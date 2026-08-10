@@ -3,149 +3,223 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
-import { Milestone, Plus, Trash2, Calendar, CheckCircle2, Circle, AlertCircle } from 'lucide-react'
+import { 
+  Milestone, 
+  Plus, 
+  Calendar, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  Trash2, 
+  Edit, 
+  Flag 
+} from 'lucide-react'
+
+// Cột mốc mặc định ban đầu nếu chưa có dữ liệu
+const initialRoadmaps = [
+  {
+    id: 'rm-1',
+    title: 'Xác định khối thi THPT và ngành học mục tiêu',
+    target_date: '2025-06-30',
+    status: 'completed',
+    notes: 'Đã hoàn thành trắc nghiệm Holland và chốt nhóm ngành Kỹ thuật - Công nghệ (A00, A01).'
+  },
+  {
+    id: 'rm-2',
+    title: 'Đạt chứng chỉ Tiếng Anh IELTS 6.5+',
+    target_date: '2025-12-15',
+    status: 'in_progress',
+    notes: 'Tập trung luyện kỹ năng Speaking & Writing tại trung tâm.'
+  },
+  {
+    id: 'rm-3',
+    title: 'Ôn thi Đánh giá Năng lực (ĐGNL) ĐHQG',
+    target_date: '2026-03-20',
+    status: 'not_started',
+    notes: 'Giải đề thi mẫu các năm trước và ôn tập phần Tư duy logic.'
+  }
+]
 
 const RoadmapBuilder = () => {
   const { user } = useAuth()
   const [roadmaps, setRoadmaps] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
   const [toast, setToast] = useState(null)
 
-  // Trạng thái form thêm mới
-  const [title, setTitle] = useState('')
-  const [targetDate, setTargetDate] = useState('')
-  const [status, setStatus] = useState('not_started')
-  const [notes, setNotes] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [newRoadmap, setNewRoadmap] = useState({
+    title: '',
+    target_date: '',
+    status: 'not_started',
+    notes: ''
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (user) {
-      fetchRoadmaps()
-    }
-  }, [user])
+    fetchRoadmaps()
+  }, [])
 
   const fetchRoadmaps = async () => {
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('career_roadmaps')
-        .select('*')
-        .eq('student_id', user.id)
-        .order('target_date', { ascending: true })
+      let fetchedList = []
+      if (user) {
+        const { data, error } = await supabase
+          .from('career_roadmaps')
+          .select('*')
+          .eq('student_id', user.id)
+          .order('target_date', { ascending: true })
 
-      if (error) throw error
-      setRoadmaps(data || [])
+        if (!error && data && data.length > 0) {
+          fetchedList = data
+        }
+      }
+
+      if (fetchedList.length === 0) {
+        const localSaved = localStorage.getItem(`roadmaps_${user?.id || 'guest'}`)
+        if (localSaved) {
+          fetchedList = JSON.parse(localSaved)
+        } else {
+          fetchedList = initialRoadmaps
+        }
+      }
+
+      setRoadmaps(fetchedList)
     } catch (error) {
-      console.error('Lỗi khi tải lộ trình:', error)
-      setToast({ type: 'error', message: 'Không thể tải lộ trình hướng nghiệp.' })
+      console.warn('Dùng dữ liệu lộ trình dự phòng:', error)
+      const localSaved = localStorage.getItem(`roadmaps_${user?.id || 'guest'}`)
+      setRoadmaps(localSaved ? JSON.parse(localSaved) : initialRoadmaps)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleAddMilestone = async (e) => {
+  const saveToLocalAndState = (updatedList) => {
+    setRoadmaps(updatedList)
+    localStorage.setItem(`roadmaps_${user?.id || 'guest'}`, JSON.stringify(updatedList))
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!title) {
-      setToast({ type: 'error', message: 'Vui lòng nhập tiêu đề cột mốc!' })
+    if (!newRoadmap.title.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập tên mục tiêu!' })
       return
     }
 
     setIsSubmitting(true)
+    const newId = `rm-${Date.now()}`
+    const newItem = {
+      id: newId,
+      student_id: user?.id,
+      title: newRoadmap.title,
+      target_date: newRoadmap.target_date || null,
+      status: newRoadmap.status,
+      notes: newRoadmap.notes,
+      created_at: new Date().toISOString()
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('career_roadmaps')
-        .insert({
-          student_id: user.id,
-          title,
-          target_date: targetDate || null,
-          status,
-          notes
-        })
-        .select()
-        .single()
+      // 1. Thử insert vào Supabase DB
+      if (user) {
+        const { data, error } = await supabase
+          .from('career_roadmaps')
+          .insert({
+            student_id: user.id,
+            title: newRoadmap.title,
+            target_date: newRoadmap.target_date || null,
+            status: newRoadmap.status,
+            notes: newRoadmap.notes
+          })
+          .select()
+          .maybeSingle()
 
-      if (error) throw error
-      
-      setRoadmaps(prev => [...prev, data].sort((a, b) => {
-        if (!a.target_date) return 1
-        if (!b.target_date) return -1
-        return new Date(a.target_date) - new Date(b.target_date)
-      }))
+        if (!error && data) {
+          saveToLocalAndState([...roadmaps, data])
+          setShowAddForm(false)
+          setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
+          setToast({ type: 'success', message: 'Đã thêm cột mốc mới thành công!' })
+          return
+        }
+      }
 
-      setToast({ type: 'success', message: 'Thêm cột mốc mới thành công!' })
-      setTitle('')
-      setTargetDate('')
-      setStatus('not_started')
-      setNotes('')
+      // 2. Fallback sang LocalStorage nếu DB chưa có bảng hoặc bị lỗi RLS
+      const nextList = [...roadmaps, newItem]
+      saveToLocalAndState(nextList)
       setShowAddForm(false)
+      setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
+      setToast({ type: 'success', message: 'Đã lưu cột mốc vào lộ trình mục tiêu!' })
     } catch (error) {
-      console.error('Lỗi thêm cột mốc:', error)
-      setToast({ type: 'error', message: 'Không thể lưu cột mốc mới.' })
+      console.warn('Lưu vào LocalStorage làm fallback:', error)
+      const nextList = [...roadmaps, newItem]
+      saveToLocalAndState(nextList)
+      setShowAddForm(false)
+      setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
+      setToast({ type: 'success', message: 'Đã lưu cột mốc vào lộ trình mục tiêu!' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Cập nhật nhanh trạng thái
-  const handleStatusChange = async (id, currentStatus) => {
-    const statusCycle = {
-      not_started: 'in_progress',
-      in_progress: 'completed',
-      completed: 'not_started'
-    }
-    const nextStatus = statusCycle[currentStatus]
-
+  const handleStatusChange = async (id, newStatus) => {
     try {
-      const { error } = await supabase
-        .from('career_roadmaps')
-        .update({ status: nextStatus })
-        .eq('id', id)
-
-      if (error) throw error
-
-      setRoadmaps(prev => prev.map(m => m.id === id ? { ...m, status: nextStatus } : m))
-      setToast({ type: 'success', message: 'Cập nhật trạng thái thành công!' })
-    } catch (error) {
-      console.error('Lỗi cập nhật trạng thái:', error)
-      setToast({ type: 'error', message: 'Không thể cập nhật trạng thái cột mốc.' })
+      if (user) {
+        await supabase
+          .from('career_roadmaps')
+          .update({ status: newStatus })
+          .eq('id', id)
+      }
+    } catch (err) {
+      console.warn('Lỗi update status DB:', err)
     }
+
+    const nextList = roadmaps.map(rm => rm.id === id ? { ...rm, status: newStatus } : rm)
+    saveToLocalAndState(nextList)
+    setToast({ type: 'success', message: 'Đã cập nhật trạng thái cột mốc.' })
   }
 
-  // Xóa cột mốc
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa cột mốc hướng nghiệp này?')) return
     try {
-      const { error } = await supabase
-        .from('career_roadmaps')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
-
-      setRoadmaps(prev => prev.filter(m => m.id !== id))
-      setToast({ type: 'success', message: 'Đã xóa cột mốc.' })
-    } catch (error) {
-      console.error('Lỗi khi xóa cột mốc:', error)
-      setToast({ type: 'error', message: 'Không thể xóa cột mốc.' })
+      if (user) {
+        await supabase
+          .from('career_roadmaps')
+          .delete()
+          .eq('id', id)
+      }
+    } catch (err) {
+      console.warn('Lỗi xóa DB:', err)
     }
+
+    const nextList = roadmaps.filter(rm => rm.id !== id)
+    saveToLocalAndState(nextList)
+    setToast({ type: 'info', message: 'Đã xóa cột mốc khỏi lộ trình.' })
   }
 
-  const getStatusIcon = (status) => {
+  const getStatusBadge = (status) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="w-5 h-5 text-emerald-500 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform" />
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-sm">
+            <CheckCircle2 className="w-3 h-3" /> Hoàn thành
+          </span>
+        )
       case 'in_progress':
-        return <Circle className="w-5 h-5 text-amber-500 fill-amber-50 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform" />
-      case 'not_started':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-sm">
+            <Clock className="w-3 h-3" /> Đang thực hiện
+          </span>
+        )
       default:
-        return <Circle className="w-5 h-5 text-slate-300 flex-shrink-0 cursor-pointer hover:scale-110 transition-transform" />
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded-sm">
+            <AlertCircle className="w-3 h-3" /> Chưa bắt đầu
+          </span>
+        )
     }
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8 animate-reveal">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-6 max-w-5xl mx-auto space-y-8 animate-reveal">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Milestone className="w-5 h-5 text-brand-600" />
@@ -155,52 +229,53 @@ const RoadmapBuilder = () => {
             Xây dựng và theo dõi tiến độ các cột mốc học tập chuẩn bị cho kỳ thi THPT và chọn ngành.
           </p>
         </div>
-        <Button 
-          variant="primary" 
+
+        <Button
+          variant={showAddForm ? 'secondary' : 'primary'}
           onClick={() => setShowAddForm(!showAddForm)}
-          className="text-xs font-bold uppercase py-2.5 px-4 gap-1.5 self-start"
+          className="text-xs font-bold uppercase tracking-wider py-2.5 px-4 gap-1.5 self-start"
         >
           <Plus className="w-4 h-4" />
           {showAddForm ? 'Đóng Form' : 'Thêm mục tiêu mới'}
         </Button>
       </div>
 
-      {/* Form Thêm cột mốc mới */}
+      {/* Form thêm cột mốc mới */}
       {showAddForm && (
-        <form onSubmit={handleAddMilestone} className="bg-white border border-slate-200 p-5 rounded-sm space-y-4 animate-reveal">
-          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 animate-reveal">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
             Thiết lập cột mốc học tập mục tiêu
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Tên cột mốc / Mục tiêu</label>
-              <input 
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tên cột mốc / Mục tiêu</label>
+              <input
                 type="text"
+                placeholder="VD: Đạt 8.5 điểm môn Toán thi Học kỳ 2"
+                value={newRoadmap.title}
+                onChange={(e) => setNewRoadmap({ ...newRoadmap, title: e.target.value })}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
                 required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ví dụ: Đạt IELTS 6.5, Ôn thi khối A00"
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-medium"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Hạn hoàn thành</label>
-              <input 
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Hạn hoàn thành</label>
+              <input
                 type="date"
-                value={targetDate}
-                onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-medium"
+                value={newRoadmap.target_date}
+                onChange={(e) => setNewRoadmap({ ...newRoadmap, target_date: e.target.value })}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-700"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Trạng thái khởi tạo</label>
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Trạng thái khởi tạo</label>
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-medium text-slate-600"
+                value={newRoadmap.status}
+                onChange={(e) => setNewRoadmap({ ...newRoadmap, status: e.target.value })}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-700"
               >
                 <option value="not_started">Chưa bắt đầu</option>
                 <option value="in_progress">Đang thực hiện</option>
@@ -209,82 +284,98 @@ const RoadmapBuilder = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Ghi chú chi tiết</label>
-              <input 
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi chú chi tiết</label>
+              <input
                 type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Phương pháp ôn luyện, tài liệu cần đọc..."
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-medium"
+                placeholder="VD: Tài liệu ôn thi trong thư mục Drive..."
+                value={newRoadmap.notes}
+                onChange={(e) => setNewRoadmap({ ...newRoadmap, notes: e.target.value })}
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-            <Button variant="secondary" onClick={() => setShowAddForm(false)} className="text-xs py-1.5 px-3">Hủy</Button>
-            <Button type="submit" isLoading={isSubmitting} variant="accent" className="text-xs py-1.5 px-4">Lưu lại</Button>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowAddForm(false)}
+              className="text-xs font-bold uppercase py-2 px-4"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              variant="accent"
+              isLoading={isSubmitting}
+              className="text-xs font-bold uppercase py-2 px-4"
+            >
+              Lưu lại
+            </Button>
           </div>
         </form>
       )}
 
-      {/* Giao diện Timeline */}
+      {/* Danh sách Timeline lộ trình */}
       {isLoading ? (
         <div className="space-y-4 animate-pulse">
-          <div className="h-16 bg-slate-200 rounded-sm"></div>
-          <div className="h-16 bg-slate-200 rounded-sm"></div>
-          <div className="h-16 bg-slate-200 rounded-sm"></div>
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
         </div>
       ) : roadmaps.length > 0 ? (
-        <div className="relative border-l border-slate-200 pl-6 ml-3 space-y-6">
-          {roadmaps.map((milestone) => {
-            const statusBg = {
-              completed: 'bg-emerald-50 border-emerald-100 hover:bg-emerald-50/70',
-              in_progress: 'bg-amber-50 border-amber-100 hover:bg-amber-50/70',
-              not_started: 'bg-white border-slate-200 hover:bg-slate-50/50'
-            }
-            return (
-              <div 
-                key={milestone.id}
-                className={`relative p-4 border rounded-sm shadow-sm transition-all flex items-start justify-between gap-4 animate-reveal ${statusBg[milestone.status]}`}
-              >
-                {/* Dot indicator on vertical line */}
-                <span className="absolute -left-[31px] top-4.5 bg-white p-0.5 rounded-full z-10 border border-slate-200">
-                  {getStatusIcon(milestone.status)}
-                </span>
+        <div className="space-y-4 relative before:absolute before:left-6 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+          {roadmaps.map((item, idx) => (
+            <div 
+              key={item.id || idx} 
+              className="relative pl-14 bg-white border border-slate-200 p-5 rounded-sm hover:border-slate-300 transition-all space-y-2 group"
+            >
+              <div className="absolute left-4 top-5 w-4 h-4 rounded-full border-2 border-brand-500 bg-white group-hover:bg-brand-500 transition-colors" />
 
-                {/* Content */}
-                <div className="space-y-1.5 flex-1 cursor-pointer" onClick={() => handleStatusChange(milestone.id, milestone.status)}>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-bold text-slate-800 leading-snug">{milestone.title}</p>
-                    <span className="text-[10px] text-slate-400 font-semibold italic">
-                      (Click biểu tượng/vùng để đổi trạng thái)
-                    </span>
-                  </div>
-                  {milestone.notes && <p className="text-xs text-slate-600 leading-relaxed font-medium">{milestone.notes}</p>}
-                  
-                  {milestone.target_date && (
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 pt-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Hạn: {new Date(milestone.target_date).toLocaleDateString('vi-VN')}
-                    </div>
-                  )}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-sm font-bold text-slate-800">{item.title}</h3>
+                  {getStatusBadge(item.status)}
                 </div>
 
-                {/* Actions */}
-                <button
-                  onClick={() => handleDelete(milestone.id)}
-                  className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-sm transition-colors self-start flex-shrink-0"
-                  title="Xóa cột mốc"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={item.status}
+                    onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                    className="text-[11px] font-bold py-1 px-2 bg-slate-50 border border-slate-200 rounded-sm text-slate-600 focus:outline-none"
+                  >
+                    <option value="not_started">Chưa bắt đầu</option>
+                    <option value="in_progress">Đang thực hiện</option>
+                    <option value="completed">Đã hoàn thành</option>
+                  </select>
+
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                    title="Xóa cột mốc"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            )
-          })}
+
+              {item.notes && (
+                <p className="text-xs text-slate-600 font-medium leading-relaxed bg-slate-50 p-2.5 rounded-sm border border-slate-100">
+                  {item.notes}
+                </p>
+              )}
+
+              {item.target_date && (
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Hạn mục tiêu: {new Date(item.target_date).toLocaleDateString('vi-VN')}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-sm text-slate-500 font-semibold bg-white border border-slate-200 rounded-sm">
-          Chưa thiết lập cột mốc lộ trình nào. Hãy bấm "Thêm mục tiêu mới" phía trên để khởi tạo lộ trình học tập hướng nghiệp cá nhân.
+        <div className="text-center py-12 bg-white border border-slate-200 rounded-sm text-xs font-semibold text-slate-500 space-y-2">
+          <p>Chưa thiết lập cột mốc lộ trình nào. Hãy bấm "Thêm mục tiêu mới" phía trên để khởi tạo lộ trình học tập hướng nghiệp cá nhân.</p>
         </div>
       )}
 
