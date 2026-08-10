@@ -10,15 +10,9 @@ import {
   CheckCircle2, 
   XCircle, 
   AlertCircle, 
-  MessageSquare,
-  User 
+  User,
+  AlertTriangle 
 } from 'lucide-react'
-
-// Chuyên viên tư vấn mẫu (Fallback)
-const fallbackCounselors = [
-  { id: 'c1', full_name: 'TS. Nguyễn Văn Minh', email: 'minh.nguyen@counselor.edu.vn', avatar_url: '' },
-  { id: 'c2', full_name: 'ThS. Trần Thị Hoàng Anh', email: 'hoanganh.tran@counselor.edu.vn', avatar_url: '' }
-]
 
 const CounselingBooking = () => {
   const { user } = useAuth()
@@ -26,6 +20,7 @@ const CounselingBooking = () => {
   const [mySessions, setMySessions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [dbError, setDbError] = useState(null)
 
   const [selectedCounselor, setSelectedCounselor] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
@@ -35,8 +30,9 @@ const CounselingBooking = () => {
   useEffect(() => {
     fetchCounselors()
     fetchMySessions()
-  }, [])
+  }, [user])
 
+  // Tải danh sách chuyên viên thuần 100% từ bảng profiles với role = counselor
   const fetchCounselors = async () => {
     try {
       const { data, error } = await supabase
@@ -44,53 +40,43 @@ const CounselingBooking = () => {
         .select('id, full_name, email, avatar_url')
         .eq('role', 'counselor')
 
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         setCounselors(data)
-      } else {
-        setCounselors(fallbackCounselors)
       }
     } catch (error) {
-      setCounselors(fallbackCounselors)
+      console.error('Lỗi khi fetch danh sách chuyên viên:', error)
     }
   }
 
+  // Tải danh sách các cuộc hẹn của học sinh thuần 100% từ bảng counseling_sessions trong Supabase
   const fetchMySessions = async () => {
+    if (!user) return
     setIsLoading(true)
+    setDbError(null)
     try {
-      let fetchedList = []
-      if (user) {
-        const { data, error } = await supabase
-          .from('counseling_sessions')
-          .select('*, counselor:counselor_id(full_name, email)')
-          .eq('student_id', user.id)
-          .order('scheduled_at', { ascending: true })
+      const { data, error } = await supabase
+        .from('counseling_sessions')
+        .select('*, counselor:counselor_id(full_name, email)')
+        .eq('student_id', user.id)
+        .order('scheduled_at', { ascending: true })
 
-        if (!error && data && data.length > 0) {
-          fetchedList = data
-        }
+      if (error) {
+        console.error('Lỗi truy vấn counseling_sessions:', error)
+        setDbError('Chưa nạp bảng counseling_sessions trong CSDL Supabase. Thầy vui lòng thực thi file schema.sql!')
+        setMySessions([])
+      } else {
+        setMySessions(data || [])
       }
-
-      if (fetchedList.length === 0) {
-        const localSaved = localStorage.getItem(`counseling_${user?.id || 'guest'}`)
-        if (localSaved) {
-          fetchedList = JSON.parse(localSaved)
-        }
-      }
-
-      setMySessions(fetchedList)
     } catch (error) {
-      const localSaved = localStorage.getItem(`counseling_${user?.id || 'guest'}`)
-      setMySessions(localSaved ? JSON.parse(localSaved) : [])
+      console.error('Lỗi fetch lịch hẹn:', error)
+      setDbError('Không thể kết nối bảng counseling_sessions trên Supabase DB.')
+      setMySessions([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const saveSessionsLocal = (newList) => {
-    setMySessions(newList)
-    localStorage.setItem(`counseling_${user?.id || 'guest'}`, JSON.stringify(newList))
-  }
-
+  // Đặt lịch hẹn mới thuần 100% vào Supabase DB
   const handleBooking = async (e) => {
     e.preventDefault()
     if (!selectedCounselor) {
@@ -102,54 +88,44 @@ const CounselingBooking = () => {
       return
     }
 
-    setIsSubmitting(true)
-    const chosenCounselorObj = counselors.find(c => c.id === selectedCounselor) || fallbackCounselors[0]
-    const newSessionItem = {
-      id: `cs-${Date.now()}`,
-      student_id: user?.id,
-      counselor_id: selectedCounselor,
-      counselor: { full_name: chosenCounselorObj.full_name, email: chosenCounselorObj.email },
-      scheduled_at: scheduledAt,
-      status: 'pending',
-      student_notes: studentNotes,
-      created_at: new Date().toISOString()
+    if (!user) {
+      setToast({ type: 'error', message: 'Bạn cần đăng nhập để đặt lịch hẹn vào CSDL!' })
+      return
     }
 
+    setIsSubmitting(true)
     try {
-      if (user) {
-        const { data, error } = await supabase
-          .from('counseling_sessions')
-          .insert({
-            student_id: user.id,
-            counselor_id: selectedCounselor,
-            scheduled_at: scheduledAt,
-            status: 'pending',
-            student_notes: studentNotes
-          })
-          .select('*, counselor:counselor_id(full_name, email)')
-          .maybeSingle()
+      const { data, error } = await supabase
+        .from('counseling_sessions')
+        .insert({
+          student_id: user.id,
+          counselor_id: selectedCounselor,
+          scheduled_at: scheduledAt,
+          status: 'pending',
+          student_notes: studentNotes
+        })
+        .select('*, counselor:counselor_id(full_name, email)')
+        .single()
 
-        if (!error && data) {
-          saveSessionsLocal([...mySessions, data])
-          setSelectedCounselor('')
-          setScheduledAt('')
-          setStudentNotes('')
-          setToast({ type: 'success', message: 'Đã gửi yêu cầu đăng ký đặt lịch hẹn tư vấn!' })
-          return
-        }
+      if (error) {
+        console.error('Lỗi insert counseling_sessions Supabase:', error)
+        setToast({ 
+          type: 'error', 
+          message: error.code === '42P01' 
+            ? 'Bảng counseling_sessions chưa được tạo trong CSDL. Thầy vui lòng nạp file schema.sql!' 
+            : `Lỗi Supabase DB: ${error.message}` 
+        })
+        return
       }
 
-      saveSessionsLocal([...mySessions, newSessionItem])
+      setMySessions(prev => [...prev, data])
       setSelectedCounselor('')
       setScheduledAt('')
       setStudentNotes('')
-      setToast({ type: 'success', message: 'Đã đăng ký lịch hẹn tư vấn thành công!' })
+      setToast({ type: 'success', message: 'Đã gửi yêu cầu đăng ký đặt lịch hẹn vào Supabase DB!' })
     } catch (error) {
-      saveSessionsLocal([...mySessions, newSessionItem])
-      setSelectedCounselor('')
-      setScheduledAt('')
-      setStudentNotes('')
-      setToast({ type: 'success', message: 'Đã đăng ký lịch hẹn tư vấn thành công!' })
+      console.error('Lỗi đặt lịch hẹn:', error)
+      setToast({ type: 'error', message: 'Lỗi khi ghi lịch hẹn vào CSDL Supabase.' })
     } finally {
       setIsSubmitting(false)
     }
@@ -189,10 +165,10 @@ const CounselingBooking = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-brand-600" />
-          Đặt lịch Tư vấn Định hướng 1-1
+          Đặt lịch Tư vấn Định hướng 1-1 (Supabase DB)
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
-          Đăng ký lịch hẹn tư vấn cá nhân với các chuyên gia tâm lý và thầy cô cố vấn hướng nghiệp.
+          Đăng ký lịch hẹn tư vấn cá nhân với các chuyên gia lưu trữ trực tiếp trong bảng counseling_sessions.
         </p>
       </div>
 
@@ -246,15 +222,25 @@ const CounselingBooking = () => {
             isLoading={isSubmitting}
             className="w-full font-bold text-xs uppercase py-2.5"
           >
-            Gửi đăng ký lịch hẹn
+            Gửi đăng ký vào Supabase DB
           </Button>
         </form>
 
         {/* Danh sách lịch hẹn đã đặt */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-2">
-            Danh sách Suất hẹn tư vấn của bạn
+            Danh sách Suất hẹn tư vấn (từ Supabase DB)
           </h3>
+
+          {dbError && (
+            <div className="bg-amber-50 border border-amber-200 p-6 rounded-sm text-center space-y-3">
+              <AlertTriangle className="w-7 h-7 text-amber-600 mx-auto" />
+              <p className="text-xs font-bold text-amber-900">{dbError}</p>
+              <Button variant="primary" onClick={fetchMySessions} className="text-xs font-bold uppercase py-2 px-6">
+                Thử lại kết nối CSDL
+              </Button>
+            </div>
+          )}
 
           {isLoading ? (
             <div className="space-y-3 animate-pulse">
@@ -296,9 +282,9 @@ const CounselingBooking = () => {
                 </div>
               ))}
             </div>
-          ) : (
+          ) : !dbError && (
             <div className="text-center py-12 bg-white border border-slate-200 rounded-sm text-xs font-semibold text-slate-500">
-              Bạn chưa có lịch hẹn tư vấn nào. Hãy điền form bên cạnh để đăng ký.
+              Chưa có dữ liệu suất hẹn tư vấn trong CSDL Supabase. Hãy điền form bên cạnh để đăng ký.
             </div>
           )}
         </div>

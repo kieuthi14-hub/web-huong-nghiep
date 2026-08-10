@@ -12,66 +12,9 @@ import {
   MapPin, 
   DollarSign, 
   ExternalLink, 
-  GraduationCap 
+  GraduationCap,
+  AlertTriangle 
 } from 'lucide-react'
-
-// Danh sách Trường học dự phòng (Fallback Data)
-const fallbackUniversitiesList = [
-  {
-    id: 'u1',
-    name: 'Đại học Bách khoa Hà Nội',
-    code: 'HUST',
-    region: 'Bắc',
-    website: 'https://hust.edu.vn',
-    tuition_fee_per_year: 30000000,
-    logo_url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'u2',
-    name: 'Đại học Bách khoa - ĐHQG TP.HCM',
-    code: 'HCMUT',
-    region: 'Nam',
-    website: 'https://hcmut.edu.vn',
-    tuition_fee_per_year: 32000000,
-    logo_url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'u3',
-    name: 'Đại học Kinh tế Quốc dân',
-    code: 'NEU',
-    region: 'Bắc',
-    website: 'https://neu.edu.vn',
-    tuition_fee_per_year: 28000000,
-    logo_url: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'u4',
-    name: 'Đại học Kinh tế TP.HCM',
-    code: 'UEH',
-    region: 'Nam',
-    website: 'https://ueh.edu.vn',
-    tuition_fee_per_year: 35000000,
-    logo_url: 'https://images.unsplash.com/photo-1592280771190-3e2e4957185e?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'u5',
-    name: 'Đại học Ngoại thương (Cơ sở Hà Nội & TP.HCM)',
-    code: 'FTU',
-    region: 'Bắc',
-    website: 'https://ftu.edu.vn',
-    tuition_fee_per_year: 25000000,
-    logo_url: 'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=200'
-  },
-  {
-    id: 'u6',
-    name: 'Đại học Bách khoa - Đại học Đà Nẵng',
-    code: 'DUT',
-    region: 'Trung',
-    website: 'https://dut.udn.vn',
-    tuition_fee_per_year: 24000000,
-    logo_url: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=200'
-  }
-]
 
 const UniversityExplorer = () => {
   const { user } = useAuth()
@@ -84,6 +27,7 @@ const UniversityExplorer = () => {
   const [selectedRegion, setSelectedRegion] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [dbError, setDbError] = useState(null)
 
   const [uniDetail, setUniDetail] = useState(null)
   const [offeredMajors, setOfferedMajors] = useState([])
@@ -114,22 +58,29 @@ const UniversityExplorer = () => {
     }
   }
 
+  // Tải danh sách trường đại học thuần 100% từ bảng universities của Supabase DB
   const fetchUniversities = async () => {
     setIsLoading(true)
+    setDbError(null)
     try {
       const { data, error } = await supabase
         .from('universities')
         .select('*')
         .order('name', { ascending: true })
 
-      if (error || !data || data.length === 0) {
-        setUniversities(fallbackUniversitiesList)
+      if (error) {
+        setDbError('Lỗi truy vấn bảng universities từ Supabase DB.')
+        setUniversities([])
+      } else if (!data || data.length === 0) {
+        setDbError('Bảng universities trong CSDL Supabase hiện tại đang rỗng. Thầy vui lòng nạp dữ liệu bằng file schema.sql.')
+        setUniversities([])
       } else {
         setUniversities(data)
       }
     } catch (error) {
-      console.warn('Dùng danh sách trường fallback:', error)
-      setUniversities(fallbackUniversitiesList)
+      console.error('Lỗi fetch trường học:', error)
+      setDbError('Không thể kết nối với bảng universities trong Supabase DB.')
+      setUniversities([])
     } finally {
       setIsLoading(false)
     }
@@ -144,27 +95,19 @@ const UniversityExplorer = () => {
         .maybeSingle()
 
       if (error || !uni) {
-        const found = fallbackUniversitiesList.find(u => u.id === id) || fallbackUniversitiesList[0]
-        setUniDetail(found)
-        setOfferedMajors([
-          { id: 'm1', major: { id: 'm1', name: 'Khoa học Máy tính & Công nghệ Thông tin', code: 'CNTT', category: 'Kỹ thuật - Công nghệ' }, subject_groups: ['A00', 'A01'], benchmark_scores_json: { 2024: 28.85 } },
-          { id: 'm2', major: { id: 'm2', name: 'Quản trị Kinh doanh', code: 'QTKD', category: 'Kinh tế - Quản lý' }, subject_groups: ['A00', 'D01'], benchmark_scores_json: { 2024: 27.50 } }
-        ])
+        setUniDetail(null)
       } else {
         setUniDetail(uni)
-        try {
-          const { data: mappings } = await supabase
-            .from('major_university_map')
-            .select('*, major:major_id(*)')
-            .eq('university_id', id)
+        const { data: mappings } = await supabase
+          .from('major_university_map')
+          .select('*, major:major_id(*)')
+          .eq('university_id', id)
 
-          setOfferedMajors(mappings || [])
-        } catch (mErr) {
-          console.warn('Lỗi lấy ngành đào tạo của trường:', mErr)
-        }
+        setOfferedMajors(mappings || [])
       }
     } catch (error) {
-      setUniDetail(fallbackUniversitiesList[0])
+      console.error('Lỗi fetch chi tiết trường:', error)
+      setUniDetail(null)
     }
   }
 
@@ -199,11 +142,11 @@ const UniversityExplorer = () => {
           next.add(itemId)
           return next
         })
-        setToast({ type: 'success', message: 'Đã lưu trường đại học vào mục tiêu.' })
+        setToast({ type: 'success', message: 'Đã lưu trường đại học vào Supabase DB.' })
       }
     } catch (error) {
-      console.warn('Lỗi bookmark:', error)
-      setToast({ type: 'info', message: 'Đã cập nhật trạng thái mục tiêu.' })
+      console.error('Lỗi bookmark:', error)
+      setToast({ type: 'error', message: 'Lỗi khi lưu trường đại học vào CSDL.' })
     }
   }
 
@@ -261,7 +204,7 @@ const UniversityExplorer = () => {
             <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <GraduationCap className="w-4.5 h-4.5 text-brand-600" />
-                Các ngành đào tạo và điểm chuẩn tuyển sinh
+                Các ngành đào tạo và điểm chuẩn tuyển sinh (từ Supabase DB)
               </h3>
               {offeredMajors.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -302,7 +245,7 @@ const UniversityExplorer = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 italic">Chưa có thông tin danh sách ngành đào tạo trong CSDL.</p>
+                <p className="text-xs text-slate-500 italic">Chưa có thông tin danh sách ngành đào tạo trong CSDL Supabase.</p>
               )}
             </div>
           </div>
@@ -365,10 +308,10 @@ const UniversityExplorer = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <School className="w-5 h-5 text-brand-600" />
-          Danh mục Trường Đại học & Học viện
+          Danh mục Trường Đại học & Học viện (Supabase DB)
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
-          Khám phá danh sách các cơ sở giáo dục đại học chất lượng tại Việt Nam theo khu vực miền và mức học phí.
+          Khám phá danh sách các cơ sở giáo dục đại học được lưu trữ trực tiếp trong bảng universities của Supabase.
         </p>
       </div>
 
@@ -402,6 +345,14 @@ const UniversityExplorer = () => {
           <div className="h-60 bg-slate-200 rounded-sm"></div>
           <div className="h-60 bg-slate-200 rounded-sm"></div>
         </div>
+      ) : dbError ? (
+        <div className="bg-amber-50 border border-amber-200 p-8 rounded-sm text-center space-y-3">
+          <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto" />
+          <p className="text-xs font-bold text-amber-900">{dbError}</p>
+          <Button variant="primary" onClick={fetchUniversities} className="text-xs uppercase font-bold py-2 px-6">
+            Thử lại kết nối Supabase
+          </Button>
+        </div>
       ) : filteredUnis.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUnis.map((uni) => (
@@ -415,7 +366,7 @@ const UniversityExplorer = () => {
         </div>
       ) : (
         <div className="text-center py-12 text-sm text-slate-500 font-semibold bg-white border border-slate-200 rounded-sm">
-          Không tìm thấy trường đại học nào trùng khớp với từ khóa.
+          Không tìm thấy trường đại học nào trùng khớp với từ khóa trong CSDL Supabase.
         </div>
       )}
 

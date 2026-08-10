@@ -14,78 +14,9 @@ import {
   BookOpen, 
   TrendingUp, 
   School,
-  Check 
+  Check,
+  AlertTriangle 
 } from 'lucide-react'
-
-// Danh sách ngành học dự phòng (Fallback Data)
-const fallbackMajorsList = [
-  {
-    id: 'm1',
-    name: 'Khoa học Máy tính & Công nghệ Thông tin',
-    code: 'CNTT',
-    category: 'Kỹ thuật - Công nghệ',
-    description: 'Ngành học tập trung vào lập trình, thiết kế hệ thống phần mềm, trí tuệ nhân tạo (AI), an ninh mạng và khoa học dữ liệu. Người học sẽ làm chủ công nghệ để giải quyết các bài toán chuyển đổi số.',
-    required_skills: ['Tư duy logic', 'Lập trình hệ thống', 'Giải quyết vấn đề', 'Ngoại ngữ'],
-    average_salary_range: '15 - 45 triệu VND',
-    career_prospects: 'Nhu cầu nhân lực chất lượng cao vô cùng lớn tại các doanh nghiệp trong nước và quốc tế. Cơ hội thăng tiến lên Tech Lead, Solution Architect hoặc khởi nghiệp công nghệ.',
-    holland_codes: ['I', 'R', 'C']
-  },
-  {
-    id: 'm2',
-    name: 'Quản trị Kinh doanh',
-    code: 'QTKD',
-    category: 'Kinh tế - Quản lý',
-    description: 'Ngành đào tạo kiến thức tổng hợp về quản lý doanh nghiệp, tài chính, nhân sự, marketing và hoạch định chiến lược kinh doanh. Giúp phát triển kỹ năng lãnh đạo toàn diện.',
-    required_skills: ['Giao tiếp thuyết phục', 'Lập kế hoạch', 'Lãnh đạo đội nhóm', 'Đàm phán'],
-    average_salary_range: '12 - 35 triệu VND',
-    career_prospects: 'Cơ hội việc làm đa dạng trong các phòng ban chức năng của doanh nghiệp. Lộ trình thăng tiến rõ ràng lên vị trí Quản lý, Giám đốc bộ phận.',
-    holland_codes: ['E', 'S', 'C']
-  },
-  {
-    id: 'm3',
-    name: 'Thiết kế Đồ họa & Truyền thông Đa phương tiện',
-    code: 'TKDH',
-    category: 'Nghệ thuật - Thiết kế',
-    description: 'Lĩnh vực kết hợp giữa tư duy nghệ thuật thẩm mỹ và các công cụ công nghệ số để tạo ra các ấn phẩm truyền thông trực quan, nhận diện thương hiệu, thiết kế UX/UI cho web/app và hoạt hình 3D.',
-    required_skills: ['Sáng tạo nghệ thuật', 'Sử dụng phần mềm Adobe/Figma', 'Tư duy thẩm mỹ', 'Làm việc nhóm'],
-    average_salary_range: '10 - 25 triệu VND',
-    career_prospects: 'Rộng mở trong các Agency quảng cáo, studio sáng tạo, công ty phát triển game và phòng marketing của mọi doanh nghiệp.',
-    holland_codes: ['A', 'I', 'R']
-  },
-  {
-    id: 'm4',
-    name: 'Sư phạm Tiếng Anh',
-    code: 'SPTA',
-    category: 'Giáo dục',
-    description: 'Ngành học trang bị kiến thức chuyên sâu về ngôn ngữ Anh cùng phương pháp sư phạm hiện đại. Sinh viên được rèn luyện kỹ năng truyền tải tri thức, thiết kế bài giảng tiếng Anh sinh động.',
-    required_skills: ['Ngoại ngữ xuất sắc', 'Truyền đạt kiến thức', 'Kiên nhẫn', 'Soạn thảo giáo án'],
-    average_salary_range: '8 - 20 triệu VND',
-    career_prospects: 'Làm việc tại hệ thống trường học công lập, trường quốc tế, trung tâm ngoại ngữ.',
-    holland_codes: ['S', 'A', 'E']
-  },
-  {
-    id: 'm5',
-    name: 'Y khoa (Bác sĩ Đa khoa)',
-    code: 'YK',
-    category: 'Y tế - Sức khỏe',
-    description: 'Đào tạo nhân lực chất lượng cao có kiến thức y học vững vàng để khám, chẩn đoán, điều trị và chăm sóc sức khỏe ban đầu cho bệnh nhân.',
-    required_skills: ['Chẩn đoán y khoa', 'Tâm lý học y tế', 'Cẩn trọng', 'Chịu áp lực tốt'],
-    average_salary_range: '15 - 50 triệu VND',
-    career_prospects: 'Làm việc tại bệnh viện tuyến trung ương đến địa phương, các phòng khám tư nhân chuẩn quốc tế.',
-    holland_codes: ['I', 'S', 'R']
-  },
-  {
-    id: 'm6',
-    name: 'Kế toán - Kiểm toán',
-    code: 'KTKT',
-    category: 'Kinh tế - Quản lý',
-    description: 'Chuyên ngành phân tích thông tin tài chính, xử lý nghiệp vụ ghi chép sổ sách kế toán, lập báo cáo tài chính và thực hiện kiểm toán thuế đúng quy định pháp luật.',
-    required_skills: ['Tính toán chính xác', 'Sử dụng Excel chuyên sâu', 'Cẩn thận chi tiết', 'Tư duy pháp lý'],
-    average_salary_range: '9 - 22 triệu VND',
-    career_prospects: 'Mọi công ty đều cần kế toán để vận hành hệ thống tài chính.',
-    holland_codes: ['C', 'E', 'I']
-  }
-]
 
 const MajorExplorer = () => {
   const { user } = useAuth()
@@ -99,6 +30,7 @@ const MajorExplorer = () => {
   const [selectedHolland, setSelectedHolland] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [dbError, setDbError] = useState(null)
 
   const [majorDetail, setMajorDetail] = useState(null)
   const [relatedUnis, setRelatedUnis] = useState([])
@@ -137,22 +69,29 @@ const MajorExplorer = () => {
     }
   }
 
+  // Tải ngành học thuần 100% từ bảng majors của Supabase DB
   const fetchMajors = async () => {
     setIsLoading(true)
+    setDbError(null)
     try {
       const { data, error } = await supabase
         .from('majors')
         .select('*')
         .order('name', { ascending: true })
 
-      if (error || !data || data.length === 0) {
-        setMajors(fallbackMajorsList)
+      if (error) {
+        setDbError('Lỗi truy vấn bảng majors từ Supabase DB.')
+        setMajors([])
+      } else if (!data || data.length === 0) {
+        setDbError('Bảng majors trong CSDL Supabase hiện tại đang rỗng. Thầy vui lòng nạp dữ liệu bằng file schema.sql.')
+        setMajors([])
       } else {
         setMajors(data)
       }
     } catch (error) {
-      console.warn('Dùng danh sách ngành fallback:', error)
-      setMajors(fallbackMajorsList)
+      console.error('Lỗi khi fetch majors:', error)
+      setDbError('Không thể kết nối với bảng majors trong Supabase DB.')
+      setMajors([])
     } finally {
       setIsLoading(false)
     }
@@ -167,28 +106,19 @@ const MajorExplorer = () => {
         .maybeSingle()
 
       if (error || !major) {
-        const found = fallbackMajorsList.find(m => m.id === id) || fallbackMajorsList[0]
-        setMajorDetail(found)
-        setRelatedUnis([
-          { id: 'ru1', university: { id: 'u1', name: 'Đại học Bách khoa Hà Nội', code: 'HUST', region: 'Bắc' }, subject_groups: ['A00', 'A01'], benchmark_scores_json: { 2024: 28.85 } },
-          { id: 'ru2', university: { id: 'u2', name: 'Đại học Bách khoa - ĐHQG TP.HCM', code: 'HCMUT', region: 'Nam' }, subject_groups: ['A00', 'A01'], benchmark_scores_json: { 2024: 28.00 } }
-        ])
+        setMajorDetail(null)
       } else {
         setMajorDetail(major)
-        try {
-          const { data: mappings } = await supabase
-            .from('major_university_map')
-            .select('*, university:university_id(*)')
-            .eq('major_id', id)
+        const { data: mappings } = await supabase
+          .from('major_university_map')
+          .select('*, university:university_id(*)')
+          .eq('major_id', id)
 
-          setRelatedUnis(mappings || [])
-        } catch (mErr) {
-          console.warn('Lỗi lấy map trường:', mErr)
-        }
+        setRelatedUnis(mappings || [])
       }
     } catch (error) {
-      const found = fallbackMajorsList[0]
-      setMajorDetail(found)
+      console.error('Lỗi fetch chi tiết ngành:', error)
+      setMajorDetail(null)
     }
   }
 
@@ -223,11 +153,11 @@ const MajorExplorer = () => {
           next.add(itemId)
           return next
         })
-        setToast({ type: 'success', message: 'Đã lưu ngành học vào mục tiêu.' })
+        setToast({ type: 'success', message: 'Đã lưu ngành học vào Supabase DB.' })
       }
     } catch (error) {
-      console.warn('Lỗi bookmark:', error)
-      setToast({ type: 'info', message: 'Đã cập nhật trạng thái mục tiêu.' })
+      console.error('Lỗi bookmark:', error)
+      setToast({ type: 'error', message: 'Lỗi khi lưu ngành học vào CSDL.' })
     }
   }
 
@@ -308,7 +238,7 @@ const MajorExplorer = () => {
             <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <School className="w-4.5 h-4.5 text-brand-600" />
-                Trường Đại học đào tạo ngành này
+                Trường Đại học đào tạo ngành này (từ Supabase DB)
               </h3>
               {relatedUnis.length > 0 ? (
                 <div className="overflow-x-auto">
@@ -351,7 +281,7 @@ const MajorExplorer = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-xs text-slate-500 italic">Chưa có thông tin trường đại học đào tạo ngành này trong CSDL.</p>
+                <p className="text-xs text-slate-500 italic">Chưa có thông tin trường đại học đào tạo ngành này trong CSDL Supabase.</p>
               )}
             </div>
           </div>
@@ -399,10 +329,10 @@ const MajorExplorer = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-brand-600" />
-          Kho cơ sở dữ liệu Ngành học
+          Kho cơ sở dữ liệu Ngành học (Supabase DB)
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
-          Tra cứu, tìm kiếm và lọc danh mục ngành đào tạo dựa trên sở thích, khối thi và mã Holland.
+          Tra cứu, tìm kiếm và lọc danh mục ngành đào tạo trực tiếp từ bảng majors trong PostgreSQL Supabase.
         </p>
       </div>
 
@@ -447,6 +377,14 @@ const MajorExplorer = () => {
           <div className="h-60 bg-slate-200 rounded-sm"></div>
           <div className="h-60 bg-slate-200 rounded-sm"></div>
         </div>
+      ) : dbError ? (
+        <div className="bg-amber-50 border border-amber-200 p-8 rounded-sm text-center space-y-3">
+          <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto" />
+          <p className="text-xs font-bold text-amber-900">{dbError}</p>
+          <Button variant="primary" onClick={fetchMajors} className="text-xs uppercase font-bold py-2 px-6">
+            Thử lại kết nối Supabase
+          </Button>
+        </div>
       ) : filteredMajors.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMajors.map((major) => (
@@ -460,7 +398,7 @@ const MajorExplorer = () => {
         </div>
       ) : (
         <div className="text-center py-12 text-sm text-slate-500 font-semibold bg-white border border-slate-200 rounded-sm">
-          Không tìm thấy ngành học nào trùng khớp với bộ lọc.
+          Không tìm thấy ngành học nào trùng khớp với bộ lọc trong CSDL Supabase.
         </div>
       )}
 

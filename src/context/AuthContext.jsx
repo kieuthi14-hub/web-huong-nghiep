@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  // Hàm tải thông tin profile từ database kèm fallback an toàn
+  // Hàm tải thông tin profile thuần 100% từ bảng profiles trong Supabase DB
   const fetchProfile = async (userId, userObj = null) => {
     const currentUser = userObj || user
     try {
@@ -54,29 +54,35 @@ export const AuthProvider = ({ children }) => {
         .eq('id', userId)
         .maybeSingle()
 
-      if (error || !data) {
-        console.warn('Chưa tìm thấy profile trong DB (có thể chưa chạy schema.sql hoặc RLS chưa cấp quyền), tự động sử dụng thông tin fallback từ Auth metadata:', error)
-        setProfile({
+      if (error) {
+        console.error('Lỗi khi lấy profile từ bảng profiles của Supabase:', error)
+      }
+
+      if (!data && currentUser) {
+        // Tự động chèn dữ liệu thực vào bảng profiles của Supabase
+        const newProfile = {
           id: userId,
-          email: currentUser?.email || '',
-          full_name: currentUser?.user_metadata?.full_name || 'Học sinh mới',
-          role: currentUser?.user_metadata?.role || 'student'
-        })
+          email: currentUser.email,
+          full_name: currentUser.user_metadata?.full_name || 'Học sinh',
+          role: currentUser.user_metadata?.role || 'student'
+        }
+        
+        const { data: createdData } = await supabase
+          .from('profiles')
+          .insert(newProfile)
+          .select()
+          .maybeSingle()
+
+        setProfile(createdData || newProfile)
       } else {
         setProfile(data)
       }
     } catch (error) {
-      console.warn('Ngoại lệ khi tải profile, dùng fallback:', error)
-      setProfile({
-        id: userId,
-        email: currentUser?.email || '',
-        full_name: currentUser?.user_metadata?.full_name || 'Học sinh mới',
-        role: currentUser?.user_metadata?.role || 'student'
-      })
+      console.error('Lỗi ngoại lệ khi fetch profile:', error)
     }
   }
 
-  // Đăng ký (mặc định role = student)
+  // Đăng ký
   const signUp = async (email, password, fullName) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -106,7 +112,7 @@ export const AuthProvider = ({ children }) => {
     return { error }
   }
 
-  // Cập nhật profile thủ công
+  // Cập nhật profile vào Supabase DB
   const updateProfile = async (updates) => {
     if (!user) return { error: new Error('Chưa đăng nhập') }
     try {

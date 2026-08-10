@@ -10,35 +10,9 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle, 
-  Trash2, 
-  Edit, 
-  Flag 
+  Trash2,
+  AlertTriangle 
 } from 'lucide-react'
-
-// Cột mốc mặc định ban đầu nếu chưa có dữ liệu
-const initialRoadmaps = [
-  {
-    id: 'rm-1',
-    title: 'Xác định khối thi THPT và ngành học mục tiêu',
-    target_date: '2025-06-30',
-    status: 'completed',
-    notes: 'Đã hoàn thành trắc nghiệm Holland và chốt nhóm ngành Kỹ thuật - Công nghệ (A00, A01).'
-  },
-  {
-    id: 'rm-2',
-    title: 'Đạt chứng chỉ Tiếng Anh IELTS 6.5+',
-    target_date: '2025-12-15',
-    status: 'in_progress',
-    notes: 'Tập trung luyện kỹ năng Speaking & Writing tại trung tâm.'
-  },
-  {
-    id: 'rm-3',
-    title: 'Ôn thi Đánh giá Năng lực (ĐGNL) ĐHQG',
-    target_date: '2026-03-20',
-    status: 'not_started',
-    notes: 'Giải đề thi mẫu các năm trước và ôn tập phần Tư duy logic.'
-  }
-]
 
 const RoadmapBuilder = () => {
   const { user } = useAuth()
@@ -46,6 +20,7 @@ const RoadmapBuilder = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [toast, setToast] = useState(null)
+  const [dbError, setDbError] = useState(null)
 
   const [newRoadmap, setNewRoadmap] = useState({
     title: '',
@@ -57,48 +32,37 @@ const RoadmapBuilder = () => {
 
   useEffect(() => {
     fetchRoadmaps()
-  }, [])
+  }, [user])
 
+  // Tải danh sách lộ trình thuần 100% từ bảng career_roadmaps trong Supabase
   const fetchRoadmaps = async () => {
+    if (!user) return
     setIsLoading(true)
+    setDbError(null)
     try {
-      let fetchedList = []
-      if (user) {
-        const { data, error } = await supabase
-          .from('career_roadmaps')
-          .select('*')
-          .eq('student_id', user.id)
-          .order('target_date', { ascending: true })
+      const { data, error } = await supabase
+        .from('career_roadmaps')
+        .select('*')
+        .eq('student_id', user.id)
+        .order('target_date', { ascending: true })
 
-        if (!error && data && data.length > 0) {
-          fetchedList = data
-        }
+      if (error) {
+        console.error('Lỗi truy vấn bảng career_roadmaps:', error)
+        setDbError('Chưa nạp bảng career_roadmaps trong CSDL Supabase. Thầy vui lòng nạp file schema.sql trong SQL Editor của Supabase.')
+        setRoadmaps([])
+      } else {
+        setRoadmaps(data || [])
       }
-
-      if (fetchedList.length === 0) {
-        const localSaved = localStorage.getItem(`roadmaps_${user?.id || 'guest'}`)
-        if (localSaved) {
-          fetchedList = JSON.parse(localSaved)
-        } else {
-          fetchedList = initialRoadmaps
-        }
-      }
-
-      setRoadmaps(fetchedList)
     } catch (error) {
-      console.warn('Dùng dữ liệu lộ trình dự phòng:', error)
-      const localSaved = localStorage.getItem(`roadmaps_${user?.id || 'guest'}`)
-      setRoadmaps(localSaved ? JSON.parse(localSaved) : initialRoadmaps)
+      console.error('Lỗi fetch lộ trình từ Supabase:', error)
+      setDbError('Không thể kết nối bảng career_roadmaps trên Supabase DB.')
+      setRoadmaps([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const saveToLocalAndState = (updatedList) => {
-    setRoadmaps(updatedList)
-    localStorage.setItem(`roadmaps_${user?.id || 'guest'}`, JSON.stringify(updatedList))
-  }
-
+  // Tạo cột mốc mới thuần 100% vào Supabase DB
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!newRoadmap.title.trim()) {
@@ -106,92 +70,82 @@ const RoadmapBuilder = () => {
       return
     }
 
-    setIsSubmitting(true)
-    const newId = `rm-${Date.now()}`
-    const newItem = {
-      id: newId,
-      student_id: user?.id,
-      title: newRoadmap.title,
-      target_date: newRoadmap.target_date || null,
-      status: newRoadmap.status,
-      notes: newRoadmap.notes,
-      created_at: new Date().toISOString()
+    if (!user) {
+      setToast({ type: 'error', message: 'Bạn cần đăng nhập để lưu lộ trình vào CSDL!' })
+      return
     }
 
+    setIsSubmitting(true)
     try {
-      // 1. Thử insert vào Supabase DB
-      if (user) {
-        const { data, error } = await supabase
-          .from('career_roadmaps')
-          .insert({
-            student_id: user.id,
-            title: newRoadmap.title,
-            target_date: newRoadmap.target_date || null,
-            status: newRoadmap.status,
-            notes: newRoadmap.notes
-          })
-          .select()
-          .maybeSingle()
+      const { data, error } = await supabase
+        .from('career_roadmaps')
+        .insert({
+          student_id: user.id,
+          title: newRoadmap.title,
+          target_date: newRoadmap.target_date || null,
+          status: newRoadmap.status,
+          notes: newRoadmap.notes
+        })
+        .select()
+        .single()
 
-        if (!error && data) {
-          saveToLocalAndState([...roadmaps, data])
-          setShowAddForm(false)
-          setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
-          setToast({ type: 'success', message: 'Đã thêm cột mốc mới thành công!' })
-          return
-        }
+      if (error) {
+        console.error('Lỗi insert Supabase DB:', error)
+        setToast({ 
+          type: 'error', 
+          message: error.code === '42P01' 
+            ? 'Bảng career_roadmaps chưa được tạo trên Supabase. Thầy vui lòng thực thi file schema.sql!' 
+            : `Lỗi Supabase DB: ${error.message}` 
+        })
+        return
       }
 
-      // 2. Fallback sang LocalStorage nếu DB chưa có bảng hoặc bị lỗi RLS
-      const nextList = [...roadmaps, newItem]
-      saveToLocalAndState(nextList)
+      setRoadmaps(prev => [...prev, data])
       setShowAddForm(false)
       setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
-      setToast({ type: 'success', message: 'Đã lưu cột mốc vào lộ trình mục tiêu!' })
+      setToast({ type: 'success', message: 'Đã thêm cột mốc mới thành công vào Supabase DB!' })
     } catch (error) {
-      console.warn('Lưu vào LocalStorage làm fallback:', error)
-      const nextList = [...roadmaps, newItem]
-      saveToLocalAndState(nextList)
-      setShowAddForm(false)
-      setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
-      setToast({ type: 'success', message: 'Đã lưu cột mốc vào lộ trình mục tiêu!' })
+      console.error('Lỗi khi nộp lộ trình:', error)
+      setToast({ type: 'error', message: 'Không thể lưu cột mốc vào Supabase DB.' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  // Cập nhật trạng thái thuần 100% vào Supabase DB
   const handleStatusChange = async (id, newStatus) => {
     try {
-      if (user) {
-        await supabase
-          .from('career_roadmaps')
-          .update({ status: newStatus })
-          .eq('id', id)
-      }
-    } catch (err) {
-      console.warn('Lỗi update status DB:', err)
-    }
+      const { error } = await supabase
+        .from('career_roadmaps')
+        .update({ status: newStatus })
+        .eq('id', id)
 
-    const nextList = roadmaps.map(rm => rm.id === id ? { ...rm, status: newStatus } : rm)
-    saveToLocalAndState(nextList)
-    setToast({ type: 'success', message: 'Đã cập nhật trạng thái cột mốc.' })
+      if (error) throw error
+
+      setRoadmaps(prev => prev.map(rm => rm.id === id ? { ...rm, status: newStatus } : rm))
+      setToast({ type: 'success', message: 'Đã cập nhật trạng thái cột mốc trong Supabase DB.' })
+    } catch (err) {
+      console.error('Lỗi update status Supabase:', err)
+      setToast({ type: 'error', message: 'Không thể cập nhật trạng thái trong CSDL.' })
+    }
   }
 
+  // Xóa cột mốc thuần 100% khỏi Supabase DB
   const handleDelete = async (id) => {
     try {
-      if (user) {
-        await supabase
-          .from('career_roadmaps')
-          .delete()
-          .eq('id', id)
-      }
-    } catch (err) {
-      console.warn('Lỗi xóa DB:', err)
-    }
+      const { error } = await supabase
+        .from('career_roadmaps')
+        .delete()
+        .eq('id', id)
 
-    const nextList = roadmaps.filter(rm => rm.id !== id)
-    saveToLocalAndState(nextList)
-    setToast({ type: 'info', message: 'Đã xóa cột mốc khỏi lộ trình.' })
+      if (error) throw error
+
+      setRoadmaps(prev => prev.filter(rm => rm.id !== id))
+      setToast({ type: 'info', message: 'Đã xóa cột mốc khỏi CSDL Supabase.' })
+    } catch (err) {
+      console.error('Lỗi xóa cột mốc Supabase:', err)
+      setToast({ type: 'error', message: 'Lỗi khi xóa cột mốc khỏi CSDL.' })
+    }
   }
 
   const getStatusBadge = (status) => {
@@ -223,10 +177,10 @@ const RoadmapBuilder = () => {
         <div>
           <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <Milestone className="w-5 h-5 text-brand-600" />
-            Lộ trình Hướng nghiệp cá nhân
+            Lộ trình Hướng nghiệp cá nhân (Supabase DB)
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Xây dựng và theo dõi tiến độ các cột mốc học tập chuẩn bị cho kỳ thi THPT và chọn ngành.
+            Xây dựng và lưu trữ tiến độ các cột mốc học tập trực tiếp trong bảng career_roadmaps của PostgreSQL.
           </p>
         </div>
 
@@ -310,10 +264,21 @@ const RoadmapBuilder = () => {
               isLoading={isSubmitting}
               className="text-xs font-bold uppercase py-2 px-4"
             >
-              Lưu lại
+              Lưu lại vào Supabase
             </Button>
           </div>
         </form>
+      )}
+
+      {/* Thông báo nếu DB chưa có bảng */}
+      {dbError && (
+        <div className="bg-amber-50 border border-amber-200 p-6 rounded-sm text-center space-y-3">
+          <AlertTriangle className="w-7 h-7 text-amber-600 mx-auto" />
+          <p className="text-xs font-bold text-amber-900">{dbError}</p>
+          <Button variant="primary" onClick={fetchRoadmaps} className="text-xs font-bold uppercase py-2 px-6">
+            Thử lại kết nối CSDL
+          </Button>
+        </div>
       )}
 
       {/* Danh sách Timeline lộ trình */}
@@ -373,9 +338,9 @@ const RoadmapBuilder = () => {
             </div>
           ))}
         </div>
-      ) : (
+      ) : !dbError && (
         <div className="text-center py-12 bg-white border border-slate-200 rounded-sm text-xs font-semibold text-slate-500 space-y-2">
-          <p>Chưa thiết lập cột mốc lộ trình nào. Hãy bấm "Thêm mục tiêu mới" phía trên để khởi tạo lộ trình học tập hướng nghiệp cá nhân.</p>
+          <p>Chưa thiết lập cột mốc lộ trình nào trong bảng career_roadmaps của Supabase DB. Hãy bấm "Thêm mục tiêu mới" phía trên để khởi tạo.</p>
         </div>
       )}
 
