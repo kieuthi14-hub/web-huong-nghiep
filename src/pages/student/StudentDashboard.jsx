@@ -14,7 +14,8 @@ import {
   Award, 
   Bookmark, 
   TrendingUp, 
-  UserCircle 
+  UserCircle,
+  ArrowRight
 } from 'lucide-react'
 
 const StudentDashboard = () => {
