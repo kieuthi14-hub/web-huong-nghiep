@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {
           setUser(session.user)
-          await fetchProfile(session.user.id)
+          await fetchProfile(session.user.id, session.user)
         }
       } catch (error) {
         console.error('Lỗi khi lấy session ban đầu:', error)
@@ -31,7 +31,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true)
       if (session) {
         setUser(session.user)
-        await fetchProfile(session.user.id)
+        await fetchProfile(session.user.id, session.user)
       } else {
         setUser(null)
         setProfile(null)
@@ -44,20 +44,35 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  // Hàm tải thông tin profile từ database
-  const fetchProfile = async (userId) => {
+  // Hàm tải thông tin profile từ database kèm fallback an toàn
+  const fetchProfile = async (userId, userObj = null) => {
+    const currentUser = userObj || user
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
 
-      if (error) throw error
-      setProfile(data)
+      if (error || !data) {
+        console.warn('Chưa tìm thấy profile trong DB (có thể chưa chạy schema.sql hoặc RLS chưa cấp quyền), tự động sử dụng thông tin fallback từ Auth metadata:', error)
+        setProfile({
+          id: userId,
+          email: currentUser?.email || '',
+          full_name: currentUser?.user_metadata?.full_name || 'Học sinh mới',
+          role: currentUser?.user_metadata?.role || 'student'
+        })
+      } else {
+        setProfile(data)
+      }
     } catch (error) {
-      console.error('Lỗi tải thông tin profile:', error)
-      setProfile(null)
+      console.warn('Ngoại lệ khi tải profile, dùng fallback:', error)
+      setProfile({
+        id: userId,
+        email: currentUser?.email || '',
+        full_name: currentUser?.user_metadata?.full_name || 'Học sinh mới',
+        role: currentUser?.user_metadata?.role || 'student'
+      })
     }
   }
 
@@ -91,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     return { error }
   }
 
-  // Cập nhật profile thủ công (ví dụ sau khi học sinh sửa thông tin cá nhân)
+  // Cập nhật profile thủ công
   const updateProfile = async (updates) => {
     if (!user) return { error: new Error('Chưa đăng nhập') }
     try {
@@ -112,7 +127,16 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, updateProfile, refreshProfile: () => fetchProfile(user?.id) }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      profile, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut, 
+      updateProfile, 
+      refreshProfile: () => fetchProfile(user?.id, user) 
+    }}>
       {children}
     </AuthContext.Provider>
   )

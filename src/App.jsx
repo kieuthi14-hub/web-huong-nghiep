@@ -24,7 +24,7 @@ import CounselorDashboard from './pages/counselor/CounselorDashboard'
 // Admin Pages
 import AdminManagement from './pages/admin/AdminManagement'
 
-// Route Bảo vệ dựa trên phân quyền (RBAC Route Guard)
+// Route Bảo vệ dựa trên phân quyền (RBAC Route Guard chống loop)
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
@@ -37,25 +37,27 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải dữ liệu...</span>
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang kết nối hệ thống...</span>
         </div>
       </div>
     )
   }
 
-  // Chưa đăng nhập
+  // 1. Chưa đăng nhập -> Chuyển về login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // Đăng nhập rồi nhưng sai quyền
-  if (allowedRoles && !allowedRoles.includes(profile?.role)) {
-    // Định hướng thông minh về trang mặc định theo role
-    if (profile?.role === 'admin') {
+  // 2. Vai trò hiện tại của user (mặc định là 'student' nếu chưa lấy được profile)
+  const userRole = profile?.role || 'student'
+
+  // 3. Đã đăng nhập nhưng truy cập trang không thuộc quyền
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
+    if (userRole === 'admin' && location.pathname !== '/admin/management') {
       return <Navigate to="/admin/management" replace />
-    } else if (profile?.role === 'counselor') {
+    } else if (userRole === 'counselor' && location.pathname !== '/counselor/dashboard') {
       return <Navigate to="/counselor/dashboard" replace />
-    } else {
+    } else if (userRole === 'student' && location.pathname !== '/student/dashboard') {
       return <Navigate to="/student/dashboard" replace />
     }
   }
@@ -86,9 +88,11 @@ const HomeRedirect = () => {
 
   if (loading) return null
 
-  if (profile?.role === 'admin') {
+  const role = profile?.role || 'student'
+
+  if (role === 'admin') {
     return <Navigate to="/admin/management" replace />
-  } else if (profile?.role === 'counselor') {
+  } else if (role === 'counselor') {
     return <Navigate to="/counselor/dashboard" replace />
   } else {
     return <Navigate to="/student/dashboard" replace />
