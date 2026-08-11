@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 
+DROP TABLE IF EXISTS public.metacognitive_matrix CASCADE;
 DROP TABLE IF EXISTS public.counseling_sessions CASCADE;
 DROP TABLE IF EXISTS public.career_roadmaps CASCADE;
 DROP TABLE IF EXISTS public.saved_items CASCADE;
@@ -124,6 +125,18 @@ CREATE TABLE public.counseling_sessions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
+-- 2.10 Bảng Ma trận Phản tư (metacognitive_matrix)
+CREATE TABLE public.metacognitive_matrix (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    student_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    target_major TEXT NOT NULL,
+    evidence TEXT NOT NULL,
+    verified_sources TEXT NOT NULL,
+    risk_analysis TEXT NOT NULL,
+    bias_check TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
 -- ====================================================================
 -- 3. THIẾT LẬP TRIGGER TỰ ĐỘNG TẠO PROFILE KHI ĐĂNG KÝ AUTH
 -- ====================================================================
@@ -160,6 +173,7 @@ ALTER TABLE public.major_university_map ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.saved_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.career_roadmaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.counseling_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.metacognitive_matrix ENABLE ROW LEVEL SECURITY;
 
 -- Cho phép đọc công khai danh mục công khai
 CREATE POLICY "Allow public read on majors" ON public.majors FOR SELECT USING (true);
@@ -174,6 +188,7 @@ CREATE POLICY "Allow authenticated full test_results" ON public.test_results FOR
 CREATE POLICY "Allow authenticated full saved_items" ON public.saved_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated full career_roadmaps" ON public.career_roadmaps FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated full counseling_sessions" ON public.counseling_sessions FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Allow authenticated full metacognitive_matrix" ON public.metacognitive_matrix FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated manage majors" ON public.majors FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "Allow authenticated manage universities" ON public.universities FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
@@ -233,7 +248,6 @@ INSERT INTO public.career_tests (id, title, description, type, questions_json) V
     ]'::jsonb
 ) ON CONFLICT (id) DO NOTHING;
 
--- 5.3 Seed Data 10 Ngành học mẫu (majors)
 INSERT INTO public.majors (id, name, code, category, description, required_skills, average_salary_range, career_prospects, holland_codes) VALUES
 (
     'b1111111-1111-1111-1111-111111111111',
@@ -267,65 +281,8 @@ INSERT INTO public.majors (id, name, code, category, description, required_skill
     '10 - 25 triệu VND',
     'Rộng mở tại các Agency quảng cáo, studio sáng tạo, công ty phát triển game và phòng Marketing.',
     ARRAY['A', 'I', 'R']
-),
-(
-    'b4444444-4444-4444-4444-444444444444',
-    'Sư phạm Tiếng Anh',
-    'SPTA',
-    'Giáo dục',
-    'Ngành đào tạo kiến thức ngôn ngữ Anh và phương pháp sư phạm hiện đại để giảng dạy tại các cấp học.',
-    ARRAY['Ngoại ngữ xuất sắc', 'Truyền đạt kiến thức', 'Kiên nhẫn', 'Soạn thảo giáo án'],
-    '8 - 20 triệu VND',
-    'Làm việc tại hệ thống trường học công lập, trường quốc tế và trung tâm ngoại ngữ.',
-    ARRAY['S', 'A', 'E']
-),
-(
-    'b5555555-5555-5555-5555-555555555555',
-    'Y khoa (Bác sĩ Đa khoa)',
-    'YK',
-    'Y tế - Sức khỏe',
-    'Đào tạo bác sĩ có kiến thức y học vững vàng để khám, chẩn đoán, điều trị và chăm sóc sức khỏe bệnh nhân.',
-    ARRAY['Chẩn đoán y khoa', 'Tâm lý học y tế', 'Cẩn trọng', 'Chịu áp lực cao'],
-    '15 - 50 triệu VND',
-    'Làm việc tại bệnh viện tuyến trung ương đến địa phương, các phòng khám tư nhân quốc tế.',
-    ARRAY['I', 'S', 'R']
-),
-(
-    'b6666666-6666-6666-6666-666666666666',
-    'Kế toán - Kiểm toán',
-    'KTKT',
-    'Kinh tế - Quản lý',
-    'Chuyên ngành phân tích thông tin tài chính, xử lý nghiệp vụ ghi chép sổ sách kế toán và kiểm toán thuế.',
-    ARRAY['Tính toán chính xác', 'Sử dụng Excel chuyên sâu', 'Cẩn thận chi tiết', 'Tư duy pháp lý'],
-    '9 - 22 triệu VND',
-    'Nhu cầu không thể thiếu tại mọi doanh nghiệp, ngân hàng và cơ quan quản lý nhà nước.',
-    ARRAY['C', 'E', 'I']
-),
-(
-    'b7777777-7777-7777-7777-777777777777',
-    'Truyền thông & Quan hệ Công chúng',
-    'PR',
-    'Nghệ thuật - Thiết kế',
-    'Xây dựng và bảo vệ hình ảnh thương hiệu, quản trị khủng hoảng truyền thông và tổ chức sự kiện.',
-    ARRAY['Viết lách sáng tạo', 'Quan hệ báo chí', 'Nhạy bén thông tin', 'Xử lý khủng hoảng'],
-    '11 - 28 triệu VND',
-    'Cơ hội lớn tại các công ty PR, truyền thông, tập đoàn đa quốc gia.',
-    ARRAY['E', 'A', 'S']
-),
-(
-    'b8888888-8888-8888-8888-888888888888',
-    'An toàn Thông tin / Bảo mật',
-    'ATTT',
-    'Kỹ thuật - Công nghệ',
-    'Bảo vệ hệ thống mạng, hạ tầng dữ liệu của tổ chức trước các đợt tấn công cyber và mã độc.',
-    ARRAY['Mã hóa dữ liệu', 'Phân tích lỗ hổng', 'Lập trình Python/C++', 'Tư duy phòng thủ'],
-    '18 - 50 triệu VND',
-    'Nhu cầu cực cao tại các ngân hàng, công ty tài chính, chính phủ và tập đoàn công nghệ.',
-    ARRAY['I', 'C', 'R']
-)
-ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO NOTHING;
 
--- 5.4 Seed Data 6 Trường Đại học tiêu biểu (universities)
 INSERT INTO public.universities (id, name, code, region, website, tuition_fee_per_year, logo_url) VALUES
 (
     'c1111111-1111-1111-1111-111111111111',
@@ -344,78 +301,12 @@ INSERT INTO public.universities (id, name, code, region, website, tuition_fee_pe
     'https://hcmut.edu.vn',
     32000000,
     'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=200'
-),
-(
-    'c3333333-3333-3333-3333-333333333333',
-    'Đại học Kinh tế Quốc dân',
-    'NEU',
-    'Bắc',
-    'https://neu.edu.vn',
-    28000000,
-    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=200'
-),
-(
-    'c4444444-4444-4444-4444-444444444444',
-    'Đại học Kinh tế TP.HCM',
-    'UEH',
-    'Nam',
-    'https://ueh.edu.vn',
-    35000000,
-    'https://images.unsplash.com/photo-1592280771190-3e2e4957185e?auto=format&fit=crop&q=80&w=200'
-),
-(
-    'c5555555-5555-5555-5555-555555555555',
-    'Đại học Ngoại thương (Hà Nội & TP.HCM)',
-    'FTU',
-    'Bắc',
-    'https://ftu.edu.vn',
-    25000000,
-    'https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&q=80&w=200'
-),
-(
-    'c6666666-6666-6666-6666-666666666666',
-    'Đại học Bách khoa - Đại học Đà Nẵng',
-    'DUT',
-    'Trung',
-    'https://dut.udn.vn',
-    24000000,
-    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=200'
-)
-ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT (id) DO NOTHING;
 
--- 5.5 Seed Data Ánh xạ Điểm chuẩn (major_university_map)
 INSERT INTO public.major_university_map (major_id, university_id, subject_groups, benchmark_scores_json) VALUES
 (
     'b1111111-1111-1111-1111-111111111111',
     'c1111111-1111-1111-1111-111111111111',
     ARRAY['A00', 'A01'],
     '{"2022": 28.29, "2023": 29.42, "2024": 28.85}'::jsonb
-),
-(
-    'b1111111-1111-1111-1111-111111111111',
-    'c2222222-2222-2222-2222-222222222222',
-    ARRAY['A00', 'A01'],
-    '{"2022": 27.50, "2023": 28.00, "2024": 28.20}'::jsonb
-),
-(
-    'b2222222-2222-2222-2222-222222222222',
-    'c3333333-3333-3333-3333-333333333333',
-    ARRAY['A00', 'A01', 'D01', 'D07'],
-    '{"2022": 27.45, "2023": 27.80, "2024": 27.50}'::jsonb
-),
-(
-    'b2222222-2222-2222-2222-222222222222',
-    'c4444444-4444-4444-4444-444444444444',
-    ARRAY['A00', 'A01', 'D01'],
-    '{"2022": 26.80, "2023": 27.20, "2024": 27.00}'::jsonb
-),
-(
-    'b3333333-3333-3333-3333-333333333333',
-    'c4444444-4444-4444-4444-444444444444',
-    ARRAY['A00', 'A01', 'D01', 'V00'],
-    '{"2022": 26.50, "2023": 26.90, "2024": 26.75}'::jsonb
 );
-
--- ====================================================================
--- THÀNH CÔNG! HỆ THỐNG CƠ SỞ DỮ LIỆU ĐÃ ĐƯỢC NẠP 100% HOÀN CHỈNH.
--- ====================================================================
