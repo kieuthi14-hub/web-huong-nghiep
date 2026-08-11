@@ -386,16 +386,16 @@ const MajorExplorer = () => {
                   </div>
                 </div>
 
-                {/* Nút Bấm Tra Cứu Mở Rộng */}
+                {/* Nút Bấm Tra Cứu Mở Rộng mở Cổng Tuyển sinh Bộ GD&ĐT */}
                 <div className="pt-2 border-t border-emerald-200/60">
                   <a 
-                    href="https://thituyensinh.vn" 
+                    href="https://tuyensinh.thi.moet.gov.vn" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-sm transition-all text-center"
+                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-sm transition-all text-center cursor-pointer"
                   >
-                    <ExternalLink className="w-4 h-4" />
-                    🔗 Mở Cổng thông tin Tuyển sinh chính thức (thituyensinh.vn / Cổng Bộ GD&ĐT) để xem trọn bộ danh sách
+                    <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                    🔗 Mở Cổng thông tin Tuyển sinh chính thức Bộ GD&ĐT (tuyensinh.thi.moet.gov.vn) để xem trọn bộ danh sách
                   </a>
                 </div>
               </div>
