@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
@@ -18,6 +19,7 @@ import {
 
 const HollandTest = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   
   const [test, setTest] = useState(null)
   const [questions, setQuestions] = useState([])
@@ -299,13 +301,14 @@ const HollandTest = () => {
                           </span>
                         </div>
                       </div>
-                      <a
-                        href={`/student/debias-matrix?major=${encodeURIComponent(major.name)}`}
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/student/debias-matrix?major=${encodeURIComponent(major.name)}`)}
                         className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-sm transition-all flex items-center gap-1 shadow-sm flex-shrink-0"
                         title="Đưa ngành học này vào Bảng Phản Tư để phân tích rủi ro"
                       >
                         🧠 Phản tư ngay
-                      </a>
+                      </button>
                     </div>
                   ))}
                 </div>
