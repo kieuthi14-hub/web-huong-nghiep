@@ -16,7 +16,9 @@ import {
   School,
   Check,
   AlertTriangle,
-  Brain 
+  Brain,
+  Lightbulb,
+  ExternalLink 
 } from 'lucide-react'
 
 // Danh sách ngành học dự phòng (Fallback Data)
@@ -300,12 +302,13 @@ const MajorExplorer = () => {
               </div>
             </div>
 
-            {/* Trường Đại học đào tạo */}
+            {/* Trường Đại học đào tạo & Hướng dẫn tra cứu */}
             <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <School className="w-4.5 h-4.5 text-brand-600" />
-                Trường Đại học đào tạo ngành này (từ Supabase DB)
+                🏫 MỘT SỐ TRƯỜNG THAM KHẢO TIÊU BIỂU & HƯỚNG DẪN TRA CỨU
               </h3>
+
               {relatedUnis.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
@@ -314,7 +317,7 @@ const MajorExplorer = () => {
                         <th className="py-3 px-4">Tên trường</th>
                         <th className="py-3 px-4">Vùng</th>
                         <th className="py-3 px-4">Khối thi</th>
-                        <th className="py-3 px-4 text-right">Điểm chuẩn gần nhất (2024)</th>
+                        <th className="py-3 px-4 text-right">ĐIỂM CHUẨN THAM KHẢO (2025)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -349,6 +352,53 @@ const MajorExplorer = () => {
               ) : (
                 <p className="text-xs text-slate-500 italic">Chưa có thông tin trường đại học đào tạo ngành này trong CSDL Supabase.</p>
               )}
+
+              {/* Khung Chỉ dẫn học sinh tự tra cứu trọn bộ các trường */}
+              <div className="bg-emerald-50/70 border border-emerald-200 p-5 rounded-sm space-y-4 text-xs text-emerald-950 mt-6 shadow-sm">
+                <div className="flex items-center gap-2 border-b border-emerald-200/60 pb-2.5">
+                  <Lightbulb className="w-4.5 h-4.5 text-emerald-700 flex-shrink-0" />
+                  <h4 className="font-bold text-emerald-900 uppercase tracking-wider">
+                    💡 Hướng dẫn học sinh tự tra cứu đầy đủ danh sách các trường trên toàn quốc:
+                  </h4>
+                </div>
+
+                {/* Cú pháp tìm kiếm chuẩn */}
+                <div className="bg-white p-3 rounded-sm border border-emerald-200/80 font-bold text-emerald-900 leading-relaxed shadow-2xs">
+                  👉 Cú pháp tìm chuẩn trên Google: <span className="text-brand-700">{majorDetail.name}</span> + Điểm chuẩn 2025 + [Tên trường bạn quan tâm]
+                </div>
+
+                {/* 3 Nguyên tắc phản tư khi chọn trường */}
+                <div className="space-y-2">
+                  <p className="font-bold text-emerald-900">3 Nguyên tắc phản tư khi chọn trường:</p>
+                  <div className="space-y-1.5 leading-relaxed">
+                    <p className="flex items-start gap-1.5">
+                      <span className="font-bold text-emerald-700">1.</span>
+                      <span><strong className="text-emerald-900">Không chỉ nhìn điểm chuẩn 1 năm:</strong> Hãy xem xu hướng biến động điểm trong 3 năm gần nhất (2023 - 2025).</span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                      <span className="font-bold text-emerald-700">2.</span>
+                      <span><strong className="text-emerald-900">Đối chiếu thực tế:</strong> So sánh kỹ khung chương trình đào tạo, mức học phí và cơ sở vật chất giữa các trường.</span>
+                    </p>
+                    <p className="flex items-start gap-1.5">
+                      <span className="font-bold text-emerald-700">3.</span>
+                      <span><strong className="text-emerald-900">Yếu tố địa lý & Việc làm:</strong> Đánh giá cơ hội thực tập, mạng lưới doanh nghiệp kết nối tại khu vực trường đặt trụ sở.</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Nút Bấm Tra Cứu Mở Rộng */}
+                <div className="pt-2 border-t border-emerald-200/60">
+                  <a 
+                    href="https://thituyensinh.vn" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 shadow-sm transition-all text-center"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    🔗 Mở Cổng thông tin Tuyển sinh chính thức (thituyensinh.vn / Cổng Bộ GD&ĐT) để xem trọn bộ danh sách
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
 
