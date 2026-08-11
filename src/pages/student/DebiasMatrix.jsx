@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
@@ -13,12 +14,13 @@ import {
   Sparkles,
   History,
   Trash2,
-  CheckCircle2,
   MessageSquareCode
 } from 'lucide-react'
 
 const DebiasMatrix = () => {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const majorParam = searchParams.get('major')
   
   const [targetMajor, setTargetMajor] = useState('')
   const [evidence, setEvidence] = useState('')
@@ -30,6 +32,12 @@ const DebiasMatrix = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoadingHistory, setIsLoadingHistory] = useState(true)
   const [toast, setToast] = useState(null)
+
+  useEffect(() => {
+    if (majorParam) {
+      setTargetMajor(majorParam)
+    }
+  }, [majorParam])
 
   useEffect(() => {
     fetchMatrices()

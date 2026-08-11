@@ -1,15 +1,22 @@
 import React from 'react'
-import { Bookmark, Sparkles, DollarSign, Award, ChevronRight } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Bookmark, DollarSign, Award, ChevronRight, AlertTriangle, Brain } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import Button from '../common/Button'
 
 const MajorCard = ({ major, isBookmarked = false, onBookmarkToggle, showLink = true }) => {
   const { id, name, code, category, average_salary_range, holland_codes = [], description } = major
+  const navigate = useNavigate()
 
   const handleBookmarkClick = (e) => {
     e.preventDefault()
     e.stopPropagation()
     onBookmarkToggle(id, 'major', isBookmarked)
+  }
+
+  const handleDebiasClick = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigate(`/student/debias-matrix?major=${encodeURIComponent(name)}`)
   }
 
   const categoryColors = {
@@ -21,6 +28,33 @@ const MajorCard = ({ major, isBookmarked = false, onBookmarkToggle, showLink = t
   }
 
   const badgeStyle = categoryColors[category] || 'bg-slate-50 text-slate-700 border-slate-200'
+
+  // Thuật toán hiển thị Mức lương thực tế phân chia theo Lộ trình (tránh tô hồng)
+  const getSalaryProgression = () => {
+    if (category === 'Kỹ thuật - Công nghệ') return 'Khởi điểm: 9 - 14 triệu | Sau 3-5 năm: 18 - 35 triệu+'
+    if (category === 'Kinh tế - Quản lý') return 'Khởi điểm: 8 - 12 triệu | Sau 3-5 năm: 15 - 28 triệu+'
+    if (category === 'Nghệ thuật - Thiết kế') return 'Khởi điểm: 7 - 11 triệu | Sau 3-5 năm: 14 - 25 triệu+'
+    if (category === 'Y tế - Sức khỏe') return 'Khởi điểm: 10 - 15 triệu | Sau 3-5 năm: 20 - 45 triệu+'
+    if (category === 'Giáo dục') return 'Khởi điểm: 7 - 10 triệu | Sau 3-5 năm: 12 - 20 triệu+'
+    return 'Khởi điểm: 8 - 12 triệu | Sau 3-5 năm: 15 - 30 triệu+'
+  }
+
+  // Thuật toán xác định Khung Cảnh Báo Rủi Ro (Risk Indicator) theo ngành
+  const getRiskWarning = () => {
+    if (name.includes('Máy tính') || name.includes('Công nghệ') || name.includes('An toàn')) {
+      return '⚠️ Thách thức chính: Tỷ lệ đào thải cao & nguy cơ tự động hóa bởi AI trong 3-5 năm tới.'
+    }
+    if (name.includes('Quản trị') || name.includes('Kinh doanh') || name.includes('PR') || name.includes('Truyền thông')) {
+      return '⚠️ Thách thức chính: Áp lực chạy KPI doanh số cao & tính cạnh tranh đào thải nhân lực gay gắt.'
+    }
+    if (name.includes('Thiết kế') || name.includes('Đồ họa')) {
+      return '⚠️ Thách thức chính: Nguy cơ bị công cụ Generative AI thay thế các tác vụ thiết kế cơ bản.'
+    }
+    if (name.includes('Kế toán') || name.includes('Kiểm toán')) {
+      return '⚠️ Thách thức chính: Các công việc nhập liệu thủ công đang bị phần mềm tự động hóa thay thế nhanh chóng.'
+    }
+    return '⚠️ Thách thức chính: Áp lực cạnh tranh nhân lực chất lượng cao & yêu cầu liên tục cập nhật kỹ năng.'
+  }
 
   return (
     <div className="bg-white border border-slate-200 hover:border-brand-300 hover:shadow-md transition-all duration-300 flex flex-col justify-between p-5 rounded-sm relative group animate-reveal">
@@ -50,21 +84,32 @@ const MajorCard = ({ major, isBookmarked = false, onBookmarkToggle, showLink = t
         <p className="text-xs text-slate-400 font-semibold mb-3">Mã ngành: {code}</p>
 
         {/* Short Description */}
-        <p className="text-xs text-slate-600 line-clamp-3 mb-4 leading-relaxed">
+        <p className="text-xs text-slate-600 line-clamp-2 mb-3 leading-relaxed">
           {description}
         </p>
 
+        {/* Khung Cảnh Báo Rủi Ro (Risk Indicator) */}
+        <div className="bg-amber-50/80 border border-amber-200 text-amber-900 p-2.5 rounded-sm mb-4">
+          <p className="text-[11px] font-bold leading-relaxed flex items-start gap-1">
+            <span>{getRiskWarning()}</span>
+          </p>
+        </div>
+
         {/* Meta Info */}
         <div className="space-y-2.5 pt-3 border-t border-slate-100 mb-4">
-          <div className="flex items-center text-xs text-slate-600 gap-2">
-            <DollarSign className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <span className="font-medium">Mức lương:</span>
-            <span className="font-semibold text-slate-800">{average_salary_range}</span>
+          <div className="flex items-start text-xs text-slate-600 gap-2">
+            <DollarSign className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="font-medium text-slate-500">Mức lương thực tế:</span>
+              <p className="font-bold text-slate-800 text-[11px] mt-0.5 leading-snug">
+                {getSalaryProgression()}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center text-xs text-slate-600 gap-2">
             <Award className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <span className="font-medium">Nhóm Holland:</span>
+            <span className="font-medium text-slate-500">Nhóm Holland:</span>
             <div className="flex gap-1">
               {holland_codes.map((code, idx) => (
                 <span 
@@ -80,10 +125,20 @@ const MajorCard = ({ major, isBookmarked = false, onBookmarkToggle, showLink = t
       </div>
 
       {showLink && (
-        <div className="pt-2">
-          <Link to={`/student/majors?id=${id}`} className="w-full">
-            <Button variant="outline" className="w-full text-xs font-semibold py-1.5 gap-1 group-hover:bg-brand-500 group-hover:text-white transition-all">
-              Xem chi tiết ngành
+        <div className="pt-2 flex items-center gap-2">
+          {/* Nút Phản tư nhanh màu xanh/tím */}
+          <button
+            onClick={handleDebiasClick}
+            className="flex-1 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-sm transition-all flex items-center justify-center gap-1 shadow-sm"
+            title="Đưa ngành học này vào Bảng Phản Tư để phân tích rủi ro"
+          >
+            <span>🧠 Đưa vào Phản Tư</span>
+          </button>
+
+          {/* Nút Xem chi tiết */}
+          <Link to={`/student/majors?id=${id}`}>
+            <Button variant="outline" className="text-[11px] font-semibold py-1.5 px-3 gap-1 hover:bg-slate-100">
+              Chi tiết
               <ChevronRight className="w-3 h-3" />
             </Button>
           </Link>
