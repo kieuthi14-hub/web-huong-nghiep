@@ -4,7 +4,17 @@ import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import HollandChart from '../../components/common/HollandChart'
-import { ClipboardList, ArrowLeft, ArrowRight, CheckCircle2, RefreshCw, Award, GraduationCap, AlertTriangle } from 'lucide-react'
+import { 
+  ClipboardList, 
+  ArrowLeft, 
+  ArrowRight, 
+  CheckCircle2, 
+  RefreshCw, 
+  Award, 
+  GraduationCap, 
+  AlertTriangle,
+  Lightbulb 
+} from 'lucide-react'
 
 const HollandTest = () => {
   const { user } = useAuth()
@@ -75,7 +85,7 @@ const HollandTest = () => {
   const handleNext = () => {
     const unanswered = pageQuestions.some(q => answers[q.id] === null)
     if (unanswered) {
-      setToast({ type: 'warning', message: 'Vui lòng trả lời toàn bộ câu hỏi ở trang này!' })
+      setToast({ type: 'warning', message: 'Vui lòng chọn phản hồi cho toàn bộ câu hỏi ở trang này!' })
       return
     }
     if (currentPage < totalPages - 1) {
@@ -101,12 +111,13 @@ const HollandTest = () => {
 
     setIsSubmitting(true)
     try {
-      // 1. Tính toán điểm RIASEC
+      // 1. Tính toán điểm RIASEC dựa trên thang đo 4 mức Likert (1=0đ, 2=1đ, 3=2đ, 4=3đ)
       const scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
       questions.forEach(q => {
-        if (answers[q.id] === true) {
-          scores[q.category] = (scores[q.category] || 0) + 1
-        }
+        const val = answers[q.id]
+        if (val === 4) scores[q.category] = (scores[q.category] || 0) + 3
+        else if (val === 3) scores[q.category] = (scores[q.category] || 0) + 2
+        else if (val === 2) scores[q.category] = (scores[q.category] || 0) + 1
       })
 
       // 2. Tìm mã Holland (3 nhóm điểm cao nhất)
@@ -276,16 +287,25 @@ const HollandTest = () => {
               {recommendedMajors.length > 0 ? (
                 <div className="space-y-3">
                   {recommendedMajors.map(major => (
-                    <div key={major.id} className="p-3 border border-slate-100 bg-slate-50 hover:border-brand-200 rounded-sm transition-all">
-                      <p className="text-xs font-bold text-slate-800">{major.name}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded-sm">
-                          {major.category}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-semibold uppercase">
-                          Holland: {(major.holland_codes || []).join(', ')}
-                        </span>
+                    <div key={major.id} className="p-3 border border-slate-100 bg-slate-50 hover:border-brand-200 rounded-sm transition-all flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">{major.name}</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 bg-brand-100 text-brand-700 rounded-sm">
+                            {major.category}
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-semibold uppercase">
+                            Holland: {(major.holland_codes || []).join(', ')}
+                          </span>
+                        </div>
                       </div>
+                      <a
+                        href={`/student/debias-matrix?major=${encodeURIComponent(major.name)}`}
+                        className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-sm transition-all flex items-center gap-1 shadow-sm flex-shrink-0"
+                        title="Đưa ngành học này vào Bảng Phản Tư để phân tích rủi ro"
+                      >
+                        🧠 Phản tư ngay
+                      </a>
                     </div>
                   ))}
                 </div>
@@ -313,7 +333,7 @@ const HollandTest = () => {
 
   // Giao diện làm bài trắc nghiệm
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-8 animate-reveal">
+    <div className="p-6 max-w-3xl mx-auto space-y-6 animate-reveal">
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <ClipboardList className="w-5 h-5 text-brand-600" />
@@ -321,6 +341,16 @@ const HollandTest = () => {
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
           {test?.description}
+        </p>
+      </div>
+
+      {/* Khung Lời Nhắc Phản Tư (Metacognitive Prompt) */}
+      <div className="bg-blue-50 border border-blue-200 text-blue-950 p-4 rounded-sm flex items-start gap-3 shadow-sm">
+        <div className="p-1.5 bg-blue-500 text-white rounded-sm flex-shrink-0 mt-0.5">
+          <Lightbulb className="w-4.5 h-4.5" />
+        </div>
+        <p className="text-xs font-semibold leading-relaxed text-blue-950">
+          <span className="font-bold text-blue-900">💡 Lời khuyên Phản tư:</span> Hãy chọn câu trả lời dựa trên trải nghiệm và năng lực <span className="font-bold uppercase underline">THỰC TẾ</span> bạn đã từng làm, tránh trả lời theo "hình mẫu mơ ước" hoặc cảm xúc nhất thời.
         </p>
       </div>
 
@@ -351,29 +381,30 @@ const HollandTest = () => {
                 Câu {globalIdx}: {q.text}
               </p>
               
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={() => handleAnswerSelect(q.id, true)}
-                  className={`px-6 py-2 border text-xs font-bold rounded-sm transition-all focus:outline-none ${
-                    answers[q.id] === true
-                      ? 'bg-brand-500 border-brand-500 text-white shadow-sm'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Đúng
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAnswerSelect(q.id, false)}
-                  className={`px-6 py-2 border text-xs font-bold rounded-sm transition-all focus:outline-none ${
-                    answers[q.id] === false
-                      ? 'bg-red-600 border-red-600 text-white shadow-sm'
-                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  Sai (Không đúng)
-                </button>
+              {/* Thang đo 4 tùy chọn Likert Scale */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 pt-1">
+                {[
+                  { value: 1, label: '1. Rất không đúng' },
+                  { value: 2, label: '2. Không đúng lắm' },
+                  { value: 3, label: '3. Khá đúng' },
+                  { value: 4, label: '4. Rất đúng' }
+                ].map((opt) => {
+                  const isSelected = answers[q.id] === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => handleAnswerSelect(q.id, opt.value)}
+                      className={`py-2.5 px-3 border text-xs font-bold rounded-sm transition-all focus:outline-none text-center ${
+                        isSelected
+                          ? 'bg-brand-600 border-brand-600 text-white shadow-sm ring-2 ring-brand-300'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )
