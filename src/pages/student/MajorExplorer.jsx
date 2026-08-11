@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import MajorCard from '../../components/career/MajorCard'
@@ -15,11 +15,50 @@ import {
   TrendingUp, 
   School,
   Check,
-  AlertTriangle 
+  AlertTriangle,
+  Brain 
 } from 'lucide-react'
+
+// Danh sách ngành học dự phòng (Fallback Data)
+const fallbackMajorsList = [
+  {
+    id: 'm1',
+    name: 'Khoa học Máy tính & Công nghệ Thông tin',
+    code: 'CNTT',
+    category: 'Kỹ thuật - Công nghệ',
+    description: 'Ngành học tập trung vào lập trình, thiết kế hệ thống phần mềm, trí tuệ nhân tạo (AI), an ninh mạng và khoa học dữ liệu. Người học sẽ làm chủ công nghệ để giải quyết các bài toán chuyển đổi số.',
+    required_skills: ['Tư duy logic', 'Lập trình hệ thống', 'Giải quyết vấn đề', 'Ngoại ngữ'],
+    average_salary_range: 'Khởi điểm: 9 - 14 triệu | Sau 3-5 năm: 18 - 35 triệu+',
+    career_prospects: 'Nhu cầu nhân lực chất lượng cao vô cùng lớn tại các doanh nghiệp trong nước và quốc tế. Cơ hội thăng tiến lên Tech Lead, Solution Architect hoặc khởi nghiệp công nghệ.',
+    holland_codes: ['I', 'R', 'C']
+  },
+  {
+    id: 'm2',
+    name: 'Quản trị Kinh doanh',
+    code: 'QTKD',
+    category: 'Kinh tế - Quản lý',
+    description: 'Ngành đào tạo kiến thức tổng hợp về quản lý doanh nghiệp, tài chính, nhân sự, marketing và hoạch định chiến lược kinh doanh. Giúp phát triển kỹ năng lãnh đạo toàn diện.',
+    required_skills: ['Giao tiếp thuyết phục', 'Lập kế hoạch', 'Lãnh đạo đội nhóm', 'Đàm phán'],
+    average_salary_range: 'Khởi điểm: 8 - 12 triệu | Sau 3-5 năm: 15 - 28 triệu+',
+    career_prospects: 'Cơ hội việc làm đa dạng trong các phòng ban chức năng của doanh nghiệp. Lộ trình thăng tiến rõ ràng lên vị trí Quản lý, Giám đốc bộ phận.',
+    holland_codes: ['E', 'S', 'C']
+  },
+  {
+    id: 'm3',
+    name: 'Thiết kế Đồ họa & Truyền thông Đa phương tiện',
+    code: 'TKDH',
+    category: 'Nghệ thuật - Thiết kế',
+    description: 'Lĩnh vực kết hợp giữa tư duy nghệ thuật thẩm mỹ và các công cụ công nghệ số để tạo ra các ấn phẩm truyền thông trực quan, nhận diện thương hiệu, thiết kế UX/UI cho web/app và hoạt hình 3D.',
+    required_skills: ['Sáng tạo nghệ thuật', 'Sử dụng phần mềm Adobe/Figma', 'Tư duy thẩm mỹ', 'Làm việc nhóm'],
+    average_salary_range: 'Khởi điểm: 7 - 11 triệu | Sau 3-5 năm: 14 - 25 triệu+',
+    career_prospects: 'Rộng mở trong các Agency quảng cáo, studio sáng tạo, công ty phát triển game và phòng marketing của mọi doanh nghiệp.',
+    holland_codes: ['A', 'I', 'R']
+  }
+]
 
 const MajorExplorer = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const majorId = searchParams.get('id')
 
@@ -106,7 +145,8 @@ const MajorExplorer = () => {
         .maybeSingle()
 
       if (error || !major) {
-        setMajorDetail(null)
+        const found = fallbackMajorsList.find(m => m.id === id) || fallbackMajorsList[0]
+        setMajorDetail(found)
       } else {
         setMajorDetail(major)
         const { data: mappings } = await supabase
@@ -118,7 +158,7 @@ const MajorExplorer = () => {
       }
     } catch (error) {
       console.error('Lỗi fetch chi tiết ngành:', error)
-      setMajorDetail(null)
+      setMajorDetail(fallbackMajorsList[0])
     }
   }
 
@@ -184,7 +224,7 @@ const MajorExplorer = () => {
           Quay lại danh sách
         </button>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
+        <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
             <div>
               <span className="px-2 py-0.5 text-xs font-bold bg-brand-50 text-brand-700 border border-brand-200 rounded-sm">
@@ -210,7 +250,8 @@ const MajorExplorer = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
+            {/* Các kỹ năng cốt lõi */}
+            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <BookOpen className="w-4.5 h-4.5 text-brand-600" />
                 Các kỹ năng cốt lõi cần có
@@ -225,7 +266,8 @@ const MajorExplorer = () => {
               </div>
             </div>
 
-            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
+            {/* Triển vọng nghề nghiệp */}
+            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <TrendingUp className="w-4.5 h-4.5 text-brand-600" />
                 Triển vọng nghề nghiệp tương lai
@@ -235,7 +277,31 @@ const MajorExplorer = () => {
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
+            {/* Khung "Thách thức & Mặt tối thực tế" (Risk Analysis Section) */}
+            <div className="bg-amber-50/70 border border-amber-200 p-6 rounded-sm space-y-4 shadow-sm">
+              <h3 className="text-sm font-bold text-amber-900 uppercase tracking-wider border-b border-amber-200/60 pb-2 flex items-center gap-2">
+                <AlertTriangle className="w-4.5 h-4.5 text-amber-600" />
+                ⚠️ Thách thức & Mặt tối thực tế của ngành
+              </h3>
+
+              <div className="space-y-2.5 text-xs text-amber-950 font-medium">
+                <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-amber-200/60">
+                  <span className="text-amber-600 font-bold">•</span>
+                  <span>Áp lực cập nhật kiến thức & công nghệ cực cao, nguy cơ bị tụt hậu nếu không có tinh thần tự học liên tục.</span>
+                </div>
+                <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-amber-200/60">
+                  <span className="text-amber-600 font-bold">•</span>
+                  <span>Nguy cơ bị tối ưu hóa và tự động hóa bởi trí tuệ nhân tạo (AI) trong 3-5 năm tới đối với các tác vụ cơ bản.</span>
+                </div>
+                <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-amber-200/60">
+                  <span className="text-amber-600 font-bold">•</span>
+                  <span>Tỷ lệ cạnh tranh đào thải khốc liệt giữa các nhân sự cấp thấp (Junior) trên thị trường lao động.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Trường Đại học đào tạo */}
+            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <School className="w-4.5 h-4.5 text-brand-600" />
                 Trường Đại học đào tạo ngành này (từ Supabase DB)
@@ -286,8 +352,9 @@ const MajorExplorer = () => {
             </div>
           </div>
 
+          {/* Cột Thông số ngành học bên phải */}
           <div className="space-y-6">
-            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
+            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">
                 Thông số ngành học
               </h3>
@@ -296,8 +363,10 @@ const MajorExplorer = () => {
                 <div className="flex items-start gap-3">
                   <DollarSign className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mức lương trung bình</p>
-                    <p className="text-sm font-bold text-slate-800 mt-0.5">{majorDetail.average_salary_range}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Mức lương lộ trình thực tế</p>
+                    <p className="text-xs font-bold text-slate-800 mt-0.5 leading-snug">
+                      {majorDetail.average_salary_range || 'Khởi điểm: 8 - 12 triệu | Sau 3-5 năm: 15 - 30 triệu+'}
+                    </p>
                   </div>
                 </div>
 
@@ -313,6 +382,18 @@ const MajorExplorer = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+
+                {/* Nút Kích hoạt Phản tư (Debias Action Button) */}
+                <div className="pt-3 border-t border-slate-100">
+                  <Button
+                    variant="primary"
+                    onClick={() => navigate(`/student/debias-matrix?major=${encodeURIComponent(majorDetail.name)}`)}
+                    className="w-full font-bold text-xs uppercase tracking-wider py-3 px-4 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
+                  >
+                    <Brain className="w-4 h-4" />
+                    🧠 Đưa ngành này vào Bảng Phản Tư
+                  </Button>
                 </div>
               </div>
             </div>
