@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
@@ -20,7 +21,7 @@ import {
   Rocket
 } from 'lucide-react'
 
-// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho cả 3 Khối Lớp (Đều tích hợp Holland + Phản tư)
+// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho cả 3 Khối Lớp (Đề cử đường dẫn chuẩn mực)
 const standardRoadmaps = {
   '10': [
     {
@@ -41,8 +42,8 @@ const standardRoadmaps = {
       step: 'Chặng 3',
       title: '🚀 Xây dựng phương pháp học tập trọng tâm & Tham gia hoạt động trải nghiệm thực tế',
       description: 'Xây dựng thói quen quản lý thời gian, rèn luyện kỹ năng tự học các môn tổ hợp và chủ động tham gia các câu lạc bộ, hoạt động ngoại khóa.',
-      actionLink: null,
-      actionText: null
+      actionLink: '/student/majors',
+      actionText: '🔍 Khám phá Ngành học'
     }
   ],
   '11': [
@@ -87,7 +88,7 @@ const standardRoadmaps = {
       step: 'Chặng 3',
       title: '🚀 Chiến thuật xếp 3 Tầng Nguyện vọng (An toàn - Vừa sức - Bứt phá) & Chốt thứ tự chính thức trên Cổng của Bộ GD&ĐT',
       description: 'Phân loại danh sách nguyện vọng theo 3 tầng chiến thuật và đăng ký thứ tự nguyện vọng chính thức trên Cổng tuyển sinh Bộ GD&ĐT.',
-      actionLink: 'https://tuyensinh.thi.moet.gov.vn',
+      actionLink: 'https://thisinh.thitotnghiepthpt.edu.vn',
       actionText: '🔗 Mở Cổng Bộ GD&ĐT'
     }
   ]
@@ -95,6 +96,7 @@ const standardRoadmaps = {
 
 const RoadmapBuilder = () => {
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
   
   // Tab khối lớp hiện tại (mặc định '12' hoặc tự động nhận diện từ profile)
   const [activeGradeTab, setActiveGradeTab] = useState('12')
@@ -151,6 +153,16 @@ const RoadmapBuilder = () => {
       setRoadmaps([])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // Hàm chuyển hướng cực mượt & an toàn cho tất cả nút bấm Chặng
+  const handleActionClick = (link) => {
+    if (!link) return
+    if (link.startsWith('http://') || link.startsWith('https://')) {
+      window.open(link, '_blank', 'noopener,noreferrer')
+    } else {
+      navigate(link)
     }
   }
 
@@ -476,15 +488,14 @@ const RoadmapBuilder = () => {
                 </div>
 
                 {step.actionLink && (
-                  <a
-                    href={step.actionLink}
-                    target={step.actionLink.startsWith('http') ? '_blank' : '_self'}
-                    rel={step.actionLink.startsWith('http') ? 'noopener noreferrer' : ''}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0"
+                  <button
+                    type="button"
+                    onClick={() => handleActionClick(step.actionLink)}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0 cursor-pointer focus:outline-none"
                   >
                     <span>{step.actionText}</span>
                     <ArrowRight className="w-3 h-3" />
-                  </a>
+                  </button>
                 )}
               </div>
 
