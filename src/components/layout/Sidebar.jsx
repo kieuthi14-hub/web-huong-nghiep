@@ -1,6 +1,6 @@
 import React from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -11,15 +11,20 @@ import {
   CalendarDays, 
   Settings, 
   UserSquare2,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
-  const isAdminOrTeacher = ['admin', 'teacher', 'counselor'].includes(userRole)
+  const userEmail = user?.email?.toLowerCase() || ''
+  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
+  
+  const isAdminOrTeacher = isWhitelistedAdmin || ['admin', 'teacher', 'counselor'].includes(userRole)
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -60,6 +65,16 @@ const Sidebar = ({ isOpen, onClose }) => {
   const handleAdminClick = () => {
     if (onClose) onClose()
     navigate('/admin/dashboard')
+  }
+
+  // Nút công tắc chuyển đổi góc nhìn giao diện Admin / Học sinh nhanh chóng
+  const handleToggleDemoView = () => {
+    if (onClose) onClose()
+    if (location.pathname.startsWith('/admin')) {
+      navigate('/student/dashboard')
+    } else {
+      navigate('/admin/dashboard')
+    }
   }
 
   return (
@@ -125,9 +140,9 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ VỚI VAI TRÒ ADMIN / TEACHER / COUNSELOR */}
-        {isAdminOrTeacher && (
-          <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+        {/* Nút bấm Admin cố định nổi bật & Công tắc chuyển đổi góc nhìn */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60 space-y-2">
+          {isAdminOrTeacher && (
             <button
               type="button"
               onClick={handleAdminClick}
@@ -136,8 +151,19 @@ const Sidebar = ({ isOpen, onClose }) => {
               <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
               <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
             </button>
-          </div>
-        )}
+          )}
+
+          <button
+            type="button"
+            onClick={handleToggleDemoView}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm text-[11px] font-bold bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/80 cursor-pointer transition-all shadow-2xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span className="truncate">
+              🔄 Chuyển giao diện ({location.pathname.startsWith('/admin') ? 'ADMIN → HỌC SINH' : 'HỌC SINH → ADMIN'})
+            </span>
+          </button>
+        </div>
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">

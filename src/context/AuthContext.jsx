@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
+// Danh sách Whitelist Email Admin được phép truy cập tự động
+export const ADMIN_EMAILS = ['kieuthi14@gmail.com']
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -19,7 +22,8 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Lỗi khi lấy session ban đầu:', error)
-      } finally {
+      } font-sans
+      finally {
         setLoading(false)
       }
     }
@@ -58,13 +62,15 @@ export const AuthProvider = ({ children }) => {
         console.error('Lỗi khi lấy profile từ bảng profiles của Supabase:', error)
       }
 
+      const userEmail = currentUser?.email?.toLowerCase() || ''
+      const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+
       if (!data && currentUser) {
-        // Tự động chèn dữ liệu thực vào bảng profiles của Supabase
         const newProfile = {
           id: userId,
           email: currentUser.email,
           full_name: currentUser.user_metadata?.full_name || 'Học sinh',
-          role: currentUser.user_metadata?.role || 'student'
+          role: isWhitelistedAdmin ? 'admin' : (currentUser.user_metadata?.role || 'student')
         }
         
         const { data: createdData } = await supabase
@@ -75,6 +81,9 @@ export const AuthProvider = ({ children }) => {
 
         setProfile(createdData || newProfile)
       } else {
+        if (isWhitelistedAdmin && data) {
+          data.role = 'admin'
+        }
         setProfile(data)
       }
     } catch (error) {
@@ -84,13 +93,14 @@ export const AuthProvider = ({ children }) => {
 
   // Đăng ký
   const signUp = async (email, password, fullName) => {
+    const isWhitelisted = ADMIN_EMAILS.includes(email?.toLowerCase())
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          role: 'student'
+          role: isWhitelisted ? 'admin' : 'student'
         }
       }
     })

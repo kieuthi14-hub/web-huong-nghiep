@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
@@ -50,10 +50,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   // 2. Vai trò hiện tại của user
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  const userEmail = user?.email?.toLowerCase() || ''
+  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
 
   // 3. Đã đăng nhập nhưng truy cập trang không thuộc quyền
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  if (allowedRoles && !allowedRoles.includes(userRole) && !isWhitelistedAdmin) {
     if (userRole === 'admin' && location.pathname !== '/admin/management' && location.pathname !== '/admin/dashboard') {
       return <Navigate to="/admin/dashboard" replace />
     } else if (userRole === 'counselor' && location.pathname !== '/counselor/dashboard') {
@@ -66,16 +68,18 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children
 }
 
-// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
+// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL + EMAIL WHITELIST)
 const AdminProtectedRoute = ({ children }) => {
   const { user, profile, loading } = useAuth()
 
   if (loading) return null
 
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  const userEmail = user?.email?.toLowerCase() || ''
+  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
 
-  // Nếu người dùng là Học sinh -> Chuyển hướng quay lại /student/dashboard kèm cờ unauthorized
-  if (userRole === 'student') {
+  // Nếu không phải admin và không nằm trong Whitelist -> Redirect về student/dashboard
+  if (userRole === 'student' && !isWhitelistedAdmin) {
     return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
   }
 
@@ -105,9 +109,11 @@ const HomeRedirect = () => {
 
   if (loading) return null
 
-  const role = profile?.role || user?.user_metadata?.role || 'student'
+  const userEmail = user?.email?.toLowerCase() || ''
+  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+  const role = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
 
-  if (role === 'admin') {
+  if (role === 'admin' || isWhitelistedAdmin) {
     return <Navigate to="/admin/dashboard" replace />
   } else if (role === 'counselor' || role === 'teacher') {
     return <Navigate to="/counselor/dashboard" replace />
@@ -219,7 +225,7 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes - BẢO VỆ BẰNG ADMIN PROTECTED ROUTE (ROLE != STUDENT) */}
+          {/* Admin Routes - WHITELIST EMAIL CHO PHÉP TRUY CẬP TỰ ĐỘNG */}
           <Route 
             path="/admin/dashboard" 
             element={
