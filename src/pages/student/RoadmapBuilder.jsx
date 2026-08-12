@@ -20,27 +20,27 @@ import {
   Rocket
 } from 'lucide-react'
 
-// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho từng Khối Lớp
+// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho cả 3 Khối Lớp (Đều tích hợp Holland + Phản tư)
 const standardRoadmaps = {
   '10': [
     {
       step: 'Chặng 1',
-      title: 'Làm trắc nghiệm Holland & Khám phá các nhóm ngành phù hợp',
+      title: '🧠 Trắc nghiệm Holland: Khám phá nhóm tính cách & thiên hướng nghề nghiệp ban đầu',
       description: 'Thực hiện bài kiểm tra trắc nghiệm hướng nghiệp Holland để tìm hiểu nhóm tính cách nghề nghiệp nổi trội (RIASEC) của bản thân.',
       actionLink: '/student/holland-test',
       actionText: '🧠 Làm trắc nghiệm ngay'
     },
     {
       step: 'Chặng 2',
-      title: 'Xác định các Tổ hợp môn xét tuyển trọng tâm (VD: A00, B00, D01...) khớp với ngành dự định để tập trung học tốt',
-      description: 'Đối chiếu danh mục ngành học để lựa chọn tổ hợp môn phù hợp nhất với thế mạnh cá nhân ngay từ năm lớp 10.',
-      actionLink: '/student/majors',
-      actionText: '🔍 Tra cứu Tổ hợp Ngành'
+      title: '🔍 Bảng Nhìn Lại (Phản tư): Soi lại thực tế năng lực để chọn Tổ hợp môn xét tuyển phù hợp (A00, B00, D01...), tránh chọn theo cảm xúc hay bạn bè',
+      description: 'Dành 2 phút soi lại năng lực thực tế các môn học để chọn tổ hợp xét tuyển phù hợp nhất với thế mạnh thay vì chạy theo số đông.',
+      actionLink: '/student/debias-matrix',
+      actionText: '🔍 Thực hiện Bảng Nhìn Lại'
     },
     {
       step: 'Chặng 3',
-      title: 'Rèn luyện phương pháp tự học và tham gia các hoạt động trải nghiệm thực tế',
-      description: 'Xây dựng thói quen quản lý thời gian, rèn luyện kỹ năng tự học và chủ động tham gia các câu lạc bộ, hoạt động ngoại khóa.',
+      title: '🚀 Xây dựng phương pháp học tập trọng tâm & Tham gia hoạt động trải nghiệm thực tế',
+      description: 'Xây dựng thói quen quản lý thời gian, rèn luyện kỹ năng tự học các môn tổ hợp và chủ động tham gia các câu lạc bộ, hoạt động ngoại khóa.',
       actionLink: null,
       actionText: null
     }
@@ -48,22 +48,22 @@ const standardRoadmaps = {
   '11': [
     {
       step: 'Chặng 1',
-      title: 'Thu hẹp danh sách xuống 2-3 ngành mục tiêu & Thực hiện Bảng Nhìn Lại (Phản tư) để soi rủi ro/mặt tối thực tế',
-      description: 'Nhận diện các thiên lệch nhận thức, kiểm chứng thông tin chính thống và đánh giá thách thức nghề nghiệp thực tế.',
-      actionLink: '/student/debias-matrix',
-      actionText: '🔍 Thực hiện Bảng Nhìn Lại'
+      title: '🧠 Trắc nghiệm Holland (Làm lại): Tái đánh giá sự thay đổi tính cách/sở thích để chọn 2-3 ngành mục tiêu',
+      description: 'Thực hiện lại bài trắc nghiệm Holland sau 1 năm để đánh giá độ ổn định hoặc chuyển biến trong xu hướng nghề nghiệp của bản thân.',
+      actionLink: '/student/holland-test',
+      actionText: '🧠 Làm lại trắc nghiệm'
     },
     {
       step: 'Chặng 2',
-      title: 'Đánh giá lực học thực tế các môn trong tổ hợp xét tuyển để lập kế hoạch bứt phá kiến thức',
-      description: 'Phân tích điểm số học kỳ để bồi dưỡng các môn còn yếu, duy trì phong độ các môn thế mạnh trong tổ hợp xét tuyển.',
-      actionLink: null,
-      actionText: null
+      title: '🔍 Bảng Nhìn Lại (Phản tư): Đưa ngành mục tiêu vào kiểm chứng rủi ro, thách thức & mặt tối thực tế của nghề',
+      description: 'Đưa 2-3 ngành học tiềm năng vào ma trận phản tư để nhận diện mặt tối, tỷ lệ đào thải và nguy cơ tự động hóa bởi AI.',
+      actionLink: '/student/debias-matrix',
+      actionText: '🔍 Kiểm tra rủi ro ngay'
     },
     {
       step: 'Chặng 3',
-      title: 'Tìm hiểu các phương thức xét tuyển mở rộng (ĐGNL, ĐGTD, Xét học bạ, Chứng chỉ...)',
-      description: 'Chủ động nắm bắt cấu trúc đề thi Đánh giá năng lực / Đánh giá tư duy và quy chế xét tuyển sớm của các trường Đại học.',
+      title: '🚀 Đánh giá lực học các môn trong tổ hợp xét tuyển & Tìm hiểu phương thức xét tuyển mở rộng (ĐGNL, ĐGTD, Học bạ...)',
+      description: 'Nắm bắt cấu trúc đề thi Đánh giá năng lực / Đánh giá tư duy và quy chế xét tuyển sớm của các trường Đại học mục tiêu.',
       actionLink: '/student/universities',
       actionText: '🏫 Tra cứu Phương thức xét tuyển'
     }
@@ -71,24 +71,24 @@ const standardRoadmaps = {
   '12': [
     {
       step: 'Chặng 1',
-      title: 'Rà soát điểm số & Lập danh sách 3 tầng nguyện vọng (An toàn - Vừa sức - Bứt phá)',
-      description: 'Phân loại nguyện vọng theo 3 tầng chiến thuật dựa trên tổng điểm thi dự kiến và điểm chuẩn 3 năm gần nhất của các trường.',
-      actionLink: '/student/universities',
-      actionText: '🎯 Phân loại Nguyện vọng'
+      title: '🧠 Trắc nghiệm Holland Chốt chặn: Tái kiểm tra lần cuối thiên hướng bản thân & Đối chiếu điểm thi thử 3 môn tổ hợp xét tuyển',
+      description: 'Tái kiểm tra thiên hướng nghề nghiệp lần cuối kết hợp đối chiếu tổng điểm thi thử 3 môn tổ hợp để xác định khoảng năng lực thực tế.',
+      actionLink: '/student/holland-test',
+      actionText: '🧠 Kiểm tra Holland chốt chặn'
     },
     {
       step: 'Chặng 2',
-      title: 'Tập trung tối ưu điểm số tổ hợp xét tuyển & Hoàn thiện hồ sơ xét tuyển sớm',
-      description: 'Nộp hồ sơ xét tuyển học bạ/ĐGNL đợt đầu và luyện đề chuyên sâu các môn thi tốt nghiệp THPT trọng điểm.',
-      actionLink: null,
-      actionText: null
+      title: '🔍 Bảng Nhìn Lại (Phản tư) Giải thiên kiến: Kiểm tra triệt để thiên kiến chi phí chìm, bẫy đám đông trước khi chốt danh sách',
+      description: 'Loại bỏ hoàn toàn tâm lý đám đông, áp lực gia đình và bẫy hào quang nghề nghiệp trước khi chốt danh sách nguyện vọng.',
+      actionLink: '/student/debias-matrix',
+      actionText: '🔍 Giải thiên kiến lần cuối'
     },
     {
       step: 'Chặng 3',
-      title: 'Bật Bảng Nhìn Lại (Phản tư) kiểm tra lần cuối trước khi chốt thứ tự NV trên Cổng của Bộ GD&ĐT',
-      description: 'Rà soát lại danh sách nguyện vọng lần cuối cùng để đảm bảo không bị ảnh hưởng bởi tâm lý đám đông trước khi đăng ký chính thức.',
-      actionLink: '/student/debias-matrix',
-      actionText: '🧠 Bật Bảng Nhìn Lại lần cuối'
+      title: '🚀 Chiến thuật xếp 3 Tầng Nguyện vọng (An toàn - Vừa sức - Bứt phá) & Chốt thứ tự chính thức trên Cổng của Bộ GD&ĐT',
+      description: 'Phân loại danh sách nguyện vọng theo 3 tầng chiến thuật và đăng ký thứ tự nguyện vọng chính thức trên Cổng tuyển sinh Bộ GD&ĐT.',
+      actionLink: 'https://tuyensinh.thi.moet.gov.vn',
+      actionText: '🔗 Mở Cổng Bộ GD&ĐT'
     }
   ]
 }
@@ -478,6 +478,8 @@ const RoadmapBuilder = () => {
                 {step.actionLink && (
                   <a
                     href={step.actionLink}
+                    target={step.actionLink.startsWith('http') ? '_blank' : '_self'}
+                    rel={step.actionLink.startsWith('http') ? 'noopener noreferrer' : ''}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0"
                   >
                     <span>{step.actionText}</span>
