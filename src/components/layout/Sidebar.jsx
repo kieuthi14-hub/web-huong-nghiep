@@ -15,8 +15,11 @@ import {
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
   const navigate = useNavigate()
+
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  const isAdminOrTeacher = ['admin', 'teacher', 'counselor'].includes(userRole)
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -37,10 +40,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   ]
 
   const getLinksByRole = () => {
-    switch (profile?.role) {
+    switch (userRole) {
       case 'admin':
         return adminLinks
       case 'counselor':
+      case 'teacher':
         return counselorLinks
       case 'student':
       default:
@@ -100,7 +104,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {profile?.full_name || 'Học sinh'}
               </p>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {profile?.role || 'STUDENT'}
+                {userRole}
               </span>
             </div>
           </div>
@@ -121,17 +125,19 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật (Bấm chuyển hướng mượt 100% bằng useNavigate) */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-          <button
-            type="button"
-            onClick={handleAdminClick}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 cursor-pointer text-left group"
-          >
-            <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
-            <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
-          </button>
-        </div>
+        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ VỚI VAI TRÒ ADMIN / TEACHER / COUNSELOR */}
+        {isAdminOrTeacher && (
+          <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+            <button
+              type="button"
+              onClick={handleAdminClick}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 cursor-pointer text-left group"
+            >
+              <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
+              <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
+            </button>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">

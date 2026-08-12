@@ -16,13 +16,10 @@ import {
   Trash2,
   MessageSquareCode,
   Lightbulb,
-  Target,
-  AlertCircle,
-  CheckCircle2,
-  ShieldAlert
+  Target
 } from 'lucide-react'
 
-// Thuật toán Chẩn đoán Bẫy Tư Duy Chọn Nghề Tự Động (Automated Career Trap Detection Engine)
+// Thuật toán Chẩn đoán Bẫy Tư Duy Chọn Nghề Tự Động
 const getBiasDiagnosis = (matrix) => {
   const { risk_analysis, verified_sources, final_decision, bias_check } = matrix
 
@@ -81,7 +78,7 @@ const getBiasDiagnosis = (matrix) => {
     }
   }
 
-  // BẪY 3: BẪY CHỈ NHÌN MẶT MÀU HỒNG (Phớt lờ rủi ro)
+  // BẪY 3: BẪY CHỈ NHÌN MẶT MÀU HỒNG
   const isRiskTooShort = textRisk.trim().length < 15
   const optimismKeywords = ["không có", "không rủi ro", "hoàn hảo", "lương cao", "không"]
   const hasOptimismBias = isRiskTooShort || (optimismKeywords.some(kw => textRisk.includes(kw)) && textRisk.trim().length < 25)
@@ -143,7 +140,7 @@ const DebiasMatrix = () => {
   const [riskAnalysis, setRiskAnalysis] = useState('')
   const [biasCheck, setBiasCheck] = useState('')
   
-  // Trạng thái Xác nhận Quyết định sau Phản tư: 'CONFIRMED' | 'BACKUP' | 'CHANGED'
+  // Trạng thái Quyết định sau Phản tư: 'CONFIRMED' | 'BACKUP' | 'CHANGED'
   const [finalDecision, setFinalDecision] = useState('CONFIRMED')
 
   const [savedMatrices, setSavedMatrices] = useState([])
@@ -189,7 +186,7 @@ const DebiasMatrix = () => {
   const handleSave = async (e) => {
     e.preventDefault()
 
-    // 1. Kiểm tra validation nhập liệu
+    // 1. Validation nhập liệu
     if (!targetMajor.trim()) {
       setToast({ type: 'warning', message: 'Vui lòng nhập Tên ngành học bạn đang dự định chọn!' })
       return
@@ -221,22 +218,8 @@ const DebiasMatrix = () => {
       bias_check: biasCheck
     })
 
-    const newEntry = {
-      id: `matrix-${Date.now()}`,
-      student_id: user?.id,
-      target_major: targetMajor,
-      evidence,
-      verified_sources: verifiedSources,
-      risk_analysis: riskAnalysis,
-      bias_check: biasCheck,
-      final_decision: finalDecision,
-      detected_bias: biasDiagnosis.type,
-      created_at: new Date().toISOString()
-    }
-
     try {
-      // 2. Lưu vào Supabase Database
-      let isSavedToDB = false
+      // 2. Lưu trực tiếp vào Supabase Database
       if (user) {
         const { data, error } = await supabase
           .from('metacognitive_matrix')
@@ -253,19 +236,10 @@ const DebiasMatrix = () => {
           .select()
           .maybeSingle()
 
-        if (!error && data) {
-          isSavedToDB = true
+        if (error) {
+          console.error('Lỗi Insert Supabase DB:', error)
+        } else if (data) {
           setSavedMatrices(prev => [data, ...prev])
-        } else {
-          console.log('Lưu dạng Demo hoặc LocalStorage:', error)
-        }
-      }
-
-      if (!isSavedToDB) {
-        const nextList = [newEntry, ...savedMatrices]
-        setSavedMatrices(nextList)
-        if (user) {
-          localStorage.setItem(`debias_matrix_${user.id}`, JSON.stringify(nextList))
         }
       }
 
@@ -279,7 +253,7 @@ const DebiasMatrix = () => {
 
       setToast({ 
         type: 'success', 
-        message: 'Lưu & Khởi tạo Bảng Nhìn Lại thành công!' 
+        message: 'Lưu bài làm Phản tư & Đồng bộ dữ liệu thành công!' 
       })
     } catch (error) {
       console.error('Lỗi khi lưu bảng phản tư:', error)
@@ -303,9 +277,6 @@ const DebiasMatrix = () => {
 
     const nextList = savedMatrices.filter(m => m.id !== id)
     setSavedMatrices(nextList)
-    if (user) {
-      localStorage.setItem(`debias_matrix_${user.id}`, JSON.stringify(nextList))
-    }
     setToast({ type: 'info', message: 'Đã xóa bản ghi.' })
   }
 
@@ -392,7 +363,7 @@ const DebiasMatrix = () => {
 
         {/* Bảng Ma Trận 4 Ô (Grid 2x2) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Ô 1: Màu xanh dương - Icon UserCheck */}
+          {/* Ô 1: Màu xanh dương */}
           <div className="bg-blue-50/40 border border-blue-200 p-5 rounded-sm space-y-3">
             <div className="flex items-center gap-2.5 text-blue-900 border-b border-blue-100 pb-2.5">
               <div className="p-1.5 bg-blue-500 text-white rounded-sm">
@@ -414,7 +385,7 @@ const DebiasMatrix = () => {
             />
           </div>
 
-          {/* Ô 2: Màu tím - Icon Search */}
+          {/* Ô 2: Màu tím */}
           <div className="bg-indigo-50/40 border border-indigo-200 p-5 rounded-sm space-y-3">
             <div className="flex items-center gap-2.5 text-indigo-900 border-b border-indigo-100 pb-2.5">
               <div className="p-1.5 bg-indigo-500 text-white rounded-sm">
@@ -436,7 +407,7 @@ const DebiasMatrix = () => {
             />
           </div>
 
-          {/* Ô 3: Màu cam - Icon AlertTriangle */}
+          {/* Ô 3: Màu cam */}
           <div className="bg-amber-50/40 border border-amber-200 p-5 rounded-sm space-y-3">
             <div className="flex items-center gap-2.5 text-amber-900 border-b border-amber-100 pb-2.5">
               <div className="p-1.5 bg-amber-500 text-white rounded-sm">
@@ -458,7 +429,7 @@ const DebiasMatrix = () => {
             />
           </div>
 
-          {/* Ô 4: Màu đỏ/hồng - Icon HelpCircle */}
+          {/* Ô 4: Màu đỏ/hồng */}
           <div className="bg-rose-50/40 border border-rose-200 p-5 rounded-sm space-y-3">
             <div className="flex items-center gap-2.5 text-rose-900 border-b border-rose-100 pb-2.5">
               <div className="p-1.5 bg-rose-500 text-white rounded-sm">
@@ -538,7 +509,7 @@ const DebiasMatrix = () => {
           </div>
         </div>
 
-        {/* Nút bấm rực rỡ bên dưới */}
+        {/* Nút bấm Lưu & Khởi tạo Bảng Nhìn Lại */}
         <div className="flex justify-end pt-2">
           <Button
             type="submit"
@@ -570,7 +541,6 @@ const DebiasMatrix = () => {
                   key={matrix.id} 
                   className="bg-white border border-slate-200 p-6 rounded-sm space-y-5 hover:border-slate-300 transition-all shadow-sm"
                 >
-                  {/* Top Bar Card */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
                       <div>
@@ -590,7 +560,6 @@ const DebiasMatrix = () => {
                     </button>
                   </div>
 
-                  {/* 4 ô Ma trận nội dung */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     <div className="p-3 bg-blue-50/30 border border-blue-100 rounded-sm space-y-1">
                       <p className="font-bold text-blue-900 flex items-center gap-1">
@@ -621,7 +590,7 @@ const DebiasMatrix = () => {
                     </div>
                   </div>
 
-                  {/* KHUNG PHẢN HỒI CHẨN ĐOÁN BẪY TƯ DUY TỰ ĐỘNG (Automated Career Trap Feedback Card) */}
+                  {/* THẺ PHẢN HỒI CHẨN ĐOÁN BẪY TƯ DUY TỰ ĐỘNG */}
                   <div className={`p-4 rounded-sm border space-y-2 leading-relaxed shadow-2xs ${biasDiagnosis.cardStyle}`}>
                     <div className="flex items-center justify-between border-b border-current/20 pb-2">
                       <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -633,54 +602,6 @@ const DebiasMatrix = () => {
                       </span>
                     </div>
                     <p className="text-xs font-semibold">{biasDiagnosis.message}</p>
-                  </div>
-
-                  {/* Khung Đánh Giá & Nhận Xét Phản Tư Đồng Bộ 100% (Debias AI Feedback) */}
-                  <div className="bg-emerald-50/60 border border-emerald-100 p-5 rounded-sm space-y-4">
-                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <MessageSquareCode className="w-4.5 h-4.5 text-emerald-700" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
-                          Khung Đánh Giá & Nhận Xét Phản Tư (Debias AI Feedback)
-                        </h4>
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200/80 text-emerald-900 rounded-sm">
-                        AI Phân Tích Đồng Bộ
-                      </span>
-                    </div>
-
-                    {/* 1. Thước đo Chỉ số Phản tư (Metacognitive Score) */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
-                        <span>Chỉ số Tư duy Phản tư (Metacognitive Score)</span>
-                        <span>{score}/100 (Rất tốt - Đã nhận diện được rủi ro)</span>
-                      </div>
-                      <div className="w-full bg-emerald-200/60 h-2.5 rounded-sm overflow-hidden border border-emerald-200">
-                        <div 
-                          className="bg-emerald-600 h-full rounded-sm transition-all duration-500" 
-                          style={{ width: `${score}%` }} 
-                        />
-                      </div>
-                    </div>
-
-                    {/* 2. Khung Phản hồi từ Trợ lý AI đồng bộ 100% với Bẫy Tư Duy */}
-                    <div className="space-y-2 pt-1 text-xs leading-relaxed text-slate-700">
-                      <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-emerald-100">
-                        <span className="text-base leading-none">🟢</span>
-                        <div>
-                          <span className="font-bold text-emerald-950">Điểm sáng: </span>
-                          <span>{biasDiagnosis.aiHighlight}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-emerald-100">
-                        <span className="text-base leading-none">⚠️</span>
-                        <div>
-                          <span className="font-bold text-amber-900">Cảnh báo & Lời khuyên: </span>
-                          <span>{biasDiagnosis.aiWarning}</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )

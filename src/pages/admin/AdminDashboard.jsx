@@ -8,7 +8,6 @@ const AdminDashboard = () => {
   // Dữ liệu thực tế từ Supabase DB
   const [students, setStudents] = useState([])
   const [matrices, setMatrices] = useState([])
-  const [hollandResults, setHollandResults] = useState([])
   
   const [stats, setStats] = useState({ 
     totalStudents: 0, 
@@ -26,41 +25,32 @@ const AdminDashboard = () => {
   })
 
   const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [toastMessage, setToastMessage] = useState(null)
 
   useEffect(() => {
     fetchRealSupabaseData()
   }, [user])
 
-  const fetchRealSupabaseData = async () => {
-    setIsLoading(true)
+  const fetchRealSupabaseData = async (isManualRefresh = false) => {
+    if (isManualRefresh) setIsRefreshing(true)
+    else setIsLoading(true)
+
     try {
-      // 1. Truy vấn dữ liệu thực tế Học sinh từ bảng profiles
-      const { data: profileData, error: profileErr } = await supabase
+      // 1. Truy vấn danh sách Học sinh từ bảng profiles
+      const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (profileErr) console.warn('Lỗi lấy profiles:', profileErr)
-
-      // 2. Truy vấn dữ liệu Phản tư thực tế từ bảng metacognitive_matrix
+      // 2. Truy vấn danh sách Bài làm Phản tư kết hợp Profile học sinh
       const { data: matrixData, error: matrixErr } = await supabase
         .from('metacognitive_matrix')
-        .select('*')
+        .select('*, profiles(*)')
         .order('created_at', { ascending: false })
 
-      if (matrixErr) console.warn('Lỗi lấy metacognitive_matrix:', matrixErr)
-
-      // 3. Truy vấn dữ liệu Holland thực tế từ bảng test_results (hoặc holland_results)
-      let hollandData = []
-      try {
-        const { data: hData } = await supabase
-          .from('test_results')
-          .select('*')
-          .order('created_at', { ascending: false })
-        if (hData) hollandData = hData
-      } catch (e) {
-        console.warn('Lấy test_results fallback:', e)
+      if (matrixErr) {
+        console.warn('Lỗi lấy metacognitive_matrix kèm profiles:', matrixErr)
       }
 
       const realProfiles = profileData || []
@@ -68,9 +58,8 @@ const AdminDashboard = () => {
 
       setStudents(realProfiles)
       setMatrices(realMatrices)
-      setHollandResults(hollandData)
 
-      // 4. Tính toán số liệu thống kê thực tế
+      // 3. Phân tích thống kê thực tế
       let successCnt = 0
       let sunkCostCnt = 0
       let bandwagonCnt = 0
@@ -78,13 +67,11 @@ const AdminDashboard = () => {
       const majorFrequency = {}
 
       realMatrices.forEach(item => {
-        // Đếm tần suất ngành học
         if (item.target_major) {
           const majorTrimmed = item.target_major.trim()
           majorFrequency[majorTrimmed] = (majorFrequency[majorTrimmed] || 0) + 1
         }
 
-        // Đếm các loại bẫy tư duy
         if (item.final_decision === 'BACKUP' || item.final_decision === 'CHANGED' || item.detected_bias === 'DEBIASED_SUCCESS') {
           successCnt++
         } else if (item.detected_bias === 'SUNK_COST_BIAS') {
@@ -98,7 +85,6 @@ const AdminDashboard = () => {
         }
       })
 
-      // Xác định Top Ngành quan tâm nhất
       let topMajorName = 'Chưa có'
       let maxFreq = 0
       Object.keys(majorFrequency).forEach(mName => {
@@ -126,10 +112,16 @@ const AdminDashboard = () => {
         topMajor: topMajorName
       })
 
+      if (isManualRefresh) {
+        setToastMessage('Đã làm mới dữ liệu thực tế từ Supabase CSDL!')
+        setTimeout(() => setToastMessage(null), 3000)
+      }
+
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu thực tế Supabase:', err)
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
     }
   }
 
@@ -142,10 +134,12 @@ const AdminDashboard = () => {
         return
       }
 
-      const headers = ['STT,Student ID,Ngành mục tiêu,Bay tu duy chan doan,Quyet dinh sau phan tu,Ngay tao\n']
-      const rows = matrices.map((m, idx) => 
-        `"${idx + 1}","${m.student_id || 'N/A'}","${m.target_major || ''}","${m.detected_bias || 'NONE'}","${m.final_decision || 'CONFIRMED'}","${new Date(m.created_at).toLocaleDateString('vi-VN')}"`
-      ).join('\n')
+      const headers = ['STT,Học sinh,Khối lớp,Ngành mục tiêu,Bẫy tư duy chẩn đoán,Quyết định sau phản tư,Ngày tạo\n']
+      const rows = matrices.map((m, idx) => {
+        const studentName = m.profiles?.full_name || 'Học sinh'
+        const grade = m.profiles?.grade_level || 'Chưa rõ'
+        return `"${idx + 1}","${studentName}","${grade}","${m.target_major || ''}","${m.detected_bias || 'NONE'}","${m.final_decision || 'CONFIRMED'}","${new Date(m.created_at).toLocaleDateString('vi-VN')}"`
+      }).join('\n')
 
       const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
@@ -225,14 +219,28 @@ const AdminDashboard = () => {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer self-start md:self-auto border border-amber-400"
-          >
-            <span>📊</span>
-            <span>XUẤT DỮ LIỆU EXCEL / CSV</span>
-          </button>
+          <div className="flex items-center gap-2.5 self-start md:self-auto">
+            {/* Nút Làm mới Dữ liệu */}
+            <button
+              type="button"
+              onClick={() => fetchRealSupabaseData(true)}
+              disabled={isRefreshing}
+              className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-sm transition-all flex items-center gap-1.5 cursor-pointer border border-slate-300"
+            >
+              <span className={isRefreshing ? 'animate-spin' : ''}>🔄</span>
+              <span>Làm mới</span>
+            </button>
+
+            {/* Nút Xuất CSV */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-amber-400"
+            >
+              <span>📊</span>
+              <span>XUẤT DỮ LIỆU EXCEL / CSV</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -366,6 +374,8 @@ const AdminDashboard = () => {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-4">STT</th>
+                  <th className="py-3 px-4">Họ và tên Học sinh</th>
+                  <th className="py-3 px-4">Lớp / Trường</th>
                   <th className="py-3 px-4">Ngành dự định chọn</th>
                   <th className="py-3 px-4">Bẫy Tư duy Chẩn đoán</th>
                   <th className="py-3 px-4 text-center">Quyết định sau Phản tư</th>
@@ -373,23 +383,38 @@ const AdminDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {matrices.map((m, idx) => (
-                  <tr key={m.id || idx} className="border-b border-slate-100 text-xs hover:bg-slate-50/50">
-                    <td className="py-3.5 px-4 font-bold text-slate-400">{idx + 1}</td>
-                    <td className="py-3.5 px-4 font-bold text-brand-600">{m.target_major}</td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-700">
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-sm text-[11px]">
-                        {formatBiasLabel(m.detected_bias)}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      {renderDecisionTag(m.final_decision)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-medium text-slate-400">
-                      {new Date(m.created_at).toLocaleDateString('vi-VN')}
-                    </td>
-                  </tr>
-                ))}
+                {matrices.map((m, idx) => {
+                  const studentName = m.profiles?.full_name || 'Học sinh'
+                  const grade = m.profiles?.grade_level || 'Chưa rõ'
+                  const school = m.profiles?.school_name || ''
+
+                  return (
+                    <tr key={m.id || idx} className="border-b border-slate-100 text-xs hover:bg-slate-50/50">
+                      <td className="py-3.5 px-4 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-800">
+                        {studentName}
+                        {m.profiles?.email && (
+                          <div className="text-[10px] font-medium text-slate-400">{m.profiles.email}</div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-600">
+                        {grade} {school ? `- ${school}` : ''}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-brand-600">{m.target_major}</td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-700">
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-sm text-[11px]">
+                          {formatBiasLabel(m.detected_bias)}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        {renderDecisionTag(m.final_decision)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-medium text-slate-400">
+                        {new Date(m.created_at).toLocaleDateString('vi-VN')}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

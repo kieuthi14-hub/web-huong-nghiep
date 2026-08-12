@@ -22,10 +22,10 @@ import CounselingBooking from './pages/student/CounselingBooking'
 // Counselor Pages
 import CounselorDashboard from './pages/counselor/CounselorDashboard'
 
-// Admin Pages - SẠCH SẼ & AN TOÀN 100%
+// Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard'
 
-// Route Bảo vệ dựa trên phân quyền (RBAC Route Guard chống loop)
+// Route Bảo vệ chung dựa trên phân quyền (RBAC Route Guard)
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
@@ -50,7 +50,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   // 2. Vai trò hiện tại của user
-  const userRole = profile?.role || 'student'
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
 
   // 3. Đã đăng nhập nhưng truy cập trang không thuộc quyền
   if (allowedRoles && !allowedRoles.includes(userRole)) {
@@ -59,8 +59,24 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     } else if (userRole === 'counselor' && location.pathname !== '/counselor/dashboard') {
       return <Navigate to="/counselor/dashboard" replace />
     } else if (userRole === 'student' && location.pathname !== '/student/dashboard') {
-      return <Navigate to="/student/dashboard" replace />
+      return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
     }
+  }
+
+  return children
+}
+
+// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
+const AdminProtectedRoute = ({ children }) => {
+  const { user, profile, loading } = useAuth()
+
+  if (loading) return null
+
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+
+  // Nếu người dùng là Học sinh -> Chuyển hướng quay lại /student/dashboard kèm cờ unauthorized
+  if (userRole === 'student') {
+    return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
   }
 
   return children
@@ -85,15 +101,15 @@ const MainLayout = ({ children }) => {
 
 // Chuyển hướng thông minh trang chủ '/' dựa vào vai trò
 const HomeRedirect = () => {
-  const { profile, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) return null
 
-  const role = profile?.role || 'student'
+  const role = profile?.role || user?.user_metadata?.role || 'student'
 
   if (role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />
-  } else if (role === 'counselor') {
+  } else if (role === 'counselor' || role === 'teacher') {
     return <Navigate to="/counselor/dashboard" replace />
   } else {
     return <Navigate to="/student/dashboard" replace />
@@ -113,7 +129,7 @@ const App = () => {
           <Route 
             path="/" 
             element={
-              <ProtectedRoute allowedRoles={['student', 'counselor', 'admin']}>
+              <ProtectedRoute allowedRoles={['student', 'counselor', 'teacher', 'admin']}>
                 <HomeRedirect />
               </ProtectedRoute>
             } 
@@ -195,7 +211,7 @@ const App = () => {
           <Route 
             path="/counselor/dashboard" 
             element={
-              <ProtectedRoute allowedRoles={['counselor']}>
+              <ProtectedRoute allowedRoles={['counselor', 'teacher']}>
                 <MainLayout>
                   <CounselorDashboard />
                 </MainLayout>
@@ -203,21 +219,25 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes - KHÔNG QUA BẤT KỲ PROTECTED ROUTE NÀO - CHẠY 100% MƯỢT MÀ */}
+          {/* Admin Routes - BẢO VỆ BẰNG ADMIN PROTECTED ROUTE (ROLE != STUDENT) */}
           <Route 
             path="/admin/dashboard" 
             element={
-              <MainLayout>
-                <AdminDashboard />
-              </MainLayout>
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              </AdminProtectedRoute>
             } 
           />
           <Route 
             path="/admin/management" 
             element={
-              <MainLayout>
-                <AdminDashboard />
-              </MainLayout>
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              </AdminProtectedRoute>
             } 
           />
 
