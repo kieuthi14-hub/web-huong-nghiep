@@ -15,7 +15,8 @@ import {
   History,
   Trash2,
   MessageSquareCode,
-  Lightbulb
+  Lightbulb,
+  Target
 } from 'lucide-react'
 
 const DebiasMatrix = () => {
@@ -28,6 +29,9 @@ const DebiasMatrix = () => {
   const [verifiedSources, setVerifiedSources] = useState('')
   const [riskAnalysis, setRiskAnalysis] = useState('')
   const [biasCheck, setBiasCheck] = useState('')
+  
+  // Trạng thái Xác nhận Quyết định sau Phản tư: 'CONFIRMED' | 'BACKUP' | 'CHANGED'
+  const [finalDecision, setFinalDecision] = useState('CONFIRMED')
 
   const [savedMatrices, setSavedMatrices] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -103,6 +107,7 @@ const DebiasMatrix = () => {
       verified_sources: verifiedSources,
       risk_analysis: riskAnalysis,
       bias_check: biasCheck,
+      final_decision: finalDecision,
       created_at: new Date().toISOString()
     }
 
@@ -118,7 +123,8 @@ const DebiasMatrix = () => {
             evidence,
             verified_sources: verifiedSources,
             risk_analysis: riskAnalysis,
-            bias_check: biasCheck
+            bias_check: biasCheck,
+            final_decision: finalDecision
           })
           .select()
           .maybeSingle()
@@ -145,10 +151,11 @@ const DebiasMatrix = () => {
       setVerifiedSources('')
       setRiskAnalysis('')
       setBiasCheck('')
+      setFinalDecision('CONFIRMED')
 
       setToast({ 
         type: 'success', 
-        message: 'Lưu & Khởi tạo Bảng Kiểm Tra Chọn Nghề thành công!' 
+        message: 'Lưu & Khởi tạo Bảng Nhìn Lại thành công!' 
       })
     } catch (error) {
       console.error('Lỗi khi lưu bảng phản tư:', error)
@@ -188,6 +195,30 @@ const DebiasMatrix = () => {
     if (totalLength > 300) return 88
     if (totalLength > 150) return 85
     return 82
+  }
+
+  const renderDecisionBadge = (decision) => {
+    switch (decision) {
+      case 'BACKUP':
+        return (
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-sm inline-flex items-center gap-1">
+            🟡 Chuyển thành Nguyện vọng Dự phòng
+          </span>
+        )
+      case 'CHANGED':
+        return (
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-100 text-rose-900 border border-rose-300 rounded-sm inline-flex items-center gap-1">
+            🔴 Đã hủy chọn & Tìm ngành khác
+          </span>
+        )
+      case 'CONFIRMED':
+      default:
+        return (
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-sm inline-flex items-center gap-1">
+            🟢 Giữ nguyên làm Nguyện vọng chính
+          </span>
+        )
+    }
   }
 
   return (
@@ -327,6 +358,63 @@ const DebiasMatrix = () => {
           </div>
         </div>
 
+        {/* Khung XÁC NHẬN QUYẾT ĐỊNH SAU PHẢN TƯ */}
+        <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-sm">
+          <label className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <Target className="w-4 h-4 text-brand-600" />
+            🎯 Sau khi đối chứng rủi ro & bằng chứng ở 4 ô trên, quyết định của bạn là gì?
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setFinalDecision('CONFIRMED')}
+              className={`p-3.5 border rounded-sm text-left transition-all flex items-start gap-2.5 ${
+                finalDecision === 'CONFIRMED'
+                  ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-200 font-bold shadow-2xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold'
+              }`}
+            >
+              <span className="text-base leading-none">🟢</span>
+              <div>
+                <p className="text-xs font-bold leading-snug">Giữ nguyên quyết định</p>
+                <p className="text-[10px] text-slate-500 font-medium mt-0.5">(Nguyện vọng chính)</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFinalDecision('BACKUP')}
+              className={`p-3.5 border rounded-sm text-left transition-all flex items-start gap-2.5 ${
+                finalDecision === 'BACKUP'
+                  ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-200 font-bold shadow-2xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold'
+              }`}
+            >
+              <span className="text-base leading-none">🟡</span>
+              <div>
+                <p className="text-xs font-bold leading-snug">Chuyển thành Dự phòng</p>
+                <p className="text-[10px] text-slate-500 font-medium mt-0.5">(Nguyện vọng dự bị)</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFinalDecision('CHANGED')}
+              className={`p-3.5 border rounded-sm text-left transition-all flex items-start gap-2.5 ${
+                finalDecision === 'CHANGED'
+                  ? 'bg-rose-50 border-rose-500 text-rose-950 ring-2 ring-rose-200 font-bold shadow-2xs'
+                  : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold'
+              }`}
+            >
+              <span className="text-base leading-none">🔴</span>
+              <div>
+                <p className="text-xs font-bold leading-snug">Hủy chọn ngành này</p>
+                <p className="text-[10px] text-slate-500 font-medium mt-0.5">(Tìm ngành học khác)</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
         {/* Nút bấm rực rỡ bên dưới */}
         <div className="flex justify-end pt-2">
           <Button
@@ -359,11 +447,14 @@ const DebiasMatrix = () => {
                 >
                   {/* Top Bar Card */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-sm">
-                        Ngành mục tiêu
-                      </span>
-                      <h3 className="text-base font-bold text-slate-800 mt-1">{matrix.target_major}</h3>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-sm">
+                          Ngành mục tiêu
+                        </span>
+                        <h3 className="text-base font-bold text-slate-800 mt-1">{matrix.target_major}</h3>
+                      </div>
+                      {renderDecisionBadge(matrix.final_decision)}
                     </div>
                     <button
                       onClick={() => handleDelete(matrix.id)}
