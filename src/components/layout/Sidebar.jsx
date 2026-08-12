@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
@@ -16,6 +16,7 @@ import {
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { profile } = useAuth()
+  const navigate = useNavigate()
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -51,6 +52,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const linkActiveStyle = 'flex items-center gap-3 px-4 py-2.5 bg-brand-800 text-white text-sm font-medium border-l-2 border-accent-400 transition-all'
   const linkInactiveStyle = 'flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-medium border-l-2 border-transparent transition-all'
+
+  const handleAdminClick = () => {
+    if (onClose) onClose()
+    navigate('/admin/dashboard')
+  }
 
   return (
     <>
@@ -115,22 +121,16 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật (Dễ dàng cho Thầy & Ban giám khảo trải nghiệm) */}
+        {/* Nút bấm Admin cố định nổi bật (Bấm chuyển hướng mượt 100% bằng useNavigate) */}
         <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-          <NavLink 
-            to="/admin/dashboard"
-            className={({ isActive }) => 
-              `flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-sm ${
-                isActive 
-                  ? 'bg-amber-500 text-slate-950 border border-amber-400 font-extrabold' 
-                  : 'bg-emerald-900/70 hover:bg-emerald-800/90 text-emerald-300 border border-emerald-500/80 font-bold'
-              }`
-            }
-            onClick={onClose}
+          <button
+            type="button"
+            onClick={handleAdminClick}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 cursor-pointer text-left group"
           >
-            <Settings className="w-4 h-4 text-amber-400 flex-shrink-0 animate-spin-slow" />
+            <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
             <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
-          </NavLink>
+          </button>
         </div>
 
         {/* Footer info */}

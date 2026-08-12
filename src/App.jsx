@@ -23,6 +23,7 @@ import CounselingBooking from './pages/student/CounselingBooking'
 import CounselorDashboard from './pages/counselor/CounselorDashboard'
 
 // Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminManagement from './pages/admin/AdminManagement'
 
 // Route Bảo vệ dựa trên phân quyền (RBAC Route Guard chống loop)
@@ -203,12 +204,12 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes - MỞ TỰ DO 100% ĐỂ DEMO BAN GIÁM KHẢO & TEST DỮ LIỆU */}
+          {/* Admin Routes - ĐĂNG KÝ TRỰC TIẾP CÔNG KHẢI 100% */}
           <Route 
             path="/admin/dashboard" 
             element={
               <MainLayout>
-                <AdminManagement />
+                <AdminDashboard />
               </MainLayout>
             } 
           />
