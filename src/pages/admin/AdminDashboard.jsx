@@ -2,159 +2,182 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
-// Danh sách dữ liệu học sinh mẫu minh chứng NCKH chuẩn hóa
-const mockStudentAuditList = [
-  {
-    id: 'st-01',
-    full_name: 'Nguyễn Văn An',
-    email: 'an.nguyen@student.edu.vn',
-    grade_level: 'Lớp 12',
-    target_major: 'Khoa học Máy tính',
-    bias_detected: 'Bẫy Tiếc Công Sức (Chi phí chìm)',
-    decision: 'CONFIRMED',
-    score: 85
-  },
-  {
-    id: 'st-02',
-    full_name: 'Trần Thị Bích',
-    email: 'bich.tran@student.edu.vn',
-    grade_level: 'Lớp 11',
-    target_major: 'Digital Marketing',
-    bias_detected: 'Bẫy Chọn Nghề Theo Phong Trào',
-    decision: 'BACKUP',
-    score: 88
-  },
-  {
-    id: 'st-03',
-    full_name: 'Lê Hoàng Nam',
-    email: 'nam.le@student.edu.vn',
-    grade_level: 'Lớp 12',
-    target_major: 'Quản trị Kinh doanh',
-    bias_detected: 'Bẫy Cảm Xúc (Thích từ nhỏ)',
-    decision: 'CHANGED',
-    score: 82
-  },
-  {
-    id: 'st-04',
-    full_name: 'Phạm Minh Đức',
-    email: 'duc.pham@student.edu.vn',
-    grade_level: 'Lớp 10',
-    target_major: 'Khoa học Dữ liệu (Data Science)',
-    bias_detected: 'Thoát Bẫy Tư Duy Thành Công',
-    decision: 'CONFIRMED',
-    score: 90
-  },
-  {
-    id: 'st-05',
-    full_name: 'Hoàng Khánh Linh',
-    email: 'linh.hoang@student.edu.vn',
-    grade_level: 'Lớp 12',
-    target_major: 'Thiết kế Đồ họa UX/UI',
-    bias_detected: 'Bẫy Chỉ Nhìn Mặt Màu Hồng',
-    decision: 'BACKUP',
-    score: 84
-  }
-]
-
 const AdminDashboard = () => {
   const { user } = useAuth()
   
-  // Dữ liệu thống kê
+  // Dữ liệu thực tế từ Supabase DB
+  const [students, setStudents] = useState([])
+  const [matrices, setMatrices] = useState([])
+  const [hollandResults, setHollandResults] = useState([])
+  
   const [stats, setStats] = useState({ 
-    totalStudents: 128, 
-    riskRecognizedPct: 84, 
-    adjustedDecisionPct: 42, 
-    topMajor: 'Khoa học Máy tính' 
+    totalStudents: 0, 
+    totalReflections: 0, 
+    debiasedSuccessPct: 0, 
+    topMajor: 'Chưa có' 
   })
   
   const [debiasStats, setDebiasStats] = useState({ 
-    success: 54, 
-    sunkCost: 36, 
-    bandwagon: 23, 
-    emotional: 15, 
-    total: 128 
+    success: 0, 
+    sunkCost: 0, 
+    bandwagon: 0, 
+    emotional: 0, 
+    total: 0 
   })
-  
+
+  const [isLoading, setIsLoading] = useState(true)
   const [toastMessage, setToastMessage] = useState(null)
 
   useEffect(() => {
-    fetchRealStats()
+    fetchRealSupabaseData()
   }, [user])
 
-  const fetchRealStats = async () => {
+  const fetchRealSupabaseData = async () => {
+    setIsLoading(true)
     try {
-      if (!user) return
-      const { data: debiasList } = await supabase
+      // 1. Truy vấn dữ liệu thực tế Học sinh từ bảng profiles
+      const { data: profileData, error: profileErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (profileErr) console.warn('Lỗi lấy profiles:', profileErr)
+
+      // 2. Truy vấn dữ liệu Phản tư thực tế từ bảng metacognitive_matrix
+      const { data: matrixData, error: matrixErr } = await supabase
         .from('metacognitive_matrix')
-        .select('detected_bias, final_decision')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-      if (debiasList && debiasList.length > 0) {
-        let successCnt = 0
-        let sunkCostCnt = 0
-        let bandwagonCnt = 0
-        let emotionalCnt = 0
+      if (matrixErr) console.warn('Lỗi lấy metacognitive_matrix:', matrixErr)
 
-        debiasList.forEach(item => {
-          if (item.final_decision === 'BACKUP' || item.final_decision === 'CHANGED' || item.detected_bias === 'DEBIASED_SUCCESS') {
-            successCnt++
-          } else if (item.detected_bias === 'SUNK_COST_BIAS') {
-            sunkCostCnt++
-          } else if (item.detected_bias === 'BANDWAGON_BIAS') {
-            bandwagonCnt++
-          } else {
-            emotionalCnt++
-          }
-        })
-
-        const total = debiasList.length
-        setDebiasStats({
-          success: successCnt,
-          sunkCost: sunkCostCnt,
-          bandwagon: bandwagonCnt,
-          emotional: emotionalCnt,
-          total
-        })
-
-        const adjustedPct = Math.round((successCnt / total) * 100)
-        setStats(prev => ({
-          ...prev,
-          totalStudents: total,
-          adjustedDecisionPct: adjustedPct
-        }))
+      // 3. Truy vấn dữ liệu Holland thực tế từ bảng test_results (hoặc holland_results)
+      let hollandData = []
+      try {
+        const { data: hData } = await supabase
+          .from('test_results')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (hData) hollandData = hData
+      } catch (e) {
+        console.warn('Lấy test_results fallback:', e)
       }
+
+      const realProfiles = profileData || []
+      const realMatrices = matrixData || []
+
+      setStudents(realProfiles)
+      setMatrices(realMatrices)
+      setHollandResults(hollandData)
+
+      // 4. Tính toán số liệu thống kê thực tế
+      let successCnt = 0
+      let sunkCostCnt = 0
+      let bandwagonCnt = 0
+      let emotionalCnt = 0
+      const majorFrequency = {}
+
+      realMatrices.forEach(item => {
+        // Đếm tần suất ngành học
+        if (item.target_major) {
+          const majorTrimmed = item.target_major.trim()
+          majorFrequency[majorTrimmed] = (majorFrequency[majorTrimmed] || 0) + 1
+        }
+
+        // Đếm các loại bẫy tư duy
+        if (item.final_decision === 'BACKUP' || item.final_decision === 'CHANGED' || item.detected_bias === 'DEBIASED_SUCCESS') {
+          successCnt++
+        } else if (item.detected_bias === 'SUNK_COST_BIAS') {
+          sunkCostCnt++
+        } else if (item.detected_bias === 'BANDWAGON_BIAS') {
+          bandwagonCnt++
+        } else if (item.detected_bias === 'EMOTIONAL_BIAS') {
+          emotionalCnt++
+        } else {
+          successCnt++
+        }
+      })
+
+      // Xác định Top Ngành quan tâm nhất
+      let topMajorName = 'Chưa có'
+      let maxFreq = 0
+      Object.keys(majorFrequency).forEach(mName => {
+        if (majorFrequency[mName] > maxFreq) {
+          maxFreq = majorFrequency[mName]
+          topMajorName = mName
+        }
+      })
+
+      const totalM = realMatrices.length
+      const debiasedPct = totalM > 0 ? Math.round((successCnt / totalM) * 100) : 0
+
+      setDebiasStats({
+        success: successCnt,
+        sunkCost: sunkCostCnt,
+        bandwagon: bandwagonCnt,
+        emotional: emotionalCnt,
+        total: totalM
+      })
+
+      setStats({
+        totalStudents: realProfiles.length,
+        totalReflections: totalM,
+        debiasedSuccessPct: debiasedPct,
+        topMajor: topMajorName
+      })
+
     } catch (err) {
-      console.warn('Sử dụng dữ liệu mẫu cho Admin Dashboard:', err)
+      console.error('Lỗi khi tải dữ liệu thực tế Supabase:', err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  // Hàm xuất dữ liệu Excel / CSV thuần
+  // Hàm xuất dữ liệu Excel / CSV Thực Tế
   const handleExportCSV = () => {
     try {
-      const headers = ['ID,Ho va ten,Email,Khoi lop,Nganh muc tiêu,Bay tu duy chan doan,Quyet dinh sau phan tu,Diem phan tu\n']
-      const rows = mockStudentAuditList.map(st => 
-        `"${st.id}","${st.full_name}","${st.email}","${st.grade_level}","${st.target_major}","${st.bias_detected}","${st.decision}",${st.score}`
+      if (matrices.length === 0) {
+        setToastMessage('Chưa có dữ liệu Phản tư thực tế để xuất file.')
+        setTimeout(() => setToastMessage(null), 3000)
+        return
+      }
+
+      const headers = ['STT,Student ID,Ngành mục tiêu,Bay tu duy chan doan,Quyet dinh sau phan tu,Ngay tao\n']
+      const rows = matrices.map((m, idx) => 
+        `"${idx + 1}","${m.student_id || 'N/A'}","${m.target_major || ''}","${m.detected_bias || 'NONE'}","${m.final_decision || 'CONFIRMED'}","${new Date(m.created_at).toLocaleDateString('vi-VN')}"`
       ).join('\n')
 
       const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `Bao_Cao_Nghien_Cuu_Phan_Tu_${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute('download', `Bao_Cao_Phan_Tu_Thuc_Te_${new Date().toISOString().slice(0, 10)}.csv`)
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
 
-      setToastMessage('Đã xuất file báo cáo dữ liệu CSV/Excel thành công!')
+      setToastMessage('Đã xuất file báo cáo dữ liệu thực tế CSV/Excel thành công!')
       setTimeout(() => setToastMessage(null), 3000)
     } catch (err) {
       console.error('Lỗi xuất CSV:', err)
     }
   }
 
-  const successPct = Math.round((debiasStats.success / (debiasStats.total || 1)) * 100)
-  const sunkCostPct = Math.round((debiasStats.sunkCost / (debiasStats.total || 1)) * 100)
-  const bandwagonPct = Math.round((debiasStats.bandwagon / (debiasStats.total || 1)) * 100)
-  const emotionalPct = Math.round((debiasStats.emotional / (debiasStats.total || 1)) * 100)
+  const formatBiasLabel = (biasType) => {
+    switch (biasType) {
+      case 'EMOTIONAL_BIAS':
+        return 'Bẫy Cảm Xúc (Thích từ nhỏ)'
+      case 'BANDWAGON_BIAS':
+        return 'Bẫy Chọn Nghề Theo Đám Đông'
+      case 'OPTIMISM_BIAS':
+        return 'Bẫy Chỉ Nhìn Mặt Màu Hồng'
+      case 'SUNK_COST_BIAS':
+        return 'Bẫy Tiếc Công Sức (Chi phí chìm)'
+      case 'DEBIASED_SUCCESS':
+      default:
+        return 'Thoát Bẫy Tư Duy Thành Công'
+    }
+  }
 
   const renderDecisionTag = (decision) => {
     switch (decision) {
@@ -168,6 +191,26 @@ const AdminDashboard = () => {
     }
   }
 
+  const successPct = debiasStats.total > 0 ? Math.round((debiasStats.success / debiasStats.total) * 100) : 0
+  const sunkCostPct = debiasStats.total > 0 ? Math.round((debiasStats.sunkCost / debiasStats.total) * 100) : 0
+  const bandwagonPct = debiasStats.total > 0 ? Math.round((debiasStats.bandwagon / debiasStats.total) * 100) : 0
+  const emotionalPct = debiasStats.total > 0 ? Math.round((debiasStats.emotional / debiasStats.total) * 100) : 0
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse font-sans">
+        <div className="h-8 bg-slate-200 w-64 rounded-sm"></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
+          <div className="h-20 bg-slate-200 rounded-sm"></div>
+        </div>
+        <div className="h-64 bg-slate-200 rounded-sm"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-reveal font-sans">
       {/* Header Trang Admin */}
@@ -175,10 +218,10 @@ const AdminDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <span>⚙️</span> Bảng Quản Trị & Báo Cáo NCKH Admin
+              <span>⚙️</span> Bảng Quản Trị & Báo Cáo Thực Tế (Supabase DB)
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Hệ thống giám sát chỉ số tư duy phản tư, chẩn đoán 4 Bẫy Tư Duy Chọn Nghề của học sinh toàn trường và xuất dữ liệu minh chứng.
+              Hệ thống kết nối trực tiếp CSDL Supabase để tổng hợp lịch sử bài làm Phản tư, chẩn đoán Bẫy Tư duy và dữ liệu đăng ký thực tế.
             </p>
           </div>
 
@@ -193,25 +236,25 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* 4 Thẻ Thống Kê Chỉ Số NCKH */}
+      {/* 4 Thẻ Thống Kê Thực Tế Từ DB */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <div className="bg-white border border-slate-200 p-5 rounded-sm flex items-center gap-4 shadow-sm">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-sm border border-blue-100 flex items-center justify-center text-xl font-bold">
             👥
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học sinh Tham Gia</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học sinh Đã Đăng Ký</p>
             <p className="text-xl font-black text-slate-800 mt-0.5">{stats.totalStudents} HS</p>
           </div>
         </div>
 
         <div className="bg-white border border-slate-200 p-5 rounded-sm flex items-center gap-4 shadow-sm">
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-sm border border-amber-100 flex items-center justify-center text-xl font-bold">
-            🎯
+          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-sm border border-indigo-100 flex items-center justify-center text-xl font-bold">
+            🧠
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">% Nhận Diện Rủi Ro</p>
-            <p className="text-xl font-black text-amber-600 mt-0.5">{stats.riskRecognizedPct}%</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bài Phản Tư Đã Khởi Tạo</p>
+            <p className="text-xl font-black text-indigo-600 mt-0.5">{stats.totalReflections} Bài</p>
           </div>
         </div>
 
@@ -220,80 +263,76 @@ const AdminDashboard = () => {
             🎉
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">% Điều Chỉnh NV Tỉnh Táo</p>
-            <p className="text-xl font-black text-emerald-600 mt-0.5">{stats.adjustedDecisionPct}%</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">% Thoát Bẫy Thành Công</p>
+            <p className="text-xl font-black text-emerald-600 mt-0.5">{stats.debiasedSuccessPct}%</p>
           </div>
         </div>
 
         <div className="bg-white border border-slate-200 p-5 rounded-sm flex items-center gap-4 shadow-sm">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-sm border border-indigo-100 flex items-center justify-center text-xl font-bold">
+          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-sm border border-amber-100 flex items-center justify-center text-xl font-bold">
             🎓
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Ngành Quan Tâm</p>
-            <p className="text-xs font-black text-indigo-700 mt-1 leading-snug">{stats.topMajor}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Ngành Được Chọn</p>
+            <p className="text-xs font-black text-amber-700 mt-1 leading-snug truncate max-w-[120px]">{stats.topMajor}</p>
           </div>
         </div>
       </div>
 
-      {/* Biểu Đồ Phân Tích 4 Bẫy Tư Duy Chọn Nghề (Thuần HTML / Progress Bar) */}
+      {/* Biểu Đồ Thống Kê 4 Bẫy Tư Duy Chọn Nghề Thực Tế */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-5 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">📊</span>
             <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-              Báo cáo Phân Tích 4 Bẫy Tư Duy Chọn Nghề (Nghiên cứu Khoa học)
+              Phân Tích Bẫy Tư Duy Thực Tế từ Supabase Database ({debiasStats.total} lượt)
             </h2>
           </div>
-          <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-sm uppercase">
-            Cập nhật thời gian thực
+          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-sm uppercase">
+            Supabase Live Data
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-          {/* Card 1: Thoát Bẫy Thành Công */}
           <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-emerald-950">🎉 Thoát Bẫy Thành Công</span>
               <span className="text-sm font-black text-emerald-900">{successPct}%</span>
             </div>
-            <p className="text-[11px] text-emerald-800 font-semibold">{debiasStats.success} lượt điều chỉnh nguyện vọng tỉnh táo</p>
+            <p className="text-[11px] text-emerald-800 font-semibold">{debiasStats.success} lượt điều chỉnh NV tỉnh táo</p>
             <div className="w-full bg-emerald-200 h-2 rounded-sm overflow-hidden">
               <div className="bg-emerald-600 h-full rounded-sm transition-all duration-500" style={{ width: `${successPct}%` }} />
             </div>
           </div>
 
-          {/* Card 2: Bẫy Tiếc Công Sức */}
           <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-950">⚠️ Bẫy Tiếc Công Sức</span>
               <span className="text-sm font-black text-amber-900">{sunkCostPct}%</span>
             </div>
-            <p className="text-[11px] text-amber-800 font-semibold">{debiasStats.sunkCost} lượt tiếc công sức đã ôn tập</p>
+            <p className="text-[11px] text-amber-800 font-semibold">{debiasStats.sunkCost} lượt tiếc công sức đã học</p>
             <div className="w-full bg-amber-200 h-2 rounded-sm overflow-hidden">
               <div className="bg-amber-500 h-full rounded-sm transition-all duration-500" style={{ width: `${sunkCostPct}%` }} />
             </div>
           </div>
 
-          {/* Card 3: Bẫy Đám Đông */}
           <div className="bg-blue-50/70 border border-blue-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-blue-950">⚠️ Bẫy Chọn Theo Đám Đông</span>
+              <span className="text-xs font-bold text-blue-950">⚠️ Bẫy Theo Đám Đông</span>
               <span className="text-sm font-black text-blue-900">{bandwagonPct}%</span>
             </div>
-            <p className="text-[11px] text-blue-800 font-semibold">{debiasStats.bandwagon} lượt bị ảnh hưởng bởi MXH/bạn bè</p>
+            <p className="text-[11px] text-blue-800 font-semibold">{debiasStats.bandwagon} lượt bị ảnh hưởng MXH/bạn bè</p>
             <div className="w-full bg-blue-200 h-2 rounded-sm overflow-hidden">
               <div className="bg-blue-600 h-full rounded-sm transition-all duration-500" style={{ width: `${bandwagonPct}%` }} />
             </div>
           </div>
 
-          {/* Card 4: Bẫy Cảm Xúc Từ Nhỏ */}
           <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-rose-950">⚠️ Bẫy Cảm Xúc Từ Nhỏ</span>
               <span className="text-sm font-black text-rose-900">{emotionalPct}%</span>
             </div>
-            <p className="text-[11px] text-rose-800 font-semibold">{debiasStats.emotional} lượt chọn theo hình mẫu quá khứ</p>
+            <p className="text-[11px] text-rose-800 font-semibold">{debiasStats.emotional} lượt chọn theo hình mẫu cũ</p>
             <div className="w-full bg-rose-200 h-2 rounded-sm overflow-hidden">
               <div className="bg-rose-600 h-full rounded-sm transition-all duration-500" style={{ width: `${emotionalPct}%` }} />
             </div>
@@ -301,53 +340,60 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Bảng Danh Sách Học Sinh Giám Sát Phản Tư (Audit Log Table) */}
+      {/* Bảng Danh Sách Dữ Liệu Phản Tư Thực Tế từ CSDL */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <span>📋</span>
-            <span>Bảng Giám Sát Kiểm Toán Tư Duy Phản Tư Học Sinh (Audit Log)</span>
+            <span>Danh Sách Bài Phản Tư Thực Tế Từ CSDL ({matrices.length} bản ghi)</span>
           </h3>
-          <span className="text-[11px] font-bold text-slate-500">Hiển thị mẫu 5 bản ghi</span>
+          <span className="text-[11px] font-bold text-brand-600">Dữ liệu từ Supabase Matrix</span>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <th className="py-3 px-4">Họ và tên Học sinh</th>
-                <th className="py-3 px-4">Khối lớp</th>
-                <th className="py-3 px-4">Ngành dự định</th>
-                <th className="py-3 px-4">Bẫy Tư duy Chẩn đoán</th>
-                <th className="py-3 px-4 text-center">Chỉ số Phản tư</th>
-                <th className="py-3 px-4 text-center">Quyết định sau Phản tư</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockStudentAuditList.map((st) => (
-                <tr key={st.id} className="border-b border-slate-100 text-xs hover:bg-slate-50/50">
-                  <td className="py-3.5 px-4 font-bold text-slate-800">
-                    <div>{st.full_name}</div>
-                    <div className="text-[10px] font-medium text-slate-400">{st.email}</div>
-                  </td>
-                  <td className="py-3.5 px-4 font-bold text-slate-600">{st.grade_level}</td>
-                  <td className="py-3.5 px-4 font-bold text-brand-600">{st.target_major}</td>
-                  <td className="py-3.5 px-4 font-semibold text-slate-700">
-                    <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-sm text-[11px]">
-                      {st.bias_detected}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-bold text-emerald-700">
-                    {st.score}/100
-                  </td>
-                  <td className="py-3.5 px-4 text-center">
-                    {renderDecisionTag(st.decision)}
-                  </td>
+        {matrices.length === 0 ? (
+          <div className="p-8 text-center bg-blue-50/60 border border-blue-200 rounded-sm space-y-2">
+            <div className="text-2xl">💡</div>
+            <p className="text-xs font-bold text-blue-950">
+              Chưa có dữ liệu học sinh làm Bảng Phản tư thực tế trong CSDL Supabase.
+            </p>
+            <p className="text-[11px] text-blue-700 font-medium">
+              Vui lòng chuyển sang tài khoản học sinh, truy cập mục "Bảng Nhìn Lại & Kiểm Tra Chọn Nghề" để trải nghiệm tạo bài làm đầu tiên. Dữ liệu sẽ tự động xuất hiện tại đây!
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <th className="py-3 px-4">STT</th>
+                  <th className="py-3 px-4">Ngành dự định chọn</th>
+                  <th className="py-3 px-4">Bẫy Tư duy Chẩn đoán</th>
+                  <th className="py-3 px-4 text-center">Quyết định sau Phản tư</th>
+                  <th className="py-3 px-4 text-right">Ngày thực hiện</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {matrices.map((m, idx) => (
+                  <tr key={m.id || idx} className="border-b border-slate-100 text-xs hover:bg-slate-50/50">
+                    <td className="py-3.5 px-4 font-bold text-slate-400">{idx + 1}</td>
+                    <td className="py-3.5 px-4 font-bold text-brand-600">{m.target_major}</td>
+                    <td className="py-3.5 px-4 font-semibold text-slate-700">
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-sm text-[11px]">
+                        {formatBiasLabel(m.detected_bias)}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      {renderDecisionTag(m.final_decision)}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-medium text-slate-400">
+                      {new Date(m.created_at).toLocaleDateString('vi-VN')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {toastMessage && (
