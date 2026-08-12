@@ -19,11 +19,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { to: '/student/roadmap', label: 'Lộ trình Hướng nghiệp', icon: <Milestone className="w-4 h-4" /> },
     { to: '/student/holland-test', label: 'Trắc nghiệm Holland', icon: <ClipboardList className="w-4 h-4" /> },
     { to: '/student/debias-matrix', label: 'Bảng Nhìn Lại & Kiểm Tra Chọn Nghề', icon: <Brain className="w-4 h-4" /> },
     { to: '/student/majors', label: 'Tra cứu Ngành học', icon: <GraduationCap className="w-4 h-4" /> },
     { to: '/student/universities', label: 'Tra cứu Trường học', icon: <School className="w-4 h-4" /> },
-    { to: '/student/roadmap', label: 'Lộ trình Hướng nghiệp', icon: <Milestone className="w-4 h-4" /> },
     { to: '/student/booking', label: 'Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
   ]
 
