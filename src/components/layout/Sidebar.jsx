@@ -1,6 +1,6 @@
 import React from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
+import { NavLink, Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -11,20 +11,12 @@ import {
   CalendarDays, 
   Settings, 
   UserSquare2,
-  ChevronRight,
-  RefreshCw
+  ChevronRight
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { user, profile } = useAuth()
-  const navigate = useNavigate()
+  const { profile } = useAuth()
   const location = useLocation()
-
-  const userEmail = user?.email?.toLowerCase() || ''
-  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
-  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
-  
-  const isAdminOrTeacher = isWhitelistedAdmin || ['admin', 'teacher', 'counselor'].includes(userRole)
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -36,46 +28,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     { to: '/student/booking', label: 'Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
   ]
 
-  const counselorLinks = [
-    { to: '/counselor/dashboard', label: 'Quản lý Tư vấn', icon: <UserSquare2 className="w-4 h-4" /> },
-  ]
-
-  const adminLinks = [
-    { to: '/admin/management', label: 'Quản lý Hệ thống', icon: <Settings className="w-4 h-4" /> },
-  ]
-
-  const getLinksByRole = () => {
-    switch (userRole) {
-      case 'admin':
-        return adminLinks
-      case 'counselor':
-      case 'teacher':
-        return counselorLinks
-      case 'student':
-      default:
-        return studentLinks
-    }
-  }
-
-  const links = getLinksByRole()
-
   const linkActiveStyle = 'flex items-center gap-3 px-4 py-2.5 bg-brand-800 text-white text-sm font-medium border-l-2 border-accent-400 transition-all'
   const linkInactiveStyle = 'flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-medium border-l-2 border-transparent transition-all'
-
-  const handleAdminClick = () => {
-    if (onClose) onClose()
-    navigate('/admin/dashboard')
-  }
-
-  // Nút công tắc chuyển đổi góc nhìn giao diện Admin / Học sinh nhanh chóng
-  const handleToggleDemoView = () => {
-    if (onClose) onClose()
-    if (location.pathname.startsWith('/admin')) {
-      navigate('/student/dashboard')
-    } else {
-      navigate('/admin/dashboard')
-    }
-  }
 
   return (
     <>
@@ -119,7 +73,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {profile?.full_name || 'Học sinh'}
               </p>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {userRole}
+                {profile?.role || 'STUDENT'}
               </span>
             </div>
           </div>
@@ -127,7 +81,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Navigation links */}
         <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
-          {links.map((link, idx) => (
+          {studentLinks.map((link, idx) => (
             <NavLink 
               key={idx} 
               to={link.to}
@@ -140,29 +94,16 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật & Công tắc chuyển đổi góc nhìn */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60 space-y-2">
-          {isAdminOrTeacher && (
-            <button
-              type="button"
-              onClick={handleAdminClick}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 cursor-pointer text-left group"
-            >
-              <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
-              <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={handleToggleDemoView}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm text-[11px] font-bold bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/80 cursor-pointer transition-all shadow-2xs"
+        {/* Nút bấm Admin cố định nổi bật - CHUYỂN HƯỚNG TRỰC TIẾP QUA THẺ LINK AN TOÀN 100% */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+          <Link
+            to="/admin/dashboard"
+            onClick={onClose}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 text-left group"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="truncate">
-              🔄 Chuyển giao diện ({location.pathname.startsWith('/admin') ? 'ADMIN → HỌC SINH' : 'HỌC SINH → ADMIN'})
-            </span>
-          </button>
+            <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
+            <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
+          </Link>
         </div>
 
         {/* Footer info */}

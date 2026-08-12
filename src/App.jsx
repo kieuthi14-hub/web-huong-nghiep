@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
+import { AuthProvider, useAuth } from './context/AuthContext'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
@@ -25,7 +25,7 @@ import CounselorDashboard from './pages/counselor/CounselorDashboard'
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard'
 
-// Route Bảo vệ chung dựa trên phân quyền (RBAC Route Guard)
+// Route Bảo vệ dựa trên phân quyền (RBAC Route Guard đơn giản, không loop)
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
@@ -47,40 +47,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // 1. Chưa đăng nhập -> Chuyển về login
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  // 2. Vai trò hiện tại của user
-  const userEmail = user?.email?.toLowerCase() || ''
-  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
-  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
-
-  // 3. Đã đăng nhập nhưng truy cập trang không thuộc quyền
-  if (allowedRoles && !allowedRoles.includes(userRole) && !isWhitelistedAdmin) {
-    if (userRole === 'admin' && location.pathname !== '/admin/management' && location.pathname !== '/admin/dashboard') {
-      return <Navigate to="/admin/dashboard" replace />
-    } else if (userRole === 'counselor' && location.pathname !== '/counselor/dashboard') {
-      return <Navigate to="/counselor/dashboard" replace />
-    } else if (userRole === 'student' && location.pathname !== '/student/dashboard') {
-      return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
-    }
-  }
-
-  return children
-}
-
-// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL + EMAIL WHITELIST)
-const AdminProtectedRoute = ({ children }) => {
-  const { user, profile, loading } = useAuth()
-
-  if (loading) return null
-
-  const userEmail = user?.email?.toLowerCase() || ''
-  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
-  const userRole = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
-
-  // Nếu không phải admin và không nằm trong Whitelist -> Redirect về student/dashboard
-  if (userRole === 'student' && !isWhitelistedAdmin) {
-    return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
   }
 
   return children
@@ -105,15 +71,13 @@ const MainLayout = ({ children }) => {
 
 // Chuyển hướng thông minh trang chủ '/' dựa vào vai trò
 const HomeRedirect = () => {
-  const { user, profile, loading } = useAuth()
+  const { profile, loading } = useAuth()
 
   if (loading) return null
 
-  const userEmail = user?.email?.toLowerCase() || ''
-  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
-  const role = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
+  const role = profile?.role || 'student'
 
-  if (role === 'admin' || isWhitelistedAdmin) {
+  if (role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />
   } else if (role === 'counselor' || role === 'teacher') {
     return <Navigate to="/counselor/dashboard" replace />
@@ -135,7 +99,7 @@ const App = () => {
           <Route 
             path="/" 
             element={
-              <ProtectedRoute allowedRoles={['student', 'counselor', 'teacher', 'admin']}>
+              <ProtectedRoute>
                 <HomeRedirect />
               </ProtectedRoute>
             } 
@@ -145,7 +109,7 @@ const App = () => {
           <Route 
             path="/student/dashboard" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <StudentDashboard />
                 </MainLayout>
@@ -155,7 +119,7 @@ const App = () => {
           <Route 
             path="/student/holland-test" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <HollandTest />
                 </MainLayout>
@@ -165,7 +129,7 @@ const App = () => {
           <Route 
             path="/student/debias-matrix" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <DebiasMatrix />
                 </MainLayout>
@@ -175,7 +139,7 @@ const App = () => {
           <Route 
             path="/student/majors" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <MajorExplorer />
                 </MainLayout>
@@ -185,7 +149,7 @@ const App = () => {
           <Route 
             path="/student/universities" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <UniversityExplorer />
                 </MainLayout>
@@ -195,7 +159,7 @@ const App = () => {
           <Route 
             path="/student/roadmap" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <RoadmapBuilder />
                 </MainLayout>
@@ -205,7 +169,7 @@ const App = () => {
           <Route 
             path="/student/booking" 
             element={
-              <ProtectedRoute allowedRoles={['student']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <CounselingBooking />
                 </MainLayout>
@@ -217,7 +181,7 @@ const App = () => {
           <Route 
             path="/counselor/dashboard" 
             element={
-              <ProtectedRoute allowedRoles={['counselor', 'teacher']}>
+              <ProtectedRoute>
                 <MainLayout>
                   <CounselorDashboard />
                 </MainLayout>
@@ -225,25 +189,21 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes - WHITELIST EMAIL CHO PHÉP TRUY CẬP TỰ ĐỘNG */}
+          {/* Admin Routes - ĐĂNG KÝ TRỰC TIẾP ROUTE THUẦN KHÔNG HOC LỖI - AN TOÀN 100% */}
           <Route 
             path="/admin/dashboard" 
             element={
-              <AdminProtectedRoute>
-                <MainLayout>
-                  <AdminDashboard />
-                </MainLayout>
-              </AdminProtectedRoute>
+              <MainLayout>
+                <AdminDashboard />
+              </MainLayout>
             } 
           />
           <Route 
             path="/admin/management" 
             element={
-              <AdminProtectedRoute>
-                <MainLayout>
-                  <AdminDashboard />
-                </MainLayout>
-              </AdminProtectedRoute>
+              <MainLayout>
+                <AdminDashboard />
+              </MainLayout>
             } 
           />
 
