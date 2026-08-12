@@ -22,8 +22,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Lỗi khi lấy session ban đầu:', error)
-      } font-sans
-      finally {
+      } finally {
         setLoading(false)
       }
     }
