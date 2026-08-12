@@ -22,50 +22,100 @@ import {
   ShieldAlert
 } from 'lucide-react'
 
-// Hàm chẩn đoán thiên kiến tự động (Automated Bias Detection Engine)
+// Thuật toán Chẩn đoán Bẫy Tư Duy Chọn Nghề Tự Động (Automated Career Trap Detection Engine)
 const getBiasDiagnosis = (matrix) => {
   const { risk_analysis, verified_sources, final_decision, bias_check } = matrix
 
-  // Trường hợp 3: Học sinh chủ động chọn BACKUP hoặc CHANGED -> Giải thiên lệch thành công
+  const textBiasCheck = (bias_check || '').toLowerCase()
+  const textSources = (verified_sources || '').toLowerCase()
+  const textRisk = (risk_analysis || '').toLowerCase()
+
+  // TH 0: Học sinh chủ động chuyển thành Dự phòng hoặc Hủy ngành -> Thoát bẫy thành công
   if (final_decision === 'BACKUP' || final_decision === 'CHANGED') {
     return {
       type: 'DEBIASED_SUCCESS',
       icon: '🎉',
-      badge: 'GIẢI THIÊN LỆCH THÀNH CÔNG',
-      title: '🎉 Tuyệt vời! Bạn đã GIẢI THIÊN LỆCH THÀNH CÔNG',
+      badge: 'THOÁT BẪY TƯ DUY THÀNH CÔNG',
+      title: '🎉 TUYỆT VỜI! BẠN ĐÃ THOÁT BẪY TƯ DUY THÀNH CÔNG',
       message: 'Việc dũng cảm nhìn vào thực tế để điều chỉnh nguyện vọng chính là biểu hiện của Tư duy Phản tư trưởng thành.',
       cardStyle: 'bg-emerald-50 border-emerald-300 text-emerald-950',
-      badgeStyle: 'bg-emerald-200 text-emerald-900 border-emerald-300'
+      badgeStyle: 'bg-emerald-200 text-emerald-900 border-emerald-300',
+      aiHighlight: 'Bạn đã tỉnh táo điều chỉnh nguyện vọng dựa trên phân tích thực tế thay vì cố bám trụ cảm xúc ban đầu.',
+      aiWarning: 'Nhận diện rủi ro rất thực tế. Hãy duy trì sự chủ động này khi sắp xếp thứ tự nguyện vọng chính thức.'
     }
   }
 
-  // Trường hợp 2: Ô 2/4 ngắn hoặc đề cập MXH/lời đồn -> Thiên kiến Đám đông
-  const textCheck = ((verified_sources || '') + ' ' + (bias_check || '')).toLowerCase()
-  const hasSocialMediaKeywords = /mạng xã hội|tiktok|facebook|youtube|bạn bè|nghe nói|lời đồn|viral|đám đông|theo bạn/.test(textCheck)
-  const isSourceTooShort = (verified_sources || '').trim().length < 35
+  // BẪY 1: BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY (Thích từ bé)
+  const emotionalKeywords = ["thích từ nhỏ", "đam mê", "ước mơ", "từ bé", "thích từ lâu", "sở thích", "thích"]
+  const hasEmotionalBias = emotionalKeywords.some(kw => textBiasCheck.includes(kw))
 
-  if (hasSocialMediaKeywords || isSourceTooShort) {
+  if (hasEmotionalBias) {
+    return {
+      type: 'EMOTIONAL_BIAS',
+      icon: '⚠️',
+      badge: 'BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY',
+      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY (THÍCH TỪ BÉ)',
+      message: 'Bạn đang chọn nghề dựa vào cảm xúc quen thuộc từ quá khứ. Yêu thích là tốt, nhưng hãy đối chiếu xem ngành này hiện tại có thay đổi hoặc bị AI ảnh hưởng so với hình dung ngày nhỏ của bạn không nhé!',
+      cardStyle: 'bg-amber-50 border-amber-300 text-amber-950',
+      badgeStyle: 'bg-amber-200 text-amber-900 border-amber-300',
+      aiHighlight: 'Bạn có đam mê cá nhân rõ ràng và kiên định với ước mơ ban đầu.',
+      aiWarning: 'Đam mê cần gắn liền với năng lực thực tế và bối cảnh thị trường tuyển dụng hiện đại.'
+    }
+  }
+
+  // BẪY 2: BẪY CHỌN NGHỀ THEO PHONG TRÀO / ĐÁM ĐÔNG
+  const bandwagonKeywords = ["bạn bè", "mạng xã hội", "tiktok", "facebook", "nghe đồn", "hot trend", "nhiều người theo", "xu hướng"]
+  const hasBandwagonBias = bandwagonKeywords.some(kw => textBiasCheck.includes(kw) || textSources.includes(kw)) || textSources.trim().length < 30
+
+  if (hasBandwagonBias) {
     return {
       type: 'BANDWAGON_BIAS',
       icon: '⚠️',
-      badge: 'CẢNH BÁO: THIÊN KIẾN ĐÁM ĐÔNG',
-      title: '⚠️ Bạn có thể đang mắc THIÊN KIẾN ĐÁM ĐÔNG (Bandwagon Effect)',
-      message: 'Quyết định của bạn đang bị ảnh hưởng bởi truyền thông/bạn bè hơn là dữ liệu điểm số thực tế. Hãy bổ sung dữ liệu chính thống từ Bộ GD&ĐT.',
+      badge: 'BẪY PHONG TRÀO / ĐÁM ĐÔNG',
+      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CHỌN NGHỀ THEO PHONG TRÀO / ĐÁM ĐÔNG',
+      message: 'Quyết định của bạn đang bị ảnh hưởng bởi tâm lý đám đông hoặc truyền thông. Hãy tập trung vào năng lực và điểm số thực tế của chính bạn!',
       cardStyle: 'bg-blue-50 border-blue-300 text-blue-950',
-      badgeStyle: 'bg-blue-200 text-blue-900 border-blue-300'
+      badgeStyle: 'bg-blue-200 text-blue-900 border-blue-300',
+      aiHighlight: 'Bạn đã nắm bắt được các ngành học đang nhận được nhiều sự quan tâm của thị trường.',
+      aiWarning: 'Cần bổ sung nguồn đối chứng chính thống từ Bộ GD&ĐT thay vì tin vào video mạng xã hội.'
     }
   }
 
-  // Trường hợp 1: Ô 3 rủi ro cao nhưng vẫn chọn CONFIRMED -> Thiên kiến Chi phí chìm
-  if (final_decision === 'CONFIRMED') {
+  // BẪY 3: BẪY CHỈ NHÌN MẶT MÀU HỒNG (Phớt lờ rủi ro)
+  const isRiskTooShort = textRisk.trim().length < 15
+  const optimismKeywords = ["không có", "không rủi ro", "hoàn hảo", "lương cao", "không"]
+  const hasOptimismBias = isRiskTooShort || (optimismKeywords.some(kw => textRisk.includes(kw)) && textRisk.trim().length < 25)
+
+  if (hasOptimismBias) {
+    return {
+      type: 'OPTIMISM_BIAS',
+      icon: '⚠️',
+      badge: 'BẪY CHỈ NHÌN MẶT MÀU HỒNG',
+      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CHỈ NHÌN MẶT MÀU HỒNG (PHỚT LỜ RỦI RO)',
+      message: 'Không có ngành nghề nào hoàn hảo. Việc phớt lờ rủi ro sẽ khiến bạn dễ bị sốc thực tế khi bước vào Đại học. Hãy tìm hiểu kỹ mặt tối và thách thức thực tế của ngành!',
+      cardStyle: 'bg-rose-50 border-rose-300 text-rose-950',
+      badgeStyle: 'bg-rose-200 text-rose-900 border-rose-300',
+      aiHighlight: 'Bạn có tinh thần tích cực và kỳ vọng lớn vào tương lai sự nghiệp.',
+      aiWarning: 'Mọi ngành học đều có áp lực riêng (tỷ lệ đào thải, sự thay đổi công nghệ). Hãy chủ động nhận diện rủi ro.'
+    }
+  }
+
+  // BẪY 4: BẪY TIẾC CÔNG SỨC / CHI PHÍ CHÌM
+  const sunkCostKeywords = ["lỡ học", "đã ôn", "tiếc", "theo từ lâu"]
+  const hasSunkCostKeywords = sunkCostKeywords.some(kw => textBiasCheck.includes(kw))
+  const isSunkCostBias = (final_decision === 'CONFIRMED' && textRisk.length > 30) || hasSunkCostKeywords
+
+  if (isSunkCostBias) {
     return {
       type: 'SUNK_COST_BIAS',
       icon: '⚠️',
-      badge: 'CẢNH BÁO: THIÊN KIẾN CHI PHÍ CHÌM',
-      title: '⚠️ Bạn có thể đang mắc THIÊN KIẾN CHI PHÍ CHÌM (Sunk Cost Fallacy) hoặc THIÊN KIẾN XÁC NHẬN',
-      message: 'Bạn đã thấy nhiều rủi ro ở Ô 3 nhưng vẫn cố chấp chọn vì tiếc công sức đã đầu tư. Hãy cân nhắc đưa ngành này xuống làm Nguyện vọng Dự phòng.',
+      badge: 'BẪY TIẾC CÔNG SỨC (CHI PHÍ CHÌM)',
+      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY TIẾC CÔNG SỨC (CHI PHÍ CHÌM)',
+      message: 'Có thể bạn đang cố bám trụ ngành này chỉ vì tiếc thời gian/công sức đã lỡ đầu tư ôn tập. Hãy dũng cảm điều chỉnh nếu ngành không còn thực sự phù hợp!',
       cardStyle: 'bg-amber-50 border-amber-300 text-amber-950',
-      badgeStyle: 'bg-amber-200 text-amber-900 border-amber-300'
+      badgeStyle: 'bg-amber-200 text-amber-900 border-amber-300',
+      aiHighlight: 'Bạn đã liệt kê rủi ro rất trung thực và nhận diện rõ độ khó của ngành.',
+      aiWarning: 'Nên cân nhắc đưa ngành này xuống làm Nguyện vọng Dự phòng để giảm thiểu rủi ro trúng tuyển.'
     }
   }
 
@@ -73,10 +123,12 @@ const getBiasDiagnosis = (matrix) => {
     type: 'BALANCED',
     icon: '🟢',
     badge: 'TƯ DUY PHẢN TƯ CÂN BẰNG',
-    title: '🟢 Tư duy Phản tư Cân bằng',
+    title: '🟢 TƯ DUY PHẢN TƯ CÂN BẰNG',
     message: 'Bạn đã phân tích toàn diện giữa năng lực thực tế, rủi ro nghề nghiệp và nguồn đối chứng chính thống.',
     cardStyle: 'bg-slate-50 border-slate-200 text-slate-800',
-    badgeStyle: 'bg-slate-200 text-slate-800 border-slate-300'
+    badgeStyle: 'bg-slate-200 text-slate-800 border-slate-300',
+    aiHighlight: 'Bạn đã cân bằng tốt giữa đam mê và năng lực thực tế.',
+    aiWarning: 'Tiếp tục duy trì góc nhìn đa chiều trước khi chốt danh sách nguyện vọng cuối cùng.'
   }
 }
 
@@ -155,13 +207,13 @@ const DebiasMatrix = () => {
       return
     }
     if (!biasCheck.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng điền Ô 4: Kiểm tra Bẫy Thiên lệch!' })
+      setToast({ type: 'warning', message: 'Vui lòng điền Ô 4: Kiểm tra Bẫy Tư Duy!' })
       return
     }
 
     setIsSubmitting(true)
 
-    // Chẩn đoán thiên kiến
+    // Chẩn đoán Bẫy Tư Duy
     const biasDiagnosis = getBiasDiagnosis({
       risk_analysis: riskAnalysis,
       verified_sources: verifiedSources,
@@ -305,7 +357,7 @@ const DebiasMatrix = () => {
               🧠 Bảng Nhìn Lại & Kiểm Tra Chọn Nghề (Phản tư)
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Công cụ kích hoạt tư duy nhìn lại giúp bạn nhận diện rủi ro, kiểm chứng thông tin và vượt qua các bẫy thiên lệch nhận thức trước khi ra quyết định.
+              Công cụ kích hoạt tư duy nhìn lại giúp bạn nhận diện rủi ro, kiểm chứng thông tin và vượt qua các Bẫy Tư Duy Chọn Nghề trước khi ra quyết định.
             </p>
           </div>
         </div>
@@ -413,15 +465,15 @@ const DebiasMatrix = () => {
                 <HelpCircle className="w-4.5 h-4.5" />
               </div>
               <h3 className="text-xs font-bold uppercase tracking-wider">
-                4. Kiểm tra Bẫy Thiên lệch
+                4. Kiểm tra Bẫy Tư Duy
               </h3>
             </div>
             <p className="text-[11px] text-rose-800 font-semibold leading-relaxed">
-              Quyết định chọn ngành này của em có đang bị ảnh hưởng bởi tâm lý đám đông hay các video viral không? Vì sao?
+              Quyết định chọn ngành này của em có đang bị ảnh hưởng bởi bẫy cảm xúc thích từ bé hay phong trào mạng xã hội không? Vì sao?
             </p>
             <textarea
               rows={4}
-              placeholder="VD: Em ban đầu định chọn theo lời rủ của nhóm bạn thân, nhưng sau khi đối chứng tài năng thì thấy bản thân thực sự đam mê kỹ thuật hơn..."
+              placeholder="VD: Em thích từ nhỏ nhưng sau khi đối chứng tài năng thì thấy bản thân thực sự hợp với kỹ thuật thực tế hơn là hình dung mơ ước..."
               value={biasCheck}
               onChange={(e) => setBiasCheck(e.target.value)}
               className="w-full p-3 text-xs bg-white border border-rose-200 focus:border-rose-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
@@ -563,13 +615,13 @@ const DebiasMatrix = () => {
 
                     <div className="p-3 bg-rose-50/30 border border-rose-100 rounded-sm space-y-1">
                       <p className="font-bold text-rose-900 flex items-center gap-1">
-                        <HelpCircle className="w-3.5 h-3.5" /> 4. Kiểm tra bẫy thiên lệch:
+                        <HelpCircle className="w-3.5 h-3.5" /> 4. Kiểm tra bẫy tư duy:
                       </p>
                       <p className="text-slate-700 leading-relaxed">{matrix.bias_check}</p>
                     </div>
                   </div>
 
-                  {/* KHUNG PHẢN HỒI CHẨN ĐOÁN THIÊN KIẾN TỰ ĐỘNG (Automated Debias Feedback Card) */}
+                  {/* KHUNG PHẢN HỒI CHẨN ĐOÁN BẪY TƯ DUY TỰ ĐỘNG (Automated Career Trap Feedback Card) */}
                   <div className={`p-4 rounded-sm border space-y-2 leading-relaxed shadow-2xs ${biasDiagnosis.cardStyle}`}>
                     <div className="flex items-center justify-between border-b border-current/20 pb-2">
                       <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -583,7 +635,7 @@ const DebiasMatrix = () => {
                     <p className="text-xs font-semibold">{biasDiagnosis.message}</p>
                   </div>
 
-                  {/* Khung Đánh Giá & Nhận Xét Phản Tư (Debias AI Feedback) */}
+                  {/* Khung Đánh Giá & Nhận Xét Phản Tư Đồng Bộ 100% (Debias AI Feedback) */}
                   <div className="bg-emerald-50/60 border border-emerald-100 p-5 rounded-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2.5">
                       <div className="flex items-center gap-2">
@@ -593,7 +645,7 @@ const DebiasMatrix = () => {
                         </h4>
                       </div>
                       <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200/80 text-emerald-900 rounded-sm">
-                        AI Phân Tích
+                        AI Phân Tích Đồng Bộ
                       </span>
                     </div>
 
@@ -611,13 +663,13 @@ const DebiasMatrix = () => {
                       </div>
                     </div>
 
-                    {/* 2. Khung Phản hồi từ Trợ lý AI */}
+                    {/* 2. Khung Phản hồi từ Trợ lý AI đồng bộ 100% với Bẫy Tư Duy */}
                     <div className="space-y-2 pt-1 text-xs leading-relaxed text-slate-700">
                       <div className="flex items-start gap-2 bg-white/80 p-3 rounded-sm border border-emerald-100">
                         <span className="text-base leading-none">🟢</span>
                         <div>
                           <span className="font-bold text-emerald-950">Điểm sáng: </span>
-                          <span>Bạn đã chủ động tham khảo dữ liệu chính thống từ Báo cáo/Bộ GD&ĐT, tránh được thiên lệch thông tin từ MXH.</span>
+                          <span>{biasDiagnosis.aiHighlight}</span>
                         </div>
                       </div>
 
@@ -625,7 +677,7 @@ const DebiasMatrix = () => {
                         <span className="text-base leading-none">⚠️</span>
                         <div>
                           <span className="font-bold text-amber-900">Cảnh báo & Lời khuyên: </span>
-                          <span>Nhận diện rủi ro của bạn rất thực tế. Hãy tiếp tục duy trì góc nhìn đa chiều này và trao đổi thêm với giáo viên/cố vấn hướng nghiệp để có lộ trình chuẩn xác nhất.</span>
+                          <span>{biasDiagnosis.aiWarning}</span>
                         </div>
                       </div>
                     </div>
