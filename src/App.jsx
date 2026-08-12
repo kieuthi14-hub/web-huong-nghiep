@@ -49,13 +49,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  // 2. Vai trò hiện tại của user (mặc định là 'student' nếu chưa lấy được profile)
+  // 2. Vai trò hiện tại của user
   const userRole = profile?.role || 'student'
 
   // 3. Đã đăng nhập nhưng truy cập trang không thuộc quyền
   if (allowedRoles && !allowedRoles.includes(userRole)) {
-    if (userRole === 'admin' && location.pathname !== '/admin/management') {
-      return <Navigate to="/admin/management" replace />
+    if (userRole === 'admin' && location.pathname !== '/admin/management' && location.pathname !== '/admin/dashboard') {
+      return <Navigate to="/admin/dashboard" replace />
     } else if (userRole === 'counselor' && location.pathname !== '/counselor/dashboard') {
       return <Navigate to="/counselor/dashboard" replace />
     } else if (userRole === 'student' && location.pathname !== '/student/dashboard') {
@@ -92,7 +92,7 @@ const HomeRedirect = () => {
   const role = profile?.role || 'student'
 
   if (role === 'admin') {
-    return <Navigate to="/admin/management" replace />
+    return <Navigate to="/admin/dashboard" replace />
   } else if (role === 'counselor') {
     return <Navigate to="/counselor/dashboard" replace />
   } else {
@@ -203,15 +203,21 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes */}
+          {/* Admin Routes - MỞ TỰ DO 100% ĐỂ DEMO BAN GIÁM KHẢO & TEST DỮ LIỆU */}
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <MainLayout>
+                <AdminManagement />
+              </MainLayout>
+            } 
+          />
           <Route 
             path="/admin/management" 
             element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <MainLayout>
-                  <AdminManagement />
-                </MainLayout>
-              </ProtectedRoute>
+              <MainLayout>
+                <AdminManagement />
+              </MainLayout>
             } 
           />
 

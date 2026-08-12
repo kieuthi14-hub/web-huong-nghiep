@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {profile?.full_name || 'Học sinh'}
               </p>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {profile?.role}
+                {profile?.role || 'STUDENT'}
               </span>
             </div>
           </div>
@@ -114,6 +114,24 @@ const Sidebar = ({ isOpen, onClose }) => {
             </NavLink>
           ))}
         </nav>
+
+        {/* Nút bấm Admin cố định nổi bật (Dễ dàng cho Thầy & Ban giám khảo trải nghiệm) */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+          <NavLink 
+            to="/admin/dashboard"
+            className={({ isActive }) => 
+              `flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-sm ${
+                isActive 
+                  ? 'bg-amber-500 text-slate-950 border border-amber-400 font-extrabold' 
+                  : 'bg-emerald-900/70 hover:bg-emerald-800/90 text-emerald-300 border border-emerald-500/80 font-bold'
+              }`
+            }
+            onClick={onClose}
+          >
+            <Settings className="w-4 h-4 text-amber-400 flex-shrink-0 animate-spin-slow" />
+            <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
+          </NavLink>
+        </div>
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">
