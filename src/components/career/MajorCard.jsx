@@ -1,5 +1,5 @@
 import React from 'react'
-import { Bookmark, DollarSign, Award, ChevronRight, AlertTriangle, Brain } from 'lucide-react'
+import { Bookmark, DollarSign, Award, ChevronRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import Button from '../common/Button'
 
@@ -126,18 +126,18 @@ const MajorCard = ({ major, isBookmarked = false, onBookmarkToggle, showLink = t
 
       {showLink && (
         <div className="pt-2 flex items-center gap-2">
-          {/* Nút Phản tư nhanh màu xanh/tím */}
+          {/* Nút Kiểm tra lựa chọn này ngay */}
           <button
             onClick={handleDebiasClick}
             className="flex-1 py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-sm transition-all flex items-center justify-center gap-1 shadow-sm"
-            title="Đưa ngành học này vào Bảng Phản Tư để phân tích rủi ro"
+            title="Đưa ngành học này vào Bảng Nhìn Lại để kiểm tra lựa chọn"
           >
-            <span>🧠 Đưa vào Phản Tư</span>
+            <span>🔍 Kiểm tra lựa chọn này ngay</span>
           </button>
 
           {/* Nút Xem chi tiết */}
           <Link to={`/student/majors?id=${id}`}>
-            <Button variant="outline" className="text-[11px] font-semibold py-1.5 px-3 gap-1 hover:bg-slate-100">
+            <Button variant="outline" className="text-[11px] font-semibold py-1.5 px-3 gap-1 hover:bg-slate-100 flex-shrink-0">
               Chi tiết
               <ChevronRight className="w-3 h-3" />
             </Button>

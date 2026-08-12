@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
     { to: '/student/holland-test', label: 'Trắc nghiệm Holland', icon: <ClipboardList className="w-4 h-4" /> },
-    { to: '/student/debias-matrix', label: 'Ma trận Phản tư (Debias)', icon: <Brain className="w-4 h-4" /> },
+    { to: '/student/debias-matrix', label: 'Bảng Nhìn Lại & Kiểm Tra Chọn Nghề', icon: <Brain className="w-4 h-4" /> },
     { to: '/student/majors', label: 'Tra cứu Ngành học', icon: <GraduationCap className="w-4 h-4" /> },
     { to: '/student/universities', label: 'Tra cứu Trường học', icon: <School className="w-4 h-4" /> },
     { to: '/student/roadmap', label: 'Lộ trình Hướng nghiệp', icon: <Milestone className="w-4 h-4" /> },
@@ -110,7 +110,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               onClick={onClose}
             >
               {link.icon}
-              <span>{link.label}</span>
+              <span className="truncate">{link.label}</span>
             </NavLink>
           ))}
         </nav>

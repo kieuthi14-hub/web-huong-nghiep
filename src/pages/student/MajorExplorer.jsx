@@ -434,7 +434,7 @@ const MajorExplorer = () => {
                   </div>
                 </div>
 
-                {/* Nút Kích hoạt Phản tư (Debias Action Button) */}
+                {/* Nút Kiểm tra lựa chọn này ngay */}
                 <div className="pt-3 border-t border-slate-100">
                   <Button
                     variant="primary"
@@ -442,7 +442,7 @@ const MajorExplorer = () => {
                     className="w-full font-bold text-xs uppercase tracking-wider py-3 px-4 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
                   >
                     <Brain className="w-4 h-4" />
-                    🧠 Đưa ngành này vào Bảng Phản Tư
+                    🔍 Kiểm tra lựa chọn này ngay
                   </Button>
                 </div>
               </div>

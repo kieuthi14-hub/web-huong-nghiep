@@ -14,7 +14,8 @@ import {
   Sparkles,
   History,
   Trash2,
-  MessageSquareCode
+  MessageSquareCode,
+  Lightbulb
 } from 'lucide-react'
 
 const DebiasMatrix = () => {
@@ -147,7 +148,7 @@ const DebiasMatrix = () => {
 
       setToast({ 
         type: 'success', 
-        message: 'Lưu & Khởi tạo Bảng Phản Tư thành công!' 
+        message: 'Lưu & Khởi tạo Bảng Kiểm Tra Chọn Nghề thành công!' 
       })
     } catch (error) {
       console.error('Lỗi khi lưu bảng phản tư:', error)
@@ -174,7 +175,7 @@ const DebiasMatrix = () => {
     if (user) {
       localStorage.setItem(`debias_matrix_${user.id}`, JSON.stringify(nextList))
     }
-    setToast({ type: 'info', message: 'Đã xóa bản ghi phản tư.' })
+    setToast({ type: 'info', message: 'Đã xóa bản ghi.' })
   }
 
   // Hàm tính toán điểm phản tư thông minh linh hoạt từ 82 đến 90 dựa vào chất lượng câu trả lời
@@ -192,18 +193,28 @@ const DebiasMatrix = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8 animate-reveal">
       {/* Page Header */}
-      <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-3 shadow-sm">
+      <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-brand-50 border border-brand-100 rounded-sm text-brand-600">
             <Brain className="w-7 h-7" />
           </div>
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              🧠 Bảng Ma Trận Phản Tư Chọn Nghề (Metacognitive Matrix)
+              🧠 Bảng Nhìn Lại & Kiểm Tra Chọn Nghề (Phản tư)
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Công cụ kích hoạt tư duy phản tư giúp bạn nhận diện rủi ro, kiểm chứng thông tin và vượt qua các bẫy thiên lệch nhận thức trước khi ra quyết định.
+              Công cụ kích hoạt tư duy nhìn lại giúp bạn nhận diện rủi ro, kiểm chứng thông tin và vượt qua các bẫy thiên lệch nhận thức trước khi ra quyết định.
             </p>
+          </div>
+        </div>
+
+        {/* Banner giải thích bình dị */}
+        <div className="bg-blue-50/80 border border-blue-200 text-blue-950 p-3.5 rounded-sm flex items-start gap-3 shadow-2xs font-semibold text-xs leading-relaxed">
+          <div className="p-1 bg-blue-500 text-white rounded-sm flex-shrink-0 mt-0.5">
+            <Lightbulb className="w-4 h-4" />
+          </div>
+          <div>
+            <span className="font-bold text-blue-900">💡 Phản tư đơn giản là gì?</span> Là việc bạn dành 2 phút "soi" lại xem mình chọn nghề này vì <span className="font-bold uppercase text-blue-900 underline">NĂNG LỰC THỰC TẾ</span> hay chỉ vì cảm xúc nhất thời & xem video mạng xã hội!
           </div>
         </div>
       </div>
@@ -325,17 +336,17 @@ const DebiasMatrix = () => {
             className="w-full md:w-auto font-bold text-xs uppercase tracking-wider py-3.5 px-8 gap-2 shadow-md hover:shadow-lg transition-all"
           >
             <Save className="w-4 h-4" />
-            Lưu & Khởi tạo Bảng Phản Tư
+            Lưu & Khởi tạo Bảng Nhìn Lại
           </Button>
         </div>
       </form>
 
-      {/* Lịch sử các Ma trận Phản tư đã tạo */}
+      {/* Lịch sử các Bảng Nhìn Lại đã tạo */}
       {savedMatrices.length > 0 && (
         <div className="space-y-4 pt-6 border-t border-slate-200">
           <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <History className="w-4.5 h-4.5 text-brand-600" />
-            Các Bảng Phản Tư Đã Khởi Tạo ({savedMatrices.length})
+            Các Bảng Nhìn Lại Đã Khởi Tạo ({savedMatrices.length})
           </h2>
 
           <div className="space-y-6">

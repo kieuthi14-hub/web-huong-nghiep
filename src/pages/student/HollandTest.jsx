@@ -305,9 +305,9 @@ const HollandTest = () => {
                         type="button"
                         onClick={() => navigate(`/student/debias-matrix?major=${encodeURIComponent(major.name)}`)}
                         className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-sm transition-all flex items-center gap-1 shadow-sm flex-shrink-0"
-                        title="Đưa ngành học này vào Bảng Phản Tư để phân tích rủi ro"
+                        title="Đưa ngành học này vào Bảng Nhìn Lại để kiểm tra lựa chọn"
                       >
-                        🧠 Phản tư ngay
+                        🔍 Kiểm tra lựa chọn này ngay
                       </button>
                     </div>
                   ))}
