@@ -16,8 +16,69 @@ import {
   Trash2,
   MessageSquareCode,
   Lightbulb,
-  Target
+  Target,
+  AlertCircle,
+  CheckCircle2,
+  ShieldAlert
 } from 'lucide-react'
+
+// Hàm chẩn đoán thiên kiến tự động (Automated Bias Detection Engine)
+const getBiasDiagnosis = (matrix) => {
+  const { risk_analysis, verified_sources, final_decision, bias_check } = matrix
+
+  // Trường hợp 3: Học sinh chủ động chọn BACKUP hoặc CHANGED -> Giải thiên lệch thành công
+  if (final_decision === 'BACKUP' || final_decision === 'CHANGED') {
+    return {
+      type: 'DEBIASED_SUCCESS',
+      icon: '🎉',
+      badge: 'GIẢI THIÊN LỆCH THÀNH CÔNG',
+      title: '🎉 Tuyệt vời! Bạn đã GIẢI THIÊN LỆCH THÀNH CÔNG',
+      message: 'Việc dũng cảm nhìn vào thực tế để điều chỉnh nguyện vọng chính là biểu hiện của Tư duy Phản tư trưởng thành.',
+      cardStyle: 'bg-emerald-50 border-emerald-300 text-emerald-950',
+      badgeStyle: 'bg-emerald-200 text-emerald-900 border-emerald-300'
+    }
+  }
+
+  // Trường hợp 2: Ô 2/4 ngắn hoặc đề cập MXH/lời đồn -> Thiên kiến Đám đông
+  const textCheck = ((verified_sources || '') + ' ' + (bias_check || '')).toLowerCase()
+  const hasSocialMediaKeywords = /mạng xã hội|tiktok|facebook|youtube|bạn bè|nghe nói|lời đồn|viral|đám đông|theo bạn/.test(textCheck)
+  const isSourceTooShort = (verified_sources || '').trim().length < 35
+
+  if (hasSocialMediaKeywords || isSourceTooShort) {
+    return {
+      type: 'BANDWAGON_BIAS',
+      icon: '⚠️',
+      badge: 'CẢNH BÁO: THIÊN KIẾN ĐÁM ĐÔNG',
+      title: '⚠️ Bạn có thể đang mắc THIÊN KIẾN ĐÁM ĐÔNG (Bandwagon Effect)',
+      message: 'Quyết định của bạn đang bị ảnh hưởng bởi truyền thông/bạn bè hơn là dữ liệu điểm số thực tế. Hãy bổ sung dữ liệu chính thống từ Bộ GD&ĐT.',
+      cardStyle: 'bg-blue-50 border-blue-300 text-blue-950',
+      badgeStyle: 'bg-blue-200 text-blue-900 border-blue-300'
+    }
+  }
+
+  // Trường hợp 1: Ô 3 rủi ro cao nhưng vẫn chọn CONFIRMED -> Thiên kiến Chi phí chìm
+  if (final_decision === 'CONFIRMED') {
+    return {
+      type: 'SUNK_COST_BIAS',
+      icon: '⚠️',
+      badge: 'CẢNH BÁO: THIÊN KIẾN CHI PHÍ CHÌM',
+      title: '⚠️ Bạn có thể đang mắc THIÊN KIẾN CHI PHÍ CHÌM (Sunk Cost Fallacy) hoặc THIÊN KIẾN XÁC NHẬN',
+      message: 'Bạn đã thấy nhiều rủi ro ở Ô 3 nhưng vẫn cố chấp chọn vì tiếc công sức đã đầu tư. Hãy cân nhắc đưa ngành này xuống làm Nguyện vọng Dự phòng.',
+      cardStyle: 'bg-amber-50 border-amber-300 text-amber-950',
+      badgeStyle: 'bg-amber-200 text-amber-900 border-amber-300'
+    }
+  }
+
+  return {
+    type: 'BALANCED',
+    icon: '🟢',
+    badge: 'TƯ DUY PHẢN TƯ CÂN BẰNG',
+    title: '🟢 Tư duy Phản tư Cân bằng',
+    message: 'Bạn đã phân tích toàn diện giữa năng lực thực tế, rủi ro nghề nghiệp và nguồn đối chứng chính thống.',
+    cardStyle: 'bg-slate-50 border-slate-200 text-slate-800',
+    badgeStyle: 'bg-slate-200 text-slate-800 border-slate-300'
+  }
+}
 
 const DebiasMatrix = () => {
   const { user } = useAuth()
@@ -99,6 +160,15 @@ const DebiasMatrix = () => {
     }
 
     setIsSubmitting(true)
+
+    // Chẩn đoán thiên kiến
+    const biasDiagnosis = getBiasDiagnosis({
+      risk_analysis: riskAnalysis,
+      verified_sources: verifiedSources,
+      final_decision: finalDecision,
+      bias_check: biasCheck
+    })
+
     const newEntry = {
       id: `matrix-${Date.now()}`,
       student_id: user?.id,
@@ -108,6 +178,7 @@ const DebiasMatrix = () => {
       risk_analysis: riskAnalysis,
       bias_check: biasCheck,
       final_decision: finalDecision,
+      detected_bias: biasDiagnosis.type,
       created_at: new Date().toISOString()
     }
 
@@ -124,7 +195,8 @@ const DebiasMatrix = () => {
             verified_sources: verifiedSources,
             risk_analysis: riskAnalysis,
             bias_check: biasCheck,
-            final_decision: finalDecision
+            final_decision: finalDecision,
+            detected_bias: biasDiagnosis.type
           })
           .select()
           .maybeSingle()
@@ -185,7 +257,6 @@ const DebiasMatrix = () => {
     setToast({ type: 'info', message: 'Đã xóa bản ghi.' })
   }
 
-  // Hàm tính toán điểm phản tư thông minh linh hoạt từ 82 đến 90 dựa vào chất lượng câu trả lời
   const calculateMetacognitiveScore = (matrix) => {
     const totalLength = (matrix.evidence?.length || 0) + 
                         (matrix.verified_sources?.length || 0) + 
@@ -440,13 +511,15 @@ const DebiasMatrix = () => {
           <div className="space-y-6">
             {savedMatrices.map((matrix) => {
               const score = calculateMetacognitiveScore(matrix)
+              const biasDiagnosis = getBiasDiagnosis(matrix)
+
               return (
                 <div 
                   key={matrix.id} 
                   className="bg-white border border-slate-200 p-6 rounded-sm space-y-5 hover:border-slate-300 transition-all shadow-sm"
                 >
                   {/* Top Bar Card */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
                       <div>
                         <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-sm">
@@ -458,7 +531,7 @@ const DebiasMatrix = () => {
                     </div>
                     <button
                       onClick={() => handleDelete(matrix.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-red-600 transition-colors self-start md:self-auto"
                       title="Xóa bản ghi"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -494,6 +567,20 @@ const DebiasMatrix = () => {
                       </p>
                       <p className="text-slate-700 leading-relaxed">{matrix.bias_check}</p>
                     </div>
+                  </div>
+
+                  {/* KHUNG PHẢN HỒI CHẨN ĐOÁN THIÊN KIẾN TỰ ĐỘNG (Automated Debias Feedback Card) */}
+                  <div className={`p-4 rounded-sm border space-y-2 leading-relaxed shadow-2xs ${biasDiagnosis.cardStyle}`}>
+                    <div className="flex items-center justify-between border-b border-current/20 pb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                        <span>{biasDiagnosis.icon}</span>
+                        <span>{biasDiagnosis.title}</span>
+                      </span>
+                      <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-sm border uppercase ${biasDiagnosis.badgeStyle}`}>
+                        {biasDiagnosis.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold">{biasDiagnosis.message}</p>
                   </div>
 
                   {/* Khung Đánh Giá & Nhận Xét Phản Tư (Debias AI Feedback) */}

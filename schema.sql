@@ -82,11 +82,13 @@ CREATE TABLE IF NOT EXISTS public.metacognitive_matrix (
   risk_analysis TEXT NOT NULL,
   bias_check TEXT NOT NULL,
   final_decision VARCHAR(20) DEFAULT 'CONFIRMED' CHECK (final_decision IN ('CONFIRMED', 'BACKUP', 'CHANGED')),
+  detected_bias TEXT DEFAULT 'NONE',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Bổ sung cột final_decision nếu bảng đã tồn tại sẵn
+-- Bổ sung cột final_decision & detected_bias nếu bảng đã tồn tại sẵn
 ALTER TABLE public.metacognitive_matrix ADD COLUMN IF NOT EXISTS final_decision VARCHAR(20) DEFAULT 'CONFIRMED';
+ALTER TABLE public.metacognitive_matrix ADD COLUMN IF NOT EXISTS detected_bias TEXT DEFAULT 'NONE';
 
 -- 8. BẢNG CAREER_ROADMAPS (Cột mốc lộ trình hướng nghiệp cá nhân)
 CREATE TABLE IF NOT EXISTS public.career_roadmaps (
