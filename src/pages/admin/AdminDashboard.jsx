@@ -21,6 +21,7 @@ const AdminDashboard = () => {
     sunkCost: 0, 
     bandwagon: 0, 
     emotional: 0, 
+    optimism: 0,
     total: 0 
   })
 
@@ -75,6 +76,7 @@ const AdminDashboard = () => {
       let sunkCostCnt = 0
       let bandwagonCnt = 0
       let emotionalCnt = 0
+      let optimismCnt = 0
       const majorFrequency = {}
 
       realMatrices.forEach(item => {
@@ -89,8 +91,8 @@ const AdminDashboard = () => {
         const decision = item?.final_decision
         const bias = item?.detected_bias
 
-        // Đếm chính xác lượt và phân loại bẫy tư duy
-        if (decision === 'BACKUP' || decision === 'CHANGED' || bias === 'DEBIASED_SUCCESS') {
+        // Đếm chính xác lượt và phân loại bẫy tư duy theo thuật toán Siêu nhận thức
+        if (decision === 'BACKUP' || decision === 'CHANGED' || bias === 'DEBIASED_SUCCESS' || bias === 'BALANCED') {
           successCnt++
         } else if (bias === 'SUNK_COST_BIAS') {
           sunkCostCnt++
@@ -98,6 +100,8 @@ const AdminDashboard = () => {
           bandwagonCnt++
         } else if (bias === 'EMOTIONAL_BIAS') {
           emotionalCnt++
+        } else if (bias === 'OPTIMISM_BIAS') {
+          optimismCnt++
         } else {
           successCnt++
         }
@@ -121,6 +125,7 @@ const AdminDashboard = () => {
         sunkCost: sunkCostCnt,
         bandwagon: bandwagonCnt,
         emotional: emotionalCnt,
+        optimism: optimismCnt,
         total: totalM
       })
 
@@ -144,7 +149,7 @@ const AdminDashboard = () => {
     }
   }
 
-  // Hàm xuất dữ liệu Excel / CSV Thực Tế
+  // Hàm xuất dữ liệu Excel / CSV Thực Tế Đã Khớp Nối
   const handleExportCSV = () => {
     try {
       if (!Array.isArray(matricesList) || matricesList.length === 0) {
@@ -153,16 +158,31 @@ const AdminDashboard = () => {
         return
       }
 
-      const headers = ['STT,Student ID,Nganh muc tieu,Bay tu duy chan doan,Quyet dinh sau phan tu,Ngay tao\n']
-      const rows = matricesList.map((m, idx) => 
-        `"${idx + 1}","${m?.student_id || 'N/A'}","${m?.target_major || ''}","${m?.detected_bias || 'NONE'}","${m?.final_decision || 'CONFIRMED'}","${m?.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : ''}"`
-      ).join('\n')
+      // Tạo map từ student_id -> profile để tra cứu nhanh thông tin học sinh
+      const userMap = {}
+      usersList.forEach(u => {
+        if (u?.id) userMap[u.id] = u
+      })
+
+      const headers = ['STT,Ho va Ten,Email,Khoi lop,Nganh muc tieu,Bay tu duy chan doan,Quyet dinh sau phan tu,Ngay tao\n']
+      const rows = matricesList.map((m, idx) => {
+        const sProfile = userMap[m?.student_id || m?.user_id]
+        const fullName = sProfile?.full_name || 'Học sinh'
+        const email = sProfile?.email || 'N/A'
+        const grade = sProfile?.grade_level || 'N/A'
+        const targetMajor = m?.target_major || ''
+        const bias = m?.detected_bias || 'NONE'
+        const decision = m?.final_decision || 'CONFIRMED'
+        const createdAt = m?.created_at ? new Date(m.created_at).toLocaleDateString('vi-VN') : ''
+
+        return `"${idx + 1}","${fullName}","${email}","${grade}","${targetMajor}","${bias}","${decision}","${createdAt}"`
+      }).join('\n')
 
       const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `Bao_Cao_Phan_Tu_Thuc_Te_${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute('download', `Bao_Cao_Phan_Tu_Thuc_Te_ViSEF_${new Date().toISOString().slice(0, 10)}.csv`)
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -184,6 +204,8 @@ const AdminDashboard = () => {
         return 'Bẫy Chỉ Nhìn Mặt Màu Hồng'
       case 'SUNK_COST_BIAS':
         return 'Bẫy Tiếc Công Sức (Chi phí chìm)'
+      case 'BALANCED':
+        return 'Tư Duy Cân Bằng'
       case 'DEBIASED_SUCCESS':
       default:
         return 'Thoát Bẫy Tư Duy Thành Công'
@@ -207,27 +229,28 @@ const AdminDashboard = () => {
   const sunkCostPct = total > 0 ? Math.round(((debiasStats?.sunkCost || 0) / total) * 100) : 0
   const bandwagonPct = total > 0 ? Math.round(((debiasStats?.bandwagon || 0) / total) * 100) : 0
   const emotionalPct = total > 0 ? Math.round(((debiasStats?.emotional || 0) / total) * 100) : 0
+  const optimismPct = total > 0 ? Math.round(((debiasStats?.optimism || 0) / total) * 100) : 0
 
   if (isLoading) {
     return (
       <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[400px] space-y-3 font-sans">
         <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải và khớp nối dữ liệu từ Supabase DB...</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải và khớp nối dữ liệu từ Supabase DB (ViSEF)...</p>
       </div>
     )
   }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-8 animate-reveal font-sans">
-      {/* Header Trang Admin */}
+      {/* Header Trang Admin - Ngữ cảnh ViSEF NCKH */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-3 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <span>⚙️</span> Bảng Quản Trị & Báo Cáo Thực Tế (Supabase DB)
+              <span>⚙️</span> Bảng Quản Trị NCKH Hướng Nghiệp Siêu Nhận Thức (ViSEF)
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Hệ thống kết nối trực tiếp CSDL Supabase để tổng hợp lịch sử bài làm Phản tư, chẩn đoán Bẫy Tư duy và dữ liệu đăng ký thực tế.
+              Hệ thống kết nối trực tiếp CSDL Supabase để tổng hợp lịch sử bài làm Phản tư, chẩn đoán Bẫy Tư duy và khớp nối dữ liệu thực tế giữa bảng <code className="text-brand-600 bg-brand-50 px-1 py-0.5 rounded">profiles</code> và <code className="text-brand-600 bg-brand-50 px-1 py-0.5 rounded">metacognitive_matrix</code>.
             </p>
           </div>
 
@@ -299,7 +322,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Biểu Đồ Thống Kê 4 Bẫy Tư Duy Chọn Nghề Thực Tế */}
+      {/* Biểu Đồ Thống Kê Phân Loại 5 Bẫy Tư Duy Chọn Nghề Thực Tế */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-5 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
@@ -313,7 +336,8 @@ const AdminDashboard = () => {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {/* Bẫy 0: Thoát bẫy thành công */}
           <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-emerald-950">🎉 Thoát Bẫy Thành Công</span>
@@ -325,17 +349,19 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-sm space-y-2">
+          {/* Bẫy 1: Cảm xúc */}
+          <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-950">⚠️ Bẫy Tiếc Công Sức</span>
-              <span className="text-sm font-black text-amber-900">{sunkCostPct}%</span>
+              <span className="text-xs font-bold text-rose-950">⚠️ Bẫy Cảm Xúc Từ Nhỏ</span>
+              <span className="text-sm font-black text-rose-900">{emotionalPct}%</span>
             </div>
-            <p className="text-[11px] text-amber-800 font-semibold">{debiasStats?.sunkCost || 0} lượt tiếc công sức đã học</p>
-            <div className="w-full bg-amber-200 h-2 rounded-sm overflow-hidden">
-              <div className="bg-amber-500 h-full rounded-sm transition-all duration-500" style={{ width: `${sunkCostPct}%` }} />
+            <p className="text-[11px] text-rose-800 font-semibold">{debiasStats?.emotional || 0} lượt chọn theo hình mẫu cũ</p>
+            <div className="w-full bg-rose-200 h-2 rounded-sm overflow-hidden">
+              <div className="bg-rose-600 h-full rounded-sm transition-all duration-500" style={{ width: `${emotionalPct}%` }} />
             </div>
           </div>
 
+          {/* Bẫy 2: Đám đông */}
           <div className="bg-blue-50/70 border border-blue-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-blue-950">⚠️ Bẫy Theo Đám Đông</span>
@@ -347,14 +373,27 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-sm space-y-2">
+          {/* Bẫy 3: Chỉ nhìn màu hồng */}
+          <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-sm space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-rose-950">⚠️ Bẫy Cảm Xúc Từ Nhỏ</span>
-              <span className="text-sm font-black text-rose-900">{emotionalPct}%</span>
+              <span className="text-xs font-bold text-purple-950">⚠️ Bẫy Chỉ Nhìn Màu Hồng</span>
+              <span className="text-sm font-black text-purple-900">{optimismPct}%</span>
             </div>
-            <p className="text-[11px] text-rose-800 font-semibold">{debiasStats?.emotional || 0} lượt chọn theo hình mẫu cũ</p>
-            <div className="w-full bg-rose-200 h-2 rounded-sm overflow-hidden">
-              <div className="bg-rose-600 h-full rounded-sm transition-all duration-500" style={{ width: `${emotionalPct}%` }} />
+            <p className="text-[11px] text-purple-800 font-semibold">{debiasStats?.optimism || 0} lượt phớt lờ rủi ro nghề</p>
+            <div className="w-full bg-purple-200 h-2 rounded-sm overflow-hidden">
+              <div className="bg-purple-600 h-full rounded-sm transition-all duration-500" style={{ width: `${optimismPct}%` }} />
+            </div>
+          </div>
+
+          {/* Bẫy 4: Tiếc công sức */}
+          <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-amber-950">⚠️ Bẫy Tiếc Công Sức</span>
+              <span className="text-sm font-black text-amber-900">{sunkCostPct}%</span>
+            </div>
+            <p className="text-[11px] text-amber-800 font-semibold">{debiasStats?.sunkCost || 0} lượt tiếc công sức đã học</p>
+            <div className="w-full bg-amber-200 h-2 rounded-sm overflow-hidden">
+              <div className="bg-amber-500 h-full rounded-sm transition-all duration-500" style={{ width: `${sunkCostPct}%` }} />
             </div>
           </div>
         </div>
@@ -460,3 +499,4 @@ const AdminDashboard = () => {
 }
 
 export default AdminDashboard
+
