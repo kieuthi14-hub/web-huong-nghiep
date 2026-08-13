@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink, Link, useLocation } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
@@ -15,8 +15,13 @@ import {
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { profile } = useAuth()
-  const location = useLocation()
+  const { user, profile } = useAuth()
+
+  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  
+  // Kiểm tra quyền Admin bảo mật: Chỉ Admin hoặc Email Whitelist kieuthi14@gmail.com
+  const isAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com'
 
   const studentLinks = [
     { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
@@ -27,6 +32,22 @@ const Sidebar = ({ isOpen, onClose }) => {
     { to: '/student/universities', label: 'Tra cứu Trường học', icon: <School className="w-4 h-4" /> },
     { to: '/student/booking', label: 'Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
   ]
+
+  const counselorLinks = [
+    { to: '/counselor/dashboard', label: 'Quản lý Tư vấn', icon: <UserSquare2 className="w-4 h-4" /> },
+  ]
+
+  const adminLinks = [
+    { to: '/admin/dashboard', label: 'Bảng Quản trị Admin', icon: <Settings className="w-4 h-4" /> },
+  ]
+
+  const getLinksByRole = () => {
+    if (isAdmin) return adminLinks
+    if (userRole === 'counselor' || userRole === 'teacher') return counselorLinks
+    return studentLinks
+  }
+
+  const links = getLinksByRole()
 
   const linkActiveStyle = 'flex items-center gap-3 px-4 py-2.5 bg-brand-800 text-white text-sm font-medium border-l-2 border-accent-400 transition-all'
   const linkInactiveStyle = 'flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-slate-800 text-sm font-medium border-l-2 border-transparent transition-all'
@@ -73,7 +94,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {profile?.full_name || 'Học sinh'}
               </p>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {profile?.role || 'STUDENT'}
+                {isAdmin ? 'ADMIN' : userRole.toUpperCase()}
               </span>
             </div>
           </div>
@@ -81,7 +102,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Navigation links */}
         <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
-          {studentLinks.map((link, idx) => (
+          {links.map((link, idx) => (
             <NavLink 
               key={idx} 
               to={link.to}
@@ -94,17 +115,19 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật - CHUYỂN HƯỚNG TRỰC TIẾP QUA THẺ LINK AN TOÀN 100% */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
-          <Link
-            to="/admin/dashboard"
-            onClick={onClose}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 text-left group"
-          >
-            <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
-            <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
-          </Link>
-        </div>
+        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ KHI VÀ CHỈ KHI LÀ ADMIN KHÔNG HARDCODE */}
+        {isAdmin && (
+          <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+            <Link
+              to="/admin/dashboard"
+              onClick={onClose}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 text-left group"
+            >
+              <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
+              <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
+            </Link>
+          </div>
+        )}
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">

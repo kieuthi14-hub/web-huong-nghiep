@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
@@ -25,7 +25,7 @@ import CounselorDashboard from './pages/counselor/CounselorDashboard'
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard'
 
-// Route Bảo vệ dựa trên phân quyền (RBAC Route Guard đơn giản, không loop)
+// Route Bảo vệ chung dựa trên phân quyền
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, profile, loading } = useAuth()
   const location = useLocation()
@@ -52,6 +52,26 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children
 }
 
+// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
+const AdminProtectedRoute = ({ children }) => {
+  const { user, profile, loading } = useAuth()
+
+  if (loading) return null
+
+  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  
+  // Kiểm tra quyền Admin bảo mật
+  const isAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || ADMIN_EMAILS.includes(userEmail)
+
+  // Nếu Học sinh cố tình gõ URL trực tiếp /admin/dashboard -> Redirect về /student/dashboard
+  if (!isAdmin) {
+    return <Navigate to="/student/dashboard" state={{ unauthorized: true }} replace />
+  }
+
+  return children
+}
+
 // Wrapper Layout cho các trang Dashboard
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -71,13 +91,15 @@ const MainLayout = ({ children }) => {
 
 // Chuyển hướng thông minh trang chủ '/' dựa vào vai trò
 const HomeRedirect = () => {
-  const { profile, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
 
   if (loading) return null
 
-  const role = profile?.role || 'student'
+  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
+  const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+  const role = isWhitelistedAdmin ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
 
-  if (role === 'admin') {
+  if (role === 'admin' || isWhitelistedAdmin) {
     return <Navigate to="/admin/dashboard" replace />
   } else if (role === 'counselor' || role === 'teacher') {
     return <Navigate to="/counselor/dashboard" replace />
@@ -189,21 +211,25 @@ const App = () => {
             } 
           />
 
-          {/* Admin Routes - ĐĂNG KÝ TRỰC TIẾP ROUTE THUẦN KHÔNG HOC LỖI - AN TOÀN 100% */}
+          {/* Admin Routes - BẢO VỆ NGHIÊM NGẶT BẰNG ADMIN PROTECTED ROUTE */}
           <Route 
             path="/admin/dashboard" 
             element={
-              <MainLayout>
-                <AdminDashboard />
-              </MainLayout>
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              </AdminProtectedRoute>
             } 
           />
           <Route 
             path="/admin/management" 
             element={
-              <MainLayout>
-                <AdminDashboard />
-              </MainLayout>
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              </AdminProtectedRoute>
             } 
           />
 
