@@ -198,6 +198,16 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/student/counseling" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CounselingBooking />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
 
           {/* Counselor Routes */}
           <Route 
