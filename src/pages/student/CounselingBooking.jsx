@@ -20,25 +20,25 @@ import {
 export const COUNSELOR_GROUPS = [
   {
     groupKey: 'school_counselors',
-    groupName: '🎓 THẦY CÔ CỐ VẤN TẠI TRƯỜNG (Tuyển sinh & Tâm lý)',
+    groupName: '🎓 THẦY CÔ CỐ VẤN TẠI TRƯỜNG',
     badgeLabel: '🎓 Cố vấn Trường',
     badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     icon: GraduationCap,
     counselors: [
       {
         id: '11111111-1111-1111-1111-111111111111',
-        name: 'Thầy Cao Xuân Hải',
+        name: 'Thầy Nguyễn Văn Minh',
         title: 'Cố vấn Hướng nghiệp',
-        fullName: 'Thầy Cao Xuân Hải - Cố vấn Hướng nghiệp',
+        fullName: 'Thầy Nguyễn Văn Minh - Cố vấn Hướng nghiệp',
         groupKey: 'school_counselors',
         badgeLabel: '🎓 Cố vấn Trường',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
       },
       {
         id: '22222222-2222-2222-2222-222222222222',
-        name: 'Cô Nguyễn Thị Kim Thuận',
-        title: 'Chuyên gia Tâm lý Học đường',
-        fullName: 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tâm lý Học đường',
+        name: 'Cô Lê Thị Mai',
+        title: 'Tâm lý học đường',
+        fullName: 'Cô Lê Thị Mai - Tâm lý học đường',
         groupKey: 'school_counselors',
         badgeLabel: '🎓 Cố vấn Trường',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -47,7 +47,7 @@ export const COUNSELOR_GROUPS = [
   },
   {
     groupKey: 'student_mentors',
-    groupName: '🚀 MẠNG LƯỚI MENTOR SINH VIÊN (Trải nghiệm thực tế Ngành học)',
+    groupName: '🚀 MẠNG LƯỚI MENTOR SINH VIÊN',
     badgeLabel: '🚀 Mentor Sinh viên',
     badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     icon: Rocket,
@@ -55,8 +55,8 @@ export const COUNSELOR_GROUPS = [
       {
         id: '33333333-3333-3333-3333-333333333333',
         name: 'Anh Trần Minh Triết',
-        title: 'SV Năm 3 Ngành Công nghệ Thông tin (ĐH Bách Khoa)',
-        fullName: 'Anh Trần Minh Triết - SV Năm 3 Ngành Công nghệ Thông tin (ĐH Bách Khoa)',
+        title: 'SV CNTT ĐH Bách Khoa',
+        fullName: 'Anh Trần Minh Triết - SV CNTT ĐH Bách Khoa',
         groupKey: 'student_mentors',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
@@ -64,8 +64,8 @@ export const COUNSELOR_GROUPS = [
       {
         id: '44444444-4444-4444-4444-444444444444',
         name: 'Chị Nguyễn Hà Phương',
-        title: 'SV Năm 2 Ngành Sư phạm Ngôn ngữ Anh (ĐH Sư Phạm)',
-        fullName: 'Chị Nguyễn Hà Phương - SV Năm 2 Ngành Sư phạm Ngôn ngữ Anh (ĐH Sư Phạm)',
+        title: 'SV Sư phạm Tiếng Anh',
+        fullName: 'Chị Nguyễn Hà Phương - SV Sư phạm Tiếng Anh',
         groupKey: 'student_mentors',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
@@ -73,8 +73,8 @@ export const COUNSELOR_GROUPS = [
       {
         id: '55555555-5555-5555-5555-555555555555',
         name: 'Anh Lê Quốc Bảo',
-        title: 'SV Năm 4 Ngành Quản trị Kinh doanh & Marketing (ĐH Kinh Tế)',
-        fullName: 'Anh Lê Quốc Bảo - SV Năm 4 Ngành Quản trị Kinh doanh & Marketing (ĐH Kinh Tế)',
+        title: 'SV Quản trị Kinh doanh',
+        fullName: 'Anh Lê Quốc Bảo - SV Quản trị Kinh doanh',
         groupKey: 'student_mentors',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
@@ -82,8 +82,8 @@ export const COUNSELOR_GROUPS = [
       {
         id: '66666666-6666-6666-6666-666666666666',
         name: 'Chị Phạm Khánh Linh',
-        title: 'SV Năm 2 Ngành Y Đa Khoa (ĐH Y Dược)',
-        fullName: 'Chị Phạm Khánh Linh - SV Năm 2 Ngành Y Đa Khoa (ĐH Y Dược)',
+        title: 'SV Y Đa Khoa',
+        fullName: 'Chị Phạm Khánh Linh - SV Y Đa Khoa',
         groupKey: 'student_mentors',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
@@ -91,6 +91,19 @@ export const COUNSELOR_GROUPS = [
     ]
   }
 ]
+
+// Định dạng thời gian HH:mm - DD/MM/YYYY
+export const formatDateTimeFormatted = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${hours}:${minutes} - ${day}/${month}/${year}`
+}
 
 // Hàm tra cứu chi tiết thông tin chuyên gia / mentor từ ID hoặc object trả về từ Supabase DB
 export const getCounselorDetails = (counselorId, counselorRelation) => {
@@ -103,8 +116,15 @@ export const getCounselorDetails = (counselorId, counselorRelation) => {
   // 2. Tìm theo tên trùng khớp với thông tin DB
   const dbName = counselorRelation?.full_name || ''
   for (const group of COUNSELOR_GROUPS) {
-    const found = group.counselors.find(c => dbName.includes(c.name))
+    const found = group.counselors.find(c => dbName.includes(c.name) || c.name.includes(dbName))
     if (found) return found
+  }
+
+  if (dbName.includes('Cao Xuân Hải') || dbName.includes('Nguyễn Văn Minh')) {
+    return COUNSELOR_GROUPS[0].counselors[0]
+  }
+  if (dbName.includes('Kim Thuận') || dbName.includes('Lê Thị Mai')) {
+    return COUNSELOR_GROUPS[0].counselors[1]
   }
 
   // 3. Phân loại suy luận từ từ khóa nếu là chuyên gia khác từ DB
@@ -210,7 +230,7 @@ const CounselingBooking = () => {
       setSelectedCounselor('')
       setScheduledAt('')
       setStudentNotes('')
-      setToast({ type: 'success', message: 'Đã gửi yêu cầu đăng ký đặt lịch hẹn vào Supabase DB!' })
+      setToast({ type: 'success', message: 'Đã gửi yêu cầu đăng ký đặt lịch hẹn thành công!' })
     } catch (error) {
       console.error('Lỗi đặt lịch hẹn:', error)
       setToast({ type: 'error', message: 'Lỗi khi ghi lịch hẹn vào CSDL Supabase.' })
@@ -253,7 +273,7 @@ const CounselingBooking = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-brand-600" />
-          Đặt lịch Tư vấn Định hướng 1-1 (Supabase DB)
+          📅 Đặt Lịch Tư Vấn Định Hướng 1-1 Với Chuyên Gia
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
           Đăng ký lịch hẹn tư vấn cá nhân với Thầy Cô Cố vấn trường hoặc Mạng lưới Mentor Sinh viên từ Supabase DB.
@@ -319,14 +339,14 @@ const CounselingBooking = () => {
             isLoading={isSubmitting}
             className="w-full font-bold text-xs uppercase py-2.5"
           >
-            Gửi đăng ký vào Supabase DB
+            GỬI YÊU CẦU ĐẶT LỊCH
           </Button>
         </form>
 
         {/* Danh sách lịch hẹn đã đặt */}
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center justify-between">
-            <span>Danh sách Suất hẹn tư vấn (từ Supabase DB)</span>
+            <span>DANH SÁCH SUẤT HẸN ĐÃ ĐĂNG KÝ</span>
             <span className="text-[11px] font-semibold text-slate-500 normal-case">
               {mySessions.length} suất hẹn
             </span>
@@ -374,7 +394,7 @@ const CounselingBooking = () => {
 
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                       <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>Thời gian: {new Date(session.scheduled_at).toLocaleString('vi-VN')}</span>
+                      <span>Thời gian: {formatDateTimeFormatted(session.scheduled_at)}</span>
                     </div>
 
                     {session.student_notes && (
