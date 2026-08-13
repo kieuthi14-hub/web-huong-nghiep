@@ -5,10 +5,9 @@ import { useAuth } from '../../context/AuthContext'
 const AdminDashboard = () => {
   const { user } = useAuth()
   
-  // Dữ liệu thực tế từ Supabase DB
+  // Dữ liệu thực tế được ghép nối từ Supabase DB
   const [usersList, setUsersList] = useState([])
   const [matricesList, setMatricesList] = useState([])
-  const [hollandMap, setHollandMap] = useState({})
   
   const [stats, setStats] = useState({ 
     totalStudents: 0, 
@@ -38,54 +37,40 @@ const AdminDashboard = () => {
     else setIsLoading(true)
 
     try {
-      // 1. Truy vấn danh sách tài khoản từ bảng profiles
+      // 1. Truy vấn danh sách tài khoản học sinh từ bảng profiles
       let realUsers = []
       try {
-        const { data: usersData } = await supabase
+        const { data: usersData, error: uErr } = await supabase
           .from('profiles')
           .select('*')
           .order('created_at', { ascending: false })
-        if (Array.isArray(usersData)) realUsers = usersData
+        
+        if (!uErr && Array.isArray(usersData)) {
+          realUsers = usersData
+        }
       } catch (e) {
-        console.warn('Lỗi lấy profiles:', e)
+        console.warn('Lỗi lấy profiles từ DB:', e)
       }
 
       // 2. Truy vấn danh sách bài làm Phản tư từ bảng metacognitive_matrix
       let realMatrices = []
       try {
-        const { data: matrixData } = await supabase
+        const { data: matrixData, error: mErr } = await supabase
           .from('metacognitive_matrix')
           .select('*')
           .order('created_at', { ascending: false })
-        if (Array.isArray(matrixData)) realMatrices = matrixData
-      } catch (e) {
-        console.warn('Lỗi lấy metacognitive_matrix:', e)
-      }
-
-      // 3. Truy vấn bài làm Holland từ test_results (An toàn)
-      const hMap = {}
-      try {
-        const { data: testData } = await supabase
-          .from('test_results')
-          .select('*')
-          .order('created_at', { ascending: false })
         
-        if (Array.isArray(testData)) {
-          testData.forEach(t => {
-            if (t?.student_id && !hMap[t.student_id]) {
-              hMap[t.student_id] = t.holland_code || t.primary_trait || 'Đã làm'
-            }
-          })
+        if (!mErr && Array.isArray(matrixData)) {
+          realMatrices = matrixData
         }
       } catch (e) {
-        console.warn('Lỗi lấy test_results:', e)
+        console.warn('Lỗi lấy metacognitive_matrix từ DB:', e)
       }
 
       setUsersList(realUsers)
       setMatricesList(realMatrices)
-      setHollandMap(hMap)
 
-      // 4. Phân tích thống kê 4 bẫy tư duy thực tế
+      // 3. Tiến hành khớp nối dữ liệu (Data Mapping & Aggregation)
       let successCnt = 0
       let sunkCostCnt = 0
       let bandwagonCnt = 0
@@ -93,6 +78,7 @@ const AdminDashboard = () => {
       const majorFrequency = {}
 
       realMatrices.forEach(item => {
+        // Thống kê tên ngành học xuất hiện nhiều nhất
         if (item?.target_major) {
           const majorTrimmed = String(item.target_major).trim()
           if (majorTrimmed) {
@@ -103,6 +89,7 @@ const AdminDashboard = () => {
         const decision = item?.final_decision
         const bias = item?.detected_bias
 
+        // Đếm chính xác lượt và phân loại bẫy tư duy
         if (decision === 'BACKUP' || decision === 'CHANGED' || bias === 'DEBIASED_SUCCESS') {
           successCnt++
         } else if (bias === 'SUNK_COST_BIAS') {
@@ -116,6 +103,7 @@ const AdminDashboard = () => {
         }
       })
 
+      // Thống kê Top Ngành được chọn nhiều nhất
       let topMajorName = 'Chưa có'
       let maxFreq = 0
       Object.keys(majorFrequency).forEach(mName => {
@@ -144,7 +132,7 @@ const AdminDashboard = () => {
       })
 
       if (isManualRefresh) {
-        setToastMessage('Đã tải lại dữ liệu mới nhất từ Supabase DB!')
+        setToastMessage('Đã làm mới và khớp nối dữ liệu mới nhất từ Supabase DB!')
         setTimeout(() => setToastMessage(null), 3000)
       }
 
@@ -224,7 +212,7 @@ const AdminDashboard = () => {
     return (
       <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[400px] space-y-3 font-sans">
         <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải danh sách Học sinh & Phản tư từ Supabase DB...</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải và khớp nối dữ liệu từ Supabase DB...</p>
       </div>
     )
   }
@@ -236,10 +224,10 @@ const AdminDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <span>⚙️</span> Bảng Quản Trị & Báo Cáo Thực Tế (Supabase RLS Active)
+              <span>⚙️</span> Bảng Quản Trị & Báo Cáo Thực Tế (Supabase DB)
             </h1>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Hệ thống truy vấn trực tiếp bảng profiles & metacognitive_matrix từ Supabase Database.
+              Hệ thống kết nối trực tiếp CSDL Supabase để tổng hợp lịch sử bài làm Phản tư, chẩn đoán Bẫy Tư duy và dữ liệu đăng ký thực tế.
             </p>
           </div>
 
@@ -321,7 +309,7 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-sm uppercase">
-            RLS Supabase Data
+            Supabase Live Data
           </span>
         </div>
 
@@ -372,14 +360,14 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Bảng Danh Sách Học Sinh & Lịch Sử Phản Tư Thực Tế ghép nối từ profiles + metacognitive_matrix */}
+      {/* Bảng Danh Sách Học Sinh Thực Tế & Khớp Nối Bài Làm Phản Tư */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <span>📋</span>
-            <span>Danh Sách Học Sinh Thực Tế & Tiến Độ Phản Tư ({usersList?.length || 0} Học sinh)</span>
+            <span>Danh Sách Học Sinh Thực Tế & Khớp Nối Bài Phản Tư ({usersList?.length || 0} Học sinh)</span>
           </h3>
-          <span className="text-[11px] font-bold text-brand-600">Ghép nối Profiles & Matrix</span>
+          <span className="text-[11px] font-bold text-brand-600">Profiles ➔ Matrix Data Mapping</span>
         </div>
 
         {!Array.isArray(usersList) || usersList.length === 0 ? (
@@ -389,7 +377,7 @@ const AdminDashboard = () => {
               Chưa có dữ liệu Học sinh thực tế trong CSDL Supabase.
             </p>
             <p className="text-[11px] text-blue-700 font-medium">
-              Vui lòng trải nghiệm tạo tài khoản học sinh và làm Bảng Phản tư để dữ liệu xuất hiện tại đây!
+              Vui lòng đăng ký tài khoản học sinh và làm Bảng Phản tư để dữ liệu xuất hiện tại đây!
             </p>
           </div>
         ) : (
@@ -400,8 +388,8 @@ const AdminDashboard = () => {
                   <th className="py-3 px-4">Họ và tên Học sinh</th>
                   <th className="py-3 px-4">Email / Khối lớp</th>
                   <th className="py-3 px-4">Ngày tham gia</th>
-                  <th className="py-3 px-4">Trắc nghiệm Holland</th>
-                  <th className="py-3 px-4">Ngành đã Phản tư gần nhất</th>
+                  <th className="py-3 px-4">Số bài Phản tư</th>
+                  <th className="py-3 px-4">Ngành dự định gần nhất</th>
                   <th className="py-3 px-4">Bẫy tư duy chẩn đoán</th>
                   <th className="py-3 px-4 text-center">Quyết định sau Phản tư</th>
                 </tr>
@@ -409,10 +397,9 @@ const AdminDashboard = () => {
               <tbody>
                 {usersList.map((u, idx) => {
                   const studentId = u?.id
-                  // Lấy danh sách bài phản tư của học sinh này
-                  const studentMatrices = matricesList.filter(m => m?.student_id === studentId)
+                  // Khớp nối bài làm phản tư với từng học sinh theo student_id / user_id
+                  const studentMatrices = matricesList.filter(m => m?.student_id === studentId || m?.user_id === studentId)
                   const latestMatrix = studentMatrices.length > 0 ? studentMatrices[0] : null
-                  const hollandResult = hollandMap[studentId] || 'Chưa làm'
 
                   return (
                     <tr key={u?.id || idx} className="border-b border-slate-100 text-xs hover:bg-slate-50/50">
@@ -426,21 +413,14 @@ const AdminDashboard = () => {
                       <td className="py-3.5 px-4 font-medium text-slate-500">
                         {u?.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : ''}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border ${
-                          hollandResult === 'Chưa làm'
-                            ? 'bg-slate-100 text-slate-500 border-slate-200'
-                            : 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                        }`}>
-                          {hollandResult}
+                      <td className="py-3.5 px-4 font-bold text-indigo-700">
+                        <span className="px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded-sm">
+                          {studentMatrices.length} bài
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-bold text-brand-600">
                         {latestMatrix?.target_major ? (
-                          <div>
-                            <span>{latestMatrix.target_major}</span>
-                            <div className="text-[10px] text-slate-400 font-medium">({studentMatrices.length} bài phản tư)</div>
-                          </div>
+                          <span>{latestMatrix.target_major}</span>
                         ) : (
                           <span className="text-slate-400 font-normal">Chưa tạo</span>
                         )}
