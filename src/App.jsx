@@ -227,7 +227,17 @@ const App = () => {
             element={
               <AdminProtectedRoute>
                 <MainLayout>
-                  <AdminDashboard />
+                  <AdminDashboard activeTabDefault="counseling" />
+                </MainLayout>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/counseling" 
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard activeTabDefault="counseling" />
                 </MainLayout>
               </AdminProtectedRoute>
             } 
@@ -237,7 +247,7 @@ const App = () => {
             element={
               <AdminProtectedRoute>
                 <MainLayout>
-                  <AdminDashboard />
+                  <AdminDashboard activeTabDefault="counseling" />
                 </MainLayout>
               </AdminProtectedRoute>
             } 

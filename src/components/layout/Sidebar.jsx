@@ -39,6 +39,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const adminLinks = [
     { to: '/admin/dashboard', label: 'Bảng Quản trị Admin', icon: <Settings className="w-4 h-4" /> },
+    { to: '/admin/counseling', label: 'Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
   ]
 
   const getLinksByRole = () => {
