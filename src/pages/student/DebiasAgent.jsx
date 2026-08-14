@@ -59,115 +59,136 @@ const QUICK_NUDGES = [
   }
 ]
 
-// Bộ suy luận Phản tư Chuyên sâu (Debiasing Knowledge Engine) theo khối ngành
+// Bộ suy luận Phản tư Chuyên sâu (Debiasing Knowledge Engine) tuân thủ 3 NGUYÊN TẮC VÀNG
 const generateDebiasingResponse = (userPrompt) => {
   const text = userPrompt.toLowerCase()
 
-  // 1. Phản biện nhóm ngành CNTT / Trí tuệ nhân tạo / Phần mềm
+  // TÍNH NĂNG 1: NGUYÊN TẮC TRUNG LẬP TUYỆT ĐỐI
+  const neutralDisclaimer = `> ⚖️ **CAM KẾT TRUNG LẬP:** Tôi là AI Phản tư, tôi **KHÔNG BAO GIỜ** khuyên bạn NÊN chọn hay KHÔNG NÊN chọn bất kỳ ngành nào. Quyết định cuối cùng hoàn toàn thuộc về bạn dựa trên sự tự đánh giá năng lực và bằng chứng thực tế.`
+
+  // 1. Nhóm bẫy THIÊN LỆCH CHI PHÍ CHÌM (Sunk Cost Fallacy)
+  if (text.includes('chi phí chìm') || text.includes('sunk cost') || text.includes('tiếc') || text.includes('lỡ') || text.includes('chuyên') || text.includes('ôn thi từ')) {
+    return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Trong tâm lý học quyết định, thời gian, công sức và tiền bạc bạn đã đầu tư trong quá khứ là những khoản **chi phí chìm không thể lấy lại**. Việc một học sinh giỏi khối chuyên hay đã dành 2-3 năm ôn luyện một môn học chỉ chứng minh bạn có khả năng tiếp thu môn học đó ở phổ thông, chứ không đảm bảo bạn sẽ hứng thú hay thành công với môi trường làm việc thực tế của ngành trong 40 năm tới.
+
+---
+
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: 天 lệch chi phí chìm (Sunk Cost Fallacy)**
+  Bạn có thể đang rơi vào tâm lý "tiếc công sức đã lỡ đầu tư" nên cố bám trụ lựa chọn cũ, thay vì dũng cảm đánh giá xem ngành đó có thực sự phù hợp với năng lực và giá trị cuộc sống hiện tại của mình hay không.
+* ⚡ **Rủi ro thực tế:** Hơn 60% sinh viên ra trường làm trái ngành hoặc rơi vào trạng thái bế tắc công việc xuất phát từ việc không dám từ bỏ lựa chọn ban đầu khi phát hiện bản thân không phù hợp.
+
+---
+
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về đánh giá năng lực thực chất:** *Nếu gạt bỏ hoàn toàn sự tiếc nuối về công sức ôn thi khối ngành cũ, ngành học nào khiến bạn tự tin nhất về khả năng duy trì sự kiên trì trong 4 năm đại học?*
+2. **Về đối diện rủi ro nghề nghiệp:** *Bạn thà chấp nhận "lãng phí" một vài năm chuẩn bị ở phổ thông để điều chỉnh đúng hướng, hay chấp nhận rủi ro tốn 4 năm đại học và hàng chục năm làm công việc mình không hề hứng thú?*`
+  }
+
+  // 2. Nhóm bẫy HIỆU ỨNG ĐÁM ĐÔNG (Bandwagon Effect)
+  if (text.includes('đám đông') || text.includes('bạn bè') || text.includes('xu hướng') || text.includes('số đông') || text.includes('nhiều người') || text.includes('hot trend') || text.includes('chạy theo')) {
+    return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Thị trường lao động vận hành theo quy luật cung - cầu. Một ngành học đang "hot" ở thời điểm hiện tại thường kéo theo hàng chục ngàn chỉ tiêu tuyển sinh toàn quốc. Khi tất cả cùng tốt nghiệp sau 4 năm, thị trường có nguy cơ chạm ngưỡng bão hòa, dẫn đến tỷ lệ cạnh tranh gay gắt và mức độ đào thải cao đối với nhân sự trung bình.
+
+---
+
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Hiệu ứng Đám đông (Bandwagon Effect)**
+  Bạn có xu hướng cảm thấy an toàn khi chọn ngành theo số đông hoặc theo quyết định của bạn bè xung quanh, dẫn đến việc nhầm lẫn giữa "sự an toàn giả tạo của trào lưu" với "sự phù hợp năng lực cá nhân".
+* ⚡ **Rủi ro thực tế:** Sự thành công trong nghề nghiệp phụ thuộc vào năng lực vượt trội của bản thân trong ngành đó, chứ không phụ thuộc vào độ "hot" của tên ngành trên giấy tờ.
+
+---
+
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về tư duy độc lập:** *Nếu ngành học này hoàn toàn không còn được báo chí khen ngợi và bạn bè xung quanh không ai chọn nữa, bản thân bạn có còn động lực tự thân để học nó không?*
+2. **Về năng lực cạnh tranh thực chất:** *Trong 1.000 sinh viên cùng tốt nghiệp ngành này với bạn, bạn sẽ dựa vào điểm mạnh cốt lõi nào của bản thân để đứng vào top 10% nhận việc làm tốt?*`
+  }
+
+  // 3. Nhóm bẫy THIÊN LỆCH SẴN CÓ (Availability Bias) - Mạng xã hội, TikTok, Tin đồn
+  if (text.includes('tiktok') || text.includes('tin đồn') || text.includes('mạng xã hội') || text.includes('xem video') || text.includes('báo chí') || text.includes('nghe nói') || text.includes('youtube')) {
+    return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Thông tin trên các nền tảng mạng xã hội (TikTok, Facebook, YouTube) thường bị chi phối bởi thuật toán giật gân, tô hồng những câu chuyện thành công cá biệt hoặc đưa ra thông tin một chiều để thu hút lượt xem (view), hoàn toàn không đại diện cho bức tranh toàn cảnh của ngành nghề.
+
+---
+
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Thiên lệch sẵn có (Availability Bias)**
+  Bạn đang đưa ra đánh giá chọn nghề dựa trên các thông tin quá dễ tiếp cận và ấn tượng mạnh trên mạng xã hội, thay vì dựa trên báo cáo dữ liệu tuyển dụng chính thống từ Bộ GD&ĐT hay thị trường lao động.
+* ⚡ **Rủi ro thực tế:** Phớt lờ các mặt tối của ngành như thời gian làm việc OT, áp lực chỉ tiêu KPI, tỷ lệ giữ chân nhân sự và nguy cơ thay đổi công nghệ.
+
+---
+
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về kiểm chứng thông tin:** *Bạn đã tìm đọc báo cáo thị trường lao động chính thống hay trò chuyện trực tiếp với ít nhất 2 người đang đi làm 3-5 năm trong ngành này để nghe về khó khăn của họ chưa?*
+2. **Về khả năng chịu đựng thực tế:** *Nếu môi trường làm việc thực tế khác xa 80% so với những video lung linh trên mạng xã hội, bạn có kế hoạch ứng phó thế nào?*`
+  }
+
+  // 4. Nhóm bẫy THIÊN LỆCH XÁC NHẬN (Confirmation Bias) & Kỳ vọng lương cao
+  if (text.includes('lương') || text.includes('thu nhập') || text.includes('lương cao') || text.includes('khen') || text.includes('chỉ thấy') || text.includes('hoàn hảo') || text.includes('đam đam')) {
+    return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Mức thu nhập cao trong bất kỳ ngành nghề nào cũng luôn đi kèm với yêu cầu trình độ chuyên môn cao, áp lực công việc khốc liệt và thời gian tích lũy kinh nghiệm từ 3-5 năm trở lên. Không có ngành học nào đảm bảo "ra trường mặc nhiên lương hàng chục triệu".
+
+---
+
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Thiên lệch xác nhận (Confirmation Bias)**
+  Bạn có xu hướng chủ động tìm kiếm những bài viết ca ngợi thu nhập và cố tình phớt lờ những cảnh báo về áp lực đào thải, nguy cơ kiệt sức (burnout) cũng như các kỹ năng khắt khe mà ngành yêu cầu.
+* ⚡ **Rủi ro thực tế:** Khi vỡ mộng giữa kỳ vọng thu nhập và thực tế công việc năm nhất đại học, học sinh rất dễ rơi vào trạng thái chán nản và bỏ dở giữa chừng.
+
+---
+
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về đánh giá năng lực thích ứng:** *Ngoài yếu tố thu nhập, bạn có thực sự hứng thú với các nhiệm vụ công việc hằng ngày của ngành này khi phải lặp đi lặp lại suốt 8 tiếng mỗi ngày không?*
+2. **Về kiên trì giai đoạn đầu:** *Nếu trong 2 năm đầu mới ra trường, mức lương chỉ ở mức cơ bản để tích lũy kinh nghiệm, bạn có đủ sự kiên nhẫn và đam mê để theo đuổi đến cùng không?*`
+  }
+
+  // 5. Phản biện nhóm ngành CNTT & AI
   if (text.includes('cntt') || text.includes('công nghệ thông tin') || text.includes('ai') || text.includes('lập trình') || text.includes('phần mềm')) {
-    return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Ngành CNTT & AI đòi hỏi khả năng tự học liên tục, tư duy logic thuật toán khắt khe và sức bền tâm lý trước áp lực công việc (OT, debug, cập nhật công nghệ mới mỗi năm). Thị trường hiện tại đã qua thời kỳ "cứ biết gõ code là lương nghìn đô". Doanh nghiệp hiện tập trung tuyển dụng nhân sự trình độ cao, có năng lực giải quyết bài toán thực tế thay vì lập trình viên sơ cấp.
+    return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Ngành CNTT & AI đòi hỏi khả năng tư duy logic thuật toán khắt khe, tính tự học liên tục và sức bền tâm lý trước áp lực công việc (OT, sửa lỗi code, sự thay đổi công nghệ hằng năm). Thị trường hiện nay thắt chặt tuyển dụng lập trình viên trình độ cơ bản và ưu tiên nhân sự chuyên sâu có tư duy giải quyết vấn đề.
 
 ---
 
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Hiệu ứng Đám đông (Bandwagon Effect):** Bạn có thể đang bị hấp dẫn bởi truyền thông báo chí liên tục giật gân về "lương hàng chục triệu khi mới ra trường", mà bỏ qua tỷ lệ đào thải lên tới 30-40% ở các năm đầu Đại học do ngợp toán rời rạc và thuật toán.
-* **Sự đe dọa từ AI & Automation:** Các công cụ AI như ChatGPT, GitHub Copilot đang thay thế trực tiếp các công việc lập trình cơ bản (CRUD, HTML/CSS đơn giản). Nếu chỉ dừng ở mức học vẹt code, bạn sẽ đối mặt với nguy cơ thất nghiệp ngay khi ra trường.
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **NHẬN DIỆN BẪY TÂM LÝ: Thiên lệch sẵn có & Hiệu ứng Đám đông**
+  Bạn có thể đang bị thu hút bởi các tiêu đề truyền thông "ngành CNTT khát nhân lực lương khủng", mà bỏ qua thực tế tỷ lệ sinh viên bỏ cuộc hoặc chuyển ngành trong 2 năm đầu đại học do không theo nổi các môn Toán rời rạc, Cấu trúc dữ liệu và Giải thuật.
+* ⚡ **Rủi ro thực tế:** Sự phát triển của các công cụ AI (GitHub Copilot, ChatGPT) đang tự động hóa mạnh mẽ các công việc gõ code đơn giản.
 
 ---
 
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về khả năng chịu đựng áp lực:** *Bạn có sẵn sàng dành 8-10 tiếng mỗi ngày ngồi trước màn hình máy tính để tự mò mẫm sửa lỗi code mà không bỏ cuộc khi không có ai hướng dẫn không?*
-2. **Về kế hoạch hành động thực tế:** *Ngoài lý do "thu nhập cao", bạn đã từng tự tay viết một đoạn mã nhỏ hay cài đặt một phần mềm phức tạp để kiểm chứng mức độ thích thú thực sự của mình chưa?*`
-  }
-
-  // 2. Phản biện nhóm ngành Y Dược / Bác sĩ / Dược sĩ
-  if (text.includes('y') || text.includes('bác sĩ') || text.includes('y dược') || text.includes('dược')) {
-    return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Ngành Y Dược đòi hỏi thời gian đào tạo kéo dài (6 năm đại học + 18 tháng thực hành chứng chỉ hành nghề + 2-3 năm chuyên khoa 1/thạc sĩ), chi phí học tập cao và cường độ trực đêm dày đặc. Đây là ngành yêu cầu trách nhiệm đạo đức tối cao vì mọi sai sót đều ảnh hưởng trực tiếp đến tính mạng con người.
-
----
-
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Bẫy Chi Phí Chìm (Sunk Cost Fallacy):** Nhiều học sinh thi Y vì áp lực vọng ước gia đình hoặc vì đã lỡ học chuyên Sinh nhiều năm, dẫu biết bản thân sợ máu hoặc không chịu được áp lực trực đêm.
-* **Thực tế thu nhập những năm đầu:** Truyền thông thường tôn vinh thu nhập của các Bác sĩ chuyên khoa lâu năm, nhưng phớt lờ thực tế rằng 6-8 năm đầu tiên sau khi ra trường, mức lương Bác sĩ trẻ tại các bệnh viện công thường chỉ ở mức cơ bản, trong khi khối lượng công việc cực kỳ áp lực.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về khả năng hy sinh cá nhân:** *Bạn có chấp nhận việc bạn bè đồng lứa các ngành khác đã ổn định tài chính và đi du lịch, trong khi bạn vẫn phải thức đêm học bài và đi trực bệnh viện ở tuổi 25-27 không?*
-2. **Về tâm lý bền bỉ:** *Động lực lớn nhất giúp bạn vượt qua những đêm trực 24 giờ liên tục là gì — sự công nhận của xã hội hay mong muốn chữa bệnh thực sự?*`
-  }
-
-  // 3. Phản biện chọn ngành theo Đám đông / Xu hướng
-  if (text.includes('đám đông') || text.includes('xu hướng') || text.includes('số đông') || text.includes('nhiều người')) {
-    return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Một ngành học "hot" ở thời điểm hiện tại chưa chắc sẽ còn "hot" sau 4-5 năm nữa khi bạn ra trường. Khi hàng ngàn sinh viên cùng ồ ạt đổ xô vào một ngành, thị trường lao động sẽ nhanh chóng chạm ngưỡng bão hòa, dẫn đến cuộc cạnh tranh khốc liệt và giảm giá trị bằng cấp.
-
----
-
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Thiên lệch Xác nhận (Confirmation Bias):** Bạn có xu hướng chỉ đọc các bài viết khen ngợi ngành này và cố tình phớt lờ các thông báo tuyển dụng đang thắt chặt hoặc bài đăng than thở thất nghiệp của các anh chị đi trước.
-* **Đánh tráo khái niệm giữa "Ngành Hot" và "Bản thân Phù hợp":** Sự thành công trong sự nghiệp phụ thuộc 80% vào mức độ giỏi chuyên môn và sự phù hợp cá nhân, chứ không phụ thuộc vào tên ngành có "kêu" hay không.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về tư duy độc lập:** *Nếu ngành này hoàn toàn không còn được báo chí nhắc tới và bạn bè xung quanh không ai đăng ký nữa, bạn có còn muốn học nó không?*
-2. **Về năng lực cạnh tranh:** *Trong 1.000 sinh viên cùng tốt nghiệp ngành này với bạn, bạn sẽ dựa vào điểm mạnh đặc biệt nào của bản thân để vượt lên top 10% nhận việc làm tốt?*`
-  }
-
-  // 4. Phản biện bẫy Kỳ vọng Lương cao
-  if (text.includes('lương') || text.includes('thu nhập') || text.includes('lương cao') || text.includes('tiền')) {
-    return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Mức lương niêm yết trên các bài báo tuyển dụng thường là con số dành cho Nhân sự xuất sắc (Top 5-10%) có từ 3-5 năm kinh nghiệm thực chiến. Đối với sinh viên mới tốt nghiệp, mức lương khởi điểm phụ thuộc hoàn toàn vào giá trị thực tế bạn đóng góp được cho doanh nghiệp, chứ không phụ thuộc vào bảng tên ngành.
-
----
-
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Bẫy Kỳ Vọng Phóng Đại (Optimism Bias):** Rất nhiều bạn trẻ lầm tưởng "học ngành X ra chắc chắn lương 20-30 triệu", nhưng không biết rằng để đạt con số đó cần đánh đổi bằng áp lực doanh số (KPI), thời gian làm việc 12 tiếng/ngày và nguy cơ cháy sạch năng lượng (Burnout).
-* **Bỏ qua chi phí cơ hội & sự ổn định:** Ngành lương cao thường đi kèm rủi ro đào thải cao và tốc độ lạc hậu kiến thức cực nhanh.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về giá trị lao động:** *Nếu trong 2 năm đầu ra trường mức lương chỉ đủ trang trải cuộc sống cơ bản (7-9 triệu/tháng), bạn có đủ kiên nhẫn để tiếp tục tích lũy năng lực không?*
-2. **Về bản chất công việc:** *Bạn chọn ngành này vì công việc hằng ngày của nó làm bạn hứng thú, hay chỉ vì con số thu nhập mà người khác hứa hẹn?*`
-  }
-
-  // 5. Phản biện Bẫy Chi phí chìm (Sunk Cost)
-  if (text.includes('chi phí chìm') || text.includes('sunk cost') || text.includes('học chuyên') || text.includes('lỡ')) {
-    return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Chi phí chìm (Sunk Cost) là những thời gian, tiền bạc, công sức bạn đã bỏ ra trong quá khứ và KHÔNG THỂ LẤY LẠI ĐƯỢC. Tiếp tục đầu tư 4 năm Đại học vào một ngành không phù hợp chỉ vì "lỡ học khối này từ cấp 3" sẽ khiến bạn tốn thêm 4 năm tuổi trẻ và hàng trăm triệu đồng phí tổn tương lai.
-
----
-
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Bẫy Ngụy Biện Tiếc Nuối:** Tư duy "đã lỡ theo thì phải theo tới cùng" là nguyên nhân chính khiến hơn 60% sinh viên ra trường làm trái ngành hoặc rơi vào trạng thái bế tắc công việc.
-* **Sự nhầm lẫn giữa Kỹ năng đã học và Đam mê tương lai:** Việc bạn học giỏi một môn ở phổ thông (VD: giỏi Tiếng Anh) chỉ là công cụ hỗ trợ, không đồng nghĩa với việc bạn bắt buộc phải trở thành Giáo viên hay Biên dịch viên nếu không thực sự muốn.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về dũng khí thay đổi:** *Nếu gạt bỏ toàn bộ sự kỳ vọng của bố mẹ và công sức ôn thi khối ngành cũ, ngành học thực sự làm bạn tò mò muốn khám phá nhất là gì?*
-2. **Về bài toán tương lai:** *Bạn thà chấp nhận "lãng phí" 1-2 năm cấp 3 để chọn đúng đường, hay thà chấp nhận lãng phí 40 năm làm công việc mình chán ghét?*`
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về năng lực giải quyết vấn đề:** *Bạn có sẵn sàng ngồi liên tục 6-8 tiếng tự mò mẫm tài liệu tiếng Anh để tìm nguyên nhân một lỗi code nhỏ mà không bỏ cuộc không?*
+2. **Về kiểm chứng thực tế:** *Bạn đã từng tự tay thử học một khóa lập trình nhập môn miễn phí để xem bản thân thực sự hứng thú hay mệt mỏi với công việc này chưa?*`
   }
 
   // 6. Phản biện chung mặc định cho mọi ngành khác
-  return `### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Để đánh giá chính xác ngành học này, bạn cần tách rời bức tranh quảng cáo của các trường đại học với môi trường làm việc thực tế tại doanh nghiệp. Mọi ngành nghề hiện đại đều đòi hỏi sự kết hợp giữa Kiến thức chuyên môn + Kỹ năng mềm (giao tiếp, làm việc nhóm) + Khả năng thích ứng với công nghệ.
+  return `${neutralDisclaimer}
+
+### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
+Mọi ngành học trong kỷ nguyên số đều có hai mặt: cơ hội phát triển sự nghiệp đi kèm với áp lực cạnh tranh và yêu cầu thích ứng công nghệ. Để đánh giá đúng một ngành, bạn cần tách biệt giữa thông tin quảng cáo tuyển sinh với thực tế công việc hằng ngày của người trong nghề.
 
 ---
 
-### ⚠️ PHẦN 2: CHỈ RA RỦI RO & BẪY TÂM LÝ BỊ GIẤU KÍN
-* **Bẫy Thiên Lệch Xác Nhận (Confirmation Bias):** Hãy cẩn trọng xem bạn có đang chỉ đi tìm kiếm những thông tin ủng hộ lựa chọn của mình mà cố tình ngó lơ các cảnh báo rủi ro về tỷ lệ cạnh tranh và áp lực nghề nghiệp hay không.
-* **Áp lực thích nghi dài hạn:** Không có ngành học nào cho bạn một sự đảm bảo trọn đời. Giá trị của bạn nằm ở năng lực giải quyết vấn đề chứ không chỉ ở tấm bằng cử nhân.
+### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
+* 🚨 **NHẬN DIỆN BẪY TÂM LÝ: Thiên lệch xác nhận (Confirmation Bias) & Bẫy Đám đông**
+  Hãy đối chiếu xem bạn đang chọn ngành dựa trên hiểu biết sâu sắc về năng lực bản thân, hay chỉ vì bị ảnh hưởng bởi lời khuyên của người khác và các thông tin màu hồng thiếu kiểm chứng.
+* ⚡ **Rủi ro thực tế:** Việc chọn ngành không dựa trên năng lực cốt lõi sẽ khiến bạn gặp khó khăn trong việc duy trì động lực học tập và tạo dựng lợi thế cạnh tranh sau khi ra trường.
 
 ---
 
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ TỰ SUY NGẪM
-1. **Về minh chứng thực tế:** *Bạn đã tìm hiểu kỹ mô tả công việc (Job Description) thực tế của ngành này trên các trang tuyển dụng để biết người đi làm hằng ngày làm gì chưa?*
-2. **Về phương án dự phòng:** *Nếu nguyện vọng 1 ngành này không đạt điểm chuẩn, bạn đã chuẩn bị phương án dự phòng NGUYỆN VỌNG 2 nào thực sự phù hợp với năng lực của mình chưa?*`
+### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
+1. **Về đánh giá sự phù hợp:** *Điểm mạnh nhất về năng lực hoặc tính cách của bạn có đóng góp trực tiếp vào công việc hằng ngày của ngành này không?*
+2. **Về phương án dự phòng:** *Nếu ngành này có sự thay đổi lớn về nhu cầu tuyển dụng trong 4 năm tới, bạn có phương án dự phòng NGUYỆN VỌNG 2 nào thực sự an toàn và phù hợp không?*`
 }
 
 const DebiasAgent = () => {
