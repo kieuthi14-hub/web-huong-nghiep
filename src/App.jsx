@@ -14,6 +14,7 @@ import Register from './pages/auth/Register'
 import StudentDashboard from './pages/student/StudentDashboard'
 import HollandTest from './pages/student/HollandTest'
 import DebiasMatrix from './pages/student/DebiasMatrix'
+import DebiasAgent from './pages/student/DebiasAgent'
 import MajorExplorer from './pages/student/MajorExplorer'
 import UniversityExplorer from './pages/student/UniversityExplorer'
 import RoadmapBuilder from './pages/student/RoadmapBuilder'
@@ -154,6 +155,16 @@ const App = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/debias-agent" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasAgent />
                 </MainLayout>
               </ProtectedRoute>
             } 
