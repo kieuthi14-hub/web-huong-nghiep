@@ -284,7 +284,7 @@ const HollandTest = () => {
             <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4">
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-2">
                 <GraduationCap className="w-4.5 h-4.5 text-brand-600" />
-                Gợi ý ngành học phù hợp nhất từ Supabase DB
+                Gợi ý ngành đào tạo phù hợp nhất với thiên hướng của bạn
               </h3>
               {recommendedMajors.length > 0 ? (
                 <div className="space-y-3">
@@ -303,9 +303,9 @@ const HollandTest = () => {
                       </div>
                       <button
                         type="button"
-                        onClick={() => navigate(`/student/debias-matrix?major=${encodeURIComponent(major.name)}`)}
+                        onClick={() => navigate(`/student/reflection?major=${encodeURIComponent(major.name)}`)}
                         className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] rounded-sm transition-all flex items-center gap-1 shadow-sm flex-shrink-0"
-                        title="Đưa ngành học này vào Bảng Nhìn Lại để kiểm tra lựa chọn"
+                        title="Đưa ngành học này vào Nhật ký Phản tư để kiểm tra lựa chọn"
                       >
                         🔍 Kiểm tra lựa chọn này ngay
                       </button>

@@ -319,17 +319,30 @@ const DebiasMatrix = () => {
     <div className="p-6 max-w-6xl mx-auto space-y-8 animate-reveal">
       {/* Page Header */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-brand-50 border border-brand-100 rounded-sm text-brand-600">
-            <Brain className="w-7 h-7" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-brand-50 border border-brand-100 rounded-sm text-brand-600">
+              <Brain className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                📝 Nhật Ký Phản Tư Ra Quyết Định
+              </h1>
+              <p className="text-xs text-slate-500 font-semibold mt-1">
+                Khung tự đánh giá và giải trừ 4 bẫy thiên lệch tâm lý để đưa ra quyết định chọn nghề vững chắc dựa trên bằng chứng thực tế.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              🧠 Bảng Nhìn Lại & Kiểm Tra Chọn Nghề (Phản tư)
-            </h1>
-            <p className="text-xs text-slate-500 font-semibold mt-1">
-              Công cụ kích hoạt tư duy nhìn lại giúp bạn nhận diện rủi ro, kiểm chứng thông tin và vượt qua các Bẫy Tư Duy Chọn Nghề trước khi ra quyết định.
-            </p>
+
+          {/* Quick Action to Roadmap */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <a
+              href="/student/roadmap"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-sm transition-all shadow-2xs"
+            >
+              <Target className="w-4 h-4 text-brand-600" />
+              <span>Lộ trình Mục tiêu (3 Khối lớp)</span>
+            </a>
           </div>
         </div>
 

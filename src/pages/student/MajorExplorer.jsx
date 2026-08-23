@@ -438,11 +438,11 @@ const MajorExplorer = () => {
                 <div className="pt-3 border-t border-slate-100">
                   <Button
                     variant="primary"
-                    onClick={() => navigate(`/student/debias-matrix?major=${encodeURIComponent(majorDetail.name)}`)}
+                    onClick={() => navigate(`/student/reflection?major=${encodeURIComponent(majorDetail.name)}`)}
                     className="w-full font-bold text-xs uppercase tracking-wider py-3 px-4 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all"
                   >
                     <Brain className="w-4 h-4" />
-                    🔍 Kiểm tra lựa chọn này ngay
+                    🔍 Kiểm tra lựa chọn này tại Nhật ký Phản tư
                   </Button>
                 </div>
               </div>
@@ -457,14 +457,52 @@ const MajorExplorer = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-reveal">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-          <GraduationCap className="w-5 h-5 text-brand-600" />
-          Kho cơ sở dữ liệu Ngành học (Supabase DB)
-        </h1>
-        <p className="text-xs text-slate-500 font-semibold mt-1">
-          Tra cứu, tìm kiếm và lọc danh mục ngành đào tạo trực tiếp từ bảng majors trong PostgreSQL Supabase.
-        </p>
+      {/* Banner Cú Hích (Nudge) Phản Tư Khách Quan */}
+      <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/5 border-l-4 border-amber-500 p-4 sm:p-5 rounded-r-sm shadow-2xs">
+        <div className="flex items-start gap-3.5">
+          <div className="p-2 bg-amber-500 text-slate-950 rounded-sm font-black flex-shrink-0 mt-0.5 shadow-xs text-base">
+            💡
+          </div>
+          <div>
+            <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+              <span>CÚ HÍCH ĐỐI CHỨNG (FACT-CHECK NUDGE)</span>
+            </h4>
+            <p className="text-xs text-amber-900 font-bold mt-1 leading-relaxed">
+              Đừng chỉ xem thông tin nổi bật trên mạng xã hội! Hãy đối chiếu chương trình đào tạo, học phí và yêu cầu thực tế để tránh bẫy Thiên lệch sẵn có.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Header Trang & Thanh Tab Chuyển Đổi Nhanh */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-5 rounded-sm shadow-xs">
+        <div>
+          <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-brand-600" />
+            Thư viện Dữ liệu Tuyển sinh & Đào tạo Thực tế
+          </h1>
+          <p className="text-xs text-slate-500 font-semibold mt-1">
+            Tra cứu thông tin chương trình đào tạo, kỹ năng bắt buộc, mức lương khởi điểm và cơ hội nghề nghiệp thực tế.
+          </p>
+        </div>
+
+        {/* Tab Switcher giữa Ngành học và Trường học */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-sm border border-slate-200 self-start md:self-auto flex-shrink-0">
+          <Link
+            to="/student/majors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xs text-xs font-bold bg-white text-brand-700 shadow-xs border border-slate-200"
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Ngành đào tạo</span>
+          </Link>
+          <Link
+            to="/student/universities"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xs text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-all"
+          >
+            <School className="w-3.5 h-3.5" />
+            <span>Trường & Điểm chuẩn</span>
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 p-4 rounded-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-center">

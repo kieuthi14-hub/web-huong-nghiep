@@ -495,10 +495,10 @@ const CounselingBooking = () => {
       <div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-brand-600" />
-          📅 Đặt Lịch Tư Vấn Định Hướng 1-1 Với Chuyên Gia
+          🎓 Tư Vấn 1-1 Đối Chứng Thực Tế Với Chuyên Gia & Mentor
         </h1>
         <p className="text-xs text-slate-500 font-semibold mt-1">
-          Đăng ký lịch hẹn tư vấn cá nhân với Thầy Cô Cố vấn trường hoặc Mạng lưới Mentor Sinh viên từ Supabase DB.
+          Đăng ký lịch hẹn tư vấn cá nhân với Thầy Cô Cố vấn trường hoặc Mạng lưới Mentor Sinh viên đối chứng thực tế.
         </p>
       </div>
 

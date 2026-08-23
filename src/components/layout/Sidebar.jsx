@@ -25,14 +25,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   const isAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com'
 
   const studentLinks = [
-    { to: '/student/dashboard', label: 'Bảng tổng quan', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { to: '/student/roadmap', label: 'Lộ trình Hướng nghiệp', icon: <Milestone className="w-4 h-4" /> },
-    { to: '/student/holland-test', label: 'Trắc nghiệm Holland', icon: <ClipboardList className="w-4 h-4" /> },
-    { to: '/student/debias-matrix', label: 'Bảng Nhìn Lại & Kiểm Tra Chọn Nghề', icon: <Brain className="w-4 h-4" /> },
-    { to: '/student/debias-agent', label: '🤖 AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400" /> },
-    { to: '/student/majors', label: 'Tra cứu Ngành học', icon: <GraduationCap className="w-4 h-4" /> },
-    { to: '/student/universities', label: 'Tra cứu Trường học', icon: <School className="w-4 h-4" /> },
-    { to: '/student/booking', label: 'Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
+    { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình Phản tư', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
+    { to: '/student/holland', label: '🧭 Trắc nghiệm Thiên hướng (Holland)', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
+    { to: '/student/debias-agent', label: '🤖 AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
+    { to: '/student/fact-check', label: '🔍 Đối chứng Dữ liệu Khách quan', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
+    { to: '/student/booking', label: '🎓 Tư vấn 1-1 Đối chứng Thực tế', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
+    { to: '/student/reflection', label: '📝 Nhật ký Phản tư Ra Quyết định', icon: <Brain className="w-4 h-4 text-rose-400" /> },
   ]
 
   const counselorLinks = [

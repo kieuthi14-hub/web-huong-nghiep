@@ -15,6 +15,7 @@ import StudentDashboard from './pages/student/StudentDashboard'
 import HollandTest from './pages/student/HollandTest'
 import DebiasMatrix from './pages/student/DebiasMatrix'
 import DebiasAgent from './pages/student/DebiasAgent'
+import FactCheckHub from './pages/student/FactCheckHub'
 import MajorExplorer from './pages/student/MajorExplorer'
 import UniversityExplorer from './pages/student/UniversityExplorer'
 import RoadmapBuilder from './pages/student/RoadmapBuilder'
@@ -128,13 +129,36 @@ const App = () => {
             } 
           />
 
-          {/* Student Routes */}
+          {/* Student Routes - Khớp 100% Mô hình Can thiệp Giảm Thiên Lệch */}
+          {/* 1. Tổng quan Lộ trình Phản tư */}
           <Route 
             path="/student/dashboard" 
             element={
               <ProtectedRoute>
                 <MainLayout>
                   <StudentDashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* 2. Trắc nghiệm Thiên hướng (Holland) */}
+          <Route 
+            path="/student/holland" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <HollandTest />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/assessment" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <HollandTest />
                 </MainLayout>
               </ProtectedRoute>
             } 
@@ -149,22 +173,26 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/student/debias-matrix" 
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
-              </ProtectedRoute>
-            } 
-          />
+
+          {/* 3. AI Tham vấn Phản tư */}
           <Route 
             path="/student/debias-agent" 
             element={
               <ProtectedRoute>
                 <MainLayout>
                   <DebiasAgent />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* 4. Đối chứng Dữ liệu Khách quan */}
+          <Route 
+            path="/student/fact-check" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
                 </MainLayout>
               </ProtectedRoute>
             } 
@@ -189,16 +217,8 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/student/roadmap" 
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <RoadmapBuilder />
-                </MainLayout>
-              </ProtectedRoute>
-            } 
-          />
+
+          {/* 5. Tư vấn 1-1 Đối chứng Thực tế */}
           <Route 
             path="/student/booking" 
             element={
@@ -215,6 +235,48 @@ const App = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <CounselingBooking />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          {/* 6. Bảng Nhật ký Phản tư Ra Quyết định & Lộ trình */}
+          <Route 
+            path="/student/reflection" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/my-path" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/debias-matrix" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/roadmap" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <RoadmapBuilder />
                 </MainLayout>
               </ProtectedRoute>
             } 
