@@ -28,118 +28,122 @@ import {
 } from 'lucide-react'
 
 // =========================================================================
-// 1. DỮ LIỆU 4 BÀI TẬP TÁC VỤ TÌNH HUỐNG (4 BEHAVIORAL SCENARIOS)
+// 1. DỮ LIỆU 4 BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ (TRUNG TÍNH, KHOA HỌC)
 // =========================================================================
 const SCENARIO_QUESTIONS = [
   {
     id: 'sc-1',
-    title: 'Tình huống 1: Bẫy Đám Đông & Mạng Xã Hội (TikTok Trend)',
-    biasLabel: 'BẪY PHONG TRÀO / HIỆU ỨNG BẦY ĐÀN',
-    badgeClass: 'bg-blue-100 text-blue-900 border-blue-300',
-    context: 'Bạn tình cờ lướt thấy video triệu view trên TikTok khẳng định: "Ngành Logistics & Chuỗi cung ứng hiện tại ra trường lương khởi điểm 50 triệu/tháng, chỉ cần biết tiếng Anh cơ bản là các tập đoàn lớn săn đón ngay".',
-    question: 'Hành động phản tư khách quan và hợp lý nhất của bạn là gì?',
+    biasCode: 'BANDWAGON_BIAS',
+    title: '📱 Tình huống 1: Xu hướng nghề nghiệp nổi bật trên Mạng xã hội',
+    tagLabel: 'Tình huống thực tế 1',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
+    context: 'Bạn tình cờ theo dõi một video clip nhận được lượng tương tác rất lớn trên mạng xã hội, chia sẻ rằng: "Ngành Logistics & Quản lý Chuỗi cung ứng hiện có mức thu nhập khởi điểm 50 triệu/tháng và các doanh nghiệp lớn luôn săn đón ngay khi ra trường".',
+    question: 'Theo bạn, hướng tiếp cận và xử lý thông tin phù hợp nhất là gì?',
     options: [
       {
         id: 'A',
-        text: 'A. Bấm lưu clip lại và quyết định chọn ngay ngành Logistics làm Nguyện vọng 1 vì tin đây là ngành hái ra tiền của tương lai.',
+        text: 'A. Lưu lại video và quyết định đăng ký ngay ngành Logistics làm Nguyện vọng 1 vì tin đây là ngành học có thu nhập cao nhất hiện nay.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang mắc Bẫy Đám đông và Bẫy Thiên lệch xác nhận (tin ngay vào thông tin đơn chiều trên mạng xã hội mà chưa đối chứng).'
+        biasFeedback: '⚠️ Lựa chọn này phản ánh việc tiếp nhận thông tin đơn chiều từ mạng xã hội khi chưa có số liệu thống kê và đối chứng thực tế.'
       },
       {
         id: 'B',
-        text: 'B. Tìm xem thêm các video khác của cùng TikToker này để xem thêm những lời khen ngợi tương tự về ngành.',
+        text: 'B. Tìm xem thêm các bài đăng và video clip khác từ cùng người sáng tạo nội dung để xem các nhận xét tương tự.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang tiếp tục tìm kiếm thông tin củng cố kỳ vọng cảm tính thay vì tìm kiếm bằng chứng phản biện khách quan.'
+        biasFeedback: '⚠️ Lựa chọn này có xu hướng tìm kiếm thêm các nội dung củng cố ấn tượng ban đầu thay vì tìm kiếm dữ liệu đối chứng độc lập.'
       },
       {
         id: 'C',
-        text: 'C. Tra cứu báo cáo thị trường lao động chính thống (VietnamWorks, Navigos, Tổng cục Thống kê), xem chuẩn đầu ra thực tế và tham vấn anh chị sinh viên/chuyên gia đang làm trong ngành.',
+        text: 'C. Tra cứu các báo cáo thị trường lao động chính thống (VietnamWorks, Navigos, Tổng cục Thống kê), xem chuẩn đầu ra thực tế và tham vấn ý kiến từ sinh viên hoặc chuyên gia đang làm việc trong ngành.',
         isCorrect: true,
-        biasFeedback: '🎉 CHÍNH XÁC! Đây là phản xạ Đối chứng Dữ liệu Khách quan giúp bạn không bị truyền thông mạng xã hội dắt mũi.'
+        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Đây là phương pháp đối chứng dữ liệu khoa học, kết hợp giữa số liệu thị trường chính thống và trải nghiệm thực tế để đưa ra quyết định vững chắc.'
       }
     ]
   },
   {
     id: 'sc-2',
-    title: 'Tình huống 2: Bẫy Chi Phí Chìm (Sunk Cost Fallacy)',
-    biasLabel: 'BẪY TIẾC CÔNG SỨC ĐÃ BỎ RA',
-    badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-    context: 'Bạn đã dành gần 3 năm THPT tập trung học và luyện thi khối A00 (Toán - Lý - Hóa) theo định hướng ban đầu. Tuy nhiên, đến học kỳ 1 lớp 12, bạn nhận ra bản thân có tố chất vượt trội về tư duy thẩm mỹ, sáng tạo nội dung và không hề thích công việc kỹ thuật cơ khí thuần túy.',
-    question: 'Quyết định phản tư dũng cảm và chuẩn xác nhất là gì?',
+    biasCode: 'SUNK_COST_BIAS',
+    title: '📚 Tình huống 2: Cân nhắc sự phù hợp giữa Tổ hợp môn đã học và Sở thích',
+    tagLabel: 'Tình huống thực tế 2',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
+    context: 'Bạn đã dành gần 3 năm THPT tập trung học và ôn luyện theo tổ hợp môn Khoa học Tự nhiên (Toán - Lý - Hóa). Tuy nhiên, gần đây bạn nhận ra bản thân có tố chất nổi trội về tư duy thẩm mỹ, sáng tạo nội dung và yêu thích môi trường làm việc linh hoạt hơn kỹ thuật thuần túy.',
+    question: 'Phương án xử lý thấu đáo và phù hợp nhất với bạn là gì?',
     options: [
       {
         id: 'A',
-        text: 'A. Cố gượng ép đăng ký ngành Kỹ thuật cơ khí vì tiếc 3 năm ôn thi khối A00 và sợ phí công sức, tiền bạc bố mẹ đã đầu tư.',
+        text: 'A. Tiếp tục đăng ký ngành Kỹ thuật cơ khí vì tiếc 3 năm ôn thi khối Tự nhiên và không muốn lãng phí thời gian, công sức đã đầu tư.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang mắc Bẫy Chi phí chìm (Sunk Cost Fallacy): Cố bám víu lấy quá khứ để đưa ra quyết định sai lầm cho 40 năm sự nghiệp phía trước.'
+        biasFeedback: '⚠️ Lựa chọn này chịu ảnh hưởng bởi việc tiếc nuối thời gian đã học trong quá khứ thay vì đánh giá sự phù hợp năng lực lâu dài cho tương lai.'
       },
       {
         id: 'B',
-        text: 'B. Buông xuôi, chán nản việc học và phó mặc cho việc thi cử đến đâu thì đến.',
+        text: 'B. Cảm thấy phân vân, giảm động lực học tập và để việc chọn ngành phụ thuộc vào kết quả thi cuối cùng.',
         isCorrect: false,
-        biasFeedback: '⚠️ Đây là phản ứng tránh né tiêu cực, không giải quyết được bài toán hướng nghiệp thực chất.'
+        biasFeedback: '⚠️ Đây là phản ứng bị động, chưa giúp bạn chủ động tìm ra giải pháp kết hợp hiệu quả giữa thế mạnh và sở thích.'
       },
       {
         id: 'C',
-        text: 'C. Đánh giá lại năng lực thực chất, tìm kiếm các ngành học giao thoa (như Thiết kế Đồ họa, UI/UX, Truyền thông Đa phương tiện) có sử dụng tổ hợp thế mạnh để chuyển hướng linh hoạt mà không lãng phí kiến thức đã tích lũy.',
+        text: 'C. Đánh giá lại năng lực thực chất, tìm hiểu các ngành học giao thoa (như Thiết kế Đồ họa số, UI/UX, Truyền thông Đa phương tiện) có thể tận dụng tư duy logic của khối Tự nhiên kết hợp với sở thích sáng tạo để chuyển hướng linh hoạt.',
         isCorrect: true,
-        biasFeedback: '🎉 TUYỆT VỜI! Bạn đã dũng cảm vượt qua Bẫy Chi phí chìm để tái định vị mục tiêu nghề nghiệp thực chất.'
+        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Bạn đã biết đánh giá lại năng lực thực chất, kết hợp hiệu quả giữa nền tảng tư duy logic sẵn có với định hướng phát triển mới.'
       }
     ]
   },
   {
     id: 'sc-3',
-    title: 'Tình huống 3: Bẫy Cảm Xúc & Phim Ảnh (Emotional Bias)',
-    biasLabel: 'BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY',
-    badgeClass: 'bg-rose-100 text-rose-900 border-rose-300',
-    context: 'Bạn luôn muốn thi vào ngành Bác sĩ Đa khoa vì từ lớp 6 xem phim y khoa thấy hình ảnh bác sĩ áo trắng rất ngầu và được xã hội kính trọng. Tuy nhiên thực tế bạn lại rất sợ máu và điểm tổng kết môn Sinh học lớp 11, 12 chỉ đạt 6.2.',
-    question: 'Bạn nên phản tư và lựa chọn như thế nào?',
+    biasCode: 'EMOTIONAL_BIAS',
+    title: '🎬 Tình huống 3: Động lực chọn nghề từ Truyền thông và Hình tượng xã hội',
+    tagLabel: 'Tình huống thực tế 3',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
+    context: 'Bạn có mong muốn theo học ngành Y khoa từ những năm THCS sau khi xem các bộ phim truyền hình về đề tài y tế. Tuy nhiên trong thực tế, bạn khá e ngại môi trường bệnh viện và điểm tổng kết môn Sinh học lớp 11, 12 ở mức trung bình khá (khoảng 6.2).',
+    question: 'Cách nhìn nhận khách quan và thực tế nhất trong trường hợp này là gì?',
     options: [
       {
         id: 'A',
-        text: 'A. Bỏ qua điểm Sinh học và nỗi sợ máu, vẫn quyết tâm nộp nguyện vọng 1 Bác sĩ Đa khoa vì nghĩ "chỉ cần có đam mê từ bé là sẽ vượt qua tất cả".',
+        text: 'A. Đặt ngay ngành Bác sĩ Đa khoa làm nguyện vọng ưu tiên duy nhất vì tin rằng lòng yêu thích từ nhỏ sẽ giúp vượt qua mọi khó khăn.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang bị Bẫy Cảm xúc Cố định che mờ năng lực thực tế. Đam mê không có nền tảng năng lực dễ dẫn tới thất bại hoặc đào thải sớm.'
+        biasFeedback: '⚠️ Lựa chọn này phản ánh việc đưa ra quyết định dựa trên cảm xúc yêu thích hình tượng bên ngoài hơn là đánh giá toàn diện năng lực học tập thực tế.'
       },
       {
         id: 'B',
-        text: 'B. Tự trấn an bản thân rằng lên Đại học Y sẽ tự hết sợ máu và tin rằng mình sẽ may mắn đạt điểm cao trong kỳ thi.',
+        text: 'B. Cho rằng khi bước vào môi trường đại học sẽ tự thích nghi và hy vọng điểm thi thực tế sẽ cao hơn quá trình học bạ.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang mắc thêm Bẫy Lạc quan tếu (Optimism Bias) khi trông chờ vào may mắn thay vì chuẩn bị phương án thực tế.'
+        biasFeedback: '⚠️ Lựa chọn này mang tính kỳ vọng chủ quan, chưa có giải pháp cụ thể để bù đắp điểm số và rào cản thực tế.'
       },
       {
         id: 'C',
-        text: 'C. Tách bạch giữa hình tượng phim ảnh với thực tế nghề y; đối chiếu lại năng lực Sinh học để tìm các ngành khối sức khỏe bổ trợ (Quản lý Bệnh viện, Kỹ thuật Y sinh, Thiết bị Y tế) hoặc đặt ngành Y vào nhóm nguyện vọng có phương án dự phòng an toàn.',
+        text: 'C. Phân biệt rõ nét giữa ấn tượng truyền thông với yêu cầu đào tạo thực tế; đối chiếu lại năng lực môn Sinh học để xem xét thêm các ngành khối sức khỏe bổ trợ (như Quản lý Y tế, Kỹ thuật Y sinh, Thiết bị Y tế) hoặc chuẩn bị phương án dự phòng an toàn.',
         isCorrect: true,
-        biasFeedback: '🎉 XUẤT SẮC! Bạn đã biết phân biệt rõ ràng giữa cảm xúc yêu thích nhất thời với năng lực hành nghề thực tế.'
+        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Bạn đã biết phân biệt rõ giữa cảm xúc yêu thích hình tượng truyền thông với yêu cầu nghề nghiệp thực tế, chủ động tìm kiếm các hướng đi phù hợp.'
       }
     ]
   },
   {
     id: 'sc-4',
-    title: 'Tình huống 4: Bẫy Mặt Trời Màu Hồng (Optimism Bias)',
-    biasLabel: 'BẪY CHỈ NHÌN MẶT MÀU HỒNG (PHỚT LỜ RỦI RO)',
-    badgeClass: 'bg-purple-100 text-purple-900 border-purple-300',
-    context: 'Một trường đại học tư thục gửi thư mời nhập học với cam kết trên tờ rơi: "100% sinh viên tốt nghiệp có việc làm quốc tế mức lương khởi điểm 1.500 USD", với mức học phí 180 triệu VNĐ/năm.',
-    question: 'Hành động của một học sinh có tư duy phản tư là gì?',
+    biasCode: 'OPTIMISM_BIAS',
+    title: '🏫 Tình huống 4: Đánh giá các cam kết đầu ra của Cơ sở đào tạo',
+    tagLabel: 'Tình huống thực tế 4',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
+    context: 'Một cơ sở giáo dục đại học giới thiệu chương trình đào tạo với thông tin cam kết: "100% sinh viên tốt nghiệp có việc làm quốc tế với mức thu nhập từ 1.500 USD/tháng", mức học phí công bố là 180 triệu VNĐ/năm.',
+    question: 'Quy trình tìm hiểu và xác minh thông tin thấu đáo của bạn gồm những bước nào?',
     options: [
       {
         id: 'A',
-        text: 'A. Thuyết phục gia đình đi vay mượn tiền để đăng ký ngay lập tức vì tin chắc tương lai sẽ nhận lương nghìn đô trả nợ dễ dàng.',
+        text: 'A. Đề xuất gia đình chuẩn bị kinh phí để nộp hồ sơ xét tuyển ngay vì tin tưởng vào mức thu nhập cam kết sau khi tốt nghiệp.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang mắc Bẫy Lạc quan quá mức và phớt lờ rủi ro gánh nặng tài chính của gia đình.'
+        biasFeedback: '⚠️ Lựa chọn này mang tính vội vàng khi chưa đánh giá kỹ tính khả thi về tài chính và các điều kiện thực tế của gia đình.'
       },
       {
         id: 'B',
-        text: 'B. Tin tưởng tuyệt đối vào lời cam kết in trên tờ rơi quảng cáo mà không cần kiểm tra thêm bất kỳ điều khoản ràng buộc nào.',
+        text: 'B. Dựa hoàn toàn vào các nội dung truyền thông của tờ rơi quảng cáo mà không tìm kiếm thêm thông tin kiểm chứng độc lập.',
         isCorrect: false,
-        biasFeedback: '⚠️ Bạn đang thiếu kỹ năng hoài nghi lành mạnh và kiểm chứng thông tin tuyển sinh độc lập.'
+        biasFeedback: '⚠️ Lựa chọn này thiếu bước kiểm chứng độc lập về tính pháp lý và các điều khoản cụ thể của chương trình.'
       },
       {
         id: 'C',
-        text: 'C. Kiểm chứng giấy phép kiểm định chất lượng của Bộ GD&ĐT, đọc kỹ các điều kiện ràng buộc trong hợp đồng cam kết việc làm, tính toán tổng chi phí 4 năm và chuẩn bị phương án tài chính dự phòng cùng gia đình.',
+        text: 'C. Tìm hiểu giấy phép kiểm định chất lượng đào tạo, đọc kỹ các điều kiện ràng buộc trong thỏa thuận cam kết việc làm, tính toán tổng chi phí cho toàn khóa học và cùng gia đình thảo luận phương án tài chính dự phòng.',
         isCorrect: true,
-        biasFeedback: '🎉 CHÍNH XÁC! Luôn luôn soi chiếu mặt tối, rủi ro pháp lý và học phí thực tế trước khi đặt bút cam kết tài chính.'
+        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Luôn chủ động kiểm chứng tính pháp lý, đọc kỹ các điều khoản cam kết và lập kế hoạch tài chính rõ ràng trước khi quyết định.'
       }
     ]
   }
@@ -252,14 +256,14 @@ const getBiasDiagnosis = (matrix) => {
 }
 
 // =========================================================================
-// 3. MAIN COMPONENT: NHẬT KÝ PHẢN TƯ (MA TRẬN & TÁC VỤ TÌNH HUỐNG)
+// 3. MAIN COMPONENT: NHẬT KÝ PHẢN TƯ & BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP
 // =========================================================================
 const DebiasMatrix = () => {
   const { user } = useAuth()
   const [searchParams] = useSearchParams()
   const initialMajor = searchParams.get('major') || ''
 
-  // 2 Tabs: 'matrix' (Ma trận 4 ô tự điền) | 'scenarios' (4 Bài test tình huống)
+  // 2 Tabs: 'matrix' (Ma trận tự phản tư) | 'scenarios' (Bài tập tình huống thực tế)
   const [activeTab, setActiveTab] = useState('matrix')
 
   // State cho Tab A: Ma trận tự phản tư
@@ -273,7 +277,7 @@ const DebiasMatrix = () => {
   const [toast, setToast] = useState(null)
   const [savedMatrices, setSavedMatrices] = useState([])
 
-  // State cho Tab B: Tác vụ tình huống số
+  // State cho Tab B: Bài tập tình huống thực tế
   const [scenarioAnswers, setScenarioAnswers] = useState({})
   const [scenarioSubmitted, setScenarioSubmitted] = useState(false)
   const [scenarioScore, setScenarioScore] = useState(0)
@@ -427,7 +431,7 @@ const DebiasMatrix = () => {
       localStorage.setItem(`scenario_result_${user.id}`, JSON.stringify(payload))
     }
 
-    // Đồng bộ vào Supabase Database
+    // Đồng bộ vào Supabase Database với mã hóa khoa học chuẩn
     try {
       if (user?.id) {
         await supabase
@@ -435,10 +439,10 @@ const DebiasMatrix = () => {
           .insert([
             {
               student_id: user.id,
-              target_major: `[Tác Vụ Tình Huống] Kết quả: ${correctCount}/${SCENARIO_QUESTIONS.length} Đạt`,
-              evidence: `Học sinh đã hoàn thành 4 tình huống nhận diện bẫy thông tin số với điểm số ${correctCount}/4.`,
+              target_major: `[Bài Tập Tình Huống] Kết quả: ${correctCount}/${SCENARIO_QUESTIONS.length} Đạt`,
+              evidence: `Học sinh đã hoàn thành 4 tình huống hướng nghiệp thực tế với điểm số ${correctCount}/4.`,
               verified_sources: 'Bộ câu hỏi tình huống thực nghiệm chuẩn khoa học ViSEF 2026.',
-              risk_analysis: 'Đã nhận diện rủi ro truyền thông và tin giả hướng nghiệp.',
+              risk_analysis: 'Đã hoàn thành đánh giá các tình huống xử lý thông tin nghề nghiệp.',
               bias_check: `Lựa chọn câu trả lời: ${JSON.stringify(scenarioAnswers)}`,
               detected_bias: correctCount >= 3 ? 'DEBIASED_SUCCESS' : 'BANDWAGON_BIAS',
               final_decision: 'CONFIRMED'
@@ -452,7 +456,7 @@ const DebiasMatrix = () => {
     setIsSubmittingScenario(false)
     setToast({
       type: 'success',
-      message: `🎉 Nộp bài thành công! Bạn đạt ${correctCount}/${SCENARIO_QUESTIONS.length} điểm Phản tư!`
+      message: `🎉 Nộp bài thành công! Bạn đạt ${correctCount}/${SCENARIO_QUESTIONS.length} điểm đánh giá!`
     })
   }
 
@@ -494,16 +498,6 @@ const DebiasMatrix = () => {
     }
   }
 
-  // Kết quả Chẩn đoán Live của bài hiện tại
-  const liveDiagnosis = getBiasDiagnosis({
-    target_major: targetMajor,
-    evidence,
-    verified_sources: verifiedSources,
-    risk_analysis: riskAnalysis,
-    bias_check: biasCheck,
-    final_decision: finalDecision
-  })
-
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6 animate-reveal font-sans">
       {/* Header Trang Phản Tư */}
@@ -515,10 +509,10 @@ const DebiasMatrix = () => {
             </div>
             <div>
               <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                📝 Nhật Ký Phản Tư & Thử Thách Bẫy Nhận Thức
+                📝 Nhật Ký Phản Tư & Bài Tập Tình Huống Hướng Nghiệp
               </h1>
               <p className="text-xs text-slate-500 font-semibold mt-1">
-                Công cụ giúp bạn tự soi chiếu năng lực thực tế, nhận diện 4 bẫy tâm lý và rèn luyện kỹ năng chống bẫy thông tin số.
+                Công cụ giúp bạn tự soi chiếu năng lực thực tế, đối chứng thông tin và rèn luyện kỹ năng ra quyết định nghề nghiệp vững chắc.
               </p>
             </div>
           </div>
@@ -534,7 +528,7 @@ const DebiasMatrix = () => {
           </div>
         </div>
 
-        {/* Thanh 2 Tabs chuyển đổi cốt lõi */}
+        {/* Thanh 2 Tabs chuyển đổi trung tính */}
         <div className="flex border-b border-slate-200 gap-4 pt-2 overflow-x-auto">
           <button
             type="button"
@@ -554,12 +548,12 @@ const DebiasMatrix = () => {
             onClick={() => setActiveTab('scenarios')}
             className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               activeTab === 'scenarios'
-                ? 'border-amber-500 text-amber-900 bg-amber-50/60 px-3 py-1.5 rounded-t-sm'
+                ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm'
                 : 'border-transparent text-slate-400 hover:text-slate-700'
             }`}
           >
-            <ShieldCheck className="w-4 h-4 text-amber-600" />
-            <span>TAB B: 🎯 Thử Thách Tác Vụ Tình Huống (4 Bài Test Bẫy Số)</span>
+            <Compass className="w-4 h-4 text-brand-600" />
+            <span>TAB B: 🎯 BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ</span>
             {scenarioSubmitted && (
               <span className="px-1.5 py-0.2 text-[10px] font-black bg-emerald-600 text-white rounded-full">
                 {scenarioScore}/4 Đạt
@@ -675,15 +669,15 @@ const DebiasMatrix = () => {
                     <HelpCircle className="w-4.5 h-4.5" />
                   </div>
                   <h3 className="text-xs font-bold uppercase tracking-wider">
-                    4. Soi chiếu Bẫy Tâm Lý Chọn Nghề
+                    4. Soi chiếu Yếu tố Nhận thức
                   </h3>
                 </div>
                 <p className="text-[11px] text-rose-800 font-semibold leading-relaxed">
-                  Tự hỏi: Mình có đang chọn vì "thích từ bé", "bạn bè rủ", "xem TikTok" hay "tiếc công ôn thi" không?
+                  Tự hỏi: Mình có đang chọn vì "thích từ bé", "bạn bè rủ", "xem video mạng xã hội" hay "tiếc công ôn thi" không?
                 </p>
                 <textarea
                   rows={4}
-                  placeholder="VD: Ban đầu thích vì xem phim hacker, nhưng sau khi đối chiếu thấy cần nhiều tư duy toán học và đã tự học thử thấy phù hợp..."
+                  placeholder="VD: Ban đầu thích vì xem phim, nhưng sau khi đối chiếu thấy cần nhiều tư duy toán học và đã tự học thử thấy phù hợp..."
                   value={biasCheck}
                   onChange={(e) => setBiasCheck(e.target.value)}
                   className="w-full p-3 text-xs bg-white border border-rose-200 focus:border-rose-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
@@ -804,22 +798,22 @@ const DebiasMatrix = () => {
       )}
 
       {/* =========================================================================
-          TAB B: THỬ THÁCH TÁC VỤ TÌNH HUỐNG (4 BEHAVIORAL SCENARIOS)
+          TAB B: BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ (4 TÌNH HUỐNG)
           ========================================================================= */}
       {activeTab === 'scenarios' && (
         <div className="space-y-6 animate-reveal">
-          {/* Banner Giới Thiệu Tab B */}
-          <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/5 border-l-4 border-amber-500 p-4 sm:p-5 rounded-r-sm shadow-2xs">
+          {/* Banner Giới Thiệu Tab B Chuẩn Trung Tính */}
+          <div className="bg-slate-50 border-l-4 border-brand-600 p-5 rounded-r-sm shadow-2xs">
             <div className="flex items-start gap-3.5">
-              <div className="p-2 bg-amber-500 text-slate-950 rounded-sm font-black flex-shrink-0 mt-0.5 shadow-xs text-base">
+              <div className="p-2 bg-brand-600 text-white rounded-sm font-black flex-shrink-0 mt-0.5 shadow-xs text-base">
                 🎯
               </div>
               <div>
-                <h4 className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>THỬ THÁCH TÁC VỤ TÌNH HUỐNG: CHỐNG BẪY THÔNG TIN SỐ (4 SCENARIOS)</span>
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ</span>
                 </h4>
-                <p className="text-xs text-amber-900 font-bold mt-1 leading-relaxed">
-                  Hãy đọc kỹ 4 tình huống thực tế thường gặp trên mạng xã hội và chọn cách xử lý thể hiện tư duy phản biện & đối chứng khách quan nhất. Điểm số sẽ được đồng bộ trực tiếp vào Hồ sơ NCKH của bạn!
+                <p className="text-xs text-slate-600 font-semibold mt-1 leading-relaxed">
+                  Đọc các tình huống thực tế thường gặp khi tiếp cận thông tin chọn ngành và lựa chọn hướng xử lý phù hợp nhất với bạn.
                 </p>
               </div>
             </div>
@@ -835,12 +829,12 @@ const DebiasMatrix = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider">
-                      🎉 BẠN ĐÃ HOÀN THÀNH THỬ THÁCH! KẾT QUẢ: {scenarioScore}/{SCENARIO_QUESTIONS.length} ĐIỂM
+                      🎉 BẠN ĐÃ HOÀN THÀNH BÀI TẬP! KẾT QUẢ ĐÁNH GIÁ: {scenarioScore}/{SCENARIO_QUESTIONS.length} ĐIỂM
                     </h3>
                     <p className="text-xs text-emerald-800 font-medium mt-0.5">
-                      {scenarioScore === 4 && 'Xuất sắc! Bạn có năng lực phản tư và kháng bẫy thông tin số hoàn hảo.'}
-                      {scenarioScore === 3 && 'Rất tốt! Bạn đã nhận diện được hầu hết các bẫy tâm lý phổ biến.'}
-                      {scenarioScore < 3 && 'Hãy xem kỹ các phản hồi bên dưới để rút kinh nghiệm khi tra cứu thông tin thực tế nhé!'}
+                      {scenarioScore === 4 && 'Xuất sắc! Bạn có phương pháp tiếp cận thông tin và đối chứng dữ liệu rất thấu đáo.'}
+                      {scenarioScore === 3 && 'Rất tốt! Bạn đã có kỹ năng nhìn nhận đa chiều trước các nguồn tin khác nhau.'}
+                      {scenarioScore < 3 && 'Hãy xem kỹ các phân tích bên dưới để rút kinh nghiệm khi tra cứu thông tin tuyển sinh thực tế nhé!'}
                     </p>
                   </div>
                 </div>
@@ -852,13 +846,13 @@ const DebiasMatrix = () => {
                   className="text-xs font-bold uppercase tracking-wider py-2 px-4 gap-1.5 border-emerald-400 text-emerald-900 hover:bg-emerald-100"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Làm lại bài test</span>
+                  <span>Làm lại bài tập</span>
                 </Button>
               </div>
             </div>
           )}
 
-          {/* 4 Câu Hỏi Tình Huống */}
+          {/* 4 Câu Hỏi Tình Huống Trung Tính */}
           <div className="space-y-6">
             {SCENARIO_QUESTIONS.map((sc, idx) => {
               const selectedOption = scenarioAnswers[sc.id]
@@ -870,18 +864,18 @@ const DebiasMatrix = () => {
                       <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center">
                         {idx + 1}
                       </span>
-                      <h3 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-wider">
+                      <h3 className="text-xs md:text-sm font-black text-slate-800 tracking-tight">
                         {sc.title}
                       </h3>
                     </div>
-                    <span className={`px-2.5 py-1 text-[10px] font-black rounded-sm border uppercase ${sc.badgeClass}`}>
-                      {sc.biasLabel}
+                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-sm border ${sc.badgeClass}`}>
+                      {sc.tagLabel}
                     </span>
                   </div>
 
                   {/* Ngữ cảnh */}
                   <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-sm text-xs text-slate-700 font-medium leading-relaxed">
-                    <strong>Bối cảnh:</strong> {sc.context}
+                    <strong>Bối cảnh thực tế:</strong> {sc.context}
                   </div>
 
                   <p className="text-xs font-bold text-slate-900">
@@ -954,10 +948,10 @@ const DebiasMatrix = () => {
                 variant="primary"
                 onClick={handleSubmitScenarioTest}
                 disabled={isSubmittingScenario}
-                className="font-bold text-xs uppercase tracking-wider py-3 px-8 gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm transition-all border border-amber-400"
+                className="font-bold text-xs uppercase tracking-wider py-3 px-8 gap-2 bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all"
               >
                 <Award className="w-4 h-4" />
-                <span>{isSubmittingScenario ? 'Đang chấm điểm...' : 'NỘP BÀI ĐÁNH GIÁ TÁC VỤ TÌNH HUỐNG'}</span>
+                <span>{isSubmittingScenario ? 'Đang chấm điểm...' : 'NỘP BÀI ĐÁNH GIÁ TÌNH HUỐNG'}</span>
               </Button>
             </div>
           )}
