@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import { 
@@ -7,38 +6,35 @@ import {
   Send, 
   Bot, 
   User, 
-  HelpCircle, 
-  Brain, 
-  AlertTriangle, 
   RotateCcw, 
   Search, 
   Scale, 
   BarChart3, 
-  Puzzle,
-  ChevronRight,
-  ShieldAlert,
+  Puzzle, 
+  Copy, 
+  Check, 
+  Download, 
+  Brain, 
   Flame,
-  CheckCircle2,
-  BookOpen
+  AlertCircle
 } from 'lucide-react'
 
-// 4 Nút gợi ý Cú hích Phản tư (Quick Nudge Prompts)
+// 4 NÃºt gá»£i Ã½ CÃº hÃ­ch Pháº£n tÆ° (Quick Nudge Prompts)
 const QUICK_NUDGES = [
   {
     id: 'nudge-1',
     icon: Search,
     color: 'hover:border-amber-400 hover:bg-amber-50/70 text-amber-900',
     iconColor: 'text-amber-600',
-    prompt: '🔍 Phân tích mặt tối & rủi ro thực tế của ngành ',
-    isNeedInput: true,
-    placeholder: 'CNTT / Y Khoa / Marketing...'
+    prompt: 'ðŸ” PhÃ¢n tÃ­ch máº·t tá»‘i & rá»§i ro thá»±c táº¿ cá»§a ngÃ nh ',
+    isNeedInput: true
   },
   {
     id: 'nudge-2',
     icon: Scale,
     color: 'hover:border-indigo-400 hover:bg-indigo-50/70 text-indigo-900',
     iconColor: 'text-indigo-600',
-    prompt: '⚖️ Tôi đang chọn ngành theo xu hướng số đông, hãy phản biện giúp tôi',
+    prompt: 'âš–ï¸ TÃ´i Ä‘ang chá»n ngÃ nh theo xu hÆ°á»›ng sá»‘ Ä‘Ã´ng, hÃ£y pháº£n biá»‡n giÃºp tÃ´i',
     isNeedInput: false
   },
   {
@@ -46,7 +42,7 @@ const QUICK_NUDGES = [
     icon: BarChart3,
     color: 'hover:border-emerald-400 hover:bg-emerald-50/70 text-emerald-900',
     iconColor: 'text-emerald-600',
-    prompt: '📊 Tìm 3 luận điểm đối lập với kỳ vọng lương cao của ngành này',
+    prompt: 'ðŸ“Š TÃ¬m 3 luáº­n Ä‘iá»ƒm Ä‘á»‘i láº­p vá»›i ká»³ vá»ng lÆ°Æ¡ng cao cá»§a ngÃ nh nÃ y',
     isNeedInput: false
   },
   {
@@ -54,161 +50,27 @@ const QUICK_NUDGES = [
     icon: Puzzle,
     color: 'hover:border-rose-400 hover:bg-rose-50/70 text-rose-900',
     iconColor: 'text-rose-600',
-    prompt: '🧩 Soi chiếu xem tôi có đang mắc Thiên lệch chi phí chìm không?',
+    prompt: 'ðŸ§© Soi chiáº¿u xem tÃ´i cÃ³ Ä‘ang máº¯c ThiÃªn lá»‡ch chi phÃ­ chÃ¬m khÃ´ng?',
     isNeedInput: false
   }
 ]
 
-// Bộ suy luận Phản tư Chuyên sâu (Debiasing Knowledge Engine) tuân thủ 3 NGUYÊN TẮC VÀNG
-const generateDebiasingResponse = (userPrompt) => {
-  const text = userPrompt.toLowerCase()
-
-  // TÍNH NĂNG 1: NGUYÊN TẮC TRUNG LẬP TUYỆT ĐỐI
-  const neutralDisclaimer = `> ⚖️ **CAM KẾT TRUNG LẬP:** Tôi là AI Phản tư, tôi **KHÔNG BAO GIỜ** khuyên bạn NÊN chọn hay KHÔNG NÊN chọn bất kỳ ngành nào. Quyết định cuối cùng hoàn toàn thuộc về bạn dựa trên sự tự đánh giá năng lực và bằng chứng thực tế.`
-
-  // 1. Nhóm bẫy THIÊN LỆCH CHI PHÍ CHÌM (Sunk Cost Fallacy)
-  if (text.includes('chi phí chìm') || text.includes('sunk cost') || text.includes('tiếc') || text.includes('lỡ') || text.includes('chuyên') || text.includes('ôn thi từ')) {
-    return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Trong tâm lý học quyết định, thời gian, công sức và tiền bạc bạn đã đầu tư trong quá khứ là những khoản **chi phí chìm không thể lấy lại**. Việc một học sinh giỏi khối chuyên hay đã dành 2-3 năm ôn luyện một môn học chỉ chứng minh bạn có khả năng tiếp thu môn học đó ở phổ thông, chứ không đảm bảo bạn sẽ hứng thú hay thành công với môi trường làm việc thực tế của ngành trong 40 năm tới.
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: 天 lệch chi phí chìm (Sunk Cost Fallacy)**
-  Bạn có thể đang rơi vào tâm lý "tiếc công sức đã lỡ đầu tư" nên cố bám trụ lựa chọn cũ, thay vì dũng cảm đánh giá xem ngành đó có thực sự phù hợp với năng lực và giá trị cuộc sống hiện tại của mình hay không.
-* ⚡ **Rủi ro thực tế:** Hơn 60% sinh viên ra trường làm trái ngành hoặc rơi vào trạng thái bế tắc công việc xuất phát từ việc không dám từ bỏ lựa chọn ban đầu khi phát hiện bản thân không phù hợp.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về đánh giá năng lực thực chất:** *Nếu gạt bỏ hoàn toàn sự tiếc nuối về công sức ôn thi khối ngành cũ, ngành học nào khiến bạn tự tin nhất về khả năng duy trì sự kiên trì trong 4 năm đại học?*
-2. **Về đối diện rủi ro nghề nghiệp:** *Bạn thà chấp nhận "lãng phí" một vài năm chuẩn bị ở phổ thông để điều chỉnh đúng hướng, hay chấp nhận rủi ro tốn 4 năm đại học và hàng chục năm làm công việc mình không hề hứng thú?*`
-  }
-
-  // 2. Nhóm bẫy HIỆU ỨNG ĐÁM ĐÔNG (Bandwagon Effect)
-  if (text.includes('đám đông') || text.includes('bạn bè') || text.includes('xu hướng') || text.includes('số đông') || text.includes('nhiều người') || text.includes('hot trend') || text.includes('chạy theo')) {
-    return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Thị trường lao động vận hành theo quy luật cung - cầu. Một ngành học đang "hot" ở thời điểm hiện tại thường kéo theo hàng chục ngàn chỉ tiêu tuyển sinh toàn quốc. Khi tất cả cùng tốt nghiệp sau 4 năm, thị trường có nguy cơ chạm ngưỡng bão hòa, dẫn đến tỷ lệ cạnh tranh gay gắt và mức độ đào thải cao đối với nhân sự trung bình.
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Hiệu ứng Đám đông (Bandwagon Effect)**
-  Bạn có xu hướng cảm thấy an toàn khi chọn ngành theo số đông hoặc theo quyết định của bạn bè xung quanh, dẫn đến việc nhầm lẫn giữa "sự an toàn giả tạo của trào lưu" với "sự phù hợp năng lực cá nhân".
-* ⚡ **Rủi ro thực tế:** Sự thành công trong nghề nghiệp phụ thuộc vào năng lực vượt trội của bản thân trong ngành đó, chứ không phụ thuộc vào độ "hot" của tên ngành trên giấy tờ.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về tư duy độc lập:** *Nếu ngành học này hoàn toàn không còn được báo chí khen ngợi và bạn bè xung quanh không ai chọn nữa, bản thân bạn có còn động lực tự thân để học nó không?*
-2. **Về năng lực cạnh tranh thực chất:** *Trong 1.000 sinh viên cùng tốt nghiệp ngành này với bạn, bạn sẽ dựa vào điểm mạnh cốt lõi nào của bản thân để đứng vào top 10% nhận việc làm tốt?*`
-  }
-
-  // 3. Nhóm bẫy THIÊN LỆCH SẴN CÓ (Availability Bias) - Mạng xã hội, TikTok, Tin đồn
-  if (text.includes('tiktok') || text.includes('tin đồn') || text.includes('mạng xã hội') || text.includes('xem video') || text.includes('báo chí') || text.includes('nghe nói') || text.includes('youtube')) {
-    return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Thông tin trên các nền tảng mạng xã hội (TikTok, Facebook, YouTube) thường bị chi phối bởi thuật toán giật gân, tô hồng những câu chuyện thành công cá biệt hoặc đưa ra thông tin một chiều để thu hút lượt xem (view), hoàn toàn không đại diện cho bức tranh toàn cảnh của ngành nghề.
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Thiên lệch sẵn có (Availability Bias)**
-  Bạn đang đưa ra đánh giá chọn nghề dựa trên các thông tin quá dễ tiếp cận và ấn tượng mạnh trên mạng xã hội, thay vì dựa trên báo cáo dữ liệu tuyển dụng chính thống từ Bộ GD&ĐT hay thị trường lao động.
-* ⚡ **Rủi ro thực tế:** Phớt lờ các mặt tối của ngành như thời gian làm việc OT, áp lực chỉ tiêu KPI, tỷ lệ giữ chân nhân sự và nguy cơ thay đổi công nghệ.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về kiểm chứng thông tin:** *Bạn đã tìm đọc báo cáo thị trường lao động chính thống hay trò chuyện trực tiếp với ít nhất 2 người đang đi làm 3-5 năm trong ngành này để nghe về khó khăn của họ chưa?*
-2. **Về khả năng chịu đựng thực tế:** *Nếu môi trường làm việc thực tế khác xa 80% so với những video lung linh trên mạng xã hội, bạn có kế hoạch ứng phó thế nào?*`
-  }
-
-  // 4. Nhóm bẫy THIÊN LỆCH XÁC NHẬN (Confirmation Bias) & Kỳ vọng lương cao
-  if (text.includes('lương') || text.includes('thu nhập') || text.includes('lương cao') || text.includes('khen') || text.includes('chỉ thấy') || text.includes('hoàn hảo') || text.includes('đam đam')) {
-    return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Mức thu nhập cao trong bất kỳ ngành nghề nào cũng luôn đi kèm với yêu cầu trình độ chuyên môn cao, áp lực công việc khốc liệt và thời gian tích lũy kinh nghiệm từ 3-5 năm trở lên. Không có ngành học nào đảm bảo "ra trường mặc nhiên lương hàng chục triệu".
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **BẪY TÂM LÝ NHẬN DIỆN: Thiên lệch xác nhận (Confirmation Bias)**
-  Bạn có xu hướng chủ động tìm kiếm những bài viết ca ngợi thu nhập và cố tình phớt lờ những cảnh báo về áp lực đào thải, nguy cơ kiệt sức (burnout) cũng như các kỹ năng khắt khe mà ngành yêu cầu.
-* ⚡ **Rủi ro thực tế:** Khi vỡ mộng giữa kỳ vọng thu nhập và thực tế công việc năm nhất đại học, học sinh rất dễ rơi vào trạng thái chán nản và bỏ dở giữa chừng.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về đánh giá năng lực thích ứng:** *Ngoài yếu tố thu nhập, bạn có thực sự hứng thú với các nhiệm vụ công việc hằng ngày của ngành này khi phải lặp đi lặp lại suốt 8 tiếng mỗi ngày không?*
-2. **Về kiên trì giai đoạn đầu:** *Nếu trong 2 năm đầu mới ra trường, mức lương chỉ ở mức cơ bản để tích lũy kinh nghiệm, bạn có đủ sự kiên nhẫn và đam mê để theo đuổi đến cùng không?*`
-  }
-
-  // 5. Phản biện nhóm ngành CNTT & AI
-  if (text.includes('cntt') || text.includes('công nghệ thông tin') || text.includes('ai') || text.includes('lập trình') || text.includes('phần mềm')) {
-    return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Ngành CNTT & AI đòi hỏi khả năng tư duy logic thuật toán khắt khe, tính tự học liên tục và sức bền tâm lý trước áp lực công việc (OT, sửa lỗi code, sự thay đổi công nghệ hằng năm). Thị trường hiện nay thắt chặt tuyển dụng lập trình viên trình độ cơ bản và ưu tiên nhân sự chuyên sâu có tư duy giải quyết vấn đề.
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **NHẬN DIỆN BẪY TÂM LÝ: Thiên lệch sẵn có & Hiệu ứng Đám đông**
-  Bạn có thể đang bị thu hút bởi các tiêu đề truyền thông "ngành CNTT khát nhân lực lương khủng", mà bỏ qua thực tế tỷ lệ sinh viên bỏ cuộc hoặc chuyển ngành trong 2 năm đầu đại học do không theo nổi các môn Toán rời rạc, Cấu trúc dữ liệu và Giải thuật.
-* ⚡ **Rủi ro thực tế:** Sự phát triển của các công cụ AI (GitHub Copilot, ChatGPT) đang tự động hóa mạnh mẽ các công việc gõ code đơn giản.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về năng lực giải quyết vấn đề:** *Bạn có sẵn sàng ngồi liên tục 6-8 tiếng tự mò mẫm tài liệu tiếng Anh để tìm nguyên nhân một lỗi code nhỏ mà không bỏ cuộc không?*
-2. **Về kiểm chứng thực tế:** *Bạn đã từng tự tay thử học một khóa lập trình nhập môn miễn phí để xem bản thân thực sự hứng thú hay mệt mỏi với công việc này chưa?*`
-  }
-
-  // 6. Phản biện chung mặc định cho mọi ngành khác
-  return `${neutralDisclaimer}
-
-### 📌 PHẦN 1: TÓM TẮT THỰC TẾ KHÁCH QUAN (KHÔNG TÔ HỒNG)
-Mọi ngành học trong kỷ nguyên số đều có hai mặt: cơ hội phát triển sự nghiệp đi kèm với áp lực cạnh tranh và yêu cầu thích ứng công nghệ. Để đánh giá đúng một ngành, bạn cần tách biệt giữa thông tin quảng cáo tuyển sinh với thực tế công việc hằng ngày của người trong nghề.
-
----
-
-### ⚠️ PHẦN 2: NHẬN DIỆN BẪY TÂM LÝ & RỦI RO THỰC TẾ
-* 🚨 **NHẬN DIỆN BẪY TÂM LÝ: Thiên lệch xác nhận (Confirmation Bias) & Bẫy Đám đông**
-  Hãy đối chiếu xem bạn đang chọn ngành dựa trên hiểu biết sâu sắc về năng lực bản thân, hay chỉ vì bị ảnh hưởng bởi lời khuyên của người khác và các thông tin màu hồng thiếu kiểm chứng.
-* ⚡ **Rủi ro thực tế:** Việc chọn ngành không dựa trên năng lực cốt lõi sẽ khiến bạn gặp khó khăn trong việc duy trì động lực học tập và tạo dựng lợi thế cạnh tranh sau khi ra trường.
-
----
-
-### 💡 PHẦN 3: 2 CÂU HỎI PHẢN TƯ (SOCRATIC QUESTIONING)
-1. **Về đánh giá sự phù hợp:** *Điểm mạnh nhất về năng lực hoặc tính cách của bạn có đóng góp trực tiếp vào công việc hằng ngày của ngành này không?*
-2. **Về phương án dự phòng:** *Nếu ngành này có sự thay đổi lớn về nhu cầu tuyển dụng trong 4 năm tới, bạn có phương án dự phòng NGUYỆN VỌNG 2 nào thực sự an toàn và phù hợp không?*`
+const INITIAL_MESSAGE = {
+  id: 'welcome-msg',
+  sender: 'ai',
+  text: 'ChÃ o báº¡n! MÃ¬nh lÃ  AI Tham váº¥n Pháº£n tÆ° ðŸŽ¯ â€” mÃ¬nh sáº½ khÃ´ng chá»n nghá» giÃºp báº¡n Ä‘Ã¢u, mÃ  sáº½ Ä‘áº·t cÃ¢u há»i Ä‘á»ƒ báº¡n tá»± nhÃ¬n rÃµ hÆ¡n vá» lá»±a chá»n cá»§a mÃ¬nh. Báº¡n Ä‘ang cÃ¢n nháº¯c ngÃ nh nghá» nÃ o váº­y?',
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 const DebiasAgent = () => {
-  const { user } = useAuth()
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome-msg',
-      sender: 'ai',
-      text: `Xin chào bạn! Tôi là **AI Tham vấn Phản tư Hướng nghiệp (Debiasing Agent)**.
-
-Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà sẽ cùng bạn **soi chiếu mọi lựa chọn dưới góc nhìn phản biện khách quan**, chỉ ra các **bẫy tư duy tâm lý** và rủi ro thực tế mà truyền thông hay giấu kín.
-
-👉 Bạn đang phân vân ngành học nào, hoặc đang gặp vướng mắc gì trong quyết định chọn nghề? Hãy chia sẻ với tôi nhé!`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ])
-
+  const { user, profile } = useAuth()
+  const [messages, setMessages] = useState([INITIAL_MESSAGE])
   const [inputPrompt, setInputPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [errorMessage, setErrorMessage] = useState(null)
   const messagesEndRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
     scrollToBottom()
@@ -218,9 +80,12 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  // Gá»i API backend (Vercel Serverless Function gá»i Ä‘áº¿n Gemini API)
   const handleSendMessage = async (textToSend) => {
-    const query = textToSend || inputPrompt
-    if (!query.trim()) return
+    const query = (textToSend || inputPrompt).trim()
+    if (!query || isLoading) return
+
+    setErrorMessage(null)
 
     const userMsg = {
       id: `usr-${Date.now()}`,
@@ -229,91 +94,201 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
-    setMessages(prev => [...prev, userMsg])
+    // Cáº­p nháº­t tin nháº¯n ngÆ°á»i dÃ¹ng ngay láº­p tá»©c
+    const newMessages = [...messages, userMsg]
+    setMessages(newMessages)
     if (!textToSend) setInputPrompt('')
     setIsLoading(true)
 
-    // Giả lập thời gian phản hồi suy nghĩ của AI Phản tư
-    setTimeout(() => {
-      const aiReplyText = generateDebiasingResponse(query)
+    try {
+      // Chuáº©n bá»‹ lá»‹ch sá»­ há»™i thoáº¡i gá»­i lÃªn server (bá» tin nháº¯n chÃ o Ä‘áº§u náº¿u chÆ°a cÃ³ lÆ°á»£t user)
+      const historyPayload = messages
+        .filter(m => m.id !== 'welcome-msg')
+        .map(m => ({
+          role: m.sender === 'user' ? 'user' : 'model',
+          text: m.text
+        }))
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: query,
+          history: historyPayload
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Lá»—i káº¿t ná»‘i AI (${response.status})`)
+      }
+
       const aiMsg = {
         id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: aiReplyText,
+        text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
-      setMessages(prev => [...prev, aiMsg])
+
+      setMessages([...newMessages, aiMsg])
+    } catch (err) {
+      console.error('Lá»—i khi tham váº¥n AI:', err)
+      setErrorMessage(err.message || 'KhÃ´ng thá»ƒ káº¿t ná»‘i Ä‘áº¿n mÃ¡y chá»§ AI. Vui lÃ²ng thá»­ láº¡i sau.')
+      
+      const errorAiMsg = {
+        id: `err-${Date.now()}`,
+        sender: 'ai',
+        text: `âš ï¸ **Ráº¥t tiáº¿c, Ä‘Ã£ cÃ³ sá»± cá»‘ káº¿t ná»‘i:** ${err.message || 'Há»‡ thá»‘ng AI Ä‘ang báº­n'}. Báº¡n vui lÃ²ng thá»­ gá»­i láº¡i cÃ¢u há»i nhÃ©!`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: true
+      }
+      setMessages([...newMessages, errorAiMsg])
+    } finally {
       setIsLoading(false)
-    }, 1000)
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }
   }
 
   const handleQuickNudgeClick = (nudge) => {
     if (nudge.isNeedInput) {
       setInputPrompt(nudge.prompt)
+      if (inputRef.current) inputRef.current.focus()
     } else {
       handleSendMessage(nudge.prompt)
     }
   }
 
   const handleResetChat = () => {
-    setMessages([
-      {
-        id: 'welcome-msg-reset',
-        sender: 'ai',
-        text: `Đã làm mới phiên phản tư! Hãy chọn một gợi ý bên dưới hoặc nhập câu hỏi/ngành học bạn muốn tôi phản biện nhé!`,
+    if (window.confirm('Báº¡n cÃ³ cháº¯c muá»‘n lÃ m má»›i cuá»™c há»™i thoáº¡i nÃ y khÃ´ng?')) {
+      setMessages([{
+        ...INITIAL_MESSAGE,
+        id: `welcome-${Date.now()}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ])
+      }])
+      setErrorMessage(null)
+    }
+  }
+
+  // Xuáº¥t & Copy toÃ n bá»™ Ä‘oáº¡n há»™i thoáº¡i
+  const handleExportChat = () => {
+    const studentName = profile?.full_name || user?.email || 'Há»c sinh'
+    const now = new Date().toLocaleString('vi-VN')
+
+    let transcriptText = `=================================================================\n`
+    transcriptText += `NHáº¬T KÃ THAM Váº¤N PHáº¢N TÆ¯ CÃ™NG AI (DEBIASING CHATBOT)\n`
+    transcriptText += `Há»c sinh: ${studentName}\n`
+    transcriptText += `Thá»i gian xuáº¥t: ${now}\n`
+    transcriptText += `Tá»•ng sá»‘ lÆ°á»£t trao Ä‘á»•i: ${messages.length}\n`
+    transcriptText += `Má»¥c Ä‘Ã­ch: NghiÃªn cá»©u giáº£m thiá»ƒu thiÃªn lá»‡ch nháº­n thá»©c & Nháº­t kÃ½ ra quyáº¿t Ä‘á»‹nh\n`
+    transcriptText += `=================================================================\n\n`
+
+    messages.forEach((msg) => {
+      const senderLabel = msg.sender === 'user' ? `[Há»c sinh - ${studentName}]` : `[AI Tham váº¥n Pháº£n tÆ°]`
+      transcriptText += `${senderLabel} (${msg.timestamp}):\n${msg.text}\n\n`
+      transcriptText += `-----------------------------------------------------------------\n\n`
+    })
+
+    // 1. Sao chÃ©p vÃ o bá»™ nhá»› táº¡m (Clipboard)
+    navigator.clipboard.writeText(transcriptText).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 3000)
+    }).catch(err => {
+      console.warn('Lá»—i khi sao chÃ©p clipboard:', err)
+    })
+
+    // 2. Táº£i vá» file text
+    try {
+      const blob = new Blob([transcriptText], { type: 'text/plain;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const dateStr = new Date().toISOString().slice(0, 10)
+      link.href = url
+      link.download = `Nhat-ky-phan-tu-AI-${dateStr}.txt`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.warn('KhÃ´ng thá»ƒ tá»± Ä‘á»™ng táº£i file:', e)
+    }
   }
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5 animate-reveal">
-      {/* HEADER TIÊU ĐỀ TRANG */}
+      {/* HEADER TIÃŠU Äá»€ TRANG */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
             <div className="p-2 bg-amber-500 text-white rounded-md shadow-xs">
               <Brain className="w-5 h-5" />
             </div>
-            <span>🤖 AI Tham vấn Phản tư Hướng nghiệp</span>
+            <span>ðŸ¤– AI Tham Váº¥n Pháº£n TÆ°</span>
             <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
               Debiasing Agent
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Trợ lý trí tuệ nhân tạo phản biện bẫy tư duy tâm lý & vạch trần rủi ro thực tế trong chọn nghề.
+            Trá»£ lÃ½ trÃ­ tuá»‡ nhÃ¢n táº¡o pháº£n biá»‡n báº«y tÆ° duy tÃ¢m lÃ½ & váº¡ch tráº§n rá»§i ro thá»±c táº¿ trong chá»n nghá».
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          onClick={handleResetChat}
-          className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-slate-600 border-slate-300 hover:bg-slate-100 shrink-0 self-start sm:self-auto"
-        >
-          <RotateCcw className="w-3.5 h-3.5" />
-          Làm mới hội thoại
-        </Button>
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+          {/* NÃšT XUáº¤T / COPY ÄOáº N Há»˜I THOáº I (YÃŠU Cáº¦U 5) */}
+          <Button
+            variant="outline"
+            onClick={handleExportChat}
+            className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-brand-700 border-brand-300 bg-brand-50/50 hover:bg-brand-100"
+            title="LÆ°u láº¡i toÃ n bá»™ cuá»™c trÃ² chuyá»‡n phá»¥c vá»¥ Nháº­t kÃ½ ra quyáº¿t Ä‘á»‹nh"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700">ÄÃ£ sao chÃ©p & Táº£i file!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                <span>Xuáº¥t / Copy há»™i thoáº¡i</span>
+                <Download className="w-3 h-3 text-slate-400 ml-0.5" />
+              </>
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleResetChat}
+            className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-slate-600 border-slate-300 hover:bg-slate-100"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>LÃ m má»›i</span>
+          </Button>
+        </div>
       </div>
 
-      {/* 1. BANNER CẢNH BÁO NGUYÊN LÝ KHOA HỌC (REQUIREMENT 1) */}
+      {/* BANNER NGUYÃŠN Táº®C KHOA Há»ŒC */}
       <div className="bg-amber-50/90 border-2 border-amber-300 p-4 rounded-sm shadow-2xs flex items-start gap-3.5 text-amber-950">
         <div className="p-2 bg-amber-200 text-amber-900 rounded-full shrink-0 mt-0.5">
           <Sparkles className="w-4 h-4" />
         </div>
         <div className="space-y-1">
           <span className="font-extrabold text-xs uppercase tracking-wider block text-amber-900 flex items-center gap-1.5">
-            <span>💡 NGUYÊN TẮC PHẢN TƯ (METACOGNITIVE DEBIASING)</span>
+            <span>ðŸ’¡ NGUYÃŠN Táº®C PHáº¢N TÆ¯ (METACOGNITIVE DEBIASING)</span>
           </span>
           <p className="text-xs leading-relaxed font-medium text-amber-900/90">
-            AI này <strong>KHÔNG</strong> chọn nghề thay bạn. AI sẽ đồng hành đặt câu hỏi phản biện, chỉ ra các bẫy tâm lý 
-            (Thiên lệch xác nhận, Hiệu ứng đám đông...) để giúp bạn tự đưa ra quyết định vững chắc dựa trên bằng chứng thực tế.
+            AI nÃ y <strong>KHÃ”NG</strong> chá»n nghá» thay báº¡n. AI sáº½ Ä‘á»“ng hÃ nh Ä‘áº·t cÃ¢u há»i pháº£n biá»‡n Socratic, chá»‰ ra cÃ¡c báº«y tÃ¢m lÃ½ 
+            (ThiÃªn lá»‡ch xÃ¡c nháº­n, Hiá»‡u á»©ng Ä‘Ã¡m Ä‘Ã´ng, Chi phÃ­ chÃ¬m...) Ä‘á»ƒ báº¡n tá»± nhÃ¬n nháº­n khÃ¡ch quan vÃ  Ä‘Æ°a ra quyáº¿t Ä‘á»‹nh vá»¯ng cháº¯c.
           </p>
         </div>
       </div>
 
-      {/* KHUNG NỘI DUNG CHATBOT */}
-      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[580px]">
-        {/* LỊCH SỬ CHAT (MESSAGE LIST) */}
+      {/* KHUNG Ná»˜I DUNG CHATBOT */}
+      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[600px]">
+        {/* Lá»ŠCH Sá»¬ CHAT (MESSAGE LIST) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50">
           {messages.map((msg) => (
             <div
@@ -327,60 +302,38 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
                   msg.sender === 'user'
                     ? 'bg-brand-600 text-white'
+                    : msg.isError
+                    ? 'bg-rose-500 text-white'
                     : 'bg-amber-500 text-white'
                 }`}
               >
                 {msg.sender === 'user' ? (
                   <User className="w-4 h-4" />
+                ) : msg.isError ? (
+                  <AlertCircle className="w-4 h-4" />
                 ) : (
                   <Bot className="w-4 h-4" />
                 )}
               </div>
 
-              {/* Bong bóng tin nhắn */}
+              {/* Bong bÃ³ng tin nháº¯n */}
               <div
-                className={`max-w-[85%] sm:max-w-[75%] rounded-sm p-4 text-xs leading-relaxed shadow-2xs space-y-2 ${
+                className={`max-w-[85%] sm:max-w-[80%] rounded-sm p-4 text-xs leading-relaxed shadow-2xs space-y-2 ${
                   msg.sender === 'user'
                     ? 'bg-brand-600 text-white font-medium rounded-tr-none'
+                    : msg.isError
+                    ? 'bg-rose-50 border border-rose-200 text-rose-800 rounded-tl-none'
                     : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                 }`}
               >
-                {/* Format Markdown giản đơn cho tin nhắn AI */}
-                {msg.sender === 'ai' ? (
-                  <div className="space-y-3">
-                    {msg.text.split('\n\n').map((paragraph, idx) => {
-                      if (paragraph.startsWith('### ')) {
-                        const title = paragraph.replace('### ', '')
-                        const isPart1 = title.includes('PHẦN 1')
-                        const isPart2 = title.includes('PHẦN 2')
-                        const isPart3 = title.includes('PHẦN 3')
-
-                        return (
-                          <div 
-                            key={idx} 
-                            className={`font-bold text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-sm border ${
-                              isPart1 ? 'bg-slate-100 text-slate-800 border-slate-300' :
-                              isPart2 ? 'bg-rose-100 text-rose-900 border-rose-300' :
-                              'bg-amber-100 text-amber-900 border-amber-300'
-                            }`}
-                          >
-                            {title}
-                          </div>
-                        )
-                      }
-                      if (paragraph === '---') {
-                        return <hr key={idx} className="border-slate-200 my-2" />
-                      }
-                      return (
-                        <p key={idx} className="whitespace-pre-line text-slate-700 font-medium leading-relaxed">
-                          {paragraph}
-                        </p>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <p className="whitespace-pre-line">{msg.text}</p>
-                )}
+                {/* Format ná»™i dung tin nháº¯n */}
+                <div className="whitespace-pre-line font-medium leading-relaxed space-y-2">
+                  {msg.text.split('\n\n').map((paragraph, idx) => (
+                    <p key={idx} className="text-slate-800">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
 
                 <div
                   className={`text-[10px] text-right font-medium mt-1 ${
@@ -393,15 +346,15 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
             </div>
           ))}
 
-          {/* Đang phản hồi Indicator */}
+          {/* Äang pháº£n há»“i Indicator */}
           {isLoading && (
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Bot className="w-4 h-4 animate-pulse" />
               </div>
-              <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-500 font-semibold flex items-center gap-2 shadow-2xs">
+              <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-600 font-semibold flex items-center gap-2.5 shadow-2xs">
                 <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>AI Phản tư đang phân tích rủi ro & bẫy tâm lý...</span>
+                <span>AI Pháº£n tÆ° Ä‘ang suy nghÄ© cÃ¢u há»i pháº£n biá»‡n...</span>
               </div>
             </div>
           )}
@@ -409,14 +362,14 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 2. BỘ NÚT GỢI Ý CÚ HÍCH PHẢN TƯ (REQUIREMENT 2 - QUICK NUDGE PROMPTS) */}
+        {/* Bá»˜ NÃšT Gá»¢I Ã CÃš HÃCH PHáº¢N TÆ¯ (QUICK NUDGE PROMPTS) */}
         <div className="p-3 bg-slate-100/80 border-t border-slate-200 space-y-2">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
             <span className="flex items-center gap-1.5">
               <Flame className="w-3.5 h-3.5 text-amber-500" />
-              <span>GỢI Ý CÚ HÍCH PHẢN TƯ NHAU (QUICK NUDGE PROMPTS)</span>
+              <span>Gá»¢I Ã CÃš HÃCH PHáº¢N TÆ¯ (Báº¤M Äá»‚ Há»ŽI NHANH)</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-normal">Bấm nút để hỏi nhanh</span>
+            <span className="text-[10px] text-slate-400 font-normal">Há»— trá»£ nháº­n diá»‡n thiÃªn lá»‡ch</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -426,8 +379,9 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
                 <button
                   key={nudge.id}
                   type="button"
+                  disabled={isLoading}
                   onClick={() => handleQuickNudgeClick(nudge)}
-                  className={`text-left text-xs font-semibold px-3 py-2 bg-white border border-slate-200 rounded-sm transition-all shadow-2xs flex items-center gap-2 ${nudge.color}`}
+                  className={`text-left text-xs font-semibold px-3 py-2 bg-white border border-slate-200 rounded-sm transition-all shadow-2xs flex items-center gap-2 ${nudge.color} disabled:opacity-50`}
                 >
                   <IconComp className={`w-3.5 h-3.5 shrink-0 ${nudge.iconColor}`} />
                   <span className="truncate">{nudge.prompt}</span>
@@ -437,7 +391,7 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
           </div>
         </div>
 
-        {/* Ô NHẬP NỘI DUNG NHAU & GỬI FORM */}
+        {/* Ã” NHáº¬P Ná»˜I DUNG & Gá»¬I FORM */}
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -446,8 +400,9 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
           className="p-3 bg-white border-t border-slate-200 flex items-center gap-2"
         >
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Nhập tên ngành học hoặc quan điểm chọn nghề của bạn để AI phản biện (VD: Em muốn học CNTT vì thấy bạn bè bảo dễ kiếm tiền...)"
+            placeholder="Nháº­p suy nghÄ© hoáº·c ngÃ nh há»c báº¡n Ä‘ang cÃ¢n nháº¯c (VD: Em muá»‘n há»c CNTT vÃ¬ tháº¥y báº¡n bÃ¨ báº£o kiáº¿m nhiá»u tiá»n...)"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800 placeholder:text-slate-400"
@@ -459,7 +414,7 @@ Tôi ở đây không phải để khen ngợi hay chọn nghề thay bạn, mà
             disabled={isLoading || !inputPrompt.trim()}
             className="font-bold text-xs uppercase py-2.5 px-4 shrink-0 flex items-center gap-1.5"
           >
-            <span>GỬI CÂU HỎI</span>
+            <span>Gá»¬I</span>
             <Send className="w-3.5 h-3.5" />
           </Button>
         </form>
