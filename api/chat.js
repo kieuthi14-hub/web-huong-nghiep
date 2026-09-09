@@ -33,7 +33,7 @@ VĂN PHONG: thân thiện, gần gũi như anh/chị đáng tin cậy, câu hỏ
 MỞ ĐẦU: "Chào bạn! Mình là AI Tham vấn Phản tư 🎯 — mình sẽ không chọn nghề giúp bạn đâu, mà sẽ đặt câu hỏi để bạn tự nhìn rõ hơn về lựa chọn của mình. Bạn đang cân nhắc ngành nghề nào vậy?"`;
 
 export default async function handler(req, res) {
-  // CORS
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -68,7 +68,12 @@ export default async function handler(req, res) {
       : (typeof atob !== 'undefined' ? atob(DEFAULT_ENCODED) : '');
 
     const apiKey = process.env.GEMINI_API_KEY || fallbackKey;
-    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    const candidateModels = [
+      process.env.GEMINI_MODEL,
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.6-flash'
+    ].filter(Boolean);
 
     const contents = [];
 
@@ -101,8 +106,6 @@ export default async function handler(req, res) {
       });
     }
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
     const payload = {
       system_instruction: {
         parts: [{ text: SYSTEM_PROMPT }]
@@ -114,26 +117,41 @@ export default async function handler(req, res) {
       }
     };
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    let replyText = null;
+    let lastError = null;
 
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      console.error('Gemini API Error:', response.status, errData);
-      const errMsg = errData?.error?.message || `Lỗi từ Gemini API (mã ${response.status})`;
-      return res.status(response.status).json({ error: errMsg });
+    for (const m of candidateModels) {
+      try {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (replyText) {
+            console.log(`Successfully responded using model: ${m}`);
+            break;
+          }
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          lastError = errData?.error?.message || `HTTP ${response.status}`;
+          console.warn(`Model ${m} failed (${response.status}):`, lastError);
+        }
+      } catch (err) {
+        lastError = err?.message || String(err);
+        console.warn(`Model ${m} request exception:`, lastError);
+      }
     }
 
-    const data = await response.json();
-    const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!replyText) {
-      return res.status(500).json({ error: 'AI không phản hồi nội dung. Vui lòng thử lại.' });
+      return res.status(500).json({ 
+        error: 'Hệ thống AI hiện đang bận hoặc quá tải. Vui lòng thử lại sau vài giây!',
+        details: lastError 
+      });
     }
 
     return res.status(200).json({ reply: replyText });
