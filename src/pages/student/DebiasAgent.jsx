@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import { 
@@ -16,7 +17,8 @@ import {
   Download, 
   Brain, 
   Flame,
-  AlertCircle
+  AlertCircle,
+  CalendarDays
 } from 'lucide-react'
 
 // 4 Nút gợi ý Cú hích Phản tư (Quick Nudge Prompts)
@@ -58,11 +60,12 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! AI Phản tư sẽ đồng hành cùng bạn qua 10 vòng hỏi đáp để thử thách và làm rõ lựa chọn ngành nghề. Sau 10 vòng, AI sẽ tổng kết Báo cáo đánh giá thiên lệch nhận thức và gợi ý kết nối chuyên gia. Bạn đang cân nhắc ngành nào vậy?',
+  text: 'Chào bạn! AI Phản tư sẽ đồng hành cùng bạn qua 10 vòng hỏi đáp để thử thách và làm rõ lựa chọn ngành nghề. Sau 10 vòng, AI sẽ tổng kết Báo cáo đánh giá thiên lệch nhận thức và hướng dẫn bạn đăng ký tư vấn trực tiếp 1-1 với Thầy/Cô hoặc Anh/Chị sinh viên trong ngành. Bạn đang cân nhắc ngành nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
 const DebiasAgent = () => {
+  const navigate = useNavigate()
   const { user, profile } = useAuth()
   const [messages, setMessages] = useState([INITIAL_MESSAGE])
   const [inputPrompt, setInputPrompt] = useState('')
@@ -267,7 +270,7 @@ const DebiasAgent = () => {
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Quy trình 10 vòng hỏi đáp phản biện bẫy tư duy tâm lý & xuất Báo cáo đánh giá thiên lệch nhận thức.
+            Quy trình 10 vòng hỏi đáp phản biện bẫy tư duy tâm lý, xuất Báo cáo đánh giá thiên lệch nhận thức & Đặt lịch tư vấn 1-1.
           </p>
         </div>
 
@@ -316,13 +319,13 @@ const DebiasAgent = () => {
           </span>
           <p className="text-xs leading-relaxed font-medium text-amber-900/90">
             Qua 10 vòng hỏi đáp ngắn gọn, AI sẽ cùng bạn lật mở các bẫy tâm lý (Hiệu ứng đám đông, Ảo tưởng lương, Bẫy an toàn...). 
-            Sau vòng thứ 10, AI sẽ tổng kết <strong>Báo cáo đánh giá thiên lệch</strong> và hướng dẫn bạn kết nối trực tiếp với <strong>thầy cô</strong> và <strong>các anh chị sinh viên đang học ngành đó</strong>.
+            Sau vòng thứ 10, AI sẽ tổng kết <strong>Báo cáo đánh giá thiên lệch</strong> và kích hoạt <strong>Cú hích hành động thực tế: Đăng ký tư vấn trực tiếp 1-1</strong> với Thầy Cô và các Anh Chị sinh viên trong ngành.
           </p>
         </div>
       </div>
 
       {/* KHUNG NỘI DUNG CHATBOT */}
-      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[640px]">
+      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[650px]">
         {/* THANH TIẾN TRÌNH 10 VÒNG ĐỐI THOẠI */}
         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
@@ -340,8 +343,8 @@ const DebiasAgent = () => {
 
             <span className="text-[11px] font-medium text-slate-500 hidden md:inline">
               {userRoundCount >= 10 
-                ? '🎉 Đã hoàn thành 10 vòng! AI đã xuất Báo cáo đánh giá thiên lệch & gợi ý kết nối bên dưới.' 
-                : '(Sau 10 vòng hỏi đáp, AI sẽ tự động xuất Báo cáo đánh giá thiên lệch & kết nối chuyên gia)'}
+                ? '🎉 Đã hoàn thành 10 vòng! Xem Báo cáo đánh giá & Cú hích đăng ký tư vấn 1-1 bên dưới.' 
+                : '(Sau 10 vòng hỏi đáp, AI sẽ tự động xuất Báo cáo đánh giá & Cú hích đặt lịch tư vấn 1-1)'}
             </span>
           </div>
 
@@ -416,7 +419,7 @@ const DebiasAgent = () => {
                 {msg.isAssessment && (
                   <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200 pb-1.5 mb-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Báo cáo Tổng kết & Đánh giá Phản tư (Vòng 10)</span>
+                    <span>Báo cáo Tổng kết & Cú hích Hành động (Vòng 10)</span>
                   </div>
                 )}
 
@@ -424,6 +427,20 @@ const DebiasAgent = () => {
                 <div className="whitespace-pre-line font-medium leading-relaxed space-y-2">
                   {renderFormattedText(msg.text, msg.sender === 'user')}
                 </div>
+
+                {/* Nút Đăng ký tư vấn trực tiếp đính kèm ngay trong Báo cáo Vòng 10 */}
+                {msg.isAssessment && (
+                  <div className="pt-2 border-t border-emerald-200/80 mt-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/student/booking')}
+                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                    >
+                      <CalendarDays className="w-4 h-4 text-emerald-100" />
+                      <span>📅 Đăng ký tư vấn trực tiếp (1-1) với Thầy/Cô & Sinh viên</span>
+                    </button>
+                  </div>
+                )}
 
                 <div
                   className={`text-[10px] text-right font-medium mt-1 ${
@@ -438,19 +455,28 @@ const DebiasAgent = () => {
 
           {/* Banner chúc mừng khi hoàn thành 10 vòng */}
           {userRoundCount >= 10 && (
-            <div className="bg-emerald-50 border border-emerald-300 p-3.5 rounded-sm text-xs text-emerald-950 flex items-start gap-3 shadow-2xs">
-              <div className="p-1 bg-emerald-200 text-emerald-900 rounded-full shrink-0 mt-0.5">
-                <Check className="w-4 h-4" />
+            <div className="bg-emerald-50 border-2 border-emerald-300 p-4 rounded-sm text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 bg-emerald-200 text-emerald-900 rounded-full shrink-0 mt-0.5">
+                  <Check className="w-4 h-4" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-bold text-emerald-900 text-sm">
+                    🎉 Hoàn thành 10 vòng phản biện! Hãy chuyển sang Cú hích Hành động thực tế:
+                  </p>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    Gặp trực tiếp Thầy/Cô cố vấn trường hoặc Anh/Chị sinh viên đang học ngành này để kiểm chứng thực tế trước khi ra quyết định cuối cùng.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="font-bold text-emerald-900">
-                  🎉 Chúc mừng bạn đã hoàn thành trọn vẹn 10 vòng hỏi đáp phản biện!
-                </p>
-                <p className="text-[11px] text-emerald-800 leading-relaxed">
-                  Hãy nhấn nút <strong>"Xuất / Copy hội thoại"</strong> ở góc trên bên phải để tải toàn bộ Báo cáo Đánh giá và Nhật ký đối thoại về máy. 
-                  Sau đó, bạn có thể bấm <strong>"Làm mới"</strong> nếu muốn phản tư tiếp một ngành nghề khác!
-                </p>
-              </div>
+              <Button
+                variant="primary"
+                onClick={() => navigate('/student/booking')}
+                className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 flex items-center gap-2 shadow-xs cursor-pointer"
+              >
+                <CalendarDays className="w-4 h-4" />
+                <span>Đăng ký tư vấn trực tiếp</span>
+              </Button>
             </div>
           )}
 

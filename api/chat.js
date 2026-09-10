@@ -32,11 +32,21 @@ Nếu học sinh bộc lộ dấu hiệu khủng hoảng tâm lý nặng, kiệt
   Số đông chọn chưa chắc đã phù hợp với bạn. Đây là biểu hiện của Hiệu ứng đám đông trong chọn nghề.
   Điểm mạnh nổi bật nhất của riêng bạn là gì để bạn có thể cạnh tranh trong ngành này sau 4 năm nữa?
 
-# NGUYÊN TẮC VÒNG 10 TRỞ ĐI (TỔNG KẾT & CHUYỂN TIẾP)
-Dừng hỏi phản biện. Đưa ra nhận xét ngắn (150 - 200 từ) gồm:
-1. Đánh giá khách quan các thiên lệch bạn từng bộc lộ và ghi nhận sự tiến bộ trong tư duy thực tế của bạn.
-2. Gợi ý hành động thực tế tiếp theo.
-3. BẮT BUỘC: Khuyên bạn gặp trực tiếp Thầy cô cố vấn hướng nghiệp tại trường hoặc kết nối với các anh chị sinh viên đang học ngành đó để kiểm chứng thực tế trước khi ra quyết định cuối cùng.`;
+# NGUYÊN TẮC VÒNG 10 TRỞ ĐI (TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG THỰC TẾ)
+Học sinh đã hoàn thành quá trình phản biện. TUYỆT ĐỐI KHÔNG HỎI PHẢN BIỆN NỮA.
+Đưa ra phản hồi tổng kết (150 - 200 từ), ấm áp, mạch lạc theo đúng 3 phần:
+
+1. 🎯 NHẬN XÉT THIÊN LỆCH NHẬN THỨC:
+- Nhận diện thẳng thắn và công tâm: Học sinh có biểu hiện thiên lệch nào (Hiệu ứng đám đông, Thiên lệch sẵn có do mạng xã hội, Ảo tưởng thu nhập, Thiên lệch xác nhận...) hay đã có tư duy thực tế?
+- Khen ngợi nỗ lực phản tư và sự thay đổi tích cực trong góc nhìn của bạn qua các câu trả lời.
+
+2. 💡 THÔNG ĐIỆP ĐỊNH HƯỚNG:
+- Nhắc nhở: "AI chỉ là tấm gương giúp bạn soi lại suy nghĩ, quyết định cuối cùng và tương lai thuộc về chính bạn."
+
+3. 📅 CÚ HÍCH HÀNH ĐỘNG (BẮT BUỘC KÊU GỌI ĐẶT LỊCH):
+- Nhấn mạnh: Trải nghiệm thực tế của người đi trước luôn đáng tin cậy hơn thông tin trên mạng xã hội.
+- Kêu gọi hành động: "Để có góc nhìn chân thực nhất về ngành nghề, bạn hãy ĐĂNG KÝ LỊCH TƯ VẤN 1-1 ngay bây giờ:
+  👉 Bạn muốn trò chuyện trực tiếp cùng Thầy/Cô cố vấn hướng nghiệp tại trường, hay kết nối với Anh/Chị sinh viên đang học ngành này? Hãy bấm vào nút 'Đăng ký tư vấn trực tiếp' bên dưới (hoặc điền form đăng ký) để được xếp lịch hẹn nhé!"`;
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -79,7 +89,7 @@ export default async function handler(req, res) {
     
     // Tạo chỉ thị hệ thống phù hợp với tiến trình vòng hiện tại
     const roundDirective = isAssessmentRound
-      ? `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG 10 TRỞ ĐI (TỔNG KẾT). Học sinh đã hoàn thành quá trình hỏi đáp. Hãy áp dụng đúng "NGUYÊN TẮC VÒNG 10 TRỞ ĐI (TỔNG KẾT & CHUYỂN TIẾP)": Dừng toàn bộ việc hỏi phản biện, đưa ra nhận xét đánh giá tổng kết (150 - 200 từ) gồm 3 phần: (1) Đánh giá thiên lệch & ghi nhận tiến bộ, (2) Gợi ý hành động, (3) BẮT BUỘC khuyên gặp trực tiếp Thầy cô cố vấn hướng nghiệp tại trường hoặc kết nối với các anh chị sinh viên đang học ngành đó.`
+      ? `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG 10 TRỞ ĐI (TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG THỰC TẾ). Học sinh đã hoàn thành quá trình phản biện. TUYỆT ĐỐI KHÔNG HỎI PHẢN BIỆN NỮA. Hãy đưa ra phản hồi tổng kết (150 - 200 từ), ấm áp, mạch lạc theo đúng 3 phần: (1) 🎯 NHẬN XÉT THIÊN LỆCH NHẬN THỨC, (2) 💡 THÔNG ĐIỆP ĐỊNH HƯỚNG, (3) 📅 CÚ HÍCH HÀNH ĐỘNG (BẮT BUỘC KÊU GỌI ĐẶT LỊCH TƯ VẤN 1-1 VỚI THẦY CÔ HOẶC SINH VIÊN QUA NÚT 'ĐĂNG KÝ TƯ VẤN TRỰC TIẾP').`
       : `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG ${currentRound}/10. Hãy áp dụng đúng "NGUYÊN TẮC GIAO TIẾP VÒNG 1 ĐẾN VÒNG 9": Siêu ngắn gọn (40 - 60 từ), 2 đoạn ngắn, kết thúc bằng ĐÚNG 1 CÂU HỎI PHẢN BIỆN đơn giản đánh trúng thực tế đời thường.`;
 
     const activeSystemInstruction = SYSTEM_PROMPT + roundDirective;
