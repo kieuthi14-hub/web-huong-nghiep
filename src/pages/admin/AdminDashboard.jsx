@@ -276,10 +276,10 @@ const VISEF_SEED_COUNSELING = [
     student: { full_name: 'Trần Thị Bích', email: 'tranbich.visef@gmail.com', grade_level: 'Grade 12' },
     counselor_id: '11111111-1111-1111-1111-111111111111',
     mentor_id: '11111111-1111-1111-1111-111111111111',
-    counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)',
+    counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
     scheduled_at: '2026-02-26T09:00:00Z',
     status: 'confirmed',
-    student_notes: '[Chuyên gia/Mentor: Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
+    student_notes: '[Chuyên gia/Mentor: Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
     created_at: '2026-02-12T15:20:00Z'
   },
   {
@@ -307,6 +307,84 @@ const VISEF_SEED_COUNSELING = [
     created_at: '2026-02-11T11:00:00Z'
   }
 ]
+
+// =========================================================================
+// MAPPING CHUYÊN GIA / MENTOR CHUẨN XÁC TỪ DỮ LIỆU
+// =========================================================================
+export const ADMIN_MENTOR_MAP = {
+  '11111111-1111-1111-1111-111111111111': 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
+  '22222222-2222-2222-2222-222222222222': 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
+  '11111111-1111-4111-a111-111111111111': 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
+  '22222222-2222-4222-a222-222222222222': 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường',
+  '33333333-3333-4333-a333-333333333301': '[CNTT & AI] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+  '33333333-3333-4333-a333-333333333307': '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)'
+}
+
+// Hàm phân giải tên hiển thị chuẩn xác, tuyệt đối không hiển thị mã UUID thô
+export const getDisplayMentorName = (session) => {
+  if (!session) return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+
+  const idToCheck = String(session.mentor_id || session.counselor_id || session.counselor?.id || '').trim()
+  const nameToCheck = String(session.counselor_name || session.counselor?.full_name || '').trim()
+
+  // 1. Nếu ID là 11111111-1111-1111-1111-111111111111 hoặc tên là UUID này
+  if (idToCheck === '11111111-1111-1111-1111-111111111111' || nameToCheck === '11111111-1111-1111-1111-111111111111') {
+    return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+  }
+
+  // 2. Tra cứu qua ADMIN_MENTOR_MAP theo ID
+  if (ADMIN_MENTOR_MAP[idToCheck]) {
+    return ADMIN_MENTOR_MAP[idToCheck]
+  }
+
+  // 3. Tra cứu qua ADMIN_MENTOR_MAP theo Tên
+  if (ADMIN_MENTOR_MAP[nameToCheck]) {
+    return ADMIN_MENTOR_MAP[nameToCheck]
+  }
+
+  // 4. Tìm kiếm từ ghi chú session [Chuyên gia/Mentor: ...]
+  if (session.student_notes && typeof session.student_notes === 'string') {
+    const match = session.student_notes.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)
+    if (match && match[1]) {
+      const extracted = match[1].trim()
+      if (extracted === '11111111-1111-1111-1111-111111111111') {
+        return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+      }
+      if (ADMIN_MENTOR_MAP[extracted]) {
+        return ADMIN_MENTOR_MAP[extracted]
+      }
+      const isExtractedUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extracted)
+      if (!isExtractedUUID && extracted.length > 2) {
+        return extracted
+      }
+    }
+  }
+
+  // 5. Nếu nameToCheck là tên người thực (không phải mã UUID)
+  const isNameUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nameToCheck)
+  if (nameToCheck && !isNameUUID && nameToCheck.length > 2) {
+    return nameToCheck
+  }
+
+  // 6. Mặc định nếu ID là UUID chưa map hoặc chưa có tên -> hiển thị Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)
+  return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+}
+
+// Hàm lấy huy hiệu tương ứng cho chuyên gia/mentor
+export const getMentorBadge = (displayName) => {
+  const name = String(displayName || '')
+  const isStudentMentor = name.includes('SV') || name.includes('Anh') || name.includes('Chị') || name.includes('Mentor') || name.includes('[')
+  if (isStudentMentor) {
+    return {
+      label: '🚀 Mentor Sinh viên',
+      className: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    }
+  }
+  return {
+    label: '🎓 Cố vấn Trường',
+    className: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+  }
+}
 
 // =========================================================================
 // 3. MAIN COMPONENT: ADMIN DASHBOARD VISEF
@@ -1218,8 +1296,8 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                   </thead>
                   <tbody>
                     {counselingSessions.map((session) => {
-                      const expert = getCounselorDetails(session.mentor_id || session.counselor_id, session.counselor, session.student_notes, session.counselor_name)
-                      const counselorName = mentorMap[session.mentor_id] || mentorMap[session.counselor_id] || expert.fullName || 'Cố vấn chuyên môn'
+                      const displayMentorName = getDisplayMentorName(session)
+                      const mentorBadge = getMentorBadge(displayMentorName)
                       const studentName = session.student?.full_name || 'Học sinh'
                       const studentEmail = session.student?.email || 'N/A'
                       const cleanNotes = session.student_notes
@@ -1244,11 +1322,11 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
 
                           {/* 2. Chuyên gia / Mentor */}
                           <td className="py-4 px-4">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border mb-1 block w-max ${expert.badgeClass}`}>
-                              {expert.badgeLabel}
+                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border mb-1 block w-max ${mentorBadge.className}`}>
+                              {mentorBadge.label}
                             </span>
                             <span className="font-bold text-slate-800 block text-xs">
-                              {mentorMap[session.mentor_id] || mentorMap[session.counselor_id] || counselorName || 'Cố vấn chuyên môn'}
+                              {displayMentorName}
                             </span>
                           </td>
 
