@@ -41,8 +41,8 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || fallbackKey;
     const candidateModels = [
       process.env.GEMINI_MODEL,
-      'gemini-3.5-flash',
       'gemini-3.5-flash-lite',
+      'gemini-3.5-flash',
       'gemini-3.6-flash'
     ].filter(Boolean);
 
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       },
       contents,
       generationConfig: {
-        temperature: 0.7,
+        temperature: 0.5,
         maxOutputTokens: 800
       }
     };
@@ -102,7 +102,15 @@ export default async function handler(req, res) {
 
         if (response.ok) {
           const data = await response.json();
-          replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          const parts = data?.candidates?.[0]?.content?.parts;
+          if (Array.isArray(parts) && parts.length > 0) {
+            const cleanParts = parts.filter(p => !p.thought && p.text);
+            if (cleanParts.length > 0) {
+              replyText = cleanParts.map(p => p.text).join('\n\n').trim();
+            } else {
+              replyText = parts[0]?.text?.trim();
+            }
+          }
           if (replyText) {
             console.log(`Successfully responded using model: ${m}`);
             break;
