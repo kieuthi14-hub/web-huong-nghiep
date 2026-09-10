@@ -16,6 +16,12 @@ import {
   Sparkles
 } from 'lucide-react'
 
+// Bản đồ Ánh xạ UUID Chuyên gia / Mentor sang Tên hiển thị thực tế
+export const mentorMap = {
+  '11111111-1111-1111-1111-111111111111': 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)',
+  '22222222-2222-2222-2222-222222222222': 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)'
+}
+
 // Cấu hình Danh sách 2 Nhóm Chuyên gia & Mentor Tư vấn 1-1
 export const COUNSELOR_GROUPS = [
   {
@@ -25,6 +31,15 @@ export const COUNSELOR_GROUPS = [
     badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     icon: GraduationCap,
     counselors: [
+      {
+        id: '11111111-1111-1111-1111-111111111111',
+        name: 'Thầy Nguyễn Văn A',
+        title: 'Cố vấn Hướng nghiệp Trường',
+        fullName: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)',
+        groupKey: 'school_counselors',
+        badgeLabel: '🎓 Cố vấn Trường',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      },
       {
         id: 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
         name: 'Thầy Cao Xuân Hải',
@@ -134,10 +149,10 @@ export const COUNSELOR_GROUPS = [
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
-        id: '[Du lịch - Khách sạn] Chị Hoàng Thu Trang - SV Năm 3 Quản trị Du lịch & Khách sạn',
+        id: '22222222-2222-2222-2222-222222222222',
         name: 'Chị Hoàng Thu Trang',
-        title: 'SV Năm 3 Quản trị Du lịch & Khách sạn',
-        fullName: '[Du lịch - Khách sạn] Chị Hoàng Thu Trang - SV Năm 3 Quản trị Du lịch & Khách sạn',
+        title: 'SV Năm 3 - ĐH KHXH&NV',
+        fullName: 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
         groupKey: 'student_mentors',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
@@ -171,6 +186,21 @@ export const formatDateTimeFormatted = (dateStr) => {
 // Hàm tra cứu chi tiết thông tin chuyên gia / mentor từ ID hoặc object trả về từ Supabase DB
 export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes, sessionCounselorName) => {
   const checkValue = counselorId || sessionCounselorName || ''
+
+  // 0. Tra cứu trực tiếp trong mentorMap
+  if (checkValue && mentorMap[checkValue]) {
+    const mappedName = mentorMap[checkValue]
+    const isMentor = mappedName.includes('Mentor') || mappedName.includes('SV') || mappedName.includes('Anh') || mappedName.includes('Chị') || mappedName.includes('[')
+    return {
+      id: checkValue,
+      name: mappedName.split('-')[0].trim() || mappedName,
+      title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
+      fullName: mappedName,
+      groupKey: isMentor ? 'student_mentors' : 'school_counselors',
+      badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
+      badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    }
+  }
 
   // 1. Tìm theo tên/value hoặc ID trong COUNSELOR_GROUPS
   for (const group of COUNSELOR_GROUPS) {
@@ -228,9 +258,9 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
   const isMentor = dbName.includes('Mentor') || dbName.includes('SV') || dbName.includes('Anh') || dbName.includes('Chị') || dbName.includes('[')
   return {
     id: counselorId || 'unknown',
-    name: dbName || 'Chuyên viên Tư vấn',
+    name: dbName || 'Cố vấn chuyên môn',
     title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
-    fullName: dbName || 'Chuyên viên Tư vấn Hướng nghiệp',
+    fullName: dbName || 'Cố vấn chuyên môn',
     groupKey: isMentor ? 'student_mentors' : 'school_counselors',
     badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
     badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -348,6 +378,7 @@ const CounselingBooking = () => {
     const fallbackLocalSession = {
       id: `local-${Date.now()}`,
       student_id: user.id,
+      mentor_id: selectedCounselor,
       counselor_id: selectedCounselor,
       counselor_name: counselorFullName,
       scheduled_at: scheduledAt,
@@ -364,6 +395,7 @@ const CounselingBooking = () => {
       // 1. Lần thử 1: Thử insert với counselor_id ban đầu và đính kèm thông tin
       const payload1 = {
         student_id: user.id,
+        mentor_id: selectedCounselor,
         counselor_id: selectedCounselor,
         counselor_name: counselorFullName,
         scheduled_at: scheduledAt,
@@ -523,10 +555,12 @@ const CounselingBooking = () => {
             >
               <option value="">-- Chọn Thầy/Cô Cố Vấn hoặc Mentor Sinh Viên --</option>
               <optgroup label="🎓 THẦY CÔ CỐ VẤN TẠI TRƯỜNG">
+                <option value="11111111-1111-1111-1111-111111111111">Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)</option>
                 <option value="Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp">Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp</option>
                 <option value="Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường">Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường</option>
               </optgroup>
               <optgroup label="🚀 MẠNG LƯỚI MENTOR SINH VIÊN (10 KHỐI NGÀNH ĐẠI DIỆN)">
+                <option value="22222222-2222-2222-2222-222222222222">Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)</option>
                 <option value="[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)">[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)</option>
                 <option value="[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)">[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)</option>
                 <option value="[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)">[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)</option>
@@ -600,14 +634,15 @@ const CounselingBooking = () => {
             </div>
           ) : mySessions.length > 0 ? (
             <div className="space-y-4">
-              {mySessions.map((session) => {
-                const expert = getCounselorDetails(session.counselor_id, session.counselor, session.student_notes, session.counselor_name)
-                const displayNotes = session.student_notes
-                  ? session.student_notes.replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]\s*/, '')
+              {mySessions.map((item) => {
+                const expert = getCounselorDetails(item.mentor_id || item.counselor_id, item.counselor, item.student_notes, item.counselor_name)
+                const counselorName = mentorMap[item.mentor_id] || mentorMap[item.counselor_id] || expert.fullName || 'Cố vấn chuyên môn'
+                const displayNotes = item.student_notes
+                  ? item.student_notes.replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]\s*/, '')
                   : ''
 
                 return (
-                  <div key={session.id} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
+                  <div key={item.id} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -615,8 +650,8 @@ const CounselingBooking = () => {
                           <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded border ${expert.badgeClass}`}>
                             {expert.badgeLabel}
                           </span>
-                          {getStatusBadge(session.status)}
-                          {session.is_local && (
+                          {getStatusBadge(item.status)}
+                          {item.is_local && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-sm" title="Đã lưu tạm trên thiết bị">
                               💾 Đã lưu local
                             </span>
@@ -626,7 +661,7 @@ const CounselingBooking = () => {
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-brand-600 shrink-0" />
                           <span className="text-xs font-bold text-slate-800">
-                            Chuyên viên: {expert.fullName}
+                            Chuyên viên: {mentorMap[item.mentor_id] || mentorMap[item.counselor_id] || counselorName || 'Cố vấn chuyên môn'}
                           </span>
                         </div>
                       </div>

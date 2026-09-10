@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { getCounselorDetails, formatDateTimeFormatted } from '../student/CounselingBooking'
+import { getCounselorDetails, formatDateTimeFormatted, mentorMap } from '../student/CounselingBooking'
 import { 
   CalendarDays, 
   CheckCircle2, 
@@ -263,6 +263,7 @@ const VISEF_SEED_COUNSELING = [
     student_id: 'usr-001',
     student: { full_name: 'Nguyễn Văn An', email: 'nguyenvanan.visef@gmail.com', grade_level: 'Grade 12' },
     counselor_id: '33333333-3333-4333-a333-333333333301',
+    mentor_id: '33333333-3333-4333-a333-333333333301',
     counselor_name: '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
     scheduled_at: '2026-02-25T14:30:00Z',
     status: 'confirmed',
@@ -273,22 +274,24 @@ const VISEF_SEED_COUNSELING = [
     id: 'cs-002',
     student_id: 'usr-002',
     student: { full_name: 'Trần Thị Bích', email: 'tranbich.visef@gmail.com', grade_level: 'Grade 12' },
-    counselor_id: '11111111-1111-4111-a111-111111111111',
-    counselor_name: 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
+    counselor_id: '11111111-1111-1111-1111-111111111111',
+    mentor_id: '11111111-1111-1111-1111-111111111111',
+    counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)',
     scheduled_at: '2026-02-26T09:00:00Z',
     status: 'confirmed',
-    student_notes: '[Chuyên gia/Mentor: Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
+    student_notes: '[Chuyên gia/Mentor: Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp Trường)]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
     created_at: '2026-02-12T15:20:00Z'
   },
   {
     id: 'cs-003',
     student_id: 'usr-003',
     student: { full_name: 'Phạm Hoàng Nam', email: 'hoangnam.visef@gmail.com', grade_level: 'Grade 11' },
-    counselor_id: '33333333-3333-4333-a333-333333333307',
-    counselor_name: '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+    counselor_id: '22222222-2222-2222-2222-222222222222',
+    mentor_id: '22222222-2222-2222-2222-222222222222',
+    counselor_name: 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
     scheduled_at: '2026-02-27T16:00:00Z',
     status: 'pending',
-    student_notes: '[Chuyên gia/Mentor: [Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)]\nEm muốn tìm hiểu lộ trình thi chứng chỉ IELTS và cơ hội việc làm ngành Biên dịch tiếng Anh.',
+    student_notes: '[Chuyên gia/Mentor: Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)]\nEm muốn tìm hiểu lộ trình thi chứng chỉ và cơ hội thực tập, việc làm ngành du lịch, ngôn ngữ.',
     created_at: '2026-02-13T08:15:00Z'
   },
   {
@@ -296,6 +299,7 @@ const VISEF_SEED_COUNSELING = [
     student_id: 'usr-004',
     student: { full_name: 'Lê Quốc Bảo', email: 'quocbao.visef@gmail.com', grade_level: 'Grade 12' },
     counselor_id: '22222222-2222-4222-a222-222222222222',
+    mentor_id: '22222222-2222-4222-a222-222222222222',
     counselor_name: 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường',
     scheduled_at: '2026-02-24T10:30:00Z',
     status: 'rejected',
@@ -1214,7 +1218,8 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                   </thead>
                   <tbody>
                     {counselingSessions.map((session) => {
-                      const expert = getCounselorDetails(session.counselor_id, session.counselor, session.student_notes, session.counselor_name)
+                      const expert = getCounselorDetails(session.mentor_id || session.counselor_id, session.counselor, session.student_notes, session.counselor_name)
+                      const counselorName = mentorMap[session.mentor_id] || mentorMap[session.counselor_id] || expert.fullName || 'Cố vấn chuyên môn'
                       const studentName = session.student?.full_name || 'Học sinh'
                       const studentEmail = session.student?.email || 'N/A'
                       const cleanNotes = session.student_notes
@@ -1243,7 +1248,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                               {expert.badgeLabel}
                             </span>
                             <span className="font-bold text-slate-800 block text-xs">
-                              {expert.fullName}
+                              {mentorMap[session.mentor_id] || mentorMap[session.counselor_id] || counselorName || 'Cố vấn chuyên môn'}
                             </span>
                           </td>
 

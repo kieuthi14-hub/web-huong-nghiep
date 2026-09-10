@@ -1,5 +1,5 @@
-import CounselingBooking, { COUNSELOR_GROUPS, getCounselorDetails } from './CounselingBooking'
+import CounselingBooking, { COUNSELOR_GROUPS, getCounselorDetails, mentorMap } from './CounselingBooking'
 
-export { COUNSELOR_GROUPS, getCounselorDetails }
+export { COUNSELOR_GROUPS, getCounselorDetails, mentorMap }
 export default CounselingBooking
 
