@@ -327,8 +327,8 @@ export const getDisplayMentorName = (session) => {
   const idToCheck = String(session.mentor_id || session.counselor_id || session.counselor?.id || '').trim()
   const nameToCheck = String(session.counselor_name || session.counselor?.full_name || '').trim()
 
-  // 1. Nếu ID là 11111111-1111-1111-1111-111111111111 hoặc tên là UUID này
-  if (idToCheck === '11111111-1111-1111-1111-111111111111' || nameToCheck === '11111111-1111-1111-1111-111111111111') {
+  // 1. Bất kỳ dấu hiệu nào của 11111111
+  if (idToCheck.includes('11111111') || nameToCheck.includes('11111111')) {
     return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
   }
 
@@ -347,26 +347,26 @@ export const getDisplayMentorName = (session) => {
     const match = session.student_notes.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)
     if (match && match[1]) {
       const extracted = match[1].trim()
-      if (extracted === '11111111-1111-1111-1111-111111111111') {
+      if (extracted.includes('11111111')) {
         return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
       }
       if (ADMIN_MENTOR_MAP[extracted]) {
         return ADMIN_MENTOR_MAP[extracted]
       }
-      const isExtractedUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extracted)
+      const isExtractedUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(extracted)
       if (!isExtractedUUID && extracted.length > 2) {
         return extracted
       }
     }
   }
 
-  // 5. Nếu nameToCheck là tên người thực (không phải mã UUID)
-  const isNameUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(nameToCheck)
+  // 5. Nếu nameToCheck là tên người thực (không chứa UUID)
+  const isNameUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(nameToCheck)
   if (nameToCheck && !isNameUUID && nameToCheck.length > 2) {
     return nameToCheck
   }
 
-  // 6. Mặc định nếu ID là UUID chưa map hoặc chưa có tên -> hiển thị Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)
+  // 6. Mặc định
   return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
 }
 
@@ -511,10 +511,31 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
       }
     })
 
-    if (combinedCounseling.length === 0) {
-      realCounseling = VISEF_SEED_COUNSELING
-    } else {
-      realCounseling = combinedCounseling
+    const rawCombined = combinedCounseling.length === 0 ? VISEF_SEED_COUNSELING : combinedCounseling
+    realCounseling = rawCombined.map(s => {
+      const isRawUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(s.counselor_name || '')
+      const idHas11 = (s.counselor_id && String(s.counselor_id).includes('11111111')) || (s.mentor_id && String(s.mentor_id).includes('11111111'))
+      if (idHas11 || isRawUUID || !s.counselor_name) {
+        return {
+          ...s,
+          counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+        }
+      }
+      return s
+    })
+
+    if (user?.id && localSessions.length > 0) {
+      try {
+        const cleaned = localSessions.map(s => {
+          const isRawUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(s.counselor_name || '')
+          const idHas11 = (s.counselor_id && String(s.counselor_id).includes('11111111')) || (s.mentor_id && String(s.mentor_id).includes('11111111'))
+          if (idHas11 || isRawUUID || !s.counselor_name) {
+            return { ...s, counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)' }
+          }
+          return s
+        })
+        localStorage.setItem(`counseling_sessions_local_${user.id}`, JSON.stringify(cleaned))
+      } catch (e) {}
     }
 
     // Fallback Seed nếu DB rỗng
@@ -1326,7 +1347,9 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                               {mentorBadge.label}
                             </span>
                             <span className="font-bold text-slate-800 block text-xs">
-                              {displayMentorName}
+                              {displayMentorName && !displayMentorName.includes('11111111') && !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(displayMentorName)
+                                ? displayMentorName
+                                : 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'}
                             </span>
                           </td>
 
