@@ -26,7 +26,7 @@ const QUICK_NUDGES = [
     icon: Search,
     color: 'hover:border-amber-400 hover:bg-amber-50/70 text-amber-900',
     iconColor: 'text-amber-600',
-    prompt: '🔍 Phân tích mặt tối & rủi ro thực tế của ngành ',
+    prompt: '🔍 Phân tích khó khăn & rủi ro thực tế của ngành ',
     isNeedInput: true
   },
   {
@@ -42,7 +42,7 @@ const QUICK_NUDGES = [
     icon: BarChart3,
     color: 'hover:border-emerald-400 hover:bg-emerald-50/70 text-emerald-900',
     iconColor: 'text-emerald-600',
-    prompt: '📊 Tìm 3 luận điểm đối lập với kỳ vọng lương cao của ngành này',
+    prompt: '📊 Nghe nói ngành này lương cao lắm, có thật như lời đồn không?',
     isNeedInput: false
   },
   {
@@ -50,7 +50,7 @@ const QUICK_NUDGES = [
     icon: Puzzle,
     color: 'hover:border-rose-400 hover:bg-rose-50/70 text-rose-900',
     iconColor: 'text-rose-600',
-    prompt: '🧩 Soi chiếu xem tôi có đang mắc Thiên lệch chi phí chìm không?',
+    prompt: '🧩 Ba mẹ khuyên chọn ngành an toàn, tôi có nên nghe theo không?',
     isNeedInput: false
   }
 ]
@@ -58,7 +58,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! AI Phản tư sẽ không chọn nghề giúp bạn, mà sẽ đặt câu hỏi phản biện để bạn tự nhìn rõ hơn về lựa chọn của mình. Bạn đang cân nhắc ngành nghề nào vậy?',
+  text: 'Chào bạn! AI Phản tư sẽ đồng hành cùng bạn qua 10 vòng hỏi đáp để thử thách và làm rõ lựa chọn ngành nghề. Sau 10 vòng, AI sẽ tổng kết Báo cáo đánh giá thiên lệch nhận thức và gợi ý kết nối chuyên gia. Bạn đang cân nhắc ngành nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -72,6 +72,9 @@ const DebiasAgent = () => {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
+  // Đếm số lượt tương tác của học sinh (vòng phản tư)
+  const userRoundCount = messages.filter(m => m.sender === 'user').length
+
   useEffect(() => {
     scrollToBottom()
   }, [messages, isLoading])
@@ -81,11 +84,13 @@ const DebiasAgent = () => {
   }
 
   // Gọi API backend (Vercel Serverless Function gọi đến Gemini API)
-  const handleSendMessage = async (textToSend) => {
+  const handleSendMessage = async (textToSend, forceAssessment = false) => {
     const query = (textToSend || inputPrompt).trim()
     if (!query || isLoading) return
 
     setErrorMessage(null)
+
+    const nextRound = userRoundCount + 1
 
     const userMsg = {
       id: `usr-${Date.now()}`,
@@ -101,7 +106,7 @@ const DebiasAgent = () => {
     setIsLoading(true)
 
     try {
-      // Chuẩn bị lịch sử hội thoại gửi lên server (bỏ tin nhắn chào đầu nếu chưa có lượt user)
+      // Chuẩn bị lịch sử hội thoại gửi lên server (bỏ tin nhắn chào đầu)
       const historyPayload = messages
         .filter(m => m.id !== 'welcome-msg')
         .map(m => ({
@@ -116,7 +121,9 @@ const DebiasAgent = () => {
         },
         body: JSON.stringify({
           message: query,
-          history: historyPayload
+          history: historyPayload,
+          round: nextRound,
+          isFinal: forceAssessment || nextRound >= 10
         })
       })
 
@@ -130,7 +137,8 @@ const DebiasAgent = () => {
         id: `ai-${Date.now()}`,
         sender: 'ai',
         text: data.reply,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isAssessment: data.isAssessment || nextRound >= 10
       }
 
       setMessages([...newMessages, aiMsg])
@@ -164,7 +172,7 @@ const DebiasAgent = () => {
   }
 
   const handleResetChat = () => {
-    if (window.confirm('Bạn có chắc muốn làm mới cuộc hội thoại này không?')) {
+    if (window.confirm('Bạn có chắc muốn làm mới cuộc hội thoại này để phản tư một ngành nghề khác?')) {
       setMessages([{
         ...INITIAL_MESSAGE,
         id: `welcome-${Date.now()}`,
@@ -174,16 +182,21 @@ const DebiasAgent = () => {
     }
   }
 
-  // Xuất & Copy toàn bộ đoạn hội thoại
+  // Xuất file và copy lịch sử chat
   const handleExportChat = () => {
-    const studentName = profile?.full_name || user?.email || 'Học sinh'
+    if (messages.length <= 1) {
+      alert('Chưa có nội dung đối thoại để xuất!')
+      return
+    }
+
+    const studentName = profile?.fullName || user?.email || 'Học sinh THPT'
     const now = new Date().toLocaleString('vi-VN')
 
     let transcriptText = `=================================================================\n`
-    transcriptText += `NHẬT KÝ THAM VẤN PHẢN TƯ CÙNG AI (DEBIASING CHATBOT)\n`
+    transcriptText += `NHẬT KÝ THAM VẤN PHẢN TƯ CÙNG AI (10 VÒNG ĐỐI THOẠI DEBIASING)\n`
     transcriptText += `Học sinh: ${studentName}\n`
     transcriptText += `Thời gian xuất: ${now}\n`
-    transcriptText += `Tổng số lượt trao đổi: ${messages.length}\n`
+    transcriptText += `Tổng số vòng phản tư: ${userRoundCount} / 10\n`
     transcriptText += `Mục đích: Nghiên cứu giảm thiểu thiên lệch nhận thức & Nhật ký ra quyết định\n`
     transcriptText += `=================================================================\n\n`
 
@@ -193,7 +206,7 @@ const DebiasAgent = () => {
       transcriptText += `-----------------------------------------------------------------\n\n`
     })
 
-    // 1. Sao chép vào bộ nhớ tạm (Clipboard)
+    // 1. Sao chép vào bộ nhớ tạm
     navigator.clipboard.writeText(transcriptText).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 3000)
@@ -208,7 +221,7 @@ const DebiasAgent = () => {
       const link = document.createElement('a')
       const dateStr = new Date().toISOString().slice(0, 10)
       link.href = url
-      link.download = `Nhat-ky-phan-tu-AI-${dateStr}.txt`
+      link.download = `Bao-cao-phan-tu-AI-${dateStr}.txt`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -216,6 +229,27 @@ const DebiasAgent = () => {
     } catch (e) {
       console.warn('Không thể tự động tải file:', e)
     }
+  }
+
+  // Format các đoạn văn và thẻ in đậm **nội dung**
+  const renderFormattedText = (text, isUser) => {
+    return text.split('\n\n').map((paragraph, pIdx) => {
+      const parts = paragraph.split(/(\*\*.*?\*\*)/g)
+      return (
+        <p key={pIdx} className={isUser ? "text-white" : "text-slate-800"}>
+          {parts.map((part, idx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return (
+                <strong key={idx} className={isUser ? "font-bold text-white" : "font-bold text-slate-900"}>
+                  {part.slice(2, -2)}
+                </strong>
+              )
+            }
+            return part
+          })}
+        </p>
+      )
+    })
   }
 
   return (
@@ -233,12 +267,12 @@ const DebiasAgent = () => {
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Trợ lý trí tuệ nhân tạo phản biện bẫy tư duy tâm lý & vạch trần rủi ro thực tế trong chọn nghề.
+            Quy trình 10 vòng hỏi đáp phản biện bẫy tư duy tâm lý & xuất Báo cáo đánh giá thiên lệch nhận thức.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
-          {/* NÚT XUẤT / COPY ĐOẠN HỘI THOẠI (YÊU CẦU 5) */}
+          {/* NÚT XUẤT / COPY ĐOẠN HỘI THOẠI */}
           <Button
             variant="outline"
             onClick={handleExportChat}
@@ -263,6 +297,7 @@ const DebiasAgent = () => {
             variant="outline"
             onClick={handleResetChat}
             className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-slate-600 border-slate-300 hover:bg-slate-100"
+            title="Làm mới để bắt đầu phiên phản tư ngành nghề khác"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Làm mới</span>
@@ -277,17 +312,63 @@ const DebiasAgent = () => {
         </div>
         <div className="space-y-1">
           <span className="font-extrabold text-xs uppercase tracking-wider block text-amber-900 flex items-center gap-1.5">
-            <span>💡 NGUYÊN TẮC PHẢN TƯ (METACOGNITIVE DEBIASING)</span>
+            <span>💡 QUY TRÌNH 10 VÒNG ĐỐI THOẠI PHẢN TƯ (METACOGNITIVE DEBIASING)</span>
           </span>
           <p className="text-xs leading-relaxed font-medium text-amber-900/90">
-            AI này <strong>KHÔNG</strong> chọn nghề thay bạn. AI sẽ đồng hành đặt câu hỏi phản biện Socratic, chỉ ra các bẫy tâm lý 
-            (Thiên lệch xác nhận, Hiệu ứng đám đông, Chi phí chìm...) để bạn tự nhìn nhận khách quan và đưa ra quyết định vững chắc.
+            Qua 10 vòng hỏi đáp ngắn gọn, AI sẽ cùng bạn lật mở các bẫy tâm lý (Hiệu ứng đám đông, Ảo tưởng lương, Bẫy an toàn...). 
+            Sau vòng thứ 10, AI sẽ tổng kết <strong>Báo cáo đánh giá thiên lệch</strong> và hướng dẫn bạn kết nối trực tiếp với <strong>thầy cô</strong> và <strong>các anh chị sinh viên đang học ngành đó</strong>.
           </p>
         </div>
       </div>
 
       {/* KHUNG NỘI DUNG CHATBOT */}
-      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[600px]">
+      <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[640px]">
+        {/* THANH TIẾN TRÌNH 10 VÒNG ĐỐI THOẠI */}
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
+              <span className={`w-2.5 h-2.5 rounded-full ${userRoundCount >= 10 ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
+              <span>Tiến trình phản tư:</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold border ${
+                userRoundCount >= 10 
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300' 
+                  : 'bg-amber-100 text-amber-900 border-amber-300'
+              }`}>
+                Vòng {Math.min(userRoundCount, 10)} / 10
+              </span>
+            </div>
+
+            <span className="text-[11px] font-medium text-slate-500 hidden md:inline">
+              {userRoundCount >= 10 
+                ? '🎉 Đã hoàn thành 10 vòng! AI đã xuất Báo cáo đánh giá thiên lệch & gợi ý kết nối bên dưới.' 
+                : '(Sau 10 vòng hỏi đáp, AI sẽ tự động xuất Báo cáo đánh giá thiên lệch & kết nối chuyên gia)'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 self-stretch sm:self-auto">
+            {userRoundCount >= 4 && userRoundCount < 10 && (
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => handleSendMessage('Xin AI tổng kết và đánh giá phản tư sau các câu trả lời của em', true)}
+                className="text-[10px] font-bold py-1 px-2 rounded-sm bg-amber-500 hover:bg-amber-600 text-white transition-all flex items-center gap-1 shrink-0 shadow-2xs"
+                title="Nhận báo cáo đánh giá thiên lệch sớm từ các câu trả lời hiện tại"
+              >
+                <BarChart3 className="w-3 h-3" />
+                <span>Nhận đánh giá sớm</span>
+              </button>
+            )}
+
+            {/* Progress Bar */}
+            <div className="flex-1 sm:w-36 bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-500 ${userRoundCount >= 10 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                style={{ width: `${Math.min((userRoundCount / 10) * 100, 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* LỊCH SỬ CHAT (MESSAGE LIST) */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-slate-50/50">
           {messages.map((msg) => (
@@ -304,6 +385,8 @@ const DebiasAgent = () => {
                     ? 'bg-brand-600 text-white'
                     : msg.isError
                     ? 'bg-rose-500 text-white'
+                    : msg.isAssessment
+                    ? 'bg-emerald-600 text-white'
                     : 'bg-amber-500 text-white'
                 }`}
               >
@@ -311,6 +394,8 @@ const DebiasAgent = () => {
                   <User className="w-4 h-4" />
                 ) : msg.isError ? (
                   <AlertCircle className="w-4 h-4" />
+                ) : msg.isAssessment ? (
+                  <Sparkles className="w-4 h-4" />
                 ) : (
                   <Bot className="w-4 h-4" />
                 )}
@@ -323,16 +408,21 @@ const DebiasAgent = () => {
                     ? 'bg-brand-600 text-white font-medium rounded-tr-none'
                     : msg.isError
                     ? 'bg-rose-50 border border-rose-200 text-rose-800 rounded-tl-none'
+                    : msg.isAssessment
+                    ? 'bg-emerald-50/60 border-2 border-emerald-300 text-slate-800 rounded-tl-none shadow-xs'
                     : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                 }`}
               >
+                {msg.isAssessment && (
+                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200 pb-1.5 mb-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Báo cáo Tổng kết & Đánh giá Phản tư (Vòng 10)</span>
+                  </div>
+                )}
+
                 {/* Format nội dung tin nhắn */}
                 <div className="whitespace-pre-line font-medium leading-relaxed space-y-2">
-                  {msg.text.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="text-slate-800">
-                      {paragraph}
-                    </p>
-                  ))}
+                  {renderFormattedText(msg.text, msg.sender === 'user')}
                 </div>
 
                 <div
@@ -346,6 +436,24 @@ const DebiasAgent = () => {
             </div>
           ))}
 
+          {/* Banner chúc mừng khi hoàn thành 10 vòng */}
+          {userRoundCount >= 10 && (
+            <div className="bg-emerald-50 border border-emerald-300 p-3.5 rounded-sm text-xs text-emerald-950 flex items-start gap-3 shadow-2xs">
+              <div className="p-1 bg-emerald-200 text-emerald-900 rounded-full shrink-0 mt-0.5">
+                <Check className="w-4 h-4" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-emerald-900">
+                  🎉 Chúc mừng bạn đã hoàn thành trọn vẹn 10 vòng hỏi đáp phản biện!
+                </p>
+                <p className="text-[11px] text-emerald-800 leading-relaxed">
+                  Hãy nhấn nút <strong>"Xuất / Copy hội thoại"</strong> ở góc trên bên phải để tải toàn bộ Báo cáo Đánh giá và Nhật ký đối thoại về máy. 
+                  Sau đó, bạn có thể bấm <strong>"Làm mới"</strong> nếu muốn phản tư tiếp một ngành nghề khác!
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Đang phản hồi Indicator */}
           {isLoading && (
             <div className="flex items-start gap-3">
@@ -354,7 +462,7 @@ const DebiasAgent = () => {
               </div>
               <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-600 font-semibold flex items-center gap-2.5 shadow-2xs">
                 <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>AI Phản tư đang suy nghĩ câu hỏi phản biện...</span>
+                <span>{userRoundCount >= 9 ? 'AI Phản tư đang phân tích dữ liệu 10 vòng để xuất Báo cáo đánh giá...' : 'AI Phản tư đang phân tích câu hỏi phản biện...'}</span>
               </div>
             </div>
           )}
@@ -369,7 +477,7 @@ const DebiasAgent = () => {
               <Flame className="w-3.5 h-3.5 text-amber-500" />
               <span>GỢI Ý CÚ HÍCH PHẢN TƯ (BẤM ĐỂ HỎI NHANH)</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-normal">Hỗ trợ nhận diện thiên lệch</span>
+            <span className="text-[10px] text-slate-400 font-normal">Vòng {Math.min(userRoundCount, 10)}/10</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -402,7 +510,7 @@ const DebiasAgent = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Nhập suy nghĩ hoặc ngành học bạn đang cân nhắc (VD: Em muốn học CNTT vì thấy bạn bè bảo kiếm nhiều tiền...)"
+            placeholder={userRoundCount >= 10 ? "Bạn đã hoàn thành 10 vòng. Bạn có thể hỏi thêm hoặc bấm Làm mới để thử ngành khác..." : "Nhập câu trả lời hoặc suy nghĩ của bạn (VD: Em thích CNTT vì thấy bảo lương cao...)"}
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800 placeholder:text-slate-400"
