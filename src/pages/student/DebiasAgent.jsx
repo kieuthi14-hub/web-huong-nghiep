@@ -58,7 +58,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! Mình là AI Tham vấn Phản tư 🎯 — mình sẽ không chọn nghề giúp bạn đâu, mà sẽ đặt câu hỏi để bạn tự nhìn rõ hơn về lựa chọn của mình. Bạn đang cân nhắc ngành nghề nào vậy?',
+  text: 'Chào bạn! Mình là AI Phản Tư 🎯 — mình sẽ không chọn nghề giúp bạn đâu, mà sẽ đặt câu hỏi để bạn tự nhìn rõ hơn. Bạn đang cân nhắc ngành nghề nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -188,7 +188,7 @@ const DebiasAgent = () => {
     transcriptText += `=================================================================\n\n`
 
     messages.forEach((msg) => {
-      const senderLabel = msg.sender === 'user' ? `[Học sinh - ${studentName}]` : `[AI Tham vấn Phản tư]`
+      const senderLabel = msg.sender === 'user' ? `[Học sinh - ${studentName}]` : `[AI Phản Tư]`
       transcriptText += `${senderLabel} (${msg.timestamp}):\n${msg.text}\n\n`
       transcriptText += `-----------------------------------------------------------------\n\n`
     })
