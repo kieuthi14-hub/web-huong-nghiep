@@ -46,7 +46,7 @@ Học sinh đã hoàn thành quá trình phản biện. TUYỆT ĐỐI KHÔNG H�
 3. 📅 CÚ HÍCH HÀNH ĐỘNG (BẮT BUỘC KÊU GỌI ĐẶT LỊCH):
 - Nhấn mạnh: Trải nghiệm thực tế của người đi trước luôn đáng tin cậy hơn thông tin trên mạng xã hội.
 - Kêu gọi hành động: "Để có góc nhìn chân thực nhất về ngành nghề, bạn hãy ĐĂNG KÝ LỊCH TƯ VẤN 1-1 ngay bây giờ:
-  👉 Bạn muốn trò chuyện trực tiếp cùng Thầy/Cô cố vấn hướng nghiệp tại trường, hay kết nối với Anh/Chị sinh viên đang học ngành này? Hãy bấm vào nút 'Đăng ký tư vấn trực tiếp' bên dưới (hoặc điền form đăng ký) để được xếp lịch hẹn nhé!"`;
+  👉 Bấm vào mục 'Tư vấn 1-1' ở thanh menu bên trái màn hình (hoặc nút bấm bên dưới) để chọn lịch hẹn trực tiếp với Thầy/Cô hoặc Anh/Chị sinh viên ngay nhé!"`;
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
     
     // Tạo chỉ thị hệ thống phù hợp với tiến trình vòng hiện tại
     const roundDirective = isAssessmentRound
-      ? `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG 10 TRỞ ĐI (TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG THỰC TẾ). Học sinh đã hoàn thành quá trình phản biện. TUYỆT ĐỐI KHÔNG HỎI PHẢN BIỆN NỮA. Hãy đưa ra phản hồi tổng kết (150 - 200 từ), ấm áp, mạch lạc theo đúng 3 phần: (1) 🎯 NHẬN XÉT THIÊN LỆCH NHẬN THỨC, (2) 💡 THÔNG ĐIỆP ĐỊNH HƯỚNG, (3) 📅 CÚ HÍCH HÀNH ĐỘNG (BẮT BUỘC KÊU GỌI ĐẶT LỊCH TƯ VẤN 1-1 VỚI THẦY CÔ HOẶC SINH VIÊN QUA NÚT 'ĐĂNG KÝ TƯ VẤN TRỰC TIẾP').`
+      ? `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG 10 TRỞ ĐI (TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG THỰC TẾ). Học sinh đã hoàn thành quá trình phản biện. TUYỆT ĐỐI KHÔNG HỎI PHẢN BIỆN NỮA. Hãy đưa ra phản hồi tổng kết (150 - 200 từ), ấm áp, mạch lạc theo đúng 3 phần: (1) 🎯 NHẬN XÉT THIÊN LỆCH NHẬN THỨC, (2) 💡 THÔNG ĐIỆP ĐỊNH HƯỚNG, (3) 📅 CÚ HÍCH HÀNH ĐỘNG (BẮT BUỘC KÊU GỌI: Bấm vào mục 'Tư vấn 1-1' ở thanh menu bên trái màn hình để chọn lịch hẹn trực tiếp với Thầy/Cô hoặc Anh/Chị sinh viên ngay nhé!).`
       : `\n\n[CHỈ ĐẠO HỆ THỐNG]: HIỆN TẠI LÀ VÒNG ${currentRound}/10. Hãy áp dụng đúng "NGUYÊN TẮC GIAO TIẾP VÒNG 1 ĐẾN VÒNG 9": Siêu ngắn gọn (40 - 60 từ), 2 đoạn ngắn, kết thúc bằng ĐÚNG 1 CÂU HỎI PHẢN BIỆN đơn giản đánh trúng thực tế đời thường.`;
 
     const activeSystemInstruction = SYSTEM_PROMPT + roundDirective;
