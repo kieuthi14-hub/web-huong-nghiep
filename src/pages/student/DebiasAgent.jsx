@@ -58,7 +58,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! Mình là AI Phản Tư 🎯 — mình sẽ không chọn nghề giúp bạn đâu, mà sẽ đặt câu hỏi để bạn tự nhìn rõ hơn. Bạn đang cân nhắc ngành nghề nào vậy?',
+  text: 'Chào bạn! AI Phản tư sẽ không chọn nghề giúp bạn, mà sẽ đặt câu hỏi phản biện để bạn tự nhìn rõ hơn về lựa chọn của mình. Bạn đang cân nhắc ngành nghề nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
