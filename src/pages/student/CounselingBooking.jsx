@@ -17,7 +17,8 @@ import {
   Video,
   MapPin,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Phone
 } from 'lucide-react'
 
 // Hàm phân tích thông tin Nền tảng Gặp gỡ (Google Meet, Zoom, Địa điểm trực tiếp) từ ghi chú chuyên viên
@@ -45,6 +46,26 @@ export const parseMeetingInfo = (notes) => {
     .trim()
 
   return { meetingUrl, locationText, cleanMessage }
+}
+
+// Hàm trích xuất thông tin liên hệ của học sinh (SĐT/Zalo, Lớp/Trường, Câu hỏi) từ student_notes
+export const parseStudentContact = (notes) => {
+  if (!notes || typeof notes !== 'string') return { phone: null, schoolClass: null, question: '' }
+  
+  const phoneMatch = notes.match(/\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):\s*([^\]]+)\]/i)
+  const phone = phoneMatch ? phoneMatch[1].trim() : null
+
+  const classMatch = notes.match(/\[(?:Lớp\/Trường|Lớp|Trường):\s*([^\]]+)\]/i)
+  const schoolClass = classMatch ? classMatch[1].trim() : null
+
+  let question = notes
+    .replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]/gi, '')
+    .replace(/\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):\s*[^\]]+\]/gi, '')
+    .replace(/\[(?:Lớp\/Trường|Lớp|Trường):\s*[^\]]+\]/gi, '')
+    .replace(/^[\s\n\r-]+|[\s\n\r-]+$/g, '')
+    .trim()
+
+  return { phone, schoolClass, question }
 }
 
 // Bản đồ Ánh xạ UUID Chuyên gia / Mentor sang Tên hiển thị thực tế
@@ -537,6 +558,8 @@ const CounselingBooking = () => {
 
   const [selectedCounselor, setSelectedCounselor] = useState('')
   const [scheduledAt, setScheduledAt] = useState('')
+  const [studentPhone, setStudentPhone] = useState('')
+  const [studentClass, setStudentClass] = useState('')
   const [studentNotes, setStudentNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -650,6 +673,10 @@ const CounselingBooking = () => {
       setToast({ type: 'warning', message: 'Vui lòng chọn Thời gian hẹn tư vấn!' })
       return
     }
+    if (!studentPhone.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập Số điện thoại hoặc Zalo để Chuyên viên gửi link Meet và liên hệ!' })
+      return
+    }
 
     if (!user) {
       setToast({ type: 'error', message: 'Bạn cần đăng nhập để đặt lịch hẹn!' })
@@ -662,8 +689,11 @@ const CounselingBooking = () => {
     const expert = getCounselorDetails(selectedCounselor)
     const counselorFullName = expert ? expert.fullName : selectedCounselor
 
-    // Ghép thông tin Tên Chuyên gia vào student_notes để bảo toàn thông tin 100% trong CSDL Supabase
-    const formattedNotes = `[Chuyên gia/Mentor: ${counselorFullName}]\n${studentNotes}`.trim()
+    // Ghép thông tin Tên Chuyên gia, SĐT/Zalo và Lớp/Trường vào student_notes để bảo toàn thông tin 100% trong CSDL Supabase
+    let formattedNotes = `[Chuyên gia/Mentor: ${counselorFullName}]`
+    if (studentPhone.trim()) formattedNotes += `\n[Liên hệ SĐT/Zalo: ${studentPhone.trim()}]`
+    if (studentClass.trim()) formattedNotes += `\n[Lớp/Trường: ${studentClass.trim()}]`
+    if (studentNotes.trim()) formattedNotes += `\n${studentNotes.trim()}`
 
     // Chuẩn hóa counselor_id sang UUID hợp lệ trong profiles
     const validCounselorId = getValidCounselorId(selectedCounselor)
@@ -737,6 +767,8 @@ const CounselingBooking = () => {
     // Reset form inputs
     setSelectedCounselor('')
     setScheduledAt('')
+    setStudentPhone('')
+    setStudentClass('')
     setStudentNotes('')
     setIsSubmitting(false)
   }
@@ -853,6 +885,40 @@ const CounselingBooking = () => {
             />
           </div>
 
+          {/* Ô Số điện thoại / Zalo liên hệ */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                Số điện thoại / Zalo của bạn <span className="text-rose-500">*</span>
+              </span>
+              <span className="text-[10px] text-brand-600 font-semibold lowercase">để nhận link Meet & nhắc hẹn</span>
+            </label>
+            <input
+              type="tel"
+              placeholder="VD: 0912345678"
+              value={studentPhone}
+              onChange={(e) => setStudentPhone(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800"
+              required
+            />
+          </div>
+
+          {/* Ô Lớp & Trường học */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <GraduationCap className="w-3.5 h-3.5 text-brand-600" />
+              Lớp & Trường đang học (Nếu có)
+            </label>
+            <input
+              type="text"
+              placeholder="VD: Lớp 12A1 - THPT Chuyên Hùng Vương"
+              value={studentClass}
+              onChange={(e) => setStudentClass(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800"
+            />
+          </div>
+
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi chú / Thắc mắc gửi chuyên viên</label>
             <textarea
@@ -937,6 +1003,24 @@ const CounselingBooking = () => {
                       <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                       <span>Thời gian: {formatDateTimeFormatted(item?.scheduled_at)}</span>
                     </div>
+
+                    {/* Thông tin liên hệ đã đăng ký */}
+                    {(contact.phone || contact.schoolClass) && (
+                      <div className="flex items-center gap-3 text-xs flex-wrap bg-slate-50 px-2.5 py-1.5 rounded border border-slate-100">
+                        {contact.phone && (
+                          <span className="flex items-center gap-1 font-bold text-emerald-800">
+                            <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                            SĐT/Zalo: {contact.phone}
+                          </span>
+                        )}
+                        {contact.schoolClass && (
+                          <span className="flex items-center gap-1 font-medium text-slate-600">
+                            <GraduationCap className="w-3.5 h-3.5 text-slate-500" />
+                            {contact.schoolClass}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {displayNotes && (
                       <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-sm border border-slate-100">

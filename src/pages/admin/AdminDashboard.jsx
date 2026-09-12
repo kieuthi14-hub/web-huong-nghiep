@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { getCounselorDetails, formatDateTimeFormatted, mentorMap, parseMeetingInfo } from '../student/CounselingBooking'
+import { getCounselorDetails, formatDateTimeFormatted, mentorMap, parseMeetingInfo, parseStudentContact } from '../student/CounselingBooking'
 import { 
   CalendarDays, 
   CheckCircle2, 
@@ -31,7 +31,11 @@ import {
   Video,
   MapPin,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Phone,
+  Mail,
+  Copy,
+  Check
 } from 'lucide-react'
 
 // =========================================================================
@@ -1372,24 +1376,64 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                       const mentorBadge = getMentorBadge(displayMentorName)
                       const studentName = session.student?.full_name || 'Học sinh'
                       const studentEmail = session.student?.email || 'N/A'
-                      const cleanNotes = session.student_notes
-                        ? session.student_notes.replace(/^\[Chuyên gia\/Mentor:\s*[\s\S]+?\](?:\r?\n|$)/, '').trim()
-                        : 'Không có ghi chú.'
+                      const contactInfo = parseStudentContact(session.student_notes)
+                      const cleanNotes = contactInfo.question || 'Không có ghi chú thêm.'
 
                       const isConfirmed = session.status === 'confirmed' || session.status === 'approved'
                       const isRejected = session.status === 'rejected'
 
                       return (
                         <tr key={session.id} className="border-b border-slate-100 hover:bg-slate-50/60 text-xs">
-                          {/* 1. Học sinh */}
+                          {/* 1. Học sinh & Thông tin liên hệ */}
                           <td className="py-4 px-4 font-bold text-slate-800">
-                            <div className="flex items-center gap-2">
-                              <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                              <span>{studentName}</span>
-                            </div>
-                            <div className="text-[10px] font-medium text-slate-400 mt-0.5 ml-5">
-                              {studentEmail}
-                            </div>
+                            {(() => {
+                              const contact = parseStudentContact(session.student_notes)
+                              const phoneClean = contact.phone ? contact.phone.replace(/[^0-9]/g, '') : null
+                              return (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                                    <span>{studentName}</span>
+                                  </div>
+
+                                  <div className="text-[10px] font-medium text-slate-400 pl-5 flex items-center gap-1">
+                                    <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <a href={`mailto:${studentEmail}`} className="hover:underline hover:text-brand-600">{studentEmail}</a>
+                                  </div>
+
+                                  {contact.phone && (
+                                    <div className="flex items-center gap-1.5 pl-5 pt-0.5">
+                                      <a
+                                        href={`tel:${contact.phone}`}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[10px] font-bold transition-colors"
+                                        title="Bấm để gọi điện thoại"
+                                      >
+                                        <Phone className="w-3 h-3 text-emerald-600" />
+                                        <span>{contact.phone}</span>
+                                      </a>
+                                      {phoneClean && (
+                                        <a
+                                          href={`https://zalo.me/${phoneClean}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-[10px] font-bold transition-colors"
+                                          title="Bấm để nhắn tin Zalo cho học sinh"
+                                        >
+                                          <span>💬 Zalo</span>
+                                          <ExternalLink className="w-2.5 h-2.5" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {contact.schoolClass && (
+                                    <div className="text-[10px] font-medium text-slate-600 pl-5">
+                                      <span>🏫 {contact.schoolClass}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </td>
 
                           {/* 2. Chuyên gia / Mentor */}
@@ -1578,14 +1622,82 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             </div>
 
             {/* Thông tin tóm tắt suất hẹn */}
-            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-sm text-xs space-y-1.5 font-medium text-slate-700">
-              <div className="flex items-center justify-between">
-                <span>Học sinh: <strong className="text-slate-900">{approvalModalSession.student?.full_name || 'Học sinh'}</strong> ({approvalModalSession.student?.email})</span>
-                <span className="text-[11px] font-bold text-brand-700">{formatDateTimeFormatted(approvalModalSession.scheduled_at)}</span>
+            {(() => {
+              const modalContact = parseStudentContact(approvalModalSession.student_notes)
+              const phoneClean = modalContact.phone ? modalContact.phone.replace(/[^0-9]/g, '') : null
+
+              return (
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-sm text-xs space-y-2 font-medium text-slate-700">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span>Học sinh: <strong className="text-slate-900">{approvalModalSession.student?.full_name || 'Học sinh'}</strong> ({approvalModalSession.student?.email})</span>
+                    <span className="text-[11px] font-bold text-brand-700">{formatDateTimeFormatted(approvalModalSession.scheduled_at)}</span>
+                  </div>
+                  <div>
+                    Chuyên gia / Mentor: <strong className="text-slate-900">{getDisplayMentorName(approvalModalSession)}</strong>
+                  </div>
+
+                  {/* Thông tin liên hệ trực tiếp của HS */}
+                  {(modalContact.phone || modalContact.schoolClass) && (
+                    <div className="flex items-center gap-3 pt-1 border-t border-slate-200 flex-wrap">
+                      {modalContact.phone && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-emerald-800 flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                            SĐT: {modalContact.phone}
+                          </span>
+                          {phoneClean && (
+                            <a
+                              href={`https://zalo.me/${phoneClean}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-[10px] font-bold"
+                            >
+                              <span>Mở Zalo chat</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {modalContact.schoolClass && (
+                        <span className="text-slate-600 font-medium">
+                          🏫 {modalContact.schoolClass}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {modalContact.question && (
+                    <div className="text-[11px] text-slate-600 pt-1 border-t border-slate-200 font-normal">
+                      <strong className="font-semibold text-slate-800">Băn khoăn của HS:</strong> {modalContact.question}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+
+            {/* Nút Sao chép Lời mời Meet gửi Zalo / SMS cho HS */}
+            <div className="bg-emerald-50/80 border border-emerald-300 p-3 rounded-sm flex items-center justify-between gap-3 shadow-2xs">
+              <div className="text-[11px] text-emerald-900 font-medium">
+                <span className="font-bold block text-emerald-950">Gửi trực tiếp cho học sinh qua Zalo / SMS:</span>
+                Sau khi bấm duyệt, bạn có thể sao chép nhanh tin nhắn hoàn chỉnh chứa Link Google Meet để gửi cho học sinh.
               </div>
-              <div>
-                Chuyên gia / Mentor: <strong className="text-slate-900">{getDisplayMentorName(approvalModalSession)}</strong>
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const studentName = approvalModalSession.student?.full_name || 'em'
+                  const mentorName = getDisplayMentorName(approvalModalSession)
+                  const time = formatDateTimeFormatted(approvalModalSession.scheduled_at)
+                  const text = `Chào ${studentName},\nLịch hẹn tư vấn 1-1 hướng nghiệp của em đã được duyệt:\n- Cố vấn/Mentor: ${mentorName}\n- Thời gian: ${time}\n- Link phòng họp: ${meetingLocation}\n- Lời dặn: ${meetingMessage}\nEm nhớ tham gia đúng giờ nhé!`
+                  navigator.clipboard.writeText(text)
+                  setToastMessage('📋 Đã sao chép nội dung lời mời gửi Zalo/SMS thành công!')
+                  setTimeout(() => setToastMessage(null), 3500)
+                }}
+                className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-emerald-800 border border-emerald-400 rounded font-bold text-xs flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs transition-colors"
+                title="Sao chép nội dung lời mời gửi Zalo/SMS"
+              >
+                <Copy className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Sao chép mẫu Zalo/SMS</span>
+              </button>
             </div>
 
             {/* Nút bấm chọn nhanh hình thức gặp */}
