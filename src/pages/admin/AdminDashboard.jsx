@@ -425,10 +425,10 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   const [meetingMessage, setMeetingMessage] = useState('Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!')
 
   useEffect(() => {
-    fetchRealSupabaseData()
+    fetchRealSupabaseData('initial')
     const pollingInterval = setInterval(() => {
-      fetchRealSupabaseData(false)
-    }, 5000)
+      fetchRealSupabaseData('silent')
+    }, 8000)
     return () => clearInterval(pollingInterval)
   }, [user])
 
@@ -444,7 +444,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             { event: '*', schema: 'public', table: 'counseling_sessions' },
             (payload) => {
               console.log('⚡ [Admin Realtime] Phát hiện thay đổi trong counseling_sessions:', payload)
-              fetchRealSupabaseData(false)
+              fetchRealSupabaseData('silent')
             }
           )
           .subscribe()
@@ -460,9 +460,19 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
     }
   }, [user])
 
-  const fetchRealSupabaseData = async (isManualRefresh = false) => {
-    if (isManualRefresh) setIsRefreshing(true)
-    else setIsLoading(true)
+  const fetchRealSupabaseData = async (mode = 'silent') => {
+    const isManual = mode === 'manual' || mode === true
+    const isInitial = mode === 'initial'
+
+    if (isManual) {
+      setIsRefreshing(true)
+    } else if (isInitial) {
+      // Chỉ hiện spinner loading toàn trang ở lần đầu mở web khi chưa có dữ liệu nào
+      if (usersList.length === 0 && counselingSessions.length === 0) {
+        setIsLoading(true)
+      }
+    }
+    // Chế độ 'silent': Background polling & Realtime cập nhật âm thầm không chạm vào loading/refreshing
 
     let realUsers = []
     let realMatrices = []
@@ -609,7 +619,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
     setMatricesList(realMatrices)
     setCounselingSessions(realCounseling)
 
-    if (isManualRefresh) {
+    if (isManual) {
       setToastMessage(isDbConnected ? 'Đã làm mới dữ liệu Live từ Supabase PostgreSQL DB!' : 'Đã nạp bộ dữ liệu NCKH ViSEF mẫu (N=90)!')
       setTimeout(() => setToastMessage(null), 3000)
     }
@@ -741,7 +751,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
         )
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-sm animate-pulse">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-sm">
             <Clock className="w-3.5 h-3.5" /> 🟡 Chờ phê duyệt
           </span>
         )
@@ -765,7 +775,8 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   const confirmedCount = counselingSessions.filter(c => c.status === 'confirmed' || c.status === 'approved').length
   const rejectedCount = counselingSessions.filter(c => c.status === 'rejected').length
 
-  if (isLoading) {
+  // Chỉ hiển thị loading che toàn màn hình nếu chưa có bất kỳ dữ liệu nào được nạp
+  if (isLoading && usersList.length === 0 && counselingSessions.length === 0) {
     return (
       <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[400px] space-y-3 font-sans">
         <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
@@ -807,7 +818,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
           <div className="flex items-center gap-2.5 self-start md:self-auto">
             <button
               type="button"
-              onClick={() => fetchRealSupabaseData(true)}
+              onClick={() => fetchRealSupabaseData('manual')}
               disabled={isRefreshing}
               className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-sm transition-all flex items-center gap-1.5 cursor-pointer border border-slate-300 shadow-2xs"
             >
@@ -866,7 +877,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             <CalendarDays className="w-4 h-4 text-violet-600" />
             <span>📅 3. Quản Lý Lịch Hẹn Tư Vấn 1-1 ({counselingSessions.length})</span>
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.5 text-[10px] bg-amber-500 text-slate-950 rounded-full font-black animate-pulse">
+              <span className="px-1.5 py-0.5 text-[10px] bg-amber-500 text-slate-950 rounded-full font-black">
                 {pendingCount} chờ duyệt
               </span>
             )}
