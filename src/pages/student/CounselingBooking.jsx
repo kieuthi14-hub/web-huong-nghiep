@@ -482,7 +482,7 @@ const CounselingBooking = () => {
     fetchMySessions()
   }, [user])
 
-  // Tải danh sách các cuộc hẹn của học sinh kết hợp Supabase DB + Local Storage
+  // Tải danh sách các cuộc hẹn của học sinh kết hợp Supabase DB + Tự động đồng bộ
   const fetchMySessions = async () => {
     if (!user) return
     setIsLoading(true)
@@ -491,6 +491,7 @@ const CounselingBooking = () => {
     const localItems = getLocalSessions(user.id)
 
     try {
+      // 1. Tải danh sách thực tế từ Supabase
       const { data, error } = await supabase
         .from('counseling_sessions')
         .select('*, counselor:counselor_id(full_name, email)')
@@ -506,12 +507,44 @@ const CounselingBooking = () => {
           setMySessions([])
         }
       } else {
-        const dbList = data || []
-        const dbIds = new Set(dbList.map(item => item.id))
-        const uniqueLocal = localItems.filter(item => !dbIds.has(item.id))
-        const merged = [...dbList, ...uniqueLocal]
-        merged.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
-        setMySessions(merged)
+        let dbList = data || []
+        const dbScheduledAts = new Set(dbList.map(item => item.scheduled_at))
+
+        // 2. Tự động đồng bộ các suất hẹn local chưa kịp gửi lên Supabase
+        const unsynced = localItems.filter(item => item.is_local && !dbScheduledAts.has(item.scheduled_at))
+        if (unsynced.length > 0) {
+          console.log('⚡ Phát hiện suất hẹn local chưa đồng bộ, đang gửi lên Supabase...', unsynced.length)
+          for (const item of unsynced) {
+            try {
+              const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.counselor_id)
+              const validCounselorId = isUUID ? item.counselor_id : '11111111-1111-1111-1111-111111111111'
+              const syncPayload = {
+                student_id: user.id,
+                counselor_id: validCounselorId,
+                scheduled_at: item.scheduled_at,
+                status: item.status || 'pending',
+                student_notes: item.student_notes
+              }
+              const { data: syncedRow, error: syncErr } = await supabase
+                .from('counseling_sessions')
+                .insert(syncPayload)
+                .select('*, counselor:counselor_id(full_name, email)')
+                .single()
+              if (syncedRow && !syncErr) {
+                dbList.push(syncedRow)
+              }
+            } catch (err) {
+              console.warn('Lỗi đồng bộ local session:', err)
+            }
+          }
+          // Dọn dẹp local storage sau khi đồng bộ
+          try {
+            localStorage.removeItem(`counseling_sessions_local_${user.id}`)
+          } catch (e) {}
+        }
+
+        dbList.sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+        setMySessions(dbList)
       }
     } catch (error) {
       console.error('Lỗi fetch lịch hẹn:', error)
@@ -521,7 +554,7 @@ const CounselingBooking = () => {
     }
   }
 
-  // Đặt lịch hẹn mới với xử lý Foreign Key & Local Fallback
+  // Đặt lịch hẹn mới: Lưu trực tiếp vào Supabase CSDL để Admin duyệt
   const handleBooking = async (e) => {
     e.preventDefault()
     if (!selectedCounselor) {
@@ -542,123 +575,64 @@ const CounselingBooking = () => {
 
     // Lấy thông tin chi tiết Chuyên gia/Mentor đã chọn từ UI list
     const expert = getCounselorDetails(selectedCounselor)
-    const counselorFullName = expert ? expert.fullName : ''
+    const counselorFullName = expert ? expert.fullName : selectedCounselor
 
-    // Ghép thông tin Tên Chuyên gia vào student_notes để bảo toàn thông tin không bao giờ bị thất lạc
-    const formattedNotes = counselorFullName 
-      ? `[Chuyên gia/Mentor: ${counselorFullName}]\n${studentNotes}`.trim()
-      : studentNotes
+    // Ghép thông tin Tên Chuyên gia vào student_notes để bảo toàn thông tin 100% trong CSDL Supabase
+    const formattedNotes = `[Chuyên gia/Mentor: ${counselorFullName}]\n${studentNotes}`.trim()
 
-    // Chuẩn bị item session fallback cho LocalStorage
-    const fallbackLocalSession = {
-      id: `local-${Date.now()}`,
+    // Ràng buộc UUID hợp lệ cho cột counselor_id trong bảng counseling_sessions
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCounselor)
+    const validCounselorId = isUUID ? selectedCounselor : '11111111-1111-1111-1111-111111111111'
+
+    // Chuẩn bị payload CHỈ chứa các cột tồn tại trong CSDL Supabase:
+    // (student_id, counselor_id, scheduled_at, status, student_notes)
+    const payload = {
       student_id: user.id,
-      mentor_id: selectedCounselor,
-      counselor_id: selectedCounselor,
-      counselor_name: counselorFullName,
+      counselor_id: validCounselorId,
       scheduled_at: scheduledAt,
       status: 'pending',
-      student_notes: formattedNotes,
-      created_at: new Date().toISOString(),
-      is_local: true
+      student_notes: formattedNotes
     }
 
     let insertSuccess = false
     let insertedData = null
 
     try {
-      // 1. Lần thử 1: Thử insert với counselor_id ban đầu và đính kèm thông tin
-      const payload1 = {
-        student_id: user.id,
-        mentor_id: selectedCounselor,
-        counselor_id: selectedCounselor,
-        counselor_name: counselorFullName,
-        scheduled_at: scheduledAt,
-        status: 'pending',
-        student_notes: formattedNotes
-      }
-
-      const { data: res1, error: err1 } = await supabase
+      const { data: resData, error: resError } = await supabase
         .from('counseling_sessions')
-        .insert(payload1)
+        .insert(payload)
         .select('*, counselor:counselor_id(full_name, email)')
         .single()
 
-      if (!err1 && res1) {
+      if (!resError && resData) {
         insertSuccess = true
-        insertedData = res1
+        insertedData = resData
       } else {
-        console.warn('Insert Supabase Lần 1 thất bại:', err1)
-
-        // Kiểm tra lỗi Foreign Key constraint (code 23503 hoặc message chứa foreign key)
-        const isFKError = err1?.code === '23503' || 
-                          err1?.message?.includes('foreign key constraint') || 
-                          err1?.message?.includes('counselor_id') ||
-                          err1?.details?.includes('counselor_id')
-
-        if (isFKError) {
-          console.log('Phát hiện lỗi Foreign Key constraint! Tiến hành retry với counselor_id = null...')
-
-          // Lần thử 2: Retry với counselor_id = null
-          const payload2 = {
-            student_id: user.id,
-            counselor_id: null,
-            counselor_name: counselorFullName,
-            scheduled_at: scheduledAt,
-            status: 'pending',
-            student_notes: formattedNotes
-          }
-
-          const { data: res2, error: err2 } = await supabase
-            .from('counseling_sessions')
-            .insert(payload2)
-            .select('*')
-            .single()
-
-          if (!err2 && res2) {
-            insertSuccess = true
-            insertedData = res2
-          } else {
-            console.warn('Insert Supabase Lần 2 (counselor_id = null) thất bại:', err2)
-
-            // Lần thử 3: Retry với counselor_id = user.id (nếu DB bắt buộc NOT NULL)
-            const payload3 = {
-              student_id: user.id,
-              counselor_id: user.id,
-              counselor_name: counselorFullName,
-              scheduled_at: scheduledAt,
-              status: 'pending',
-              student_notes: formattedNotes
-            }
-
-            const { data: res3, error: err3 } = await supabase
-              .from('counseling_sessions')
-              .insert(payload3)
-              .select('*')
-              .single()
-
-            if (!err3 && res3) {
-              insertSuccess = true
-              insertedData = res3
-            }
-          }
-        }
+        console.error('Lỗi khi ghi lịch hẹn vào Supabase:', resError)
       }
     } catch (error) {
-      console.error('Lỗi kết nối Supabase:', error)
+      console.error('Lỗi ngoại lệ khi ghi Supabase:', error)
     }
 
     if (insertSuccess && insertedData) {
       setMySessions(prev => [...prev, insertedData])
       setDbError(null)
-      setToast({ type: 'success', message: 'Đã gửi yêu cầu đặt lịch thành công!' })
+      setToast({ type: 'success', message: '🎉 Đã gửi yêu cầu đặt lịch hẹn đến Admin thành công!' })
     } else {
-      // Fallback lưu Local Storage & Local State nếu Supabase thất bại
-      console.log('Lưu vào Local Storage (Fallback mượt mà UI)!')
+      // Fallback lưu Local Storage nếu mạng mất kết nối
+      const fallbackLocalSession = {
+        id: `local-${Date.now()}`,
+        student_id: user.id,
+        counselor_id: validCounselorId,
+        scheduled_at: scheduledAt,
+        status: 'pending',
+        student_notes: formattedNotes,
+        created_at: new Date().toISOString(),
+        is_local: true
+      }
       saveLocalSession(user.id, fallbackLocalSession)
       setMySessions(prev => [...prev, fallbackLocalSession])
-      setDbError(null)
-      setToast({ type: 'success', message: 'Đã gửi yêu cầu đặt lịch thành công!' })
+      setToast({ type: 'warning', message: 'Hệ thống đã lưu tạm suất hẹn trên thiết bị do kết nối CSDL gián đoạn.' })
     }
 
     // Reset form inputs
@@ -812,7 +786,7 @@ const CounselingBooking = () => {
                   ? 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
                   : rawName
                 const displayNotes = item?.student_notes
-                  ? item.student_notes.replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]\s*/, '')
+                  ? item.student_notes.replace(/^\[Chuyên gia\/Mentor:\s*[\s\S]+?\](?:\r?\n|$)/, '').trim()
                   : ''
 
                 return (
