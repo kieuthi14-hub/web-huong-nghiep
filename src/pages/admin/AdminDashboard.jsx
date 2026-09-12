@@ -275,19 +275,19 @@ const VISEF_SEED_COUNSELING = [
     counselor_name: '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
     scheduled_at: '2026-02-25T14:30:00Z',
     status: 'confirmed',
-    student_notes: '[Chuyên gia/Mentor: [CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)]\nEm muốn nhờ anh tư vấn kỹ hơn về môi trường học thực tế ngành Kỹ thuật Máy tính và AI tại Bách Khoa ạ.',
+    student_notes: '[Chuyên gia/Mentor: [CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)]\n[Liên hệ SĐT/Zalo: 0912345678]\n[Lớp/Trường: Lớp 12A1 - THPT Chuyên Hùng Vương]\nEm muốn nhờ anh tư vấn kỹ hơn về môi trường học thực tế ngành Kỹ thuật Máy tính và AI tại Bách Khoa ạ.',
     created_at: '2026-02-13T10:00:00Z'
   },
   {
     id: 'cs-002',
     student_id: 'usr-002',
     student: { full_name: 'Trần Thị Bích', email: 'tranbich.visef@gmail.com', grade_level: 'Grade 12' },
-    counselor_id: '11111111-1111-1111-1111-111111111111',
-    mentor_id: '11111111-1111-1111-1111-111111111111',
-    counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
+    counselor_id: '11111111-1111-4111-a111-111111111111',
+    mentor_id: '11111111-1111-4111-a111-111111111111',
+    counselor_name: 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
     scheduled_at: '2026-02-26T09:00:00Z',
     status: 'confirmed',
-    student_notes: '[Chuyên gia/Mentor: Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
+    student_notes: '[Chuyên gia/Mentor: Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp]\n[Liên hệ SĐT/Zalo: 0987654321]\n[Lớp/Trường: Lớp 12A2 - THPT Chuyên Hùng Vương]\nNhờ Thầy tư vấn đánh giá phương thức xét tuyển sớm bằng học bạ và thi ĐGNL ĐHQG.',
     created_at: '2026-02-12T15:20:00Z'
   },
   {
@@ -296,10 +296,10 @@ const VISEF_SEED_COUNSELING = [
     student: { full_name: 'Phạm Hoàng Nam', email: 'hoangnam.visef@gmail.com', grade_level: 'Grade 11' },
     counselor_id: '22222222-2222-2222-2222-222222222222',
     mentor_id: '22222222-2222-2222-2222-222222222222',
-    counselor_name: 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
+    counselor_name: '[Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
     scheduled_at: '2026-02-27T16:00:00Z',
     status: 'pending',
-    student_notes: '[Chuyên gia/Mentor: Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)]\nEm muốn tìm hiểu lộ trình thi chứng chỉ và cơ hội thực tập, việc làm ngành du lịch, ngôn ngữ.',
+    student_notes: '[Chuyên gia/Mentor: [Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)]\n[Liên hệ SĐT/Zalo: 0905123456]\n[Lớp/Trường: Lớp 11B3]\nEm muốn tìm hiểu lộ trình thi chứng chỉ và cơ hội thực tập, việc làm ngành du lịch, ngôn ngữ.',
     created_at: '2026-02-13T08:15:00Z'
   },
   {
@@ -311,7 +311,7 @@ const VISEF_SEED_COUNSELING = [
     counselor_name: 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
     scheduled_at: '2026-02-24T10:30:00Z',
     status: 'rejected',
-    student_notes: '[Chuyên gia/Mentor: Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường]\nEm đang gặp áp lực tâm lý thi cử từ phía gia đình khi gia đình bắt thi Y khoa.',
+    student_notes: '[Chuyên gia/Mentor: Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường]\n[Liên hệ SĐT/Zalo: 0935987654]\n[Lớp/Trường: Lớp 12A5]\nEm đang gặp áp lực tâm lý thi cử từ phía gia đình khi gia đình bắt thi Y khoa.',
     created_at: '2026-02-11T11:00:00Z'
   }
 ]
@@ -332,24 +332,21 @@ export const ADMIN_MENTOR_MAP = {
   'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)': '[Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)'
 }
 
-// Hàm phân giải tên hiển thị chuẩn xác, tuyệt đối không hiển thị mã UUID thô
+// Hàm phân giải tên hiển thị chuẩn xác từ ghi chú học sinh hoặc thông tin chuyên viên, không bao giờ rơi về mặc định sai
 export const getDisplayMentorName = (session) => {
   if (!session) return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
 
-  // 1. Ưu tiên số 1: Trích xuất từ student_notes tag [Chuyên gia/Mentor: ...]
-  if (session.student_notes && typeof session.student_notes === 'string') {
-    const match = session.student_notes.match(/^\[Chuyên gia\/Mentor:\s*([\s\S]+?)\](?:\r?\n|$)/) ||
-                  session.student_notes.match(/\[Chuyên gia\/Mentor:\s*([\s\S]+?)\]/)
-    if (match && match[1]) {
-      const extracted = match[1].trim()
-      if (extracted === '11111111-1111-1111-1111-111111111111') {
-        return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-      }
-      if (ADMIN_MENTOR_MAP[extracted]) {
-        return ADMIN_MENTOR_MAP[extracted]
-      }
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(extracted)
-      if (!isUUID && extracted.length > 2) {
+  // 1. ƯU TIÊN SỐ 1: Bóc tách chính xác từ student_notes theo dòng (tránh lỗi ngoặc vuông lồng nhau)
+  const notes = session.student_notes
+  if (notes && typeof notes === 'string') {
+    const lines = notes.split('\n')
+    const mentorLine = lines.find(l => l.trim().startsWith('[Chuyên gia/Mentor:'))
+    if (mentorLine) {
+      const extracted = mentorLine.trim()
+        .replace(/^\[Chuyên gia\/Mentor:\s*/i, '')
+        .replace(/\]\s*$/, '')
+        .trim()
+      if (extracted && extracted !== '11111111-1111-1111-1111-111111111111' && extracted.length > 2) {
         return extracted
       }
     }
@@ -373,19 +370,26 @@ export const getDisplayMentorName = (session) => {
   return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
 }
 
-// Hàm lấy huy hiệu tương ứng cho chuyên gia/mentor
+// Hàm lấy huy hiệu tương ứng cho chuyên gia/mentor (phân biệt Cố vấn trường, Cựu SV, Mentor sinh viên)
 export const getMentorBadge = (displayName) => {
   const name = String(displayName || '')
-  const isStudentMentor = name.includes('SV') || name.includes('Anh') || name.includes('Chị') || name.includes('Mentor') || name.includes('[')
-  if (isStudentMentor) {
+  const isAlumni = name.includes('Cựu SV') || name.includes('Alumni') || name.includes('KTS') || name.includes('Luật sư') || name.includes('Dược sĩ')
+  const isTeacher = name.startsWith('Thầy ') || name.startsWith('Cô ') || name.startsWith('TS.') || name.startsWith('ThS.') || name.includes('Cố vấn Trường') || name.includes('Bí thư')
+  if (isTeacher) {
     return {
-      label: '🚀 Mentor Sinh viên',
-      className: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      label: '🎓 Cố vấn Trường',
+      className: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    }
+  }
+  if (isAlumni) {
+    return {
+      label: '💼 Cựu SV (Alumni)',
+      className: 'bg-amber-100 text-amber-800 border-amber-300'
     }
   }
   return {
-    label: '🎓 Cố vấn Trường',
-    className: 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    label: '🚀 Mentor Sinh viên',
+    className: 'bg-indigo-100 text-indigo-800 border-indigo-300'
   }
 }
 
@@ -422,6 +426,10 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
 
   useEffect(() => {
     fetchRealSupabaseData()
+    const pollingInterval = setInterval(() => {
+      fetchRealSupabaseData(false)
+    }, 5000)
+    return () => clearInterval(pollingInterval)
   }, [user])
 
   // Lắng nghe Realtime tự động từ Supabase
@@ -1393,7 +1401,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                                 <div className="space-y-1.5">
                                   <div className="flex items-center gap-2">
                                     <User className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-                                    <span>{studentName}</span>
+                                    <span className="font-bold text-slate-900">{studentName}</span>
                                   </div>
 
                                   <div className="text-[10px] font-medium text-slate-400 pl-5 flex items-center gap-1">
@@ -1401,30 +1409,36 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                                     <a href={`mailto:${studentEmail}`} className="hover:underline hover:text-brand-600">{studentEmail}</a>
                                   </div>
 
-                                  {contact.phone && (
-                                    <div className="flex items-center gap-1.5 pl-5 pt-0.5">
-                                      <a
-                                        href={`tel:${contact.phone}`}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[10px] font-bold transition-colors"
-                                        title="Bấm để gọi điện thoại"
-                                      >
-                                        <Phone className="w-3 h-3 text-emerald-600" />
-                                        <span>{contact.phone}</span>
-                                      </a>
-                                      {phoneClean && (
+                                  <div className="pl-5 pt-0.5">
+                                    {contact.phone ? (
+                                      <div className="flex items-center gap-1.5 flex-wrap">
                                         <a
-                                          href={`https://zalo.me/${phoneClean}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded text-[10px] font-bold transition-colors"
-                                          title="Bấm để nhắn tin Zalo cho học sinh"
+                                          href={`tel:${contact.phone}`}
+                                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded font-bold text-xs transition-colors shadow-2xs"
+                                          title="Bấm để gọi điện thoại cho học sinh"
                                         >
-                                          <span>💬 Zalo</span>
-                                          <ExternalLink className="w-2.5 h-2.5" />
+                                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                                          <span>{contact.phone}</span>
                                         </a>
-                                      )}
-                                    </div>
-                                  )}
+                                        {phoneClean && (
+                                          <a
+                                            href={`https://zalo.me/${phoneClean}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-300 rounded font-bold text-xs transition-colors shadow-2xs"
+                                            title="Bấm để nhắn tin Zalo cho học sinh"
+                                          >
+                                            <span>💬 Chat Zalo</span>
+                                            <ExternalLink className="w-3 h-3" />
+                                          </a>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                        ⚠️ Chưa để lại SĐT
+                                      </span>
+                                    )}
+                                  </div>
 
                                   {contact.schoolClass && (
                                     <div className="text-[10px] font-medium text-slate-600 pl-5">
@@ -1526,9 +1540,15 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                             )}
 
                             {/* Câu hỏi của học sinh */}
-                            <p className="line-clamp-2 bg-slate-50 p-2 rounded border border-slate-100 text-[11px] font-medium leading-relaxed" title={cleanNotes}>
-                              <span className="font-bold text-slate-700">HS hỏi: </span>{cleanNotes}
-                            </p>
+                            {cleanNotes ? (
+                              <p className="line-clamp-2 bg-slate-50 p-2 rounded border border-slate-100 text-[11px] font-medium leading-relaxed" title={cleanNotes}>
+                                <span className="font-bold text-slate-700">HS hỏi: </span>{cleanNotes}
+                              </p>
+                            ) : (
+                              <p className="text-[10px] text-slate-400 italic bg-slate-50/60 p-1.5 rounded border border-slate-100">
+                                Không có ghi chú thêm
+                              </p>
+                            )}
                           </td>
 
                           {/* 5. Trạng thái */}

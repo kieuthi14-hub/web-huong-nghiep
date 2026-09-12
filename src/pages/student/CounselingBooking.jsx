@@ -52,18 +52,30 @@ export const parseMeetingInfo = (notes) => {
 export const parseStudentContact = (notes) => {
   if (!notes || typeof notes !== 'string') return { phone: null, schoolClass: null, question: '' }
   
+  // 1. Số điện thoại từ tag [Liên hệ SĐT/Zalo: ...]
   const phoneMatch = notes.match(/\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):\s*([^\]]+)\]/i)
-  const phone = phoneMatch ? phoneMatch[1].trim() : null
+  let phone = phoneMatch ? phoneMatch[1].trim() : null
+  if (!phone) {
+    // Tự động tìm số điện thoại dạng 10 số nếu học sinh ghi thẳng vào nội dung
+    const phoneRegexMatch = notes.match(/(?:0|\+84)(?:3|5|7|8|9)[0-9]{8}\b/)
+    if (phoneRegexMatch) phone = phoneRegexMatch[0].trim()
+  }
 
+  // 2. Lớp/Trường từ tag [Lớp/Trường: ...]
   const classMatch = notes.match(/\[(?:Lớp\/Trường|Lớp|Trường):\s*([^\]]+)\]/i)
   const schoolClass = classMatch ? classMatch[1].trim() : null
 
-  let question = notes
-    .replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]/gi, '')
-    .replace(/\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):\s*[^\]]+\]/gi, '')
-    .replace(/\[(?:Lớp\/Trường|Lớp|Trường):\s*[^\]]+\]/gi, '')
-    .replace(/^[\s\n\r-]+|[\s\n\r-]+$/g, '')
-    .trim()
+  // 3. Câu hỏi băn khoăn thực tế của học sinh (Lọc sạch 100% các dòng metadata thẻ vuông, không bao giờ bị dính tên mentor)
+  const lines = notes.split('\n')
+  const questionLines = lines.filter(line => {
+    const trimmed = line.trim()
+    if (!trimmed) return false
+    if (trimmed.startsWith('[Chuyên gia/Mentor:')) return false
+    if (/^\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):/i.test(trimmed)) return false
+    if (/^\[(?:Lớp\/Trường|Lớp|Trường):/i.test(trimmed)) return false
+    return true
+  })
+  const question = questionLines.join('\n').trim()
 
   return { phone, schoolClass, question }
 }
@@ -378,46 +390,49 @@ export const formatDateTimeFormatted = (dateStr) => {
   return `${hours}:${minutes} - ${day}/${month}/${year}`
 }
 
+// Hàm bóc tách chính xác tên chuyên gia / mentor từ ghi chú
+export const parseMentorNameFromNotes = (notes) => {
+  if (!notes || typeof notes !== 'string') return null
+  const lines = notes.split('\n')
+  const mentorLine = lines.find(l => l.trim().startsWith('[Chuyên gia/Mentor:'))
+  if (mentorLine) {
+    const extracted = mentorLine.trim()
+      .replace(/^\[Chuyên gia\/Mentor:\s*/i, '')
+      .replace(/\]\s*$/, '')
+      .trim()
+    if (extracted && extracted !== '11111111-1111-1111-1111-111111111111' && extracted.length > 2) {
+      return extracted
+    }
+  }
+  return null
+}
+
 // Hàm tra cứu chi tiết thông tin chuyên gia / mentor từ ID hoặc object trả về từ Supabase DB
 export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes, sessionCounselorName) => {
-  // 1. ƯU TIÊN SỐ 1: Bóc tách chính xác từ sessionNotes nếu có tag [Chuyên gia/Mentor: ...]
-  if (sessionNotes && typeof sessionNotes === 'string') {
-    const match = sessionNotes.match(/^\[Chuyên gia\/Mentor:\s*([\s\S]+?)\](?:\r?\n|$)/) ||
-                  sessionNotes.match(/\[Chuyên gia\/Mentor:\s*([\s\S]+?)\]/)
-    if (match && match[1]) {
-      const extracted = match[1].trim()
-      // Tìm trong COUNSELOR_GROUPS
-      for (const group of COUNSELOR_GROUPS) {
-        const found = group.counselors.find(c => 
-          c.fullName === extracted ||
-          c.id === extracted ||
-          c.name === extracted ||
-          extracted.includes(c.name)
-        )
-        if (found) return found
-      }
-      if (extracted === '11111111-1111-1111-1111-111111111111') {
-        return {
-          id: '11111111-1111-1111-1111-111111111111',
-          name: 'Thầy Nguyễn Văn A',
-          title: 'Cố vấn Hướng nghiệp',
-          fullName: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
-          groupKey: 'school_counselors',
-          badgeLabel: '🎓 Cố vấn Trường',
-          badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
-        }
-      }
-      const isAlumni = extracted.includes('Cựu SV') || extracted.includes('KTS') || extracted.includes('Luật sư') || extracted.includes('Dược sĩ')
-      const isTeacher = extracted.includes('Thầy') || extracted.includes('Cô')
-      return {
-        id: counselorId || 'mentor',
-        name: extracted.split('-')[0].trim() || extracted,
-        title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
-        fullName: extracted,
-        groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
-        badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
-        badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      }
+  // 1. ƯU TIÊN SỐ 1: Bóc tách chính xác từ sessionNotes theo từng dòng (tránh lỗi ngoặc vuông lồng nhau)
+  const mentorFromNotes = parseMentorNameFromNotes(sessionNotes)
+  if (mentorFromNotes) {
+    // Tìm trong COUNSELOR_GROUPS
+    for (const group of COUNSELOR_GROUPS) {
+      const found = group.counselors.find(c => 
+        c.fullName === mentorFromNotes ||
+        c.id === mentorFromNotes ||
+        c.name === mentorFromNotes ||
+        mentorFromNotes.includes(c.name)
+      )
+      if (found) return found
+    }
+
+    const isAlumni = mentorFromNotes.includes('Cựu SV') || mentorFromNotes.includes('Alumni') || mentorFromNotes.includes('KTS') || mentorFromNotes.includes('Luật sư') || mentorFromNotes.includes('Dược sĩ')
+    const isTeacher = mentorFromNotes.startsWith('Thầy ') || mentorFromNotes.startsWith('Cô ') || mentorFromNotes.startsWith('TS.') || mentorFromNotes.startsWith('ThS.') || mentorFromNotes.includes('Cố vấn Hướng nghiệp') || mentorFromNotes.includes('Bí thư')
+    return {
+      id: counselorId || 'mentor',
+      name: mentorFromNotes.split('-')[0].trim() || mentorFromNotes,
+      title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
+      fullName: mentorFromNotes,
+      groupKey: isTeacher ? 'school_counselors' : isAlumni ? 'alumni' : 'student_mentors',
+      badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+      badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
     }
   }
 
@@ -970,9 +985,7 @@ const CounselingBooking = () => {
                 const expert = getCounselorDetails(item?.counselor_id, item?.counselor, item?.student_notes, item?.counselor_name || item?.mentor_id)
                 const counselorName = expert?.fullName || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
                 const contact = parseStudentContact(item?.student_notes)
-                const displayNotes = contact.question || (item?.student_notes
-                  ? item.student_notes.replace(/^\[Chuyên gia\/Mentor:\s*[\s\S]+?\](?:\r?\n|$)/, '').trim()
-                  : '')
+                const displayNotes = contact.question
 
                 return (
                   <div key={item?.id || index} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
