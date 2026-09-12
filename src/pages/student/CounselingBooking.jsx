@@ -442,17 +442,45 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
   }
 }
 
+// Hàm chuẩn hóa counselor_id sang UUID hợp lệ trong bảng profiles (1111... hoặc 2222...)
+const getValidCounselorId = (id) => {
+  if (id === '22222222-2222-2222-2222-222222222222') return '22222222-2222-2222-2222-222222222222'
+  return '11111111-1111-1111-1111-111111111111'
+}
+
 // Quản lý LocalStorage cho suất hẹn tư vấn fallback
 const LOCAL_STORAGE_KEY_PREFIX = 'counseling_sessions_local_'
 
 const getLocalSessions = (userId) => {
   if (!userId) return []
+  const result = []
+  const seen = new Set()
   try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PREFIX + userId)
-    return raw ? JSON.parse(raw) : []
+    const keys = [
+      LOCAL_STORAGE_KEY_PREFIX + userId,
+      'counseling_sessions_local',
+      'counseling_sessions'
+    ]
+    for (const key of keys) {
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              if (item && item.scheduled_at && !seen.has(item.scheduled_at)) {
+                seen.add(item.scheduled_at)
+                result.push({ ...item, is_local: true })
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    }
   } catch (e) {
-    return []
+    console.error('Lỗi đọc local storage:', e)
   }
+  return result
 }
 
 const saveLocalSession = (userId, session) => {
@@ -491,10 +519,22 @@ const CounselingBooking = () => {
     const localItems = getLocalSessions(user.id)
 
     try {
-      // 1. Tải danh sách thực tế từ Supabase
+      // 1. Đảm bảo profile học sinh tồn tại trong Supabase profiles để không vướng foreign key
+      try {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Học sinh',
+          role: 'student'
+        }, { onConflict: 'id' })
+      } catch (profErr) {
+        console.warn('Profile upsert check:', profErr)
+      }
+
+      // 2. Tải danh sách thực tế từ Supabase
       const { data, error } = await supabase
         .from('counseling_sessions')
-        .select('*, counselor:counselor_id(full_name, email)')
+        .select('*')
         .eq('student_id', user.id)
         .order('scheduled_at', { ascending: true })
 
@@ -510,36 +550,47 @@ const CounselingBooking = () => {
         let dbList = data || []
         const dbScheduledAts = new Set(dbList.map(item => item.scheduled_at))
 
-        // 2. Tự động đồng bộ các suất hẹn local chưa kịp gửi lên Supabase
-        const unsynced = localItems.filter(item => item.is_local && !dbScheduledAts.has(item.scheduled_at))
+        // 3. Tự động đồng bộ các suất hẹn local chưa kịp gửi lên Supabase
+        const unsynced = localItems.filter(item => (item.is_local || String(item.id).startsWith('local-')) && !dbScheduledAts.has(item.scheduled_at))
         if (unsynced.length > 0) {
           console.log('⚡ Phát hiện suất hẹn local chưa đồng bộ, đang gửi lên Supabase...', unsynced.length)
+          const syncedIds = new Set()
           for (const item of unsynced) {
             try {
-              const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.counselor_id)
-              const validCounselorId = isUUID ? item.counselor_id : '11111111-1111-1111-1111-111111111111'
+              const mentorName = item.counselor_name || item.mentor_id || ''
+              let notes = item.student_notes || ''
+              if (mentorName && !notes.includes('[Chuyên gia/Mentor:')) {
+                notes = `[Chuyên gia/Mentor: ${mentorName}]\n${notes}`.trim()
+              }
               const syncPayload = {
                 student_id: user.id,
-                counselor_id: validCounselorId,
+                counselor_id: getValidCounselorId(item.counselor_id),
                 scheduled_at: item.scheduled_at,
                 status: item.status || 'pending',
-                student_notes: item.student_notes
+                student_notes: notes
               }
-              const { data: syncedRow, error: syncErr } = await supabase
+              const { data: syncedData, error: syncErr } = await supabase
                 .from('counseling_sessions')
                 .insert(syncPayload)
-                .select('*, counselor:counselor_id(full_name, email)')
-                .single()
-              if (syncedRow && !syncErr) {
-                dbList.push(syncedRow)
+                .select()
+              if (!syncErr && syncedData && syncedData.length > 0) {
+                syncedIds.add(item.id)
+                dbList.push(syncedData[0])
+              } else {
+                console.warn('Sync item error:', syncErr)
               }
             } catch (err) {
               console.warn('Lỗi đồng bộ local session:', err)
             }
           }
-          // Dọn dẹp local storage sau khi đồng bộ
+          // Dọn dẹp local storage các item đã đồng bộ thành công
           try {
-            localStorage.removeItem(`counseling_sessions_local_${user.id}`)
+            const remaining = localItems.filter(li => !syncedIds.has(li.id))
+            if (remaining.length > 0) {
+              localStorage.setItem(LOCAL_STORAGE_KEY_PREFIX + user.id, JSON.stringify(remaining))
+            } else {
+              localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + user.id)
+            }
           } catch (e) {}
         }
 
@@ -580,9 +631,20 @@ const CounselingBooking = () => {
     // Ghép thông tin Tên Chuyên gia vào student_notes để bảo toàn thông tin 100% trong CSDL Supabase
     const formattedNotes = `[Chuyên gia/Mentor: ${counselorFullName}]\n${studentNotes}`.trim()
 
-    // Ràng buộc UUID hợp lệ cho cột counselor_id trong bảng counseling_sessions
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(selectedCounselor)
-    const validCounselorId = isUUID ? selectedCounselor : '11111111-1111-1111-1111-111111111111'
+    // Chuẩn hóa counselor_id sang UUID hợp lệ trong profiles
+    const validCounselorId = getValidCounselorId(selectedCounselor)
+
+    // 1. Đảm bảo profile của học sinh tồn tại trong bảng profiles của Supabase để không vi phạm FK
+    try {
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Học sinh',
+        role: 'student'
+      }, { onConflict: 'id' })
+    } catch (profErr) {
+      console.warn('Upsert profile notice:', profErr)
+    }
 
     // Chuẩn bị payload CHỈ chứa các cột tồn tại trong CSDL Supabase:
     // (student_id, counselor_id, scheduled_at, status, student_notes)
@@ -601,12 +663,14 @@ const CounselingBooking = () => {
       const { data: resData, error: resError } = await supabase
         .from('counseling_sessions')
         .insert(payload)
-        .select('*, counselor:counselor_id(full_name, email)')
-        .single()
+        .select()
 
-      if (!resError && resData) {
+      if (!resError && Array.isArray(resData) && resData.length > 0) {
         insertSuccess = true
-        insertedData = resData
+        insertedData = {
+          ...resData[0],
+          counselor: { full_name: counselorFullName, email: 'counselor@edu.vn' }
+        }
       } else {
         console.error('Lỗi khi ghi lịch hẹn vào Supabase:', resError)
       }
@@ -615,15 +679,16 @@ const CounselingBooking = () => {
     }
 
     if (insertSuccess && insertedData) {
-      setMySessions(prev => [...prev, insertedData])
+      setMySessions(prev => [insertedData, ...prev])
       setDbError(null)
-      setToast({ type: 'success', message: '🎉 Đã gửi yêu cầu đặt lịch hẹn đến Admin thành công!' })
+      setToast({ type: 'success', message: '🎉 Đã gửi yêu cầu đặt lịch hẹn thành công lên hệ thống để Admin duyệt!' })
     } else {
       // Fallback lưu Local Storage nếu mạng mất kết nối
       const fallbackLocalSession = {
         id: `local-${Date.now()}`,
         student_id: user.id,
         counselor_id: validCounselorId,
+        counselor_name: counselorFullName,
         scheduled_at: scheduledAt,
         status: 'pending',
         student_notes: formattedNotes,
@@ -631,8 +696,8 @@ const CounselingBooking = () => {
         is_local: true
       }
       saveLocalSession(user.id, fallbackLocalSession)
-      setMySessions(prev => [...prev, fallbackLocalSession])
-      setToast({ type: 'warning', message: 'Hệ thống đã lưu tạm suất hẹn trên thiết bị do kết nối CSDL gián đoạn.' })
+      setMySessions(prev => [fallbackLocalSession, ...prev])
+      setToast({ type: 'warning', message: 'Hệ thống đã lưu tạm suất hẹn trên thiết bị do kết nối CSDL gián đoạn. Suất hẹn sẽ tự động đồng bộ khi tải lại trang!' })
     }
 
     // Reset form inputs
@@ -671,6 +736,8 @@ const CounselingBooking = () => {
     }
   }
 
+  const localUnsyncedCount = mySessions.filter(s => s.is_local || String(s.id).startsWith('local-')).length
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-reveal">
       <div>
@@ -688,6 +755,26 @@ const CounselingBooking = () => {
           Đăng ký lịch hẹn tư vấn cá nhân với Thầy Cô Cố vấn trường hoặc Mạng lưới Mentor Sinh viên đối chứng thực tế.
         </p>
       </div>
+
+      {localUnsyncedCount > 0 && (
+        <div className="bg-amber-50 border border-amber-300 p-4 rounded-sm flex items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-semibold text-amber-900">
+            <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-pulse" />
+            <span>
+              Có <strong>{localUnsyncedCount}</strong> suất hẹn đang lưu tạm trên thiết bị do kết nối CSDL trước đó gián đoạn.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchMySessions}
+            disabled={isLoading}
+            className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm cursor-pointer whitespace-nowrap shadow-xs transition-colors flex items-center gap-1.5"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Đồng bộ ngay lên Admin</span>
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Form đặt lịch */}

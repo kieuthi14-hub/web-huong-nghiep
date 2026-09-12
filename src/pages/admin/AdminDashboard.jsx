@@ -497,21 +497,81 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
       console.warn('Supabase DB fetch warning:', e)
     }
 
-    // Đọc thêm LocalStorage nếu có
+    // Đọc thêm LocalStorage nếu có (quét toàn bộ thiết bị trình duyệt nếu đang test cùng máy)
     let localSessions = []
     try {
-      if (user?.id) {
-        const raw = localStorage.getItem(`counseling_sessions_local_${user.id}`)
-        if (raw) localSessions = JSON.parse(raw)
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && (k.startsWith('counseling_sessions_local') || k === 'counseling_sessions')) {
+          const raw = localStorage.getItem(k)
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed)) {
+                parsed.forEach(item => {
+                  if (item && item.id) localSessions.push({ ...item, is_local: true })
+                })
+              }
+            } catch (e) {}
+          }
+        }
       }
     } catch (e) {
       console.error('Lỗi đọc local storage:', e)
     }
 
-    const combinedCounseling = [...realCounseling]
     const dbIds = new Set(realCounseling.map(c => c.id))
+
+    // Tự động đồng bộ các suất hẹn local phát hiện trên máy lên Supabase CSDL
+    const unsyncedFromDevice = localSessions.filter(ls => !dbIds.has(ls.id) && !realCounseling.some(rc => rc.scheduled_at === ls.scheduled_at))
+    if (unsyncedFromDevice.length > 0 && supabase && typeof supabase.from === 'function') {
+      console.log('⚡ [Admin] Phát hiện', unsyncedFromDevice.length, 'suất hẹn local trên thiết bị, tự động đẩy lên Supabase...')
+      for (const ls of unsyncedFromDevice) {
+        try {
+          const mentorName = ls.counselor_name || ls.mentor_id || ''
+          let notes = ls.student_notes || ''
+          if (mentorName && !notes.includes('[Chuyên gia/Mentor:')) {
+            notes = `[Chuyên gia/Mentor: ${mentorName}]\n${notes}`.trim()
+          }
+          const validCounselorId = (ls.counselor_id === '22222222-2222-2222-2222-222222222222')
+            ? '22222222-2222-2222-2222-222222222222'
+            : '11111111-1111-1111-1111-111111111111'
+
+          // Đảm bảo student_id có profile
+          if (ls.student_id) {
+            await supabase.from('profiles').upsert({
+              id: ls.student_id,
+              email: ls.student?.email || 'student@test.com',
+              full_name: ls.student?.full_name || 'Học sinh',
+              role: 'student'
+            }, { onConflict: 'id' }).catch(() => {})
+          }
+
+          const syncPayload = {
+            student_id: ls.student_id || user?.id,
+            counselor_id: validCounselorId,
+            scheduled_at: ls.scheduled_at,
+            status: ls.status || 'pending',
+            student_notes: notes
+          }
+          const { data: inserted, error: syncErr } = await supabase
+            .from('counseling_sessions')
+            .insert(syncPayload)
+            .select('*, student:student_id(full_name, email, grade_level), counselor:counselor_id(full_name, email)')
+          
+          if (!syncErr && inserted && inserted.length > 0) {
+            realCounseling.unshift(inserted[0])
+            dbIds.add(inserted[0].id)
+          }
+        } catch (err) {
+          console.warn('[Admin] Lỗi đồng bộ local session lên DB:', err)
+        }
+      }
+    }
+
+    const combinedCounseling = [...realCounseling]
     localSessions.forEach(ls => {
-      if (!dbIds.has(ls.id)) {
+      if (!dbIds.has(ls.id) && !combinedCounseling.some(c => c.scheduled_at === ls.scheduled_at)) {
         combinedCounseling.push(ls)
       }
     })
@@ -528,20 +588,6 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
       }
       return s
     })
-
-    if (user?.id && localSessions.length > 0) {
-      try {
-        const cleaned = localSessions.map(s => {
-          const isRawUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(s.counselor_name || '')
-          const idHas11 = (s.counselor_id && String(s.counselor_id).includes('11111111')) || (s.mentor_id && String(s.mentor_id).includes('11111111'))
-          if (idHas11 || isRawUUID || !s.counselor_name) {
-            return { ...s, counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)' }
-          }
-          return s
-        })
-        localStorage.setItem(`counseling_sessions_local_${user.id}`, JSON.stringify(cleaned))
-      } catch (e) {}
-    }
 
     // Fallback Seed nếu DB rỗng
     if (!isDbConnected || realMatrices.length === 0) {
