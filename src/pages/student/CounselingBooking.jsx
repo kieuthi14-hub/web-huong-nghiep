@@ -969,9 +969,10 @@ const CounselingBooking = () => {
               {mySessions.map((item, index) => {
                 const expert = getCounselorDetails(item?.counselor_id, item?.counselor, item?.student_notes, item?.counselor_name || item?.mentor_id)
                 const counselorName = expert?.fullName || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-                const displayNotes = item?.student_notes
+                const contact = parseStudentContact(item?.student_notes)
+                const displayNotes = contact.question || (item?.student_notes
                   ? item.student_notes.replace(/^\[Chuyên gia\/Mentor:\s*[\s\S]+?\](?:\r?\n|$)/, '').trim()
-                  : ''
+                  : '')
 
                 return (
                   <div key={item?.id || index} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
