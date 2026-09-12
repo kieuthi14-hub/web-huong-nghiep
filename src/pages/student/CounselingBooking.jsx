@@ -19,18 +19,22 @@ import {
 // Bản đồ Ánh xạ UUID Chuyên gia / Mentor sang Tên hiển thị thực tế
 export const mentorMap = {
   '11111111-1111-1111-1111-111111111111': 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
-  '22222222-2222-2222-2222-222222222222': 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
-  '11111111-1111-4111-a111-111111111111': 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
-  '22222222-2222-4222-a222-222222222222': 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường',
-  '33333333-3333-4333-a333-333333333301': '[CNTT & AI] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-  '33333333-3333-4333-a333-333333333307': '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)'
+  '22222222-2222-2222-2222-222222222222': '[Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+  '11111111-1111-4111-a111-111111111111': 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
+  '22222222-2222-4222-a222-222222222222': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
+  '33333333-3333-4333-a333-333333333301': '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+  '33333333-3333-4333-a333-333333333307': '[Sư phạm Tiếng Anh] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+  // Fallbacks ánh xạ từ dữ liệu cũ:
+  'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp': 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
+  'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
+  'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)': '[Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)'
 }
 
-// Cấu hình Danh sách 2 Nhóm Chuyên gia & Mentor Tư vấn 1-1
+// Cấu hình Danh sách Nhóm Chuyên gia & Mentor Tư vấn 1-1 phân loại logic theo nhóm trường & Cựu SV
 export const COUNSELOR_GROUPS = [
   {
     groupKey: 'school_counselors',
-    groupName: '🎓 THẦY CÔ CỐ VẤN TẠI TRƯỜNG',
+    groupName: '🎓 THẦY CÔ CỐ VẤN HƯỚNG NGHIỆP TẠI TRƯỜNG',
     badgeLabel: '🎓 Cố vấn Trường',
     badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
     icon: GraduationCap,
@@ -38,26 +42,26 @@ export const COUNSELOR_GROUPS = [
       {
         id: '11111111-1111-1111-1111-111111111111',
         name: 'Thầy Nguyễn Văn A',
-        title: 'Cố vấn Hướng nghiệp',
+        title: 'Cố vấn Hướng nghiệp (Phụ trách chung)',
         fullName: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
         groupKey: 'school_counselors',
         badgeLabel: '🎓 Cố vấn Trường',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
       },
       {
-        id: 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
+        id: 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
         name: 'Thầy Cao Xuân Hải',
-        title: 'Bí thư đoàn trường - Cố vấn Định hướng Nghề nghiệp',
-        fullName: 'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp',
+        title: 'Bí thư Đoàn trường - Cố vấn Hướng nghiệp',
+        fullName: 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
         groupKey: 'school_counselors',
         badgeLabel: '🎓 Cố vấn Trường',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
       },
       {
-        id: 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường',
+        id: 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
         name: 'Cô Nguyễn Thị Kim Thuận',
-        title: 'Chuyên gia Tư vấn Tâm lý Học đường',
-        fullName: 'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường',
+        title: 'Cố vấn Hướng nghiệp & Tâm lý Học đường',
+        fullName: 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
         groupKey: 'school_counselors',
         badgeLabel: '🎓 Cố vấn Trường',
         badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
@@ -65,110 +69,245 @@ export const COUNSELOR_GROUPS = [
     ]
   },
   {
-    groupKey: 'student_mentors',
-    groupName: '🚀 MẠNG LƯỚI MENTOR SINH VIÊN (10 KHỐI NGÀNH ĐẠI DIỆN)',
-    badgeLabel: '🚀 Mentor Sinh viên',
+    groupKey: 'tech_engineering',
+    groupName: '🏛️ NHÓM TRƯỜNG KỸ THUẬT, CÔNG NGHỆ & AI (ĐH Bách Khoa, ĐH CNTT, ĐH Sư Phạm Kỹ Thuật, HV Bưu Chính)',
+    badgeLabel: '🚀 Kỹ thuật & CNTT',
+    badgeClass: 'bg-sky-100 text-sky-800 border-sky-300',
+    icon: Rocket,
+    counselors: [
+      {
+        id: '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+        name: 'Anh Trần Minh Triết',
+        title: 'SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+        fullName: '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+        groupKey: 'tech_engineering',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[CNTT & An toàn thông tin] Anh Lê Tuấn Kiệt - Cựu SV Kỹ sư An ninh mạng (ĐH Công Nghệ Thông Tin - ĐHQG TP.HCM)',
+        name: 'Anh Lê Tuấn Kiệt',
+        title: 'Cựu SV Kỹ sư An ninh mạng (ĐH CNTT - ĐHQG)',
+        fullName: '[CNTT & An toàn thông tin] Anh Lê Tuấn Kiệt - Cựu SV Kỹ sư An ninh mạng (ĐH Công Nghệ Thông Tin - ĐHQG TP.HCM)',
+        groupKey: 'tech_engineering',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      },
+      {
+        id: '[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
+        name: 'Anh Hoàng Minh Đức',
+        title: 'SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
+        fullName: '[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
+        groupKey: 'tech_engineering',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[Cơ điện tử & Tự động hóa Robot] Anh Nguyễn Văn Thành - Cựu SV Kỹ sư Tự động hóa (ĐH Sư Phạm Kỹ Thuật)',
+        name: 'Anh Nguyễn Văn Thành',
+        title: 'Cựu SV Kỹ sư Tự động hóa (ĐH Sư Phạm Kỹ Thuật)',
+        fullName: '[Cơ điện tử & Tự động hóa Robot] Anh Nguyễn Văn Thành - Cựu SV Kỹ sư Tự động hóa (ĐH Sư Phạm Kỹ Thuật)',
+        groupKey: 'tech_engineering',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'economics_finance',
+    groupName: '📊 NHÓM TRƯỜNG KINH TẾ, TÀI CHÍNH, QUẢN TRỊ & LOGISTICS (ĐH Ngoại Thương, ĐH Kinh Tế Quốc Dân, ĐH Kinh Tế TP.HCM, HV Tài Chính, ĐH Nha Trang)',
+    badgeLabel: '🚀 Kinh tế & Quản trị',
+    badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
+    icon: Rocket,
+    counselors: [
+      {
+        id: '[Kinh tế, Quản trị & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế TP.HCM)',
+        name: 'Anh Lê Quốc Bảo',
+        title: 'SV Năm 4 QTKD & Marketing (ĐH Kinh Tế TP.HCM)',
+        fullName: '[Kinh tế, Quản trị & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế TP.HCM)',
+        groupKey: 'economics_finance',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[Tài chính, Ngân hàng & Fintech] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
+        name: 'Chị Vũ Quỳnh Nga',
+        title: 'SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
+        fullName: '[Tài chính, Ngân hàng & Fintech] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
+        groupKey: 'economics_finance',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[Phân tích Dữ liệu Kinh doanh & Đầu tư] Anh Phạm Đức Anh - Cựu SV Chuyên viên Phân tích Dữ liệu (ĐH Kinh Tế Quốc Dân)',
+        name: 'Anh Phạm Đức Anh',
+        title: 'Cựu SV Chuyên viên Phân tích Dữ liệu (ĐH Kinh Tế Quốc Dân)',
+        fullName: '[Phân tích Dữ liệu Kinh doanh & Đầu tư] Anh Phạm Đức Anh - Cựu SV Chuyên viên Phân tích Dữ liệu (ĐH Kinh Tế Quốc Dân)',
+        groupKey: 'economics_finance',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      },
+      {
+        id: '[Logistics & Chuỗi Cung Ứng Quốc tế] Chị Đoàn Ngọc Yến Vy - Cựu SV Chuyên viên Xuất nhập khẩu (ĐH Nha Trang)',
+        name: 'Chị Đoàn Ngọc Yến Vy',
+        title: 'Cựu SV Chuyên viên Xuất nhập khẩu (ĐH Nha Trang)',
+        fullName: '[Logistics & Chuỗi Cung Ứng Quốc tế] Chị Đoàn Ngọc Yến Vy - Cựu SV Chuyên viên Xuất nhập khẩu (ĐH Nha Trang)',
+        groupKey: 'economics_finance',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'medical_health',
+    groupName: '🩺 NHÓM TRƯỜNG Y DƯỢC & KHOA HỌC SỨC KHỎE (ĐH Y Dược TP.HCM, ĐH Y Hà Nội, ĐH Dược Hà Nội)',
+    badgeLabel: '🚀 Y Dược & Sức khỏe',
+    badgeClass: 'bg-teal-100 text-teal-800 border-teal-300',
+    icon: Rocket,
+    counselors: [
+      {
+        id: '[Y Đa khoa & Bác sĩ Lâm sàng] Chị Phạm Khánh Linh - SV Năm 4 Bác sĩ Đa Khoa (ĐH Y Dược TP.HCM)',
+        name: 'Chị Phạm Khánh Linh',
+        title: 'SV Năm 4 Bác sĩ Đa Khoa (ĐH Y Dược TP.HCM)',
+        fullName: '[Y Đa khoa & Bác sĩ Lâm sàng] Chị Phạm Khánh Linh - SV Năm 4 Bác sĩ Đa Khoa (ĐH Y Dược TP.HCM)',
+        groupKey: 'medical_health',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[Dược học & Nghiên cứu Thuốc] Dược sĩ Phan Thanh Tùng - Cựu SV Chuyên viên Nghiên cứu Dược (ĐH Dược Hà Nội)',
+        name: 'Dược sĩ Phan Thanh Tùng',
+        title: 'Cựu SV Chuyên viên Nghiên cứu Dược (ĐH Dược Hà Nội)',
+        fullName: '[Dược học & Nghiên cứu Thuốc] Dược sĩ Phan Thanh Tùng - Cựu SV Chuyên viên Nghiên cứu Dược (ĐH Dược Hà Nội)',
+        groupKey: 'medical_health',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'social_law',
+    groupName: '⚖️ NHÓM TRƯỜNG KHOA HỌC XÃ HỘI, NHÂN VĂN & LUẬT (ĐH KHXH&NV, ĐH Luật TP.HCM, ĐH Luật Hà Nội)',
+    badgeLabel: '🚀 Xã hội & Luật',
     badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300',
     icon: Rocket,
     counselors: [
       {
-        id: '[CNTT & AI] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-        name: 'Anh Trần Minh Triết',
-        title: 'SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-        fullName: '[CNTT & AI] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-        groupKey: 'student_mentors',
+        id: '22222222-2222-2222-2222-222222222222',
+        name: 'Chị Hoàng Thu Trang',
+        title: 'SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+        fullName: '[Báo chí & Truyền thông] Chị Hoàng Thu Trang - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+        groupKey: 'social_law',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
-        id: '[Kỹ thuật & Vi mạch] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
-        name: 'Anh Hoàng Minh Đức',
-        title: 'SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
-        fullName: '[Kỹ thuật & Vi mạch] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+        id: '[Luật Kinh tế & Pháp chế Doanh nghiệp] Luật sư Bùi Tuấn Anh - Cựu SV Chuyên viên Pháp chế (ĐH Luật TP.HCM)',
+        name: 'Luật sư Bùi Tuấn Anh',
+        title: 'Cựu SV Chuyên viên Pháp chế (ĐH Luật TP.HCM)',
+        fullName: '[Luật Kinh tế & Pháp chế Doanh nghiệp] Luật sư Bùi Tuấn Anh - Cựu SV Chuyên viên Pháp chế (ĐH Luật TP.HCM)',
+        groupKey: 'social_law',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
       },
       {
-        id: '[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)',
-        name: 'Chị Phạm Khánh Linh',
-        title: 'SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)',
-        fullName: '[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
-      {
-        id: '[Kinh tế & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế)',
-        name: 'Anh Lê Quốc Bảo',
-        title: 'SV Năm 4 QTKD & Marketing (ĐH Kinh Tế)',
-        fullName: '[Kinh tế & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
-      {
-        id: '[Tài chính & Ngân hàng] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
-        name: 'Chị Vũ Quỳnh Nga',
-        title: 'SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
-        fullName: '[Tài chính & Ngân hàng] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
-      {
-        id: '[Logistics & Chuỗi Cung Ứng] Chị Đoàn Ngọc Yến Vy - Cựu SV vừa tốt nghiệp ngành Logistics (ĐH Nha Trang)',
-        name: 'Chị Đoàn Ngọc Yến Vy',
-        title: 'Cựu SV vừa tốt nghiệp ngành Logistics (ĐH Nha Trang)',
-        fullName: '[Logistics & Chuỗi Cung Ứng] Chị Đoàn Ngọc Yến Vy - Cựu SV vừa tốt nghiệp ngành Logistics (ĐH Nha Trang)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
+        id: '[Tâm lý học & Quản trị Nhân sự] Chị Đỗ Minh Thư - Cựu SV Chuyên viên Đào tạo & Tuyển dụng (ĐH KHXH&NV)',
+        name: 'Chị Đỗ Minh Thư',
+        title: 'Cựu SV Chuyên viên Nhân sự (ĐH KHXH&NV)',
+        fullName: '[Tâm lý học & Quản trị Nhân sự] Chị Đỗ Minh Thư - Cựu SV Chuyên viên Đào tạo & Tuyển dụng (ĐH KHXH&NV)',
+        groupKey: 'social_law',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'education_languages',
+    groupName: '📚 NHÓM TRƯỜNG SƯ PHẠM & NGOẠI NGỮ (ĐH Sư Phạm Hà Nội, ĐH Sư Phạm TP.HCM, ĐH Sư Phạm Quy Nhơn, ĐH Ngoại Ngữ)',
+    badgeLabel: '🚀 Sư phạm & Ngôn ngữ',
+    badgeClass: 'bg-rose-100 text-rose-800 border-rose-300',
+    icon: Rocket,
+    counselors: [
       {
         id: '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
         name: 'Chị Nguyễn Hà Phương',
         title: 'SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
         fullName: '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
-        groupKey: 'student_mentors',
+        groupKey: 'education_languages',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
-        id: '[Luật & Truyền thông] Anh Bùi Tuấn Anh - SV Năm 4 Luật Kinh Tế (ĐH Luật TP Hồ Chí Minh)',
-        name: 'Anh Bùi Tuấn Anh',
-        title: 'SV Năm 4 Luật Kinh Tế (ĐH Luật TP Hồ Chí Minh)',
-        fullName: '[Luật & Truyền thông] Anh Bùi Tuấn Anh - SV Năm 4 Luật Kinh Tế (ĐH Luật TP Hồ Chí Minh)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
+        id: '[Ngôn ngữ Anh & Biên - Phiên dịch] Thầy Trần Văn Nam - Cựu SV Giảng dạy & Dịch thuật (ĐH Ngoại Ngữ - ĐHQGHN)',
+        name: 'Thầy Trần Văn Nam',
+        title: 'Cựu SV Giảng dạy & Dịch thuật (ĐH Ngoại Ngữ)',
+        fullName: '[Ngôn ngữ Anh & Biên - Phiên dịch] Thầy Trần Văn Nam - Cựu SV Giảng dạy & Dịch thuật (ĐH Ngoại Ngữ - ĐHQGHN)',
+        groupKey: 'education_languages',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'architecture_design',
+    groupName: '🎨 NHÓM TRƯỜNG KIẾN TRÚC, NGHỆ THUẬT & THIẾT KẾ (ĐH Kiến Trúc TP.HCM/Hà Nội, ĐH Mỹ Thuật)',
+    badgeLabel: '🚀 Kiến trúc & Thiết kế',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-300',
+    icon: Rocket,
+    counselors: [
       {
-        id: '[Thiết kế & Nghệ thuật] Anh Đỗ Hoàng Nam - SV Năm 2 Thiết kế Đồ họa (ĐH Kiến Trúc)',
+        id: '[Thiết kế Đồ họa & UI/UX Sáng tạo] Anh Đỗ Hoàng Nam - SV Năm 3 Thiết kế Đồ họa (ĐH Kiến Trúc TP.HCM)',
         name: 'Anh Đỗ Hoàng Nam',
-        title: 'SV Năm 2 Thiết kế Đồ họa (ĐH Kiến Trúc)',
-        fullName: '[Thiết kế & Nghệ thuật] Anh Đỗ Hoàng Nam - SV Năm 2 Thiết kế Đồ họa (ĐH Kiến Trúc)',
-        groupKey: 'student_mentors',
+        title: 'SV Năm 3 Thiết kế Đồ họa (ĐH Kiến Trúc TP.HCM)',
+        fullName: '[Thiết kế Đồ họa & UI/UX Sáng tạo] Anh Đỗ Hoàng Nam - SV Năm 3 Thiết kế Đồ họa (ĐH Kiến Trúc TP.HCM)',
+        groupKey: 'architecture_design',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
-        id: '22222222-2222-2222-2222-222222222222',
-        name: 'Chị Hoàng Thu Trang',
-        title: 'SV Năm 3 - ĐH KHXH&NV',
-        fullName: 'Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
-      },
+        id: '[Kiến trúc Công trình & Nội thất] KTS. Lê Trọng Nghĩa - Cựu SV Kiến trúc sư Công trình (ĐH Kiến Trúc Hà Nội)',
+        name: 'KTS. Lê Trọng Nghĩa',
+        title: 'Cựu SV Kiến trúc sư Công trình (ĐH Kiến Trúc Hà Nội)',
+        fullName: '[Kiến trúc Công trình & Nội thất] KTS. Lê Trọng Nghĩa - Cựu SV Kiến trúc sư Công trình (ĐH Kiến Trúc Hà Nội)',
+        groupKey: 'architecture_design',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'tourism_hospitality',
+    groupName: '🏨 NHÓM TRƯỜNG DU LỊCH, NHÀ HÀNG - KHÁCH SẠN & DỊCH VỤ (ĐH Thương Mại, ĐH Du Lịch Huế, ĐH Tài Chính - Marketing)',
+    badgeLabel: '🚀 Du lịch & Khách sạn',
+    badgeClass: 'bg-orange-100 text-orange-800 border-orange-300',
+    icon: Rocket,
+    counselors: [
       {
-        id: '[Khối ngành khác / Đặt hẹn theo yêu cầu] Mạng lưới Cựu học sinh mở rộng',
-        name: 'Mạng lưới Cựu học sinh mở rộng',
-        title: 'Vui lòng ghi rõ ngành trong phần Ghi chú',
-        fullName: '[Khối ngành khác / Đặt hẹn theo yêu cầu] Mạng lưới Cựu học sinh mở rộng (Ghi rõ vào Ghi chú)',
-        groupKey: 'student_mentors',
-        badgeLabel: '🚀 Mentor Sinh viên',
-        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+        id: '[Quản trị Du lịch & Khách sạn Quốc tế] Chị Mai Phương Uyên - Cựu SV Quản lý Dịch vụ Khách sạn (ĐH Thương Mại)',
+        name: 'Chị Mai Phương Uyên',
+        title: 'Cựu SV Quản lý Dịch vụ Khách sạn (ĐH Thương Mại)',
+        fullName: '[Quản trị Du lịch & Khách sạn Quốc tế] Chị Mai Phương Uyên - Cựu SV Quản lý Dịch vụ Khách sạn (ĐH Thương Mại)',
+        groupKey: 'tourism_hospitality',
+        badgeLabel: '💼 Cựu SV (Alumni)',
+        badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'alumni_network',
+    groupName: '🌐 MẠNG LƯỚI CỰU HỌC SINH MỞ RỘNG (ĐẶT HẸN TRƯỜNG / NGÀNH THEO YÊU CẦU)',
+    badgeLabel: '🌐 Mở rộng',
+    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
+    icon: Rocket,
+    counselors: [
+      {
+        id: '[Khối ngành & Trường khác] Mạng lưới Cựu học sinh toàn quốc (Vui lòng ghi rõ trường & ngành mong muốn trong Ghi chú)',
+        name: 'Mạng lưới Cựu học sinh toàn quốc',
+        title: 'Vui lòng ghi rõ trường & ngành mong muốn trong Ghi chú',
+        fullName: '[Khối ngành & Trường khác] Mạng lưới Cựu học sinh toàn quốc (Vui lòng ghi rõ trường & ngành mong muốn trong Ghi chú)',
+        groupKey: 'alumni_network',
+        badgeLabel: '🌐 Mở rộng',
+        badgeClass: 'bg-slate-100 text-slate-800 border-slate-300'
       }
     ]
   }
@@ -208,15 +347,16 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
   // 0b. Tra cứu trực tiếp trong mentorMap
   if (checkValue && mentorMap[checkValue]) {
     const mappedName = mentorMap[checkValue]
-    const isMentor = mappedName.includes('Mentor') || mappedName.includes('SV') || mappedName.includes('Anh') || mappedName.includes('Chị') || mappedName.includes('[')
+    const isAlumni = mappedName.includes('Cựu SV') || mappedName.includes('KTS') || mappedName.includes('Luật sư') || mappedName.includes('Dược sĩ')
+    const isTeacher = mappedName.includes('Thầy') || mappedName.includes('Cô')
     return {
       id: checkValue,
       name: mappedName.split('-')[0].trim() || mappedName,
-      title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
+      title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
       fullName: mappedName,
-      groupKey: isMentor ? 'student_mentors' : 'school_counselors',
-      badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
-      badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+      badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+      badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
     }
   }
 
@@ -255,17 +395,18 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
         )
         if (found) return found
       }
-      const isMentor = extractedName.includes('Mentor') || extractedName.includes('SV') || extractedName.includes('Anh') || extractedName.includes('Chị') || extractedName.includes('[')
+      const isAlumni = extractedName.includes('Cựu SV') || extractedName.includes('KTS') || extractedName.includes('Luật sư') || extractedName.includes('Dược sĩ')
+      const isTeacher = extractedName.includes('Thầy') || extractedName.includes('Cô')
       const isExtractedUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extractedName)
       if (!isExtractedUUID && extractedName.length > 2) {
         return {
           id: checkValue || 'custom',
           name: extractedName.split('-')[0].trim() || extractedName,
-          title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
+          title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
           fullName: extractedName,
-          groupKey: isMentor ? 'student_mentors' : 'school_counselors',
-          badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
-          badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+          groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+          badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+          badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
         }
       }
     }
@@ -273,29 +414,31 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
 
   // 3. Nếu checkValue là chuỗi trực tiếp từ option value (và không phải UUID thô)
   if (checkValue && typeof checkValue === 'string' && checkValue.length > 5 && !isUUID) {
-    const isMentor = checkValue.includes('Mentor') || checkValue.includes('SV') || checkValue.includes('Anh') || checkValue.includes('Chị') || checkValue.includes('[')
+    const isAlumni = checkValue.includes('Cựu SV') || checkValue.includes('KTS') || checkValue.includes('Luật sư') || checkValue.includes('Dược sĩ')
+    const isTeacher = checkValue.includes('Thầy') || checkValue.includes('Cô')
     return {
       id: checkValue,
       name: checkValue.split('-')[0].trim() || checkValue,
-      title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
+      title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
       fullName: checkValue,
-      groupKey: isMentor ? 'student_mentors' : 'school_counselors',
-      badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
-      badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+      groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+      badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+      badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
     }
   }
 
   // 4. Mặc định: Nếu chưa có tên hoặc ID là UUID chưa map -> hiển thị Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)
   const dbName = counselorRelation?.full_name || (!isUUID && checkValue.length > 2 ? checkValue : '') || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-  const isMentor = dbName.includes('Mentor') || dbName.includes('SV') || dbName.includes('Anh') || dbName.includes('Chị') || dbName.includes('[')
+  const isAlumni = dbName.includes('Cựu SV') || dbName.includes('KTS') || dbName.includes('Luật sư') || dbName.includes('Dược sĩ')
+  const isTeacher = dbName.includes('Thầy') || dbName.includes('Cô')
   return {
     id: counselorId || 'unknown',
     name: dbName,
-    title: isMentor ? 'Mentor Sinh viên' : 'Cố vấn Hướng nghiệp',
+    title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
     fullName: dbName,
-    groupKey: isMentor ? 'student_mentors' : 'school_counselors',
-    badgeLabel: isMentor ? '🚀 Mentor Sinh viên' : '🎓 Cố vấn Trường',
-    badgeClass: isMentor ? 'bg-indigo-100 text-indigo-800 border-indigo-300' : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+    groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+    badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+    badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
   }
 }
 
@@ -585,26 +728,16 @@ const CounselingBooking = () => {
               className="w-full px-3 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800 cursor-pointer transition-colors"
               required
             >
-              <option value="">-- Chọn Thầy/Cô Cố Vấn hoặc Mentor Sinh Viên --</option>
-              <optgroup label="🎓 THẦY CÔ CỐ VẤN TẠI TRƯỜNG">
-                <option value="11111111-1111-1111-1111-111111111111">Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)</option>
-                <option value="Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp">Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp</option>
-                <option value="Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường">Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường</option>
-              </optgroup>
-              <optgroup label="🚀 MẠNG LƯỚI MENTOR SINH VIÊN (10 KHỐI NGÀNH ĐẠI DIỆN)">
-                <option value="22222222-2222-2222-2222-222222222222">Chị Hoàng Thu Trang (SV Năm 3 - ĐH KHXH&NV)</option>
-                <option value="[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)">[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)</option>
-                <option value="[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)">[Kỹ thuật & Vi mạch bán dẫn] Anh Hoàng Minh Đức - SV Năm 3 Kỹ thuật Điện - Điện tử (ĐH Bách Khoa)</option>
-                <option value="[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)">[Y Dược & Sức khỏe] Chị Phạm Khánh Linh - SV Năm 2 Bác sĩ Đa Khoa (ĐH Y Dược)</option>
-                <option value="[Kinh tế, Quản trị & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế)">[Kinh tế, Quản trị & Marketing] Anh Lê Quốc Bảo - SV Năm 4 QTKD & Marketing (ĐH Kinh Tế)</option>
-                <option value="[Tài chính, Ngân hàng & Fintech] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)">[Tài chính, Ngân hàng & Fintech] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)</option>
-                <option value="[Logistics & Chuỗi Cung Ứng] Chị Đoàn Ngọc Yến Vy - Cựu SV vừa tốt nghiệp ngành Logistics (ĐH Nha Trang)">[Logistics & Chuỗi Cung Ứng] Chị Đoàn Ngọc Yến Vy - Cựu SV vừa tốt nghiệp ngành Logistics (ĐH Nha Trang)</option>
-                <option value="[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)">[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)</option>
-                <option value="[Luật & Truyền thông - Xã hội] Anh Bùi Tuấn Anh - SV Năm 4 Luật Kinh Tế (ĐH Luật TP Hồ Chí Minh)">[Luật & Truyền thông - Xã hội] Anh Bùi Tuấn Anh - SV Năm 4 Luật Kinh Tế (ĐH Luật TP Hồ Chí Minh)</option>
-                <option value="[Thiết kế & Nghệ thuật Đa phương tiện] Anh Đỗ Hoàng Nam - SV Năm 2 Thiết kế Đồ họa (ĐH Kiến Trúc)">[Thiết kế & Nghệ thuật Đa phương tiện] Anh Đỗ Hoàng Nam - SV Năm 2 Thiết kế Đồ họa (ĐH Kiến Trúc)</option>
-                <option value="[Du lịch, Nhà hàng - Khách sạn] Chị Hoàng Thu Trang - SV Năm 3 Quản trị Du lịch & Khách sạn">[Du lịch, Nhà hàng - Khách sạn] Chị Hoàng Thu Trang - SV Năm 3 Quản trị Du lịch & Khách sạn</option>
-                <option value="[Khối ngành khác / Đặt hẹn theo yêu cầu] Mạng lưới Cựu học sinh mở rộng (Vui lòng ghi rõ ngành trong phần Ghi chú)">[Khối ngành khác / Đặt hẹn theo yêu cầu] Mạng lưới Cựu học sinh mở rộng (Vui lòng ghi rõ ngành trong phần Ghi chú)</option>
-              </optgroup>
+              <option value="">-- Chọn Thầy/Cô Cố Vấn hoặc Mentor Sinh Viên / Cựu SV --</option>
+              {COUNSELOR_GROUPS.map((group) => (
+                <optgroup key={group.groupKey} label={group.groupName}>
+                  {group.counselors.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.fullName}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
             </select>
           </div>
 
