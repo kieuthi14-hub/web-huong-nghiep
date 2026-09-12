@@ -328,50 +328,40 @@ export const ADMIN_MENTOR_MAP = {
 export const getDisplayMentorName = (session) => {
   if (!session) return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
 
-  // 1. Ưu tiên trích xuất chính xác Chuyên gia/Mentor từ student_notes nếu có
+  // 1. Ưu tiên số 1: Trích xuất từ student_notes tag [Chuyên gia/Mentor: ...]
   if (session.student_notes && typeof session.student_notes === 'string') {
     const match = session.student_notes.match(/^\[Chuyên gia\/Mentor:\s*([\s\S]+?)\](?:\r?\n|$)/) ||
                   session.student_notes.match(/\[Chuyên gia\/Mentor:\s*([\s\S]+?)\]/)
     if (match && match[1]) {
       const extracted = match[1].trim()
-      if (extracted.includes('11111111')) {
+      if (extracted === '11111111-1111-1111-1111-111111111111') {
         return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
       }
       if (ADMIN_MENTOR_MAP[extracted]) {
         return ADMIN_MENTOR_MAP[extracted]
       }
-      const isExtractedUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(extracted)
-      if (!isExtractedUUID && extracted.length > 2) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(extracted)
+      if (!isUUID && extracted.length > 2) {
         return extracted
       }
     }
   }
 
-  const idToCheck = String(session.mentor_id || session.counselor_id || session.counselor?.id || '').trim()
-  const nameToCheck = String(session.counselor_name || session.counselor?.full_name || '').trim()
+  // 2. Tra cứu counselor_name nếu đã có sẵn tên người thực
+  const counselorName = String(session.counselor_name || session.counselor?.full_name || '').trim()
+  const isNameUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(counselorName)
+  if (counselorName && !isNameUUID && !counselorName.includes('11111111')) {
+    if (ADMIN_MENTOR_MAP[counselorName]) return ADMIN_MENTOR_MAP[counselorName]
+    return counselorName
+  }
 
-  // 2. Tra cứu qua ADMIN_MENTOR_MAP theo ID
+  // 3. Tra cứu ID qua ADMIN_MENTOR_MAP
+  const idToCheck = String(session.mentor_id || session.counselor_id || '').trim()
   if (ADMIN_MENTOR_MAP[idToCheck]) {
     return ADMIN_MENTOR_MAP[idToCheck]
   }
 
-  // 3. Tra cứu qua ADMIN_MENTOR_MAP theo Tên
-  if (ADMIN_MENTOR_MAP[nameToCheck]) {
-    return ADMIN_MENTOR_MAP[nameToCheck]
-  }
-
-  // 4. Bất kỳ dấu hiệu nào của 11111111
-  if (idToCheck.includes('11111111') || nameToCheck.includes('11111111')) {
-    return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-  }
-
-  // 5. Nếu nameToCheck là tên người thực (không chứa UUID)
-  const isNameUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(nameToCheck)
-  if (nameToCheck && !isNameUUID && nameToCheck.length > 2) {
-    return nameToCheck
-  }
-
-  // 6. Mặc định
+  // 4. Mặc định
   return 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
 }
 
@@ -578,15 +568,11 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
 
     const rawCombined = combinedCounseling.length === 0 ? VISEF_SEED_COUNSELING : combinedCounseling
     realCounseling = rawCombined.map(s => {
-      const isRawUUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(s.counselor_name || '')
-      const idHas11 = (s.counselor_id && String(s.counselor_id).includes('11111111')) || (s.mentor_id && String(s.mentor_id).includes('11111111'))
-      if (idHas11 || isRawUUID || !s.counselor_name) {
-        return {
-          ...s,
-          counselor_name: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-        }
+      const displayMentor = getDisplayMentorName(s)
+      return {
+        ...s,
+        counselor_name: displayMentor
       }
-      return s
     })
 
     // Fallback Seed nếu DB rỗng
@@ -1398,9 +1384,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                               {mentorBadge.label}
                             </span>
                             <span className="font-bold text-slate-800 block text-xs">
-                              {displayMentorName && !displayMentorName.includes('11111111') && !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(displayMentorName)
-                                ? displayMentorName
-                                : 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'}
+                              {displayMentorName || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'}
                             </span>
                           </td>
 

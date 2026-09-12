@@ -328,55 +328,23 @@ export const formatDateTimeFormatted = (dateStr) => {
 
 // Hàm tra cứu chi tiết thông tin chuyên gia / mentor từ ID hoặc object trả về từ Supabase DB
 export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes, sessionCounselorName) => {
-  const checkValue = String(counselorId || sessionCounselorName || '').trim()
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(checkValue)
-
-  // 0. Nếu ID là 11111111-1111-1111-1111-111111111111
-  if (checkValue === '11111111-1111-1111-1111-111111111111') {
-    return {
-      id: '11111111-1111-1111-1111-111111111111',
-      name: 'Thầy Nguyễn Văn A',
-      title: 'Cố vấn Hướng nghiệp',
-      fullName: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
-      groupKey: 'school_counselors',
-      badgeLabel: '🎓 Cố vấn Trường',
-      badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
-    }
-  }
-
-  // 0b. Tra cứu trực tiếp trong mentorMap
-  if (checkValue && mentorMap[checkValue]) {
-    const mappedName = mentorMap[checkValue]
-    const isAlumni = mappedName.includes('Cựu SV') || mappedName.includes('KTS') || mappedName.includes('Luật sư') || mappedName.includes('Dược sĩ')
-    const isTeacher = mappedName.includes('Thầy') || mappedName.includes('Cô')
-    return {
-      id: checkValue,
-      name: mappedName.split('-')[0].trim() || mappedName,
-      title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
-      fullName: mappedName,
-      groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
-      badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
-      badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
-    }
-  }
-
-  // 1. Tìm theo tên/value hoặc ID trong COUNSELOR_GROUPS
-  for (const group of COUNSELOR_GROUPS) {
-    const found = group.counselors.find(c => 
-      c.id === checkValue || 
-      c.fullName === checkValue || 
-      (checkValue && checkValue.includes(c.name)) ||
-      (checkValue && c.fullName.includes(checkValue))
-    )
-    if (found) return found
-  }
-
-  // 2. Tìm trong sessionNotes
+  // 1. ƯU TIÊN SỐ 1: Bóc tách chính xác từ sessionNotes nếu có tag [Chuyên gia/Mentor: ...]
   if (sessionNotes && typeof sessionNotes === 'string') {
-    const match = sessionNotes.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)
+    const match = sessionNotes.match(/^\[Chuyên gia\/Mentor:\s*([\s\S]+?)\](?:\r?\n|$)/) ||
+                  sessionNotes.match(/\[Chuyên gia\/Mentor:\s*([\s\S]+?)\]/)
     if (match && match[1]) {
-      const extractedName = match[1].trim()
-      if (extractedName === '11111111-1111-1111-1111-111111111111') {
+      const extracted = match[1].trim()
+      // Tìm trong COUNSELOR_GROUPS
+      for (const group of COUNSELOR_GROUPS) {
+        const found = group.counselors.find(c => 
+          c.fullName === extracted ||
+          c.id === extracted ||
+          c.name === extracted ||
+          extracted.includes(c.name)
+        )
+        if (found) return found
+      }
+      if (extracted === '11111111-1111-1111-1111-111111111111') {
         return {
           id: '11111111-1111-1111-1111-111111111111',
           name: 'Thầy Nguyễn Văn A',
@@ -387,58 +355,93 @@ export const getCounselorDetails = (counselorId, counselorRelation, sessionNotes
           badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
         }
       }
+      const isAlumni = extracted.includes('Cựu SV') || extracted.includes('KTS') || extracted.includes('Luật sư') || extracted.includes('Dược sĩ')
+      const isTeacher = extracted.includes('Thầy') || extracted.includes('Cô')
+      return {
+        id: counselorId || 'mentor',
+        name: extracted.split('-')[0].trim() || extracted,
+        title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
+        fullName: extracted,
+        groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+        badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+        badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      }
+    }
+  }
+
+  // 2. ƯU TIÊN SỐ 2: Kiểm tra sessionCounselorName nếu có tên người thực
+  if (sessionCounselorName && typeof sessionCounselorName === 'string' && sessionCounselorName.length > 3) {
+    if (!sessionCounselorName.includes('11111111') && !/^[0-9a-f]{8}-[0-9a-f]{4}/i.test(sessionCounselorName)) {
       for (const group of COUNSELOR_GROUPS) {
         const found = group.counselors.find(c => 
-          extractedName.includes(c.name) || 
-          c.fullName === extractedName ||
-          extractedName.includes(c.fullName)
+          c.fullName === sessionCounselorName || c.name === sessionCounselorName || sessionCounselorName.includes(c.name)
         )
         if (found) return found
       }
-      const isAlumni = extractedName.includes('Cựu SV') || extractedName.includes('KTS') || extractedName.includes('Luật sư') || extractedName.includes('Dược sĩ')
-      const isTeacher = extractedName.includes('Thầy') || extractedName.includes('Cô')
-      const isExtractedUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extractedName)
-      if (!isExtractedUUID && extractedName.length > 2) {
-        return {
-          id: checkValue || 'custom',
-          name: extractedName.split('-')[0].trim() || extractedName,
-          title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
-          fullName: extractedName,
-          groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
-          badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
-          badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
-        }
+      const isAlumni = sessionCounselorName.includes('Cựu SV') || sessionCounselorName.includes('KTS') || sessionCounselorName.includes('Luật sư') || sessionCounselorName.includes('Dược sĩ')
+      const isTeacher = sessionCounselorName.includes('Thầy') || sessionCounselorName.includes('Cô')
+      return {
+        id: counselorId || 'counselor',
+        name: sessionCounselorName.split('-')[0].trim() || sessionCounselorName,
+        title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
+        fullName: sessionCounselorName,
+        groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+        badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+        badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
       }
     }
   }
 
-  // 3. Nếu checkValue là chuỗi trực tiếp từ option value (và không phải UUID thô)
-  if (checkValue && typeof checkValue === 'string' && checkValue.length > 5 && !isUUID) {
-    const isAlumni = checkValue.includes('Cựu SV') || checkValue.includes('KTS') || checkValue.includes('Luật sư') || checkValue.includes('Dược sĩ')
-    const isTeacher = checkValue.includes('Thầy') || checkValue.includes('Cô')
-    return {
-      id: checkValue,
-      name: checkValue.split('-')[0].trim() || checkValue,
-      title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
-      fullName: checkValue,
-      groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
-      badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
-      badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+  // 3. ƯU TIÊN SỐ 3: Kiểm tra counselorId (khi chọn từ dropdown lúc đặt lịch mới)
+  const checkValue = String(counselorId || '').trim()
+  if (checkValue) {
+    for (const group of COUNSELOR_GROUPS) {
+      const found = group.counselors.find(c => c.id === checkValue || c.fullName === checkValue)
+      if (found) return found
+    }
+    if (mentorMap[checkValue]) {
+      const mappedName = mentorMap[checkValue]
+      for (const group of COUNSELOR_GROUPS) {
+        const found = group.counselors.find(c => c.fullName === mappedName || mappedName.includes(c.name))
+        if (found) return found
+      }
+      const isAlumni = mappedName.includes('Cựu SV') || mappedName.includes('KTS') || mappedName.includes('Luật sư') || mappedName.includes('Dược sĩ')
+      const isTeacher = mappedName.includes('Thầy') || mappedName.includes('Cô')
+      return {
+        id: checkValue,
+        name: mappedName.split('-')[0].trim() || mappedName,
+        title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
+        fullName: mappedName,
+        groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+        badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+        badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      }
+    }
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(checkValue)
+    if (!isUUID && checkValue.length > 5) {
+      const isAlumni = checkValue.includes('Cựu SV') || checkValue.includes('KTS') || checkValue.includes('Luật sư') || checkValue.includes('Dược sĩ')
+      const isTeacher = checkValue.includes('Thầy') || checkValue.includes('Cô')
+      return {
+        id: checkValue,
+        name: checkValue.split('-')[0].trim() || checkValue,
+        title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
+        fullName: checkValue,
+        groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
+        badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
+        badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      }
     }
   }
 
-  // 4. Mặc định: Nếu chưa có tên hoặc ID là UUID chưa map -> hiển thị Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)
-  const dbName = counselorRelation?.full_name || (!isUUID && checkValue.length > 2 ? checkValue : '') || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-  const isAlumni = dbName.includes('Cựu SV') || dbName.includes('KTS') || dbName.includes('Luật sư') || dbName.includes('Dược sĩ')
-  const isTeacher = dbName.includes('Thầy') || dbName.includes('Cô')
+  // 4. Mặc định
   return {
-    id: counselorId || 'unknown',
-    name: dbName,
-    title: isTeacher ? 'Cố vấn Hướng nghiệp' : isAlumni ? 'Cựu SV (Alumni)' : 'Mentor Sinh viên',
-    fullName: dbName,
-    groupKey: isTeacher ? 'school_counselors' : 'student_mentors',
-    badgeLabel: isTeacher ? '🎓 Cố vấn Trường' : isAlumni ? '💼 Cựu SV (Alumni)' : '🚀 Mentor Sinh viên',
-    badgeClass: isTeacher ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : isAlumni ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    id: '11111111-1111-1111-1111-111111111111',
+    name: 'Thầy Nguyễn Văn A',
+    title: 'Cố vấn Hướng nghiệp',
+    fullName: 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
+    groupKey: 'school_counselors',
+    badgeLabel: '🎓 Cố vấn Trường',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
   }
 }
 
@@ -867,11 +870,8 @@ const CounselingBooking = () => {
           ) : mySessions.length > 0 ? (
             <div className="space-y-4">
               {mySessions.map((item, index) => {
-                const expert = getCounselorDetails(item?.mentor_id || item?.counselor_id, item?.counselor, item?.student_notes, item?.counselor_name)
-                const rawName = mentorMap[item?.mentor_id] || mentorMap[item?.counselor_id] || expert?.fullName || 'Cố vấn chuyên môn'
-                const counselorName = (rawName.includes('11111111') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(rawName))
-                  ? 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
-                  : rawName
+                const expert = getCounselorDetails(item?.counselor_id, item?.counselor, item?.student_notes, item?.counselor_name || item?.mentor_id)
+                const counselorName = expert?.fullName || 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
                 const displayNotes = item?.student_notes
                   ? item.student_notes.replace(/^\[Chuyên gia\/Mentor:\s*[\s\S]+?\](?:\r?\n|$)/, '').trim()
                   : ''
