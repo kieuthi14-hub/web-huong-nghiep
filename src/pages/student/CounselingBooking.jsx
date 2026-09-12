@@ -700,6 +700,12 @@ const CounselingBooking = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8 animate-reveal">
       <div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
+            <Sparkles className="w-3 h-3 text-emerald-600" />
+            Đã cập nhật: Phân loại theo Nhóm trường & Mạng lưới Cựu SV
+          </span>
+        </div>
         <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
           <CalendarDays className="w-5 h-5 text-brand-600" />
           🎓 Tư Vấn 1-1 Đối Chứng Thực Tế Với Chuyên Gia & Mentor

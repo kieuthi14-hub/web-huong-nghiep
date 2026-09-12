@@ -17,6 +17,16 @@
   </head>
   <body class="bg-slate-50 text-slate-900 font-sans min-h-screen">
     <div id="root"></div>
+    <script>
+      // Đảm bảo không bị lưu cache cũ từ Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for (var reg of registrations) {
+            reg.unregister();
+          }
+        });
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
