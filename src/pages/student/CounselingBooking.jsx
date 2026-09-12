@@ -13,8 +13,39 @@ import {
   AlertTriangle,
   GraduationCap,
   Rocket,
-  Sparkles
+  Sparkles,
+  Video,
+  MapPin,
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react'
+
+// Hàm phân tích thông tin Nền tảng Gặp gỡ (Google Meet, Zoom, Địa điểm trực tiếp) từ ghi chú chuyên viên
+export const parseMeetingInfo = (notes) => {
+  if (!notes || typeof notes !== 'string') return { meetingUrl: null, locationText: null, cleanMessage: '' }
+  
+  // 1. URL phòng họp (Google Meet, Zoom, Teams, Web)
+  const urlMatch = notes.match(/(https?:\/\/[^\s\],"'<>]+)/i)
+  const meetingUrl = urlMatch ? urlMatch[1] : null
+
+  // 2. Địa điểm trực tiếp
+  const locMatch = notes.match(/\[(?:Địa điểm|Phòng gặp|Địa chỉ):\s*([^\]]+)\]/i)
+  let locationText = locMatch ? locMatch[1].trim() : null
+
+  // Nếu không có tag nhưng notes chứa từ "Phòng" hoặc "Trường"
+  if (!locationText && !meetingUrl && (notes.includes('Phòng') || notes.includes('phòng') || notes.includes('Trường') || notes.includes('Văn phòng'))) {
+    locationText = notes.split('\n')[0].replace(/^\[.*?\]/, '').trim()
+  }
+
+  // 3. Tin nhắn làm sạch
+  let cleanMessage = notes
+    .replace(/\[(?:Link|Link phòng họp|Phòng họp|Phòng gặp|Địa điểm|Địa chỉ):\s*[^\]]+\]/gi, '')
+    .replace(/(https?:\/\/[^\s\],"'<>]+)/gi, '')
+    .replace(/^[\s\n\r-]+|[\s\n\r-]+$/g, '')
+    .trim()
+
+  return { meetingUrl, locationText, cleanMessage }
+}
 
 // Bản đồ Ánh xạ UUID Chuyên gia / Mentor sang Tên hiển thị thực tế
 export const mentorMap = {
@@ -914,10 +945,96 @@ const CounselingBooking = () => {
                       </div>
                     )}
 
-                    {item?.counselor_notes && (
-                      <div className="text-xs text-brand-800 bg-brand-50 p-2.5 rounded-sm border border-brand-200">
-                        <span className="font-bold text-brand-900">Phản hồi từ Chuyên viên: </span>
-                        {item.counselor_notes}
+                    {/* NỀN TẢNG GẶP GỠ: GOOGLE MEET / PHÒNG TRỰC TIẾP */}
+                    {item?.status === 'confirmed' || item?.status === 'approved' || item?.status === 'completed' ? (() => {
+                      const meetingInfo = parseMeetingInfo(item?.counselor_notes)
+                      const isOnline = Boolean(meetingInfo.meetingUrl)
+
+                      if (isOnline) {
+                        const isGoogleMeet = meetingInfo.meetingUrl.includes('meet.google')
+                        const isZoom = meetingInfo.meetingUrl.includes('zoom.us')
+
+                        return (
+                          <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-sm space-y-2.5 shadow-2xs">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Video className="w-4 h-4 text-emerald-600 animate-pulse" />
+                                Nền tảng Gặp gỡ Trực tuyến (1-1 Online)
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-200 text-emerald-900 border border-emerald-300 rounded uppercase">
+                                {isGoogleMeet ? '🌐 Google Meet' : isZoom ? '💻 Zoom Meeting' : '🌐 Phòng họp Online'}
+                              </span>
+                            </div>
+                            
+                            <p className="text-xs text-emerald-800 font-medium">
+                              Buổi tư vấn định hướng sẽ diễn ra qua phòng họp trực tuyến. Đến khung giờ đã hẹn, bạn hãy bấm nút bên dưới để vào gặp Chuyên gia/Mentor:
+                            </p>
+
+                            <div className="flex items-center gap-3 pt-1 flex-wrap">
+                              <a
+                                href={meetingInfo.meetingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all cursor-pointer"
+                              >
+                                <Video className="w-4 h-4" />
+                                <span>{isGoogleMeet ? '👉 Tham gia phòng Google Meet' : isZoom ? '👉 Tham gia phòng Zoom' : '👉 Vào phòng họp trực tuyến'}</span>
+                                <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
+                              </a>
+                            </div>
+
+                            {meetingInfo.cleanMessage && (
+                              <div className="text-[11px] text-emerald-900 pt-2 border-t border-emerald-200 font-semibold flex items-start gap-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-emerald-700 shrink-0 mt-0.5" />
+                                <span>Hướng dẫn từ Chuyên viên: {meetingInfo.cleanMessage}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      if (meetingInfo.locationText) {
+                        return (
+                          <div className="bg-sky-50 border border-sky-300 p-4 rounded-sm space-y-2 shadow-2xs">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                              <span className="text-xs font-bold text-sky-950 flex items-center gap-1.5 uppercase tracking-wider">
+                                <MapPin className="w-4 h-4 text-sky-600" />
+                                Địa điểm Gặp mặt Trực tiếp tại Trường (Offline)
+                              </span>
+                              <span className="text-[10px] font-bold px-2 py-0.5 bg-sky-200 text-sky-900 border border-sky-300 rounded uppercase">
+                                🏛️ Phòng Tham vấn trường
+                              </span>
+                            </div>
+                            <div className="text-xs text-sky-900 font-bold flex items-center gap-2 bg-white/70 p-2.5 rounded border border-sky-200">
+                              <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
+                              <span>{meetingInfo.locationText}</span>
+                            </div>
+                            {meetingInfo.cleanMessage && (
+                              <div className="text-[11px] text-sky-800 pt-1 font-medium flex items-start gap-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-sky-600 shrink-0 mt-0.5" />
+                                <span>Lời nhắn: {meetingInfo.cleanMessage}</span>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      }
+
+                      // Mặc định nếu đã duyệt nhưng chưa nhập link/phòng
+                      return (
+                        <div className="bg-emerald-50/70 border border-emerald-200 p-3 rounded-sm text-xs text-emerald-800 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>Lịch hẹn đã được Admin xác nhận. Chuyên viên sẽ liên hệ và gửi link Google Meet trước giờ hẹn.</span>
+                        </div>
+                      )
+                    })() : item?.status === 'rejected' ? (
+                      <div className="bg-rose-50 border border-rose-200 p-3 rounded-sm text-xs text-rose-700 font-semibold flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>Yêu cầu hẹn đã bị từ chối hoặc cần đổi lịch. Bạn có thể chọn thời gian hoặc Chuyên viên khác để đăng ký lại.</span>
+                      </div>
+                    ) : (
+                      <div className="bg-amber-50/80 border border-amber-200 p-3 rounded-sm text-xs text-amber-800 font-semibold flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Đang chờ Admin phê duyệt & thiết lập phòng gặp (Google Meet / Trực tiếp).</span>
                       </div>
                     )}
                   </div>

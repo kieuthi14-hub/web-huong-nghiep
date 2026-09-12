@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { getCounselorDetails, formatDateTimeFormatted, mentorMap } from '../student/CounselingBooking'
+import { getCounselorDetails, formatDateTimeFormatted, mentorMap, parseMeetingInfo } from '../student/CounselingBooking'
 import { 
   CalendarDays, 
   CheckCircle2, 
@@ -27,7 +27,11 @@ import {
   Scale,
   Compass,
   FileText,
-  Target
+  Target,
+  Video,
+  MapPin,
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react'
 
 // =========================================================================
@@ -407,6 +411,11 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [toastMessage, setToastMessage] = useState(null)
 
+  // Modal Phê duyệt & Thiết lập Phòng gặp (Google Meet / Offline)
+  const [approvalModalSession, setApprovalModalSession] = useState(null)
+  const [meetingLocation, setMeetingLocation] = useState('https://meet.google.com/new')
+  const [meetingMessage, setMeetingMessage] = useState('Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!')
+
   useEffect(() => {
     fetchRealSupabaseData()
   }, [user])
@@ -597,19 +606,24 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
     setIsRefreshing(false)
   }
 
-  // Duyệt / Từ chối Lịch hẹn 1-1
-  const handleUpdateCounselingStatus = async (sessionId, newStatus) => {
+  // Duyệt / Từ chối Lịch hẹn 1-1 & Thiết lập phòng gặp Google Meet / Offline
+  const handleUpdateCounselingStatus = async (sessionId, newStatus, counselorNotes = null) => {
     setIsUpdatingStatus(true)
 
+    const updatePayload = { status: newStatus }
+    if (counselorNotes !== null) {
+      updatePayload.counselor_notes = counselorNotes
+    }
+
     setCounselingSessions(prev => 
-      prev.map(item => item.id === sessionId ? { ...item, status: newStatus } : item)
+      prev.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
     )
 
     try {
       if (supabase && typeof supabase.from === 'function') {
         await supabase
           .from('counseling_sessions')
-          .update({ status: newStatus })
+          .update(updatePayload)
           .eq('id', sessionId)
       }
 
@@ -618,7 +632,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
           const raw = localStorage.getItem(`counseling_sessions_local_${user.id}`)
           if (raw) {
             const list = JSON.parse(raw)
-            const updated = list.map(item => item.id === sessionId ? { ...item, status: newStatus } : item)
+            const updated = list.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
             localStorage.setItem(`counseling_sessions_local_${user.id}`, JSON.stringify(updated))
           }
         } catch (e) {
@@ -627,7 +641,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
       }
 
       const msg = (newStatus === 'confirmed' || newStatus === 'approved')
-        ? '🟢 Đã DUYỆT thành công lịch hẹn tư vấn!'
+        ? '🟢 Đã DUYỆT thành công lịch hẹn & thiết lập phòng gặp!'
         : '🔴 Đã TỪ CHỐI / ĐỔI LỊCH hẹn tư vấn!'
 
       setToastMessage(msg)
@@ -1347,7 +1361,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                       <th className="py-3.5 px-4">Tên Học sinh & Contact</th>
                       <th className="py-3.5 px-4">Chuyên gia / Mentor được chọn</th>
                       <th className="py-3.5 px-4">Ngày giờ hẹn gặp</th>
-                      <th className="py-3.5 px-4">Ghi chú & Thắc mắc</th>
+                      <th className="py-3.5 px-4">Nền tảng / Phòng gặp & Ghi chú</th>
                       <th className="py-3.5 px-4">Trạng thái</th>
                       <th className="py-3.5 px-4 text-center">Thao tác Admin</th>
                     </tr>
@@ -1396,10 +1410,80 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                             </div>
                           </td>
 
-                          {/* 4. Ghi chú */}
-                          <td className="py-4 px-4 max-w-xs text-slate-600">
+                          {/* 4. Nền tảng gặp gỡ & Ghi chú */}
+                          <td className="py-4 px-4 max-w-sm text-slate-600 space-y-2">
+                            {/* Trạng thái Nền tảng Google Meet / Trực tiếp */}
+                            {session.status === 'confirmed' || session.status === 'approved' ? (() => {
+                              const meeting = parseMeetingInfo(session.counselor_notes)
+                              if (meeting.meetingUrl) {
+                                const isMeet = meeting.meetingUrl.includes('meet.google')
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <a
+                                      href={meeting.meetingUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded font-bold text-[11px] transition-colors"
+                                    >
+                                      <Video className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>{isMeet ? '🌐 Google Meet' : '💻 Phòng họp Online'}</span>
+                                      <ExternalLink className="w-3 h-3 text-emerald-500" />
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setApprovalModalSession(session)
+                                        setMeetingLocation(meeting.meetingUrl || 'https://meet.google.com/new')
+                                        setMeetingMessage(meeting.cleanMessage || '')
+                                      }}
+                                      className="text-[10px] text-slate-500 hover:text-brand-600 underline font-semibold cursor-pointer"
+                                    >
+                                      Sửa link
+                                    </button>
+                                  </div>
+                                )
+                              }
+                              if (meeting.locationText) {
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-50 text-sky-800 border border-sky-300 rounded font-bold text-[11px]">
+                                      <MapPin className="w-3.5 h-3.5 text-sky-600" />
+                                      <span>{meeting.locationText}</span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setApprovalModalSession(session)
+                                        setMeetingLocation(meeting.locationText || '')
+                                        setMeetingMessage(meeting.cleanMessage || '')
+                                      }}
+                                      className="text-[10px] text-slate-500 hover:text-brand-600 underline font-semibold cursor-pointer"
+                                    >
+                                      Sửa
+                                    </button>
+                                  </div>
+                                )
+                              }
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setApprovalModalSession(session)
+                                    setMeetingLocation('https://meet.google.com/new')
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 cursor-pointer"
+                                >
+                                  <Video className="w-3 h-3" />
+                                  <span>+ Thêm link Google Meet</span>
+                                </button>
+                              )
+                            })() : (
+                              <span className="text-[10px] text-slate-400 italic">Chờ duyệt để cấp link Meet</span>
+                            )}
+
+                            {/* Câu hỏi của học sinh */}
                             <p className="line-clamp-2 bg-slate-50 p-2 rounded border border-slate-100 text-[11px] font-medium leading-relaxed" title={cleanNotes}>
-                              {cleanNotes}
+                              <span className="font-bold text-slate-700">HS hỏi: </span>{cleanNotes}
                             </p>
                           </td>
 
@@ -1411,20 +1495,33 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                           {/* 6. Nút thao tác Admin trực tiếp */}
                           <td className="py-4 px-4 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {/* Nút 🟢 DUYỆT LỊCH */}
+                              {/* Nút 🟢 DUYỆT LỊCH (Mở Modal Thiết lập Google Meet / Địa điểm) */}
                               <button
                                 type="button"
                                 disabled={isUpdatingStatus}
-                                onClick={() => handleUpdateCounselingStatus(session.id, 'confirmed')}
+                                onClick={() => {
+                                  setApprovalModalSession(session)
+                                  const meeting = parseMeetingInfo(session.counselor_notes)
+                                  if (meeting.meetingUrl) {
+                                    setMeetingLocation(meeting.meetingUrl)
+                                  } else if (meeting.locationText) {
+                                    setMeetingLocation(meeting.locationText)
+                                  } else {
+                                    // Tạo link Google Meet tự động
+                                    const code = 'meet-' + Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)
+                                    setMeetingLocation('https://meet.google.com/' + code)
+                                  }
+                                  setMeetingMessage(meeting.cleanMessage || 'Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!')
+                                }}
                                 className={`px-3 py-1.5 rounded text-[11px] font-bold uppercase transition-all shadow-xs flex items-center gap-1 cursor-pointer border ${
                                   isConfirmed
-                                    ? 'bg-emerald-600 text-white border-emerald-700 opacity-90'
-                                    : 'bg-emerald-50 hover:bg-emerald-600 text-emerald-800 hover:text-white border-emerald-300'
+                                    ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border-emerald-400'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700'
                                 }`}
-                                title="Bấm để phê duyệt chính thức lịch hẹn này vào DB"
+                                title="Bấm để thiết lập link phòng họp và phê duyệt"
                               >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Duyệt lịch</span>
+                                {isConfirmed ? <Video className="w-3.5 h-3.5 text-emerald-700" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                <span>{isConfirmed ? 'Đổi link Meet' : 'Duyệt & Cấp Meet'}</span>
                               </button>
 
                               {/* Nút 🔴 TỪ CHỐI */}
@@ -1451,6 +1548,140 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL DUYỆT LỊCH HẸN & CẤP LINK GOOGLE MEET / ĐỊA ĐIỂM
+          ========================================================================= */}
+      {approvalModalSession && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-reveal">
+          <div className="bg-white border border-slate-200 rounded-sm shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <Video className="w-4.5 h-4.5 text-emerald-600" />
+                  <span>Phê Duyệt Lịch Hẹn & Cấp Link Phòng Gặp</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Thiết lập link Google Meet hoặc địa điểm trực tiếp để gửi ngay đến tài khoản của học sinh.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApprovalModalSession(null)}
+                className="p-1 rounded text-slate-400 hover:text-slate-800 hover:bg-slate-100 cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Thông tin tóm tắt suất hẹn */}
+            <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-sm text-xs space-y-1.5 font-medium text-slate-700">
+              <div className="flex items-center justify-between">
+                <span>Học sinh: <strong className="text-slate-900">{approvalModalSession.student?.full_name || 'Học sinh'}</strong> ({approvalModalSession.student?.email})</span>
+                <span className="text-[11px] font-bold text-brand-700">{formatDateTimeFormatted(approvalModalSession.scheduled_at)}</span>
+              </div>
+              <div>
+                Chuyên gia / Mentor: <strong className="text-slate-900">{getDisplayMentorName(approvalModalSession)}</strong>
+              </div>
+            </div>
+
+            {/* Nút bấm chọn nhanh hình thức gặp */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                Chọn Nhanh Hình Thức & Nền Tảng Gặp Gỡ
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const roomCode = 'meet-' + Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)
+                    setMeetingLocation('https://meet.google.com/' + roomCode)
+                  }}
+                  className="p-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-sm font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-colors text-center"
+                >
+                  <Video className="w-4 h-4 text-emerald-600" />
+                  <span>🌐 Google Meet</span>
+                  <span className="text-[9px] font-normal text-emerald-700">Tạo mã phòng tự động</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMeetingLocation('Phòng Tham vấn Tâm lý & Hướng nghiệp - Tầng 2 (Văn phòng Đoàn trường)')}
+                  className="p-2.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 rounded-sm font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-colors text-center"
+                >
+                  <MapPin className="w-4 h-4 text-sky-600" />
+                  <span>🏛️ Gặp Tại Trường</span>
+                  <span className="text-[9px] font-normal text-sky-700">Phòng Tham vấn</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMeetingLocation('https://zoom.us/j/')}
+                  className="p-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-300 rounded-sm font-bold text-xs flex flex-col items-center gap-1 cursor-pointer transition-colors text-center"
+                >
+                  <Video className="w-4 h-4 text-indigo-600" />
+                  <span>💻 Zoom Meeting</span>
+                  <span className="text-[9px] font-normal text-indigo-700">Nhập ID phòng Zoom</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Ô nhập Link phòng họp hoặc Địa điểm */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block flex items-center justify-between">
+                <span>Đường link phòng họp (URL) hoặc Địa điểm cụ thể:</span>
+                <span className="text-[10px] text-brand-600 font-semibold lowercase">hiển thị trực tiếp cho HS</span>
+              </label>
+              <input
+                type="text"
+                value={meetingLocation}
+                onChange={(e) => setMeetingLocation(e.target.value)}
+                placeholder="VD: https://meet.google.com/abc-defg-hij hoặc Phòng Tư vấn Hướng nghiệp..."
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 focus:border-brand-500 focus:outline-none rounded-sm font-medium text-slate-800"
+                required
+              />
+            </div>
+
+            {/* Ô nhập Lời nhắn gửi học sinh */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+                Lời nhắn / Hướng dẫn chuẩn bị gửi học sinh:
+              </label>
+              <textarea
+                rows={3}
+                value={meetingMessage}
+                onChange={(e) => setMeetingMessage(e.target.value)}
+                placeholder="VD: Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 focus:border-brand-500 focus:outline-none rounded-sm font-medium text-slate-800"
+              />
+            </div>
+
+            {/* Nút hành động */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setApprovalModalSession(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-sm cursor-pointer transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={isUpdatingStatus || !meetingLocation.trim()}
+                onClick={async () => {
+                  const finalNotes = '[Phòng gặp: ' + meetingLocation.trim() + ']\n' + meetingMessage.trim()
+                  await handleUpdateCounselingStatus(approvalModalSession.id, 'confirmed', finalNotes)
+                  setApprovalModalSession(null)
+                }}
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Xác nhận Duyệt & Cấp Link</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
