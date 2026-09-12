@@ -5,6 +5,7 @@ import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
 // Layouts
 import Navbar from './components/layout/Navbar'
 import Sidebar from './components/layout/Sidebar'
+import ErrorBoundary from './components/common/ErrorBoundary'
 
 // Public Pages
 import Login from './pages/auth/Login'
@@ -84,7 +85,9 @@ const MainLayout = ({ children }) => {
       <div className="flex-1 flex overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-y-auto h-[calc(100vh-4rem)]">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

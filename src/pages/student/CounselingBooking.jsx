@@ -666,24 +666,27 @@ const CounselingBooking = () => {
             </div>
           ) : mySessions.length > 0 ? (
             <div className="space-y-4">
-              {mySessions.map((item) => {
-                const expert = getCounselorDetails(item.mentor_id || item.counselor_id, item.counselor, item.student_notes, item.counselor_name)
-                const counselorName = mentorMap[item.mentor_id] || mentorMap[item.counselor_id] || expert.fullName || 'Cố vấn chuyên môn'
-                const displayNotes = item.student_notes
+              {mySessions.map((item, index) => {
+                const expert = getCounselorDetails(item?.mentor_id || item?.counselor_id, item?.counselor, item?.student_notes, item?.counselor_name)
+                const rawName = mentorMap[item?.mentor_id] || mentorMap[item?.counselor_id] || expert?.fullName || 'Cố vấn chuyên môn'
+                const counselorName = (rawName.includes('11111111') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(rawName))
+                  ? 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)'
+                  : rawName
+                const displayNotes = item?.student_notes
                   ? item.student_notes.replace(/\[Chuyên gia\/Mentor:\s*[^\]]+\]\s*/, '')
                   : ''
 
                 return (
-                  <div key={item.id} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
+                  <div key={item?.id || index} className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-2xs hover:border-slate-300 transition-colors">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           {/* Nhãn phân loại chuyên gia / mentor */}
-                          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded border ${expert.badgeClass}`}>
-                            {expert.badgeLabel}
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded border ${expert?.badgeClass || 'bg-slate-100 text-slate-800 border-slate-300'}`}>
+                            {expert?.badgeLabel || 'Cố vấn'}
                           </span>
-                          {getStatusBadge(item.status)}
-                          {item.is_local && (
+                          {getStatusBadge(item?.status)}
+                          {item?.is_local && (
                             <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-sm" title="Đã lưu tạm trên thiết bị">
                               💾 Đã lưu local
                             </span>
@@ -693,7 +696,7 @@ const CounselingBooking = () => {
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-brand-600 shrink-0" />
                           <span className="text-xs font-bold text-slate-800">
-                            Chuyên viên: {mentorMap[item.mentor_id] || mentorMap[item.counselor_id] || counselorName || 'Cố vấn chuyên môn'}
+                            Chuyên viên: {counselorName}
                           </span>
                         </div>
                       </div>
@@ -701,7 +704,7 @@ const CounselingBooking = () => {
 
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
                       <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>Thời gian: {formatDateTimeFormatted(session.scheduled_at)}</span>
+                      <span>Thời gian: {formatDateTimeFormatted(item?.scheduled_at)}</span>
                     </div>
 
                     {displayNotes && (
@@ -711,10 +714,10 @@ const CounselingBooking = () => {
                       </div>
                     )}
 
-                    {session.counselor_notes && (
+                    {item?.counselor_notes && (
                       <div className="text-xs text-brand-800 bg-brand-50 p-2.5 rounded-sm border border-brand-200">
                         <span className="font-bold text-brand-900">Phản hồi từ Chuyên viên: </span>
-                        {session.counselor_notes}
+                        {item.counselor_notes}
                       </div>
                     )}
                   </div>
