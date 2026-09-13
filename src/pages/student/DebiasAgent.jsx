@@ -60,7 +60,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! Tôi là "AI Phản tư" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT. Tôi sẽ đồng hành cùng bạn qua các vòng hỏi đáp phản biện thực tế để giúp bạn tự soi chiếu lại năng lực, động cơ và nhận diện các bẫy thiên lệch nhận thức trước khi quyết định. Bạn đang cân nhắc ngành nghề nào vậy?',
+  text: 'Chào bạn! Tôi là "AI Phản tư" — Người đồng hành khơi mở góc nhìn hướng nghiệp cho học sinh THPT. Tôi sẽ cùng bạn trò chuyện và khám phá những góc nhìn thực tế, đa chiều về ngành nghề bạn đang quan tâm để bạn có thêm sự tự tin khi đưa ra quyết định. Bạn đang cân nhắc ngành nghề nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -270,7 +270,7 @@ const DebiasAgent = () => {
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Quy trình 10 vòng hỏi đáp phản biện bẫy tư duy tâm lý, xuất Báo cáo đánh giá thiên lệch nhận thức & Đặt lịch tư vấn 1-1.
+            Lộ trình 10 vòng đồng hành khơi mở góc nhìn thực tế, kích hoạt năng lực tự quyết & kết nối tư vấn đối chứng 1-1.
           </p>
         </div>
 
@@ -315,11 +315,10 @@ const DebiasAgent = () => {
         </div>
         <div className="space-y-1">
           <span className="font-extrabold text-xs uppercase tracking-wider block text-amber-900 flex items-center gap-1.5">
-            <span>💡 QUY TRÌNH 10 VÒNG ĐỐI THOẠI PHẢN TƯ (METACOGNITIVE DEBIASING)</span>
+            <span>💡 LỘ TRÌNH ĐỒNG HÀNH KHƠI MỞ GÓC NHÌN HƯỚNG NGHIỆP</span>
           </span>
           <p className="text-xs leading-relaxed font-medium text-amber-900/90">
-            Qua 10 vòng hỏi đáp ngắn gọn, AI sẽ cùng bạn lật mở các bẫy tâm lý (Hiệu ứng đám đông, Ảo tưởng lương, Bẫy an toàn...). 
-            Sau vòng thứ 10, AI sẽ tổng kết <strong>Báo cáo đánh giá thiên lệch</strong> và kích hoạt <strong>Cú hích hành động thực tế: Đăng ký tư vấn trực tiếp 1-1</strong> với Thầy Cô và các Anh Chị sinh viên trong ngành.
+            AI Phản tư sẽ đồng hành cùng bạn qua 4 giai đoạn: <strong>Lắng nghe & mở rộng góc nhìn</strong> (vòng 1-3), <strong>Cung cấp dữ liệu thực tế & bức tranh đa chiều</strong> (vòng 4-7), <strong>Kích hoạt năng lực tự quyết</strong> (vòng 8-9) và <strong>Tổng hợp, gợi mở kết nối đối chứng thực tế 1-1</strong> (từ vòng 10).
           </p>
         </div>
       </div>
@@ -331,7 +330,7 @@ const DebiasAgent = () => {
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
               <span className={`w-2.5 h-2.5 rounded-full ${userRoundCount >= 10 ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
-              <span>Tiến trình phản tư:</span>
+              <span>Tiến trình đồng hành:</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold border ${
                 userRoundCount >= 10 
                   ? 'bg-emerald-100 text-emerald-900 border-emerald-300' 
@@ -343,8 +342,8 @@ const DebiasAgent = () => {
 
             <span className="text-[11px] font-medium text-slate-500 hidden md:inline">
               {userRoundCount >= 10 
-                ? '🎉 Đã hoàn thành 10 vòng! Xem Báo cáo đánh giá & Cú hích đăng ký tư vấn 1-1 bên dưới.' 
-                : '(Sau 10 vòng hỏi đáp, AI sẽ tự động xuất Báo cáo đánh giá & Cú hích đặt lịch tư vấn 1-1)'}
+                ? '🎉 Đã hoàn thành lộ trình! Xem bản tổng hợp định hướng & gợi mở kết nối thực tế bên dưới.' 
+                : '(Sau các vòng đối thoại, AI sẽ tự động tổng hợp định hướng & gợi ý kết nối đối chứng thực tế)'}
             </span>
           </div>
 
@@ -353,12 +352,12 @@ const DebiasAgent = () => {
               <button
                 type="button"
                 disabled={isLoading}
-                onClick={() => handleSendMessage('Xin AI tổng kết và đánh giá phản tư sau các câu trả lời của em', true)}
+                onClick={() => handleSendMessage('Xin AI tổng hợp và gợi ý định hướng cho em dựa trên các trao đổi vừa qua', true)}
                 className="text-[10px] font-bold py-1 px-2 rounded-sm bg-amber-500 hover:bg-amber-600 text-white transition-all flex items-center gap-1 shrink-0 shadow-2xs"
-                title="Nhận báo cáo đánh giá thiên lệch sớm từ các câu trả lời hiện tại"
+                title="Nhận tổng hợp và định hướng sớm từ các câu trả lời hiện tại"
               >
                 <BarChart3 className="w-3 h-3" />
-                <span>Nhận đánh giá sớm</span>
+                <span>Nhận tổng kết sớm</span>
               </button>
             )}
 
@@ -419,7 +418,7 @@ const DebiasAgent = () => {
                 {msg.isAssessment && (
                   <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200 pb-1.5 mb-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Báo cáo Tổng kết & Cú hích Hành động (Vòng 10)</span>
+                    <span>Tổng hợp Định hướng & Gợi mở Kết nối thực tế (Vòng 10)</span>
                   </div>
                 )}
 
@@ -437,7 +436,7 @@ const DebiasAgent = () => {
                       className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
                       <CalendarDays className="w-4 h-4 text-emerald-100" />
-                      <span>📅 Đăng ký tư vấn trực tiếp (1-1) với Thầy/Cô & Sinh viên</span>
+                      <span>📅 Đặt lịch 'Tư vấn 1-1 Đối chứng Thực tế' ngay</span>
                     </button>
                   </div>
                 )}
@@ -462,10 +461,10 @@ const DebiasAgent = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="font-bold text-emerald-900 text-sm">
-                    🎉 Hoàn thành 10 vòng phản biện! Hãy chuyển sang Cú hích Hành động thực tế:
+                    🎉 Hoàn thành lộ trình đồng hành! Hãy kết nối đối chứng thực tế:
                   </p>
                   <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Gặp trực tiếp Thầy/Cô cố vấn trường hoặc Anh/Chị sinh viên đang học ngành này để kiểm chứng thực tế trước khi ra quyết định cuối cùng.
+                    Gặp trực tiếp Thầy/Cô cố vấn trường hoặc Anh/Chị sinh viên đang học ngành này để kiểm chứng thực tế và có thêm trải nghiệm trước khi ra quyết định.
                   </p>
                 </div>
               </div>
@@ -475,7 +474,7 @@ const DebiasAgent = () => {
                 className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <CalendarDays className="w-4 h-4" />
-                <span>Đăng ký tư vấn trực tiếp</span>
+                <span>Đặt lịch tư vấn 1-1</span>
               </Button>
             </div>
           )}
@@ -488,7 +487,7 @@ const DebiasAgent = () => {
               </div>
               <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-600 font-semibold flex items-center gap-2.5 shadow-2xs">
                 <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>{userRoundCount >= 9 ? 'AI Phản tư đang phân tích dữ liệu 10 vòng để xuất Báo cáo đánh giá...' : 'AI Phản tư đang phân tích câu hỏi phản biện...'}</span>
+                <span>{userRoundCount >= 9 ? 'AI Phản tư đang tổng hợp bức tranh hướng nghiệp cho bạn...' : 'AI Phản tư đang lắng nghe và suy ngẫm...'}</span>
               </div>
             </div>
           )}
