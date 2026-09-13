@@ -28,8 +28,8 @@ Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủn
 
 function getRoundDirective(round, isFinal) {
   if (isFinal || round >= 10) {
-    return `\n\n[CHỈ ĐẠO HỆ THỐNG - VÒNG 10 TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG]:
-TUYỆT ĐỐI DỪNG TOÀN BỘ CÂU HỎI PHẢN BIỆN, KHÔNG HỎI THÊM BẤT KỲ CÂU NÀO NỮA.
+    return `\n\n# CHỈ THỊ VÒNG 10 TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG:
+(LƯU Ý: TUYỆT ĐỐI DỪNG TOÀN BỘ CÂU HỎI, KHÔNG IN DÒNG TIÊU ĐỀ CHỈ THỊ NÀY RA PHẢN HỒI)
 Hãy xuất bản bản tóm tắt chân thành (khoảng 130 - 160 từ) gồm ĐÚNG 3 PHẦN rõ ràng:
 
 1. 🌟 ĐIỂM SÁNG TRONG TƯ DUY:
@@ -233,7 +233,11 @@ export default async function handler(req, res) {
               replyText = parts[0]?.text?.trim();
             }
             if (replyText) {
-              replyText = replyText.replace(/^(Người Đồng Hành Phản Tư|AI Phản tư)[:\s-]*/i, '').trim();
+              replyText = replyText
+                .replace(/^(Người Đồng Hành Phản Tư|AI Phản tư)[:\s-]*/i, '')
+                .replace(/^\[.*?CHỈ (ĐẠO|THỊ).*?\]\s*/i, '')
+                .replace(/^#+.*?CHỈ (ĐẠO|THỊ).*?\n/i, '')
+                .trim();
             }
           }
           if (replyText) {
