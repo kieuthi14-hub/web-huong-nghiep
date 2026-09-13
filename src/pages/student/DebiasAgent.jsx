@@ -60,7 +60,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! Mình là AI Đồng hành Phản tư. Mình ở đây để cùng bạn lắng nghe những điều bạn thực sự mong muốn, khám phá thế mạnh của bản thân và cùng nhìn nhận bức tranh toàn diện, thực tế nhất về các ngành học bạn quan tâm. Bạn đang cân nhắc ngành nghề nào, và điều gì ở ngành đó khiến bạn thấy tò mò hay hứng thú nhất vậy?',
+  text: 'Chào bạn! Tôi là "AI Phản tư" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT. Tôi sẽ đồng hành cùng bạn qua các vòng hỏi đáp phản biện thực tế để giúp bạn tự soi chiếu lại năng lực, động cơ và nhận diện các bẫy thiên lệch nhận thức trước khi quyết định. Bạn đang cân nhắc ngành nghề nào vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
