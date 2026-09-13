@@ -28,7 +28,7 @@ const QUICK_NUDGES = [
     icon: Search,
     color: 'hover:border-amber-400 hover:bg-amber-50/70 text-amber-900',
     iconColor: 'text-amber-600',
-    prompt: '🔍 Phân tích khó khăn & rủi ro thực tế của ngành ',
+    prompt: '🔍 Khám phá bức tranh toàn diện & thực tế công việc của ngành ',
     isNeedInput: true
   },
   {
@@ -36,7 +36,7 @@ const QUICK_NUDGES = [
     icon: Scale,
     color: 'hover:border-indigo-400 hover:bg-indigo-50/70 text-indigo-900',
     iconColor: 'text-indigo-600',
-    prompt: '⚖️ Tôi đang chọn ngành theo xu hướng số đông, hãy phản biện giúp tôi',
+    prompt: '⚖️ Tôi đang phân vân giữa sở thích cá nhân và xu hướng thị trường',
     isNeedInput: false
   },
   {
@@ -44,7 +44,7 @@ const QUICK_NUDGES = [
     icon: BarChart3,
     color: 'hover:border-emerald-400 hover:bg-emerald-50/70 text-emerald-900',
     iconColor: 'text-emerald-600',
-    prompt: '📊 Nghe nói ngành này lương cao lắm, có thật như lời đồn không?',
+    prompt: '📊 Cơ hội nghề nghiệp & thu nhập thực tế ngành này sau 4 năm thế nào?',
     isNeedInput: false
   },
   {
@@ -52,7 +52,7 @@ const QUICK_NUDGES = [
     icon: Puzzle,
     color: 'hover:border-rose-400 hover:bg-rose-50/70 text-rose-900',
     iconColor: 'text-rose-600',
-    prompt: '🧩 Ba mẹ khuyên chọn ngành an toàn, tôi có nên nghe theo không?',
+    prompt: '🧩 Ba mẹ khuyên chọn ngành an toàn, tôi nên cân bằng thế nào?',
     isNeedInput: false
   }
 ]
@@ -60,7 +60,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! AI Phản tư sẽ đồng hành cùng bạn qua 10 vòng hỏi đáp để thử thách và làm rõ lựa chọn ngành nghề. Sau 10 vòng, AI sẽ tổng kết Báo cáo đánh giá thiên lệch nhận thức và hướng dẫn bạn đăng ký tư vấn trực tiếp 1-1 với Thầy/Cô hoặc Anh/Chị sinh viên trong ngành. Bạn đang cân nhắc ngành nào vậy?',
+  text: 'Chào bạn! Mình là AI Đồng hành Phản tư. Mình ở đây để cùng bạn lắng nghe những điều bạn thực sự mong muốn, khám phá thế mạnh của bản thân và cùng nhìn nhận bức tranh toàn diện, thực tế nhất về các ngành học bạn quan tâm. Bạn đang cân nhắc ngành nghề nào, và điều gì ở ngành đó khiến bạn thấy tò mò hay hứng thú nhất vậy?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
