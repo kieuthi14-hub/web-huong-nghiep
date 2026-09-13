@@ -60,7 +60,7 @@ const QUICK_NUDGES = [
 const INITIAL_MESSAGE = {
   id: 'welcome-msg',
   sender: 'ai',
-  text: 'Chào bạn! Tôi là "AI Phản tư" — Người đồng hành khơi mở góc nhìn hướng nghiệp cho học sinh THPT. Tôi sẽ cùng bạn trò chuyện và khám phá những góc nhìn thực tế, đa chiều về ngành nghề bạn đang quan tâm để bạn có thêm sự tự tin khi đưa ra quyết định. Bạn đang cân nhắc ngành nghề nào vậy?',
+  text: 'Chào bạn! Mình là "Người Đồng Hành Phản Tư" — Cố vấn khơi mở góc nhìn hướng nghiệp cho học sinh THPT. Mình ở đây để cùng bạn trò chuyện, khám phá bức tranh thực tế đa chiều về các ngành nghề và giúp bạn tự tin đưa ra quyết định cho tương lai. Bạn đang cân nhắc ngành nghề nào, hay bạn đang cảm thấy phân vân chưa biết chọn gì?',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
@@ -264,13 +264,13 @@ const DebiasAgent = () => {
             <div className="p-2 bg-amber-500 text-white rounded-md shadow-xs">
               <Brain className="w-5 h-5" />
             </div>
-            <span>🤖 AI Tham Vấn Phản Tư</span>
+            <span>🤝 Người Đồng Hành Phản Tư</span>
             <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
               Debiasing Agent
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Lộ trình 10 vòng đồng hành khơi mở góc nhìn thực tế, kích hoạt năng lực tự quyết & kết nối tư vấn đối chứng 1-1.
+            Quy trình 10 vòng đồng hành khơi mở góc nhìn thực tế, kích hoạt năng lực tự quyết & kết nối tư vấn đối chứng 1-1.
           </p>
         </div>
 
@@ -315,10 +315,10 @@ const DebiasAgent = () => {
         </div>
         <div className="space-y-1">
           <span className="font-extrabold text-xs uppercase tracking-wider block text-amber-900 flex items-center gap-1.5">
-            <span>💡 LỘ TRÌNH ĐỒNG HÀNH KHƠI MỞ GÓC NHÌN HƯỚNG NGHIỆP</span>
+            <span>💡 QUY TRÌNH 10 VÒNG ĐỒNG HÀNH KHƠI MỞ GÓC NHÌN HƯỚNG NGHIỆP</span>
           </span>
           <p className="text-xs leading-relaxed font-medium text-amber-900/90">
-            AI Phản tư sẽ đồng hành cùng bạn qua 4 giai đoạn: <strong>Lắng nghe & mở rộng góc nhìn</strong> (vòng 1-3), <strong>Cung cấp dữ liệu thực tế & bức tranh đa chiều</strong> (vòng 4-7), <strong>Kích hoạt năng lực tự quyết</strong> (vòng 8-9) và <strong>Tổng hợp, gợi mở kết nối đối chứng thực tế 1-1</strong> (từ vòng 10).
+            Người Đồng Hành Phản Tư sẽ cùng bạn qua từng lượt trao đổi: <strong>Thấu cảm</strong>, <strong>cung cấp dữ liệu thực tế cân bằng (mặt sáng & áp lực đời thường)</strong>, <strong>câu hỏi phản tư</strong> để tự nhận diện năng lực, và tổng kết khơi mở năng lực tự quyết kết hợp đối chứng thực tế 1-1.
           </p>
         </div>
       </div>
