@@ -313,6 +313,43 @@ const VISEF_SEED_COUNSELING = [
     status: 'rejected',
     student_notes: '[Chuyên gia/Mentor: Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường]\n[Liên hệ SĐT/Zalo: 0935987654]\n[Lớp/Trường: Lớp 12A5]\nEm đang gặp áp lực tâm lý thi cử từ phía gia đình khi gia đình bắt thi Y khoa.',
     created_at: '2026-02-11T11:00:00Z'
+  },
+  {
+    id: 'cs-005',
+    student_id: 'usr-005',
+    student: { full_name: 'Lê Minh Khang', email: 'minhkhang.visef@gmail.com', grade_level: 'Grade 12' },
+    counselor_id: '11111111-1111-1111-1111-111111111111',
+    mentor_id: '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+    counselor_name: '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+    scheduled_at: '2026-02-28T08:30:00Z',
+    status: 'pending',
+    student_notes: '[Chuyên gia/Mentor: [Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)]\n[Liên hệ SĐT/Zalo: 0918765432]\n[Lớp/Trường: Lớp 12A3]\nEm muốn tìm hiểu chương trình đào tạo ngành Kế toán - Kiểm toán và cơ hội việc làm sau khi ra trường ạ.',
+    created_at: '2026-02-14T09:00:00Z'
+  },
+  {
+    id: 'cs-006',
+    student_id: 'usr-006',
+    student: { full_name: 'Vũ Thùy Linh', email: 'thuylinh.visef@gmail.com', grade_level: 'Grade 12' },
+    counselor_id: '11111111-1111-1111-1111-111111111111',
+    mentor_id: '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+    counselor_name: '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+    scheduled_at: '2026-03-01T14:00:00Z',
+    status: 'confirmed',
+    student_notes: '[Chuyên gia/Mentor: [Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)]\n[Liên hệ SĐT/Zalo: 0976123987]\n[Lớp/Trường: Lớp 12A4]\nNhờ chị tư vấn lộ trình học Sư phạm Sinh học và chính sách hỗ trợ học phí theo Nghị định 116 ạ.',
+    counselor_notes: '[Phòng gặp: https://meet.google.com/meet-bio-edu]\nEm chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!',
+    created_at: '2026-02-14T10:15:00Z'
+  },
+  {
+    id: 'cs-007',
+    student_id: 'usr-007',
+    student: { full_name: 'Đặng Hoàng Yến', email: 'hoangyen.visef@gmail.com', grade_level: 'Grade 11' },
+    counselor_id: '22222222-2222-2222-2222-222222222222',
+    mentor_id: '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+    counselor_name: '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+    scheduled_at: '2026-03-02T15:30:00Z',
+    status: 'pending',
+    student_notes: '[Chuyên gia/Mentor: [Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)]\n[Liên hệ SĐT/Zalo: 0988554433]\n[Lớp/Trường: Lớp 11A1]\nEm muốn hỏi về yêu cầu ngoại ngữ và cơ hội làm việc tại các tổ chức phi chính phủ, cơ quan ngoại giao ngành Quan hệ Quốc tế.',
+    created_at: '2026-02-14T11:30:00Z'
   }
 ]
 
@@ -326,6 +363,13 @@ export const ADMIN_MENTOR_MAP = {
   '22222222-2222-4222-a222-222222222222': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
   '33333333-3333-4333-a333-333333333301': '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
   '33333333-3333-4333-a333-333333333307': '[Sư phạm Tiếng Anh] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+  // 3 Mentor Mới bổ sung theo yêu cầu:
+  'Lê Thị Hoa': '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+  'Chị Lê Thị Hoa': '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+  'Bùi Thị Vân Anh': '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+  'Chị Bùi Thị Vân Anh': '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+  'Nguyễn Lê Bảo Trân': '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+  'Chị Nguyễn Lê Bảo Trân': '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
   // Fallbacks:
   'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp': 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
   'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',

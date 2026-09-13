@@ -88,6 +88,13 @@ export const mentorMap = {
   '22222222-2222-4222-a222-222222222222': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
   '33333333-3333-4333-a333-333333333301': '[CNTT & Trí tuệ nhân tạo] Anh Trần Minh Triết - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
   '33333333-3333-4333-a333-333333333307': '[Sư phạm Tiếng Anh] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+  // 3 Mentor Mới bổ sung theo yêu cầu:
+  'Lê Thị Hoa': '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+  'Chị Lê Thị Hoa': '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+  'Bùi Thị Vân Anh': '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+  'Chị Bùi Thị Vân Anh': '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+  'Nguyễn Lê Bảo Trân': '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+  'Chị Nguyễn Lê Bảo Trân': '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
   // Fallbacks ánh xạ từ dữ liệu cũ:
   'Thầy Cao Xuân Hải (Bí thư đoàn trường) - Cố vấn Định hướng Nghề nghiệp': 'Thầy Cao Xuân Hải (Bí thư Đoàn trường) - Cố vấn Hướng nghiệp',
   'Cô Nguyễn Thị Kim Thuận - Chuyên gia Tư vấn Tâm lý Học đường': 'Cô Nguyễn Thị Kim Thuận - Cố vấn Hướng nghiệp & Tâm lý Học đường',
@@ -194,6 +201,15 @@ export const COUNSELOR_GROUPS = [
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
+        id: '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+        name: 'Chị Lê Thị Hoa',
+        title: 'SV Ngành Kế toán (Nhóm trường Kinh tế)',
+        fullName: '[Kế toán] Chị Lê Thị Hoa - SV Ngành Kế toán (Nhóm trường Kinh tế)',
+        groupKey: 'economics_finance',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
         id: '[Tài chính, Ngân hàng & Fintech] Chị Vũ Quỳnh Nga - SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
         name: 'Chị Vũ Quỳnh Nga',
         title: 'SV Năm 3 Tài chính - Ngân hàng (ĐH Ngoại Thương)',
@@ -266,6 +282,15 @@ export const COUNSELOR_GROUPS = [
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       },
       {
+        id: '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+        name: 'Chị Nguyễn Lê Bảo Trân',
+        title: 'SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+        fullName: '[Quan hệ Quốc tế] Chị Nguyễn Lê Bảo Trân - SV Ngành Quan hệ Quốc tế (Nhóm trường KHXH & Nhân văn)',
+        groupKey: 'social_law',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
         id: '[Luật Kinh tế & Pháp chế Doanh nghiệp] Luật sư Bùi Tuấn Anh - Cựu SV Chuyên viên Pháp chế (ĐH Luật TP.HCM)',
         name: 'Luật sư Bùi Tuấn Anh',
         title: 'Cựu SV Chuyên viên Pháp chế (ĐH Luật TP.HCM)',
@@ -297,6 +322,15 @@ export const COUNSELOR_GROUPS = [
         name: 'Chị Nguyễn Hà Phương',
         title: 'SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
         fullName: '[Sư phạm & Ngôn ngữ] Chị Nguyễn Hà Phương - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+        groupKey: 'education_languages',
+        badgeLabel: '🚀 Mentor Sinh viên',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+        name: 'Chị Bùi Thị Vân Anh',
+        title: 'SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
+        fullName: '[Sư phạm Sinh học] Chị Bùi Thị Vân Anh - SV Ngành Sư phạm Sinh học (Nhóm trường Sư phạm)',
         groupKey: 'education_languages',
         badgeLabel: '🚀 Mentor Sinh viên',
         badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
