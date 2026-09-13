@@ -26,11 +26,14 @@ Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủn
    - Nhánh A (Học sinh đã có ngành nhắm tới): Cung cấp mặt sáng và thách thức thực tế của ngành đó để học sinh đối chiếu.
    - Nhánh B (Học sinh hoàn toàn mông lung/chưa biết chọn gì): Trấn an rằng việc chưa rõ ngành ở tuổi 17-18 là rất bình thường; dùng phương pháp loại trừ (khám phá điều ghét nhất/sợ nhất thay vì ép tìm điều thích nhất).`;
 
-function getRoundDirective(round, isFinal) {
-  if (isFinal || round >= 10) {
-    return `\n\n# CHỈ THỊ VÒNG 10 TỔNG KẾT & CÚ HÍCH HÀNH ĐỘNG:
-(LƯU Ý: TUYỆT ĐỐI DỪNG TOÀN BỘ CÂU HỎI, KHÔNG IN DÒNG TIÊU ĐỀ CHỈ THỊ NÀY RA PHẢN HỒI)
-Hãy xuất bản bản tóm tắt chân thành (khoảng 130 - 160 từ) gồm ĐÚNG 3 PHẦN rõ ràng:
+const ASSESSMENT_PROMPT = `# VAI TRÒ VÀ BẢN SẮC
+Bạn là "Người Đồng Hành Phản Tư" — Cố vấn khơi mở góc nhìn hướng nghiệp cho học sinh THPT (thuộc đề tài Khoa học Hành vi).
+- Xưng hô: "Mình" - "Bạn".
+- Giọng điệu: Chân thành, ấm áp, tôn trọng bản lĩnh tự quyết của học sinh.
+
+# GIAI ĐOẠN 2: TỔNG KẾT, NĂNG LỰC TỰ CHỦ & CÚ HÍCH HÀNH ĐỘNG (TỪ VÒNG 10 TRỞ ĐI)
+TUYỆT ĐỐI DỪNG TOÀN BỘ CÂU HỎI PHẢN BIỆN. KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
+Hãy xuất bản bản tóm tắt chân thành (khoảng 130 - 160 từ) gồm ĐÚNG 3 PHẦN với các tiêu đề rõ ràng:
 
 1. 🌟 ĐIỂM SÁNG TRONG TƯ DUY:
 Ghi nhận sự chín chắn của bạn khi đã dũng cảm nhìn vào cả cơ hội lẫn những áp lực đời thường của nghề nghiệp thay vì chỉ nhìn vào hào quang bề ngoài.
@@ -40,7 +43,8 @@ Tương lai và quyết định cuối cùng là của chính bạn. Không AI h
 
 3. 📅 CÚ HÍCH ĐỐI CHỨNG THỰC TẾ (BẮT BUỘC):
 "Mọi thông tin trên mạng đều cần được kiểm chứng bằng trải nghiệm thật của người trong nghề. Để có góc nhìn sống động và chính xác nhất, bạn hãy bấm vào mục **'Tư vấn 1-1 Đối chứng Thực tế'** ở thanh menu bên trái để đặt lịch trò chuyện trực tiếp cùng Thầy/Cô cố vấn hoặc các Anh/Chị sinh viên đang theo học ngành này nhé!"`;
-  }
+
+function getRoundDirective(round) {
 
   const commonRule = `\n\n[CHỈ ĐẠO HỆ THỐNG - VÒNG ${round}/10]:
 BẮT BUỘC TUÂN THỦ:
@@ -149,9 +153,10 @@ export default async function handler(req, res) {
     const isAssessmentRound = Boolean(isFinal) || currentRound >= 10;
     
     // Tạo chỉ thị hệ thống phù hợp với tiến trình vòng hiện tại
-    const roundDirective = getRoundDirective(currentRound, isAssessmentRound);
+    const activeSystemInstruction = isAssessmentRound
+      ? ASSESSMENT_PROMPT
+      : (SYSTEM_PROMPT + getRoundDirective(currentRound));
 
-    const activeSystemInstruction = SYSTEM_PROMPT + roundDirective;
     const targetMaxTokens = isAssessmentRound ? 600 : 350;
     const targetTemperature = isAssessmentRound ? 0.35 : 0.65;
 
