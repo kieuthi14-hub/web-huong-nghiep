@@ -84,19 +84,19 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
   Hỏi: "Ngành ${targetCareer} đòi hỏi rất nặng về [môn cốt lõi]. Điểm tổng kết môn này gần đây của em ra sao, và em đã từng tự học chuyên sâu chủ đề nào chưa hay chỉ dừng ở sở thích bề nổi?"`;
 
     case 3:
-      return baseDirective + `\n- VÒNG 3 (Chất vấn ảo tưởng thị trường & thu nhập):
-  Nêu thực tế nhiều clip mạng xã hội tô hồng mức lương khởi điểm cao.
-  Hỏi: "Em có biết tỷ lệ sinh viên ngành này phải làm trái ngành hoặc mức lương thực tế cho người mới ra trường hiện nay là bao nhiêu không?"`;
+      return baseDirective + `\n- VÒNG 3 (Đối chiếu kỳ vọng thị trường & thu nhập thực tế):
+  Nêu thực tế nhiều nội dung truyền thông thường tập trung vào các trường hợp nổi bật thay vì bức tranh phổ quát.
+  Hỏi: "Em có biết tỷ lệ sinh viên ngành này làm việc đúng chuyên ngành hoặc mức thu nhập khởi điểm thực tế cho người mới tốt nghiệp hiện nay là bao nhiêu không?"`;
 
     case 4:
       return baseDirective + `\n- VÒNG 4 (Chất vấn chi phí & học phí tự chủ):
-  Nêu thực tế học phí tự chủ tăng 10-15%/năm và chi phí 4 năm đại học.
-  Hỏi: "Học phí đại học tự chủ thường tăng 10-15% mỗi năm. Em và gia đình đã tính toán tổng chi phí 4 năm ăn học để đảm bảo không bị đứt gánh tài chính chưa?"`;
+  Nêu thực tế học phí tự chủ tăng 10-15%/năm và chi phí sinh hoạt 4 năm đại học.
+  Hỏi: "Học phí đại học tự chủ thường tăng 10-15% mỗi năm. Em và gia đình đã cùng trao đổi và chuẩn bị nguồn lực tài chính chủ động cho 4 năm học chưa?"`;
 
     case 5:
-      return baseDirective + `\n- VÒNG 5 (Chất vấn áp lực đào thải & cạnh tranh AI):
-  Nêu áp lực tự động hóa từ AI và tính cạnh tranh cao.
-  Hỏi: "Khi công nghệ AI đang tự động hóa nhiều tác vụ của ngành này, em có điểm mạnh đặc biệt nào để tạo ra giá trị khác biệt và không bị đào thải?"`;
+      return baseDirective + `\n- VÒNG 5 (Thách thức thích ứng & nâng cao năng lực cạnh tranh trước AI):
+  Nêu áp lực tự động hóa từ AI và yêu cầu chuyên môn ngày càng cao.
+  Hỏi: "Khi công nghệ AI đang tự động hóa nhiều tác vụ cơ bản của ngành này, em dự định rèn luyện thêm kỹ năng chuyên sâu nào để tạo ra giá trị khác biệt và duy trì năng lực cạnh tranh lâu dài?"`;
 
     default:
       return baseDirective + `\n- VÒNG ĐÀO SÂU:

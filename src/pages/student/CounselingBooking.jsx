@@ -1317,13 +1317,13 @@ const CounselingBooking = () => {
           {/* Câu 1 */}
           <div className="space-y-2 p-4 bg-slate-50 border border-slate-200 rounded-sm">
             <label className="font-extrabold text-slate-900 block">
-              1. Học sinh có còn giữ ảo tưởng ban đầu về nghề sau buổi tư vấn không?
+              1. Mức độ nhận thức thực tế của học sinh về ngành nghề sau buổi tư vấn:
             </label>
             <div className="space-y-1.5">
               {[
-                { val: 'persisted', label: 'Vẫn còn giữ nhiều ảo tưởng / kỳ vọng phi thực tế' },
-                { val: 'reduced', label: 'Đã giảm bớt ảo tưởng, bắt đầu nhìn nhận thực tế hơn' },
-                { val: 'cleared', label: 'Đã hoàn toàn tỉnh táo, thấu hiểu mặt trái & thách thức khốc liệt' }
+                { val: 'persisted', label: 'Vẫn còn giữ kỳ vọng chủ quan / chưa sát với thực tế' },
+                { val: 'reduced', label: 'Đã điều chỉnh góc nhìn, nhận thức rõ ràng và sát thực tế hơn' },
+                { val: 'cleared', label: 'Đã nắm vững bức tranh tổng thể, hiểu rõ cơ hội & thách thức nghề nghiệp' }
               ].map(opt => (
                 <label key={opt.val} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded cursor-pointer hover:bg-slate-100 transition-colors">
                   <input
@@ -1357,8 +1357,8 @@ const CounselingBooking = () => {
               className="w-full accent-violet-600 cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-slate-400 font-bold">
-              <span>1: Rất e ngại / Sốc</span>
-              <span>5: Lưỡng lự</span>
+              <span>1: Còn nhiều băn khoăn</span>
+              <span>5: Đang cân nhắc</span>
               <span>10: Sẵn sàng dấn thân</span>
             </div>
 

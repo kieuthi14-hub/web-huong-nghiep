@@ -142,12 +142,15 @@ const FactCheckHub = () => {
       const storedData = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor')
       if (storedData) {
         const anc = JSON.parse(storedData)
-        uniName = anc.target_university || anc.targetUniversity || ''
+        const raw = anc.target_university || anc.targetUniversity || ''
+        if (raw && !raw.toLowerCase().includes('chưa xác định')) {
+          uniName = raw.trim()
+        }
       }
     } catch (e) {}
 
-    if (!uniName && anchor?.target_university) {
-      uniName = anchor.target_university
+    if (!uniName && anchor?.target_university && !anchor.target_university.toLowerCase().includes('chưa xác định')) {
+      uniName = anchor.target_university.trim()
     }
 
     const queryTerm = uniName ? `Đề án tuyển sinh ${uniName} filetype:pdf` : 'Đề án tuyển sinh đại học filetype:pdf'
@@ -162,16 +165,21 @@ const FactCheckHub = () => {
       const storedData = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor')
       if (storedData) {
         const anc = JSON.parse(storedData)
-        uniName = anc.target_university || anc.targetUniversity || ''
+        const raw = anc.target_university || anc.targetUniversity || ''
+        if (raw && !raw.toLowerCase().includes('chưa xác định')) {
+          uniName = raw.trim()
+        }
       }
     } catch (e) {}
 
-    if (!uniName && anchor?.target_university) {
-      uniName = anchor.target_university
+    if (!uniName && anchor?.target_university && !anchor.target_university.toLowerCase().includes('chưa xác định')) {
+      uniName = anchor.target_university.trim()
     }
 
     // Mở thẳng tìm kiếm file PDF chính thức của trường
-    const query = encodeURIComponent(`"Đề án tuyển sinh" "${uniName}" filetype:pdf`)
+    const query = uniName 
+      ? encodeURIComponent(`"Đề án tuyển sinh" "${uniName}" filetype:pdf`)
+      : encodeURIComponent(`"Đề án tuyển sinh" filetype:pdf`)
     window.open(`https://www.google.com/search?q=${query}`, '_blank')
   }
 
@@ -245,8 +253,19 @@ const FactCheckHub = () => {
     }
   }, [cutoffScore, tuition, employmentRate, anchor])
 
-  const targetUniDisplay = anchor?.target_university || ''
-  const targetCareerDisplay = anchor?.target_career || ''
+  const isUniDetermined = Boolean(
+    anchor?.target_university && 
+    anchor.target_university.trim() !== '' &&
+    !anchor.target_university.toLowerCase().includes('chưa xác định')
+  )
+  const targetUniDisplay = isUniDetermined ? anchor.target_university.trim() : ''
+
+  const isCareerDetermined = Boolean(
+    anchor?.target_career && 
+    anchor.target_career.trim() !== '' &&
+    !anchor.target_career.toLowerCase().includes('chưa xác định')
+  )
+  const targetCareerDisplay = isCareerDetermined ? anchor.target_career.trim() : ''
 
   return (
     <div className="py-6 px-4 bg-slate-50 min-h-screen">
@@ -426,11 +445,11 @@ const FactCheckHub = () => {
             {/* KHỐI HỖ TRỢ TRA CỨU NHANH BƯỚC 3 */}
             <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
               <h3 style={{ color: '#166534', marginTop: 0, fontSize: '16px' }}>
-                🎯 Hướng Dẫn Tìm Nhanh Số Liệu Thực Tế (Không Lo Bị Giấu)
+                🎯 Hướng Dẫn Tra Cứu Nhanh Số Liệu Chính Thức
               </h3>
               
               <p style={{ fontSize: '14px', color: '#374151', marginBottom: '14px' }}>
-                Các trường thường giấu học phí và tỷ lệ việc làm trong file đề án PDF. Hãy làm theo 2 cách dưới đây để lấy số liệu chính xác:
+                Các bảng số liệu chi tiết về học phí, chỉ tiêu và tỷ lệ việc làm được công bố chính thức trong file Đề án tuyển sinh (PDF). Hãy làm theo 2 cách dưới đây để tra cứu nhanh và chính xác:
               </p>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
@@ -443,7 +462,7 @@ const FactCheckHub = () => {
                 {/* Nút 2: Tự động mở Google tìm file Đề án tuyển sinh */}
                 <button type="button" onClick={openAdmissionPDF}
                         style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  📑 Tải Đề án tuyển sinh {targetUniDisplay ? `(${targetUniDisplay})` : ''} (Xem Học phí & Việc làm)
+                  📑 Tải Đề án tuyển sinh {targetUniDisplay ? `(${targetUniDisplay}) ` : ''}(Xem Học phí & Việc làm)
                 </button>
               </div>
 
