@@ -25,12 +25,13 @@ const Sidebar = ({ isOpen, onClose }) => {
   const isAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com'
 
   const studentLinks = [
-    { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình Phản tư', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
-    { to: '/student/holland', label: '🧭 Trắc nghiệm Thiên hướng (Holland)', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
-    { to: '/student/debias-agent', label: '🤖 AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
-    { to: '/student/fact-check', label: '🔍 Đối chứng Dữ liệu Khách quan', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
-    { to: '/student/booking', label: '🎓 Tư vấn 1-1 Đối chứng Thực tế', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
-    { to: '/student/reflection', label: '📝 Nhật ký Phản tư Ra Quyết định', icon: <Brain className="w-4 h-4 text-rose-400" /> },
+    { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
+    { to: '/student/holland', label: '1️⃣ Trắc nghiệm Thiên hướng', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
+    { to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
+    { to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
+    { to: '/student/booking', label: '4️⃣ Tư vấn 1-1 Thực tế', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
+    { to: '/student/reflection', label: '5️⃣ Nhật ký Ra Quyết định', icon: <Brain className="w-4 h-4 text-rose-400" /> },
+    { to: '/student/roadmap', label: '6️⃣ Lộ trình Mục tiêu & Ký Cam kết', icon: <Milestone className="w-4 h-4 text-cyan-400" /> },
   ]
 
   const counselorLinks = [

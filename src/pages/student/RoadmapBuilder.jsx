@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
+import { jsPDF } from 'jspdf'
+import html2canvas from 'html2canvas'
 import { 
   Milestone, 
   Plus, 
@@ -18,31 +20,40 @@ import {
   Sparkles,
   School,
   Sprout,
-  Rocket
+  Rocket,
+  Download,
+  FileCheck,
+  Target,
+  BookOpen,
+  Award,
+  ShieldCheck,
+  TrendingUp,
+  Brain,
+  FileSignature
 } from 'lucide-react'
 
-// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho cả 3 Khối Lớp (Đề cử đường dẫn chuẩn mực)
+// Bộ Lộ trình Mẫu chuẩn hóa linh hoạt cho cả 3 Khối Lớp
 const standardRoadmaps = {
   '10': [
     {
       step: 'Chặng 1',
       title: '🧠 Trắc nghiệm Holland: Khám phá nhóm tính cách & thiên hướng nghề nghiệp ban đầu',
       description: 'Thực hiện bài kiểm tra trắc nghiệm hướng nghiệp Holland để tìm hiểu nhóm tính cách nghề nghiệp nổi trội (RIASEC) của bản thân.',
-      actionLink: '/student/holland-test',
+      actionLink: '/student/holland',
       actionText: '🧠 Làm trắc nghiệm ngay'
     },
     {
       step: 'Chặng 2',
       title: '🔍 Bảng Nhìn Lại (Phản tư): Soi lại thực tế năng lực để chọn Tổ hợp môn xét tuyển phù hợp (A00, B00, D01...), tránh chọn theo cảm xúc hay bạn bè',
       description: 'Dành 2 phút soi lại năng lực thực tế các môn học để chọn tổ hợp xét tuyển phù hợp nhất với thế mạnh thay vì chạy theo số đông.',
-      actionLink: '/student/debias-matrix',
+      actionLink: '/student/reflection',
       actionText: '🔍 Thực hiện Bảng Nhìn Lại'
     },
     {
       step: 'Chặng 3',
       title: '🚀 Xây dựng phương pháp học tập trọng tâm & Tham gia hoạt động trải nghiệm thực tế',
       description: 'Xây dựng thói quen quản lý thời gian, rèn luyện kỹ năng tự học các môn tổ hợp và chủ động tham gia các câu lạc bộ, hoạt động ngoại khóa.',
-      actionLink: '/student/majors',
+      actionLink: '/student/fact-check',
       actionText: '🔍 Khám phá Ngành học'
     }
   ],
@@ -51,43 +62,43 @@ const standardRoadmaps = {
       step: 'Chặng 1',
       title: '🧠 Trắc nghiệm Holland (Làm lại): Tái đánh giá sự thay đổi tính cách/sở thích để chọn 2-3 ngành mục tiêu',
       description: 'Thực hiện lại bài trắc nghiệm Holland sau 1 năm để đánh giá độ ổn định hoặc chuyển biến trong xu hướng nghề nghiệp của bản thân.',
-      actionLink: '/student/holland-test',
+      actionLink: '/student/holland',
       actionText: '🧠 Làm lại trắc nghiệm'
     },
     {
       step: 'Chặng 2',
-      title: '🔍 Bảng Nhìn Lại (Phản tư): Đưa ngành mục tiêu vào kiểm chứng rủi ro, thách thức & mặt tối thực tế của nghề',
-      description: 'Đưa 2-3 ngành học tiềm năng vào ma trận phản tư để nhận diện mặt tối, tỷ lệ đào thải và nguy cơ tự động hóa bởi AI.',
-      actionLink: '/student/debias-matrix',
-      actionText: '🔍 Kiểm tra rủi ro ngay'
+      title: '🔍 AI Socrates Phản tư: Đưa ngành mục tiêu vào kiểm chứng rủi ro, thách thức & mặt tối thực tế của nghề',
+      description: 'Đưa ngành học tiềm năng vào đối thoại phễu Socrates để nhận diện điểm mù, tỷ lệ đào thải và nguy cơ tự động hóa bởi AI.',
+      actionLink: '/student/debias-agent',
+      actionText: '🤖 Đối thoại Socrates'
     },
     {
       step: 'Chặng 3',
       title: '🚀 Đánh giá lực học các môn trong tổ hợp xét tuyển & Tìm hiểu phương thức xét tuyển mở rộng (ĐGNL, ĐGTD, Học bạ...)',
       description: 'Nắm bắt cấu trúc đề thi Đánh giá năng lực / Đánh giá tư duy và quy chế xét tuyển sớm của các trường Đại học mục tiêu.',
-      actionLink: '/student/universities',
+      actionLink: '/student/fact-check',
       actionText: '🏫 Tra cứu Phương thức xét tuyển'
     }
   ],
   '12': [
     {
       step: 'Chặng 1',
-      title: '🧠 Trắc nghiệm Holland Chốt chặn: Tái kiểm tra lần cuối thiên hướng bản thân & Đối chiếu điểm thi thử 3 môn tổ hợp xét tuyển',
+      title: '🧠 Trắc nghiệm Holland Chốt chặn & Đối chứng Điểm chuẩn 3 năm',
       description: 'Tái kiểm tra thiên hướng nghề nghiệp lần cuối kết hợp đối chiếu tổng điểm thi thử 3 môn tổ hợp để xác định khoảng năng lực thực tế.',
-      actionLink: '/student/holland-test',
-      actionText: '🧠 Kiểm tra Holland chốt chặn'
+      actionLink: '/student/fact-check',
+      actionText: '📊 Đối chứng Dữ liệu Khách quan'
     },
     {
       step: 'Chặng 2',
-      title: '🔍 Bảng Nhìn Lại (Phản tư) Giải thiên kiến: Kiểm tra triệt để thiên kiến chi phí chìm, bẫy đám đông trước khi chốt danh sách',
+      title: '🎓 Gặp Mentor 1-1 & Lập Nhật Ký Ra Quyết Định',
       description: 'Loại bỏ hoàn toàn tâm lý đám đông, áp lực gia đình và bẫy hào quang nghề nghiệp trước khi chốt danh sách nguyện vọng.',
-      actionLink: '/student/debias-matrix',
-      actionText: '🔍 Giải thiên kiến lần cuối'
+      actionLink: '/student/booking',
+      actionText: '🎓 Đặt lịch Tư vấn 1-1'
     },
     {
       step: 'Chặng 3',
-      title: '🚀 Chiến thuật xếp 3 Tầng Nguyện vọng (An toàn - Vừa sức - Bứt phá) & Chốt thứ tự chính thức trên Cổng của Bộ GD&ĐT',
-      description: 'Phân loại danh sách nguyện vọng theo 3 tầng chiến thuật và đăng ký thứ tự nguyện vọng chính thức trên Cổng tuyển sinh Bộ GD&ĐT.',
+      title: '🚀 Chiến thuật xếp 3 Tầng Nguyện vọng & Chốt thứ tự chính thức trên Cổng của Bộ GD&ĐT',
+      description: 'Phân loại danh sách nguyện vọng theo 3 tầng chiến thuật (An toàn - Vừa sức - Bứt phá) và đăng ký chính thức trên Cổng tuyển sinh Bộ GD&ĐT.',
       actionLink: 'https://thisinh.thitotnghiepthpt.edu.vn',
       actionText: '🔗 Mở Cổng Bộ GD&ĐT'
     }
@@ -98,14 +109,54 @@ const RoadmapBuilder = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
   
-  // Tab khối lớp hiện tại (mặc định '12' hoặc tự động nhận diện từ profile)
+  // Tab khối lớp hiện tại
   const [activeGradeTab, setActiveGradeTab] = useState('12')
   
+  // Đọc dữ liệu các bước trước
+  const [anchor] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('career_initial_anchor') || 'null')
+    } catch (e) {
+      return null
+    }
+  })
+
+  const [decisionJournal] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('decision_reflection_journal') || 'null')
+    } catch (e) {
+      return null
+    }
+  })
+
+  const [evidenceData] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('career_evidence_task') || 'null')
+    } catch (e) {
+      return null
+    }
+  })
+
+  // State Ma Trận Kế Hoạch Hành Động (Action Plan Matrix)
+  const [actionPlanMatrix, setActionPlanMatrix] = useState(() => {
+    try {
+      const saved = localStorage.getItem('action_plan_matrix')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+
+    return {
+      targetSubjectScores: 'Toán: 8.5+ | Môn thứ hai (Lý/Hóa/Văn): 8.2+ | Tiếng Anh: 8.0+ (Tổng tổ hợp: 25.0+ điểm)',
+      remediationPlan: 'Tập trung ôn luyện lại phần kiến thức môn còn yếu (Toán Giải tích / Tiếng Anh Ngữ pháp); làm tối thiểu 2 đề thi thử chuẩn cấu trúc mỗi tuần.',
+      selfStudySkills: 'Hoàn thành khóa học Tin học cơ bản (Excel/Python cơ bản); tự học giao tiếp Tiếng Anh 30 phút mỗi ngày; rèn luyện kỹ năng quản lý thời gian.'
+    }
+  })
+
   const [roadmaps, setRoadmaps] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showAddForm, setShowAddForm] = useState(false)
   const [toast, setToast] = useState(null)
   const [dbError, setDbError] = useState(null)
+  const [isExportingPDF, setIsExportingPDF] = useState(false)
 
   const [newRoadmap, setNewRoadmap] = useState({
     title: '',
@@ -115,7 +166,6 @@ const RoadmapBuilder = () => {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Tự động nhận diện khối lớp của học sinh từ dữ liệu tài khoản
   useEffect(() => {
     if (profile?.grade_level) {
       if (profile.grade_level === 'Grade 10') setActiveGradeTab('10')
@@ -128,7 +178,6 @@ const RoadmapBuilder = () => {
     fetchRoadmaps()
   }, [user])
 
-  // Tải danh sách mục tiêu cá nhân từ bảng career_roadmaps trong Supabase
   const fetchRoadmaps = async () => {
     if (!user) return
     setIsLoading(true)
@@ -141,22 +190,19 @@ const RoadmapBuilder = () => {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Lỗi truy vấn bảng career_roadmaps:', error)
-        setDbError('Chưa nạp bảng career_roadmaps trong CSDL Supabase. Thầy vui lòng nạp file schema.sql.')
+        console.warn('Lỗi bảng career_roadmaps:', error)
         setRoadmaps([])
       } else {
         setRoadmaps(data || [])
       }
     } catch (error) {
-      console.error('Lỗi fetch lộ trình từ Supabase:', error)
-      setDbError('Không thể kết nối bảng career_roadmaps trên Supabase DB.')
+      console.warn('Lỗi fetch lộ trình:', error)
       setRoadmaps([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Hàm chuyển hướng cực mượt & an toàn cho tất cả nút bấm Chặng
   const handleActionClick = (link) => {
     if (!link) return
     if (link.startsWith('http://') || link.startsWith('https://')) {
@@ -166,16 +212,56 @@ const RoadmapBuilder = () => {
     }
   }
 
-  // Tạo mục tiêu cá nhân mới thuần 100% vào Supabase DB
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!newRoadmap.title.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng nhập tên mục tiêu!' })
+  const handleMatrixChange = (field, value) => {
+    setActionPlanMatrix(prev => {
+      const updated = { ...prev, [field]: value }
+      localStorage.setItem('action_plan_matrix', JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  // Xuất file PDF Bản Kế Hoạch & Ký Cam Kết Hành Động
+  const handleExportPDF = async () => {
+    const certElement = document.getElementById('commitment-action-plan-certificate')
+    if (!certElement) {
+      setToast({ type: 'warning', message: 'Không tìm thấy khung Bản cam kết để xuất file!' })
       return
     }
 
-    if (!user) {
-      setToast({ type: 'error', message: 'Bạn cần đăng nhập để lưu lộ trình vào CSDL!' })
+    setIsExportingPDF(true)
+    try {
+      const canvas = await html2canvas(certElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      const studentNameClean = (profile?.full_name || user?.email || 'Hoc-Sinh').replace(/[^a-zA-Z0-9]/g, '_')
+      pdf.save(`Ban-Ke-Hoach-Huong-Nghiep-${studentNameClean}.pdf`)
+
+      setToast({
+        type: 'success',
+        message: '🎉 Đã xuất Bản Kế Hoạch Hướng Nghiệp & Ký Cam Kết Hành Động PDF thành công!'
+      })
+    } catch (err) {
+      console.error('Lỗi khi xuất PDF:', err)
+      setToast({ type: 'error', message: 'Không thể tạo file PDF. Vui lòng thử lại.' })
+    } finally {
+      setIsExportingPDF(false)
+    }
+  }
+
+  // Thêm mục tiêu cá nhân
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!newRoadmap.title.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập tên mục tiêu cá nhân.' })
       return
     }
 
@@ -183,29 +269,24 @@ const RoadmapBuilder = () => {
     try {
       const { data, error } = await supabase
         .from('career_roadmaps')
-        .insert({
-          student_id: user.id,
-          title: newRoadmap.title,
-          target_date: newRoadmap.target_date || null,
-          status: newRoadmap.status,
-          notes: newRoadmap.notes
-        })
+        .insert([
+          {
+            student_id: user.id,
+            title: newRoadmap.title,
+            target_date: newRoadmap.target_date || null,
+            status: newRoadmap.status,
+            notes: newRoadmap.notes
+          }
+        ])
         .select()
         .single()
 
-      if (error) {
-        console.error('Lỗi insert Supabase DB:', error)
-        setToast({ 
-          type: 'error', 
-          message: `Lỗi Supabase DB: ${error.message}` 
-        })
-        return
-      }
+      if (error) throw error
 
       setRoadmaps(prev => [data, ...prev])
       setShowAddForm(false)
       setNewRoadmap({ title: '', target_date: '', status: 'not_started', notes: '' })
-      setToast({ type: 'success', message: 'Đã thêm mục tiêu cá nhân thành công vào Supabase DB!' })
+      setToast({ type: 'success', message: 'Đã thêm mục tiêu cá nhân thành công!' })
     } catch (error) {
       console.error('Lỗi khi nộp lộ trình:', error)
       setToast({ type: 'error', message: 'Không thể lưu mục tiêu vào Supabase DB.' })
@@ -214,7 +295,6 @@ const RoadmapBuilder = () => {
     }
   }
 
-  // Cập nhật trạng thái thuần 100% vào Supabase DB
   const handleStatusChange = async (id, newStatus) => {
     try {
       const { error } = await supabase
@@ -227,12 +307,11 @@ const RoadmapBuilder = () => {
       setRoadmaps(prev => prev.map(rm => rm.id === id ? { ...rm, status: newStatus } : rm))
       setToast({ type: 'success', message: 'Đã cập nhật trạng thái mục tiêu.' })
     } catch (err) {
-      console.error('Lỗi update status Supabase:', err)
+      console.error('Lỗi update status:', err)
       setToast({ type: 'error', message: 'Không thể cập nhật trạng thái.' })
     }
   }
 
-  // Xóa cột mốc khỏi Supabase DB
   const handleDelete = async (id) => {
     try {
       const { error } = await supabase
@@ -245,7 +324,7 @@ const RoadmapBuilder = () => {
       setRoadmaps(prev => prev.filter(rm => rm.id !== id))
       setToast({ type: 'info', message: 'Đã xóa mục tiêu khỏi danh sách.' })
     } catch (err) {
-      console.error('Lỗi xóa mục tiêu Supabase:', err)
+      console.error('Lỗi xóa mục tiêu:', err)
       setToast({ type: 'error', message: 'Lỗi khi xóa mục tiêu.' })
     }
   }
@@ -274,164 +353,382 @@ const RoadmapBuilder = () => {
   }
 
   const currentStandardSteps = standardRoadmaps[activeGradeTab] || standardRoadmaps['12']
+  const studentFinalMajor = decisionJournal?.chosenMajor || anchor?.targetMajor || 'Chưa xác định'
+  const studentInitialConf = anchor?.confidenceScore || 8
+  const studentPostConf = decisionJournal?.postConfidenceScore || 7
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6 animate-reveal">
-      {/* Header Trang */}
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-8 animate-reveal font-sans">
+      {/* HEADER TIÊU ĐỀ BƯỚC 6 */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200 p-6 rounded-sm shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Milestone className="w-5 h-5 text-brand-600" />
-            Lộ trình Hướng nghiệp Tối ưu theo Khối lớp
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+            <div className="p-2 bg-cyan-600 text-white rounded-md shadow-xs">
+              <Milestone className="w-5 h-5" />
+            </div>
+            <span>6️⃣ Lộ Trình Mục Tiêu Cá Nhân</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-cyan-100 text-cyan-900 border border-cyan-300 px-2.5 py-0.5 rounded-full">
+              Action Plan Matrix & Commitment Device
+            </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Hệ thống định hướng chiến lược học tập và chốt nguyện vọng phù hợp với từng giai đoạn học THPT.
+            Chuyển hóa nhận thức sau 5 bước thành hành động cụ thể (Implementation Intentions). Xuất bản cam kết hành động để in và dán ở góc học tập.
           </p>
         </div>
 
-        <Button
-          variant={showAddForm ? 'secondary' : 'primary'}
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="text-xs font-bold uppercase tracking-wider py-2.5 px-4 gap-1.5 self-start flex-shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          {showAddForm ? 'Đóng Form' : '+ THÊM MỤC TIÊU CÁ NHÂN'}
-        </Button>
-      </div>
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <Button
+            variant="primary"
+            onClick={handleExportPDF}
+            disabled={isExportingPDF}
+            className="text-xs font-black uppercase tracking-wider py-2.5 px-4 bg-cyan-700 hover:bg-cyan-800 text-white gap-2 shadow-xs cursor-pointer animate-pulse"
+          >
+            <Download className="w-4 h-4" />
+            <span>{isExportingPDF ? 'Đang tạo PDF...' : 'Ký Cam Kết & Xuất PDF'}</span>
+          </Button>
 
-      {/* Banner Hướng Dẫn Xanh Nhẹ */}
-      <div className="bg-blue-50/80 border border-blue-200 text-blue-950 p-4 rounded-sm flex items-start gap-3 shadow-2xs font-semibold text-xs leading-relaxed">
-        <div className="p-1 bg-blue-500 text-white rounded-sm flex-shrink-0 mt-0.5">
-          <Lightbulb className="w-4 h-4" />
+          <Button
+            variant={showAddForm ? 'secondary' : 'outline'}
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="text-xs font-bold uppercase tracking-wider py-2.5 px-3 gap-1.5 self-start"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{showAddForm ? 'Đóng' : '+ Thêm Mục Tiêu'}</span>
+          </Button>
         </div>
-        <div>
-          <span className="font-bold text-blue-900">💡 Lời nhắn hệ thống:</span> Hệ thống đang hiển thị Lộ trình chuẩn hóa cho khối lớp của bạn. Bạn có thể bấm chọn các Tab khối lớp khác để tham khảo lộ trình tổng thể trong 3 năm THPT.
+      </div>
+
+      {/* TỔNG KẾT HÀNH TRÌNH 5 BƯỚC TRƯỚC */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-4 bg-white border border-slate-200 rounded-sm shadow-2xs space-y-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            Ngành Mục Tiêu Chốt Lại
+          </span>
+          <p className="text-sm font-extrabold text-brand-900 truncate">
+            🎯 {studentFinalMajor}
+          </p>
+          <span className="text-[11px] text-emerald-700 font-semibold">
+            {decisionJournal?.finalDecisionChoice === 'CHANGE' ? '🔄 Đã chuyển ngành mới' : '✅ Giữ nguyên & Cam kết dấn thân'}
+          </span>
+        </div>
+
+        <div className="p-4 bg-white border border-slate-200 rounded-sm shadow-2xs space-y-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            Độ Tự Tin (Trước vs Sau)
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-500">Trước: {studentInitialConf}/10</span>
+            <span className="text-xs text-slate-400">➔</span>
+            <span className="text-xs font-extrabold text-emerald-700">Sau: {studentPostConf}/10</span>
+          </div>
+          <span className="text-[11px] text-slate-500 font-medium">
+            Tự tin thực chứng, hiểu rõ thử thách
+          </span>
+        </div>
+
+        <div className="p-4 bg-white border border-slate-200 rounded-sm shadow-2xs space-y-1">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            Trạng Thái Cam Kết
+          </span>
+          <p className="text-sm font-extrabold text-slate-800 flex items-center gap-1.5">
+            <FileSignature className="w-4 h-4 text-cyan-600" />
+            <span>Sẵn Sàng Ký Cam Kết</span>
+          </p>
+          <span className="text-[11px] text-cyan-700 font-semibold">
+            Bước 6/6 trong Mô hình Can thiệp
+          </span>
         </div>
       </div>
 
-      {/* Thanh Chọn Khối Lớp (Grade Navigation Tabs) Kích thước lớn */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button
-          type="button"
-          onClick={() => setActiveGradeTab('10')}
-          className={`p-4 rounded-sm border text-left transition-all duration-200 flex items-center gap-3 ${
-            activeGradeTab === '10'
-              ? 'bg-brand-600 border-brand-600 text-white shadow-md ring-2 ring-brand-200'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-          }`}
-        >
-          <div className={`p-2 rounded-sm ${activeGradeTab === '10' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-            <School className="w-5 h-5" />
+      {/* BẢNG MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX) */}
+      <div className="bg-white border-2 border-cyan-500/80 rounded-sm p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-cyan-600 text-white rounded-sm">
+              <Target className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 uppercase tracking-wide">
+                BẢNG MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX)
+              </h2>
+              <p className="text-xs text-slate-500 font-semibold">
+                Điền mục tiêu điểm số và kế hoạch bồi dưỡng kiến thức để tự cam kết hành động
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider">🏫 Khối Lớp 10</p>
-            <p className={`text-[11px] font-semibold mt-0.5 ${activeGradeTab === '10' ? 'text-brand-100' : 'text-slate-500'}`}>
-              Khám phá & Chọn Tổ hợp
-            </p>
-          </div>
-        </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveGradeTab('11')}
-          className={`p-4 rounded-sm border text-left transition-all duration-200 flex items-center gap-3 ${
-            activeGradeTab === '11'
-              ? 'bg-brand-600 border-brand-600 text-white shadow-md ring-2 ring-brand-200'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-          }`}
-        >
-          <div className={`p-2 rounded-sm ${activeGradeTab === '11' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-            <Sprout className="w-5 h-5" />
+          {/* Chọn Tab Khối lớp */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-sm border border-slate-200 text-xs font-bold">
+            {['10', '11', '12'].map((grade) => (
+              <button
+                key={grade}
+                type="button"
+                onClick={() => setActiveGradeTab(grade)}
+                className={`px-3 py-1.5 rounded-sm transition-all cursor-pointer ${
+                  activeGradeTab === grade
+                    ? 'bg-cyan-600 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Khối Lớp {grade}
+              </button>
+            ))}
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider">🌱 Khối Lớp 11</p>
-            <p className={`text-[11px] font-semibold mt-0.5 ${activeGradeTab === '11' ? 'text-brand-100' : 'text-slate-500'}`}>
-              Tập trung & Kiểm chứng Phản tư
-            </p>
-          </div>
-        </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveGradeTab('12')}
-          className={`p-4 rounded-sm border text-left transition-all duration-200 flex items-center gap-3 ${
-            activeGradeTab === '12'
-              ? 'bg-brand-600 border-brand-600 text-white shadow-md ring-2 ring-brand-200'
-              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300'
-          }`}
-        >
-          <div className={`p-2 rounded-sm ${activeGradeTab === '12' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
-            <Rocket className="w-5 h-5" />
+        <div className="space-y-4 text-xs">
+          {/* Ô 1: Điểm tổng kết tổ hợp */}
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-900 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-cyan-700" />
+              <span>1. Điểm tổng kết tổ hợp xét tuyển cần đạt (Mục tiêu 3 môn chính):</span>
+            </label>
+            <input
+              type="text"
+              value={actionPlanMatrix.targetSubjectScores}
+              onChange={(e) => handleMatrixChange('targetSubjectScores', e.target.value)}
+              placeholder="VD: Toán: 8.5+ | Lý: 8.0+ | Anh: 8.5+ (Tổng tổ hợp A01: 25.0+ điểm)"
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-sm font-semibold text-xs text-slate-800 focus:outline-none focus:border-cyan-600"
+            />
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider">🚀 Khối Lớp 12</p>
-            <p className={`text-[11px] font-semibold mt-0.5 ${activeGradeTab === '12' ? 'text-brand-100' : 'text-slate-500'}`}>
-              Tối ưu & Thực chiến Xét tuyển
-            </p>
+
+          {/* Ô 2: Kế hoạch bù đắp môn yếu */}
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-900 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-emerald-700" />
+              <span>2. Kế hoạch bù đắp lỗ hổng kiến thức & Môn còn yếu cần cải thiện ngay:</span>
+            </label>
+            <textarea
+              rows={2}
+              value={actionPlanMatrix.remediationPlan}
+              onChange={(e) => handleMatrixChange('remediationPlan', e.target.value)}
+              placeholder="VD: Môn Toán phần Hình học không gian còn yếu; dành 45 phút mỗi tối làm thêm bài tập nâng cao và làm đề thi thử vào sáng Chủ nhật..."
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-sm font-semibold text-xs text-slate-800 focus:outline-none focus:border-cyan-600"
+            />
           </div>
-        </button>
+
+          {/* Ô 3: Kỹ năng thực tế tự học */}
+          <div className="space-y-1.5">
+            <label className="font-extrabold text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>3. Kỹ năng thực tế tự rèn luyện (Tin học, Ngoại ngữ, Kỹ năng mềm, Dự án):</span>
+            </label>
+            <textarea
+              rows={2}
+              value={actionPlanMatrix.selfStudySkills}
+              onChange={(e) => handleMatrixChange('selfStudySkills', e.target.value)}
+              placeholder="VD: Luyện nghe Tiếng Anh qua TED Talks 20 phút/ngày; học cách dùng phần mềm văn phòng Word/Excel; tham gia CLB truyền thông của trường..."
+              className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-sm font-semibold text-xs text-slate-800 focus:outline-none focus:border-cyan-600"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Form thêm mục tiêu cá nhân mới */}
-      {showAddForm && (
-        <form onSubmit={handleSubmit} className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 animate-reveal shadow-sm">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2 flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            Thiết lập Mục tiêu cá nhân mới
-          </h3>
+      {/* KHUNG XÁC NHẬN & KÝ CAM KẾT HÀNH ĐỘNG (XUẤT PDF) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Award className="w-5 h-5 text-brand-600" />
+            <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+              BẢN KẾ HOẠCH HƯỚNG NGHIỆP & CAM KẾT HÀNH ĐỘNG CÁ NHÂN (XUẤT PDF)
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-500 font-semibold">
+            Bấm "Ký Cam Kết & Xuất PDF" ở trên hoặc dưới để tải file
+          </span>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Tên mục tiêu cá nhân</label>
-              <input
-                type="text"
-                placeholder="VD: Đạt 8.5 điểm môn Toán thi Học kỳ 2; Thi chứng chỉ IELTS 6.5..."
-                value={newRoadmap.title}
-                onChange={(e) => setNewRoadmap({ ...newRoadmap, title: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
-                required
-              />
+        {/* PHẦN CHỨNG CHỈ ĐƯỢC CHỤP BỞI HTML2CANVAS SANG PDF */}
+        <div 
+          id="commitment-action-plan-certificate"
+          className="bg-white border-4 border-slate-900 p-8 rounded-sm shadow-md space-y-6 text-slate-900 relative"
+          style={{ fontFamily: 'sans-serif' }}
+        >
+          {/* Header Trang trọng của Bản Cam kết */}
+          <div className="text-center border-b-2 border-slate-900 pb-4 space-y-1">
+            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500 block">
+              ĐỀ TÀI NGHIÊN CỨU KHOA HỌC HÀNH VI — HƯỚNG NGHIỆP GIẢM THIÊN LỆCH NHẬN THỨC
+            </span>
+            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight text-slate-900">
+              BẢN KẾ HOẠCH HƯỚNG NGHIỆP & CAM KẾT HÀNH ĐỘNG CÁ NHÂN
+            </h2>
+            <p className="text-xs italic text-slate-600">
+              (Commitment Device & Implementation Intentions — Áp dụng Thuyết Tự Quyết SDT)
+            </p>
+          </div>
+
+          {/* Thông tin học sinh */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 border border-slate-200 text-xs">
+            <div>
+              <span className="font-bold text-slate-500 block text-[10px] uppercase">Họ và tên học sinh</span>
+              <span className="font-black text-slate-900 text-sm">{profile?.full_name || user?.email || 'Học sinh THPT'}</span>
+            </div>
+            <div>
+              <span className="font-bold text-slate-500 block text-[10px] uppercase">Khối lớp hiện tại</span>
+              <span className="font-bold text-slate-900">Khối Lớp {activeGradeTab}</span>
+            </div>
+            <div>
+              <span className="font-bold text-slate-500 block text-[10px] uppercase">Ngày lập cam kết</span>
+              <span className="font-bold text-slate-900">{new Date().toLocaleDateString('vi-VN')}</span>
+            </div>
+            <div>
+              <span className="font-bold text-slate-500 block text-[10px] uppercase">Chỉ số tự tin thực chứng</span>
+              <span className="font-black text-emerald-700">{studentPostConf}/10 (Sau phản tư)</span>
+            </div>
+          </div>
+
+          {/* Ngành mục tiêu & 3 Rủi ro đã nhận diện */}
+          <div className="space-y-3 text-xs">
+            <div className="p-3 bg-brand-50 border border-brand-200 rounded-sm">
+              <span className="font-black text-brand-900 block text-xs uppercase mb-1">
+                🎯 NGÀNH HỌC MỤC TIÊU ĐÃ KIỂM CHỨNG & CHỐT QUYẾT ĐỊNH:
+              </span>
+              <p className="text-sm font-black text-slate-900">
+                {studentFinalMajor} {anchor?.targetUniversity ? `— [${anchor.targetUniversity}]` : ''}
+              </p>
             </div>
 
+            {decisionJournal?.riskAcademic && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px]">
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-sm">
+                  <strong className="text-slate-900 block mb-1">1. Thách thức học thuật:</strong>
+                  <p className="text-slate-700">{decisionJournal.riskAcademic}</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-sm">
+                  <strong className="text-slate-900 block mb-1">2. Thách thức tài chính:</strong>
+                  <p className="text-slate-700">{decisionJournal.riskFinancial}</p>
+                </div>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-sm">
+                  <strong className="text-slate-900 block mb-1">3. Thách thức đào thải / AI:</strong>
+                  <p className="text-slate-700">{decisionJournal.riskMarket}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Ma trận hành động */}
+          <div className="space-y-2 text-xs border-t border-slate-200 pt-3">
+            <h4 className="font-black uppercase tracking-wider text-slate-900 text-xs">
+              📋 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG CỤ THỂ:
+            </h4>
+            <div className="space-y-2 text-[11px] leading-relaxed">
+              <div className="flex items-start gap-2">
+                <span className="font-black text-cyan-800 min-w-36">Điểm số mục tiêu:</span>
+                <span className="font-semibold text-slate-800">{actionPlanMatrix.targetSubjectScores}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-black text-emerald-800 min-w-36">Kế hoạch khắc phục:</span>
+                <span className="font-medium text-slate-800">{actionPlanMatrix.remediationPlan}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-black text-amber-800 min-w-36">Kỹ năng tự rèn luyện:</span>
+                <span className="font-medium text-slate-800">{actionPlanMatrix.selfStudySkills}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Lời Tuyên Thệ Cam Kết & Khung Ký Tên */}
+          <div className="border-t-2 border-slate-900 pt-4 space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-300 text-center text-xs font-bold text-amber-950 italic">
+              "Tôi xác nhận đã trải qua trọn vẹn 6 bước phản tư khoa học, nhìn thẳng vào các khó khăn và rủi ro thực tế. Tôi cam kết tự giác thực hiện kế hoạch hành động này, chủ động rèn luyện mỗi ngày và hoàn toàn chịu trách nhiệm về tương lai của chính mình."
+            </div>
+
+            <div className="grid grid-cols-2 text-center pt-2 text-xs">
+              <div className="space-y-12">
+                <div>
+                  <span className="font-bold text-slate-500 uppercase block text-[10px]">Xác nhận của Cố vấn Hướng nghiệp</span>
+                  <span className="italic text-[11px] text-slate-600">(Đã đối chứng thực tế)</span>
+                </div>
+                <p className="font-bold text-slate-800">Ban Cố Vấn Hướng Nghiệp</p>
+              </div>
+
+              <div className="space-y-12">
+                <div>
+                  <span className="font-bold text-slate-500 uppercase block text-[10px]">Học sinh ký cam kết</span>
+                  <span className="italic text-[11px] text-slate-600">(Ký và ghi rõ họ tên)</span>
+                </div>
+                <p className="font-black text-slate-900 uppercase">
+                  {profile?.full_name || user?.email || 'Học sinh'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nút Xuất PDF dưới chân bản cam kết */}
+        <div className="text-center pt-2">
+          <Button
+            type="button"
+            variant="primary"
+            onClick={handleExportPDF}
+            disabled={isExportingPDF}
+            className="w-full sm:w-auto px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <Download className="w-4 h-4 text-cyan-400" />
+            <span>{isExportingPDF ? 'Đang xuất PDF...' : '📜 XÁC NHẬN & TẢI BẢN CAM KẾT HÀNH ĐỘNG (FILE PDF)'}</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* FORM THÊM MỤC TIÊU CÁ NHÂN */}
+      {showAddForm && (
+        <form onSubmit={handleSubmit} className="bg-white border-2 border-brand-500 p-6 rounded-sm space-y-4 shadow-sm animate-reveal">
+          <h3 className="text-xs font-black text-brand-900 uppercase tracking-wider border-b border-brand-100 pb-2">
+            Thêm Mục Tiêu Hành Động Mới
+          </h3>
+
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 uppercase">Tên Mục Tiêu / Tác Vụ</label>
+            <input
+              type="text"
+              placeholder="VD: Ôn luyện phần Hàm số đạt 9 điểm trong bài kiểm tra 1 tiết..."
+              value={newRoadmap.title}
+              onChange={(e) => setNewRoadmap({ ...newRoadmap, title: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Hạn hoàn thành (Dự kiến)</label>
+              <label className="text-[11px] font-bold text-slate-700 uppercase">Hạn Chót (Target Date)</label>
               <input
                 type="date"
                 value={newRoadmap.target_date}
                 onChange={(e) => setNewRoadmap({ ...newRoadmap, target_date: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-700"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Trạng thái khởi tạo</label>
+              <label className="text-[11px] font-bold text-slate-700 uppercase">Trạng Thái</label>
               <select
                 value={newRoadmap.status}
                 onChange={(e) => setNewRoadmap({ ...newRoadmap, status: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-700"
+                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold cursor-pointer"
               >
                 <option value="not_started">Chưa bắt đầu</option>
                 <option value="in_progress">Đang thực hiện</option>
                 <option value="completed">Đã hoàn thành</option>
               </select>
             </div>
+          </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi chú chi tiết</label>
-              <input
-                type="text"
-                placeholder="VD: Tài liệu ôn tập lưu trong thư mục Drive..."
-                value={newRoadmap.notes}
-                onChange={(e) => setNewRoadmap({ ...newRoadmap, notes: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
-              />
-            </div>
+          <div className="space-y-1">
+            <label className="text-[11px] font-bold text-slate-700 uppercase">Ghi Chú Kế Hoạch</label>
+            <textarea
+              rows={2}
+              placeholder="Ghi chú phương pháp học tập hoặc tài liệu cần tham khảo..."
+              value={newRoadmap.notes}
+              onChange={(e) => setNewRoadmap({ ...newRoadmap, notes: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               onClick={() => setShowAddForm(false)}
               className="text-xs font-bold uppercase py-2 px-4"
             >
@@ -439,143 +736,88 @@ const RoadmapBuilder = () => {
             </Button>
             <Button
               type="submit"
-              variant="accent"
-              isLoading={isSubmitting}
-              className="text-xs font-bold uppercase py-2 px-4"
+              variant="primary"
+              disabled={isSubmitting}
+              className="text-xs font-bold uppercase py-2 px-6"
             >
-              Lưu Mục tiêu vào CSDL
+              Lưu Mục Tiêu
             </Button>
           </div>
         </form>
       )}
 
-      {/* Thông báo nếu DB chưa nạp bảng */}
-      {dbError && (
-        <div className="bg-amber-50 border border-amber-200 p-6 rounded-sm text-center space-y-3">
-          <AlertTriangle className="w-7 h-7 text-amber-600 mx-auto" />
-          <p className="text-xs font-bold text-amber-900">{dbError}</p>
-          <Button variant="primary" onClick={fetchRoadmaps} className="text-xs font-bold uppercase py-2 px-6">
-            Thử lại kết nối CSDL
-          </Button>
-        </div>
-      )}
+      {/* DANH SÁCH 3 CHẶNG CHIẾN LƯỢC MẪU CHO KHỐI LỚP */}
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center justify-between">
+          <span>LỘ TRÌNH CHIẾN LƯỢC ĐỀ XUẤT CHO HỌC SINH KHỐI {activeGradeTab}</span>
+          <span className="text-[11px] text-cyan-700 font-bold normal-case">3 Chặng then chốt</span>
+        </h3>
 
-      {/* Khối Lộ trình Chuẩn hóa theo Khối Lớp được chọn */}
-      <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-5 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center justify-between">
-          <span>Khung Lộ trình Chuẩn hóa - Khối Lớp {activeGradeTab}</span>
-          <span className="text-xs text-brand-600 font-semibold normal-case">
-            {activeGradeTab === '10' && 'Giai đoạn Định hình & Chọn Khối môn'}
-            {activeGradeTab === '11' && 'Giai đoạn Tích lũy & Kiểm chứng Phản tư'}
-            {activeGradeTab === '12' && 'Giai đoạn Tối ưu & Chốt Nguyện vọng'}
-          </span>
-        </h2>
-
-        <div className="space-y-4 relative before:absolute before:left-5 before:top-3 before:bottom-3 before:w-0.5 before:bg-brand-100">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {currentStandardSteps.map((step, idx) => (
-            <div 
-              key={idx} 
-              className="relative pl-12 p-4 bg-slate-50/70 border border-slate-200/80 rounded-sm space-y-2 hover:border-brand-300 transition-all"
-            >
-              <div className="absolute left-3.5 top-4.5 w-3.5 h-3.5 rounded-full border-2 border-brand-600 bg-white" />
-
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-brand-100 text-brand-800 rounded-sm uppercase">
-                    {step.step}
-                  </span>
-                  <h3 className="text-xs font-bold text-slate-800 leading-snug">{step.title}</h3>
-                </div>
-
-                {step.actionLink && (
-                  <button
-                    type="button"
-                    onClick={() => handleActionClick(step.actionLink)}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex-shrink-0 cursor-pointer focus:outline-none"
-                  >
-                    <span>{step.actionText}</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </button>
-                )}
+            <div key={idx} className="bg-white border border-slate-200 p-5 rounded-sm shadow-2xs space-y-3 flex flex-col justify-between hover:border-cyan-400 transition-colors">
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-cyan-100 text-cyan-900 border border-cyan-300 rounded-sm inline-block">
+                  {step.step}
+                </span>
+                <h4 className="text-xs font-bold text-slate-900 leading-snug">
+                  {step.title}
+                </h4>
+                <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                  {step.description}
+                </p>
               </div>
 
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                {step.description}
-              </p>
+              <button
+                type="button"
+                onClick={() => handleActionClick(step.actionLink)}
+                className="w-full py-2 px-3 bg-slate-50 hover:bg-cyan-50 border border-slate-200 hover:border-cyan-300 text-cyan-800 font-bold text-xs rounded-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>{step.actionText}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Danh sách Mục tiêu Cá nhân đã lưu vào Supabase DB */}
-      <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3 flex items-center justify-between">
-          <span>🎯 Danh sách Mục tiêu Cá nhân của bạn ({roadmaps.length})</span>
-        </h2>
+      {/* DANH SÁCH MỤC TIÊU CÁ NHÂN TỰ ĐẶT */}
+      {roadmaps.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200 pb-2 flex items-center justify-between">
+            <span>MỤC TIÊU CÁ NHÂN ĐÃ THÊM</span>
+            <span className="text-[11px] text-slate-500 font-semibold">{roadmaps.length} mục tiêu</span>
+          </h3>
 
-        {isLoading ? (
-          <div className="space-y-3 animate-pulse">
-            <div className="h-16 bg-slate-100 rounded-sm"></div>
-            <div className="h-16 bg-slate-100 rounded-sm"></div>
-          </div>
-        ) : roadmaps.length > 0 ? (
-          <div className="space-y-3">
-            {roadmaps.map((item, idx) => (
-              <div 
-                key={item.id || idx} 
-                className="bg-slate-50 border border-slate-200 p-4 rounded-sm hover:border-slate-300 transition-all space-y-2"
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-200 rounded-sm">
-                      Mục tiêu cá nhân
-                    </span>
-                    <h3 className="text-xs font-bold text-slate-800">{item.title}</h3>
-                    {getStatusBadge(item.status)}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={item.status}
-                      onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                      className="text-[11px] font-bold py-1 px-2 bg-white border border-slate-200 rounded-sm text-slate-600 focus:outline-none"
-                    >
-                      <option value="not_started">Chưa bắt đầu</option>
-                      <option value="in_progress">Đang thực hiện</option>
-                      <option value="completed">Đã hoàn thành</option>
-                    </select>
-
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="p-1 text-slate-400 hover:text-red-600 transition-colors"
-                      title="Xóa mục tiêu"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {roadmaps.map((rm) => (
+              <div key={rm.id} className="bg-white border border-slate-200 p-4 rounded-sm shadow-2xs space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-bold text-slate-900">{rm.title}</h4>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(rm.id)}
+                    className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                {item.notes && (
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed bg-white p-2.5 rounded-sm border border-slate-100">
-                    {item.notes}
-                  </p>
+                {rm.notes && (
+                  <p className="text-[11px] text-slate-600 font-medium">{rm.notes}</p>
                 )}
 
-                {item.target_date && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Hạn mục tiêu: {new Date(item.target_date).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                )}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px]">
+                  <span className="text-slate-500">
+                    {rm.target_date ? `Hạn: ${new Date(rm.target_date).toLocaleDateString('vi-VN')}` : 'Không có hạn'}
+                  </span>
+                  <div>{getStatusBadge(rm.status)}</div>
+                </div>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-8 bg-slate-50 border border-dashed border-slate-200 rounded-sm text-xs font-semibold text-slate-500">
-            Bạn chưa thêm mục tiêu cá nhân nào. Hãy bấm nút <span className="font-bold text-brand-600">+ THÊM MỤC TIÊU CÁ NHÂN</span> phía trên để bổ sung kế hoạch riêng!
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {toast && (
         <Toast

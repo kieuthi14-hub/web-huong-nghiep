@@ -96,7 +96,7 @@ const StudentDashboard = () => {
               <span>MÔ HÌNH CAN THIỆP GIẢM THIÊN LỆCH NHẬN THỨC (DEBIASING FRAMEWORK)</span>
             </h4>
             <p className="text-xs text-amber-900 font-bold mt-1 leading-relaxed">
-              Tránh bẫy chọn nghề theo trào lưu số đông hoặc thiên lệch cảm xúc. Hãy lần lượt đi qua các bước: Trắc nghiệm thiên hướng ➔ AI Phản tư ➔ Đối chứng dữ liệu thực tế ➔ Tư vấn chuyên gia ➔ Nhật ký ra quyết định.
+              Tránh bẫy chọn nghề theo trào lưu số đông hoặc thiên lệch cảm xúc. Hãy lần lượt đi qua 6 bước: Trắc nghiệm thiên hướng ➔ AI Socrates ➔ Đối chứng dữ liệu ➔ Tư vấn 1-1 ➔ Nhật ký ra quyết định ➔ Lộ trình & Ký cam kết hành động.
             </p>
           </div>
         </div>
@@ -156,7 +156,7 @@ const StudentDashboard = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 group-hover:text-amber-600 transition-colors">
-                🤖 AI Tham Vấn Phản Tư
+                🤖 AI Tham Vấn Phản Tư Socrates
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
                 Trò chuyện phản biện, bóc tách rủi ro thực tế & bẫy tâm lý chọn nghề.
@@ -279,10 +279,10 @@ const StudentDashboard = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 group-hover:text-brand-600 transition-colors">
-                🎯 Lộ Trình Mục Tiêu Cá Nhân
+                🎯 Lộ Trình Mục Tiêu & Ký Cam Kết Hành Động
               </h3>
               <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                Khung lộ trình chuẩn hóa và theo dõi tiến độ hoàn thành mục tiêu 3 khối lớp.
+                Ma trận kế hoạch hành động 3 khối lớp, thiết lập mục tiêu điểm số và xuất bản cam kết PDF.
               </p>
             </div>
           </div>

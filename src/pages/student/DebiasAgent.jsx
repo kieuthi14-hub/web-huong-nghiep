@@ -18,25 +18,30 @@ import {
   Brain, 
   Flame,
   AlertCircle,
-  CalendarDays
+  CalendarDays,
+  ArrowRight,
+  ShieldAlert,
+  Target,
+  FileCheck2,
+  Lock
 } from 'lucide-react'
 
-// 4 Nút gợi ý Cú hích Phản tư (Quick Nudge Prompts)
+// 4 Nút gợi ý Cú hích Phản tư Socrates (Socratic Funneling Quick Nudges)
 const QUICK_NUDGES = [
   {
     id: 'nudge-1',
     icon: Search,
     color: 'hover:border-amber-400 hover:bg-amber-50/70 text-amber-900',
     iconColor: 'text-amber-600',
-    prompt: '🔍 Khám phá bức tranh toàn diện & thực tế công việc của ngành ',
-    isNeedInput: true
+    prompt: '🔍 Thầy có thể chỉ rõ những điểm mù và áp lực nặng nề nhất của ngành này không?',
+    isNeedInput: false
   },
   {
     id: 'nudge-2',
     icon: Scale,
     color: 'hover:border-indigo-400 hover:bg-indigo-50/70 text-indigo-900',
     iconColor: 'text-indigo-600',
-    prompt: '⚖️ Tôi đang phân vân giữa sở thích cá nhân và xu hướng thị trường',
+    prompt: '⚖️ Em thích ngành này nhưng chưa rõ môn học cốt lõi nào sẽ quyết định khả năng tốt nghiệp?',
     isNeedInput: false
   },
   {
@@ -44,7 +49,7 @@ const QUICK_NUDGES = [
     icon: BarChart3,
     color: 'hover:border-emerald-400 hover:bg-emerald-50/70 text-emerald-900',
     iconColor: 'text-emerald-600',
-    prompt: '📊 Cơ hội nghề nghiệp & thu nhập thực tế ngành này sau 4 năm thế nào?',
+    prompt: '📊 Nhiều clip nói ra trường lương vài chục triệu, thực tế tỷ lệ làm trái ngành là bao nhiêu?',
     isNeedInput: false
   },
   {
@@ -52,22 +57,58 @@ const QUICK_NUDGES = [
     icon: Puzzle,
     color: 'hover:border-rose-400 hover:bg-rose-50/70 text-rose-900',
     iconColor: 'text-rose-600',
-    prompt: '🧩 Ba mẹ khuyên chọn ngành an toàn, tôi nên cân bằng thế nào?',
+    prompt: '💰 Học phí đại học tự chủ tăng 10-15%/năm, áp lực tài chính 4 năm thực tế sẽ như thế nào?',
     isNeedInput: false
   }
 ]
 
-const INITIAL_MESSAGE = {
-  id: 'welcome-msg',
-  sender: 'ai',
-  text: 'Chào bạn! Mình là "Người Đồng Hành Phản Tư" — Cố vấn khơi mở góc nhìn hướng nghiệp cho học sinh THPT. Mình ở đây để cùng bạn trò chuyện, khám phá bức tranh thực tế đa chiều về các ngành nghề và giúp bạn tự tin đưa ra quyết định cho tương lai. Bạn đang cân nhắc ngành nghề nào, hay bạn đang cảm thấy phân vân chưa biết chọn gì?',
-  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+const getInitialGreeting = (anc) => {
+  if (anc?.targetMajor) {
+    const major = anc.targetMajor
+    const uni = anc.targetUniversity ? ` tại trường ${anc.targetUniversity}` : ''
+    const src = anc.choiceSource ? `nguồn từ: ${anc.choiceSource}` : 'mạng xã hội/truyền miệng'
+    const conf = anc.confidenceScore ? `${anc.confidenceScore}/10` : '8/10'
+    return `Chào em! Thầy là "AI Tham Vấn Phản Tư Socrates" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT (thuộc Đề tài Khoa học Hành vi).
+
+Ở Bước 1, em đã xác lập **Mỏ neo nhận thức ban đầu**:
+🎯 Ngành mục tiêu: **${major}**${uni}
+📌 Nguồn tham khảo: **${src}**
+🔥 Điểm tự tin ban đầu (Overconfidence): **${conf}**
+
+Một quyết định quan trọng cho cả cuộc đời không thể xây dựng trên cảm xúc nhất thời hay sự hào nhoáng trên mạng xã hội. Thầy ở đây không phải để khen ngợi hay hùa theo em, mà để giúp em nhìn thẳng vào số liệu và thực tế khắt khe.
+
+Thầy hỏi thẳng em câu đầu tiên: **Tại sao em lại tin rằng năng lực học tập và tố chất thực tế hiện tại của mình thực sự phù hợp để theo đuổi ngành ${major}?**`
+  }
+  return `Chào em! Thầy là "AI Tham Vấn Phản Tư Socrates" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT (thuộc Đề tài Khoa học Hành vi). 
+
+Thầy ở đây để cùng em bóc tách những góc khuất, áp lực đào thải và số liệu thực tế khắc nghiệt của ngành nghề em dự định chọn, phá vỡ các thiên lệch nhận thức cảm tính trước khi em ra quyết định.
+
+Hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**`
 }
 
 const DebiasAgent = () => {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
-  const [messages, setMessages] = useState([INITIAL_MESSAGE])
+
+  // 1. Đọc Mỏ neo nhận thức ban đầu (Initial Anchor) từ Bước 1
+  const [anchor, setAnchor] = useState(() => {
+    try {
+      const saved = localStorage.getItem('career_initial_anchor')
+      return saved ? JSON.parse(saved) : null
+    } catch (e) {
+      return null
+    }
+  })
+
+  const [messages, setMessages] = useState(() => [
+    {
+      id: 'welcome-msg',
+      sender: 'ai',
+      text: getInitialGreeting(anchor),
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ])
+
   const [inputPrompt, setInputPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -75,8 +116,32 @@ const DebiasAgent = () => {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
+  // Cập nhật lại tin nhắn chào đầu nếu anchor được load trễ
+  useEffect(() => {
+    if (!anchor) {
+      try {
+        const saved = localStorage.getItem('career_initial_anchor')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setAnchor(parsed)
+          setMessages([
+            {
+              id: 'welcome-msg',
+              sender: 'ai',
+              text: getInitialGreeting(parsed),
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }
+          ])
+        }
+      } catch (e) {}
+    }
+  }, [])
+
   // Đếm số lượt tương tác của học sinh (vòng phản tư)
   const userRoundCount = messages.filter(m => m.sender === 'user').length
+  const MIN_REQUIRED_ROUNDS = 6
+  const TARGET_ROUNDS = 8
+  const isReadyForStep3 = userRoundCount >= MIN_REQUIRED_ROUNDS
 
   useEffect(() => {
     scrollToBottom()
@@ -86,13 +151,12 @@ const DebiasAgent = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // Gọi API backend (Vercel Serverless Function gọi đến Gemini API)
+  // Gọi API backend Vercel Serverless kết nối Gemini API (Socratic Funneling)
   const handleSendMessage = async (textToSend, forceAssessment = false) => {
     const query = (textToSend || inputPrompt).trim()
     if (!query || isLoading) return
 
     setErrorMessage(null)
-
     const nextRound = userRoundCount + 1
 
     const userMsg = {
@@ -102,14 +166,12 @@ const DebiasAgent = () => {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
-    // Cập nhật tin nhắn người dùng ngay lập tức
     const newMessages = [...messages, userMsg]
     setMessages(newMessages)
     if (!textToSend) setInputPrompt('')
     setIsLoading(true)
 
     try {
-      // Chuẩn bị lịch sử hội thoại gửi lên server (bỏ tin nhắn chào đầu)
       const historyPayload = messages
         .filter(m => m.id !== 'welcome-msg')
         .map(m => ({
@@ -126,7 +188,13 @@ const DebiasAgent = () => {
           message: query,
           history: historyPayload,
           round: nextRound,
-          isFinal: forceAssessment || nextRound >= 10
+          isFinal: forceAssessment || nextRound >= TARGET_ROUNDS,
+          anchor: anchor ? {
+            target_major: anchor.targetMajor,
+            target_university: anchor.targetUniversity,
+            choice_source: anchor.choiceSource,
+            confidence_score_initial: anchor.confidenceScore
+          } : {}
         })
       })
 
@@ -141,7 +209,7 @@ const DebiasAgent = () => {
         sender: 'ai',
         text: data.reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isAssessment: data.isAssessment || nextRound >= 10
+        isFinalChallenge: data.isFinal || nextRound >= TARGET_ROUNDS
       }
 
       setMessages([...newMessages, aiMsg])
@@ -152,7 +220,7 @@ const DebiasAgent = () => {
       const errorAiMsg = {
         id: `err-${Date.now()}`,
         sender: 'ai',
-        text: `⚠️ **Rất tiếc, đã có sự cố kết nối:** ${err.message || 'Hệ thống AI đang bận'}. Bạn vui lòng thử gửi lại câu hỏi nhé!`,
+        text: `⚠️ **Sự cố kết nối AI:** ${err.message || 'Hệ thống AI đang bận'}. Em vui lòng gửi lại câu trả lời nhé!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isError: true
       }
@@ -175,17 +243,18 @@ const DebiasAgent = () => {
   }
 
   const handleResetChat = () => {
-    if (window.confirm('Bạn có chắc muốn làm mới cuộc hội thoại này để phản tư một ngành nghề khác?')) {
+    if (window.confirm('Em có chắc muốn làm mới phiên đối thoại Socrates để phản biện một ngành nghề khác?')) {
       setMessages([{
-        ...INITIAL_MESSAGE,
         id: `welcome-${Date.now()}`,
+        sender: 'ai',
+        text: getInitialGreeting(anchor),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }])
       setErrorMessage(null)
     }
   }
 
-  // Xuất file và copy lịch sử chat
+  // Xuất file và copy nhật ký phản tư
   const handleExportChat = () => {
     if (messages.length <= 1) {
       alert('Chưa có nội dung đối thoại để xuất!')
@@ -196,45 +265,39 @@ const DebiasAgent = () => {
     const now = new Date().toLocaleString('vi-VN')
 
     let transcriptText = `=================================================================\n`
-    transcriptText += `NHẬT KÝ THAM VẤN PHẢN TƯ CÙNG AI (10 VÒNG ĐỐI THOẠI DEBIASING)\n`
+    transcriptText += `NHẬT KÝ THAM VẤN PHẢN TƯ SOCRATES (KHOA HỌC HÀNH VI - DEBIASING)\n`
     transcriptText += `Học sinh: ${studentName}\n`
     transcriptText += `Thời gian xuất: ${now}\n`
-    transcriptText += `Tổng số vòng phản tư: ${userRoundCount} / 10\n`
-    transcriptText += `Mục đích: Nghiên cứu giảm thiểu thiên lệch nhận thức & Nhật ký ra quyết định\n`
+    transcriptText += `Mỏ neo ban đầu: Ngành ${anchor?.targetMajor || 'Chưa ghi'} - Trường ${anchor?.targetUniversity || 'Chưa ghi'}\n`
+    transcriptText += `Độ tự tin ban đầu (Overconfidence): ${anchor?.confidenceScore || 8}/10\n`
+    transcriptText += `Tổng số vòng chất vấn: ${userRoundCount} / ${TARGET_ROUNDS}\n`
     transcriptText += `=================================================================\n\n`
 
     messages.forEach((msg) => {
-      const senderLabel = msg.sender === 'user' ? `[Học sinh - ${studentName}]` : `[AI Phản Tư]`
+      const senderLabel = msg.sender === 'user' ? `[Học sinh - ${studentName}]` : `[AI Tham Vấn Phản Tư Socrates]`
       transcriptText += `${senderLabel} (${msg.timestamp}):\n${msg.text}\n\n`
       transcriptText += `-----------------------------------------------------------------\n\n`
     })
 
-    // 1. Sao chép vào bộ nhớ tạm
     navigator.clipboard.writeText(transcriptText).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 3000)
-    }).catch(err => {
-      console.warn('Lỗi khi sao chép clipboard:', err)
-    })
+    }).catch(err => console.warn('Lỗi clipboard:', err))
 
-    // 2. Tải về file text
     try {
       const blob = new Blob([transcriptText], { type: 'text/plain;charset=utf-8' })
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       const dateStr = new Date().toISOString().slice(0, 10)
       link.href = url
-      link.download = `Bao-cao-phan-tu-AI-${dateStr}.txt`
+      link.download = `Nhat-ky-Socrates-Debiasing-${dateStr}.txt`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
-    } catch (e) {
-      console.warn('Không thể tự động tải file:', e)
-    }
+    } catch (e) {}
   }
 
-  // Format các đoạn văn và thẻ in đậm **nội dung**
   const renderFormattedText = (text, isUser) => {
     return text.split('\n\n').map((paragraph, pIdx) => {
       const parts = paragraph.split(/(\*\*.*?\*\*)/g)
@@ -257,40 +320,39 @@ const DebiasAgent = () => {
 
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5 animate-reveal">
-      {/* HEADER TIÊU ĐỀ TRANG */}
+      {/* HEADER TIÊU ĐỀ BƯỚC 2 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2.5">
             <div className="p-2 bg-amber-500 text-white rounded-md shadow-xs">
               <Brain className="w-5 h-5" />
             </div>
-            <span>🤝 Người Đồng Hành Phản Tư</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
-              Debiasing Agent
+            <span>2️⃣ AI Tham Vấn Phản Tư Socrates</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
+              Socratic Funneling
             </span>
           </h1>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Quy trình 10 vòng đồng hành khơi mở góc nhìn thực tế, kích hoạt năng lực tự quyết & kết nối tư vấn đối chứng 1-1.
+            Kỹ thuật chất vấn phễu Socrates: Phá vỡ bẫy nịnh bợ (Anti-Sycophancy), kích hoạt tư duy phân tích sâu (Hệ thống 2) và bóc tách các điểm mù nghề nghiệp.
           </p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
-          {/* NÚT XUẤT / COPY ĐOẠN HỘI THOẠI */}
           <Button
             variant="outline"
             onClick={handleExportChat}
             className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-brand-700 border-brand-300 bg-brand-50/50 hover:bg-brand-100"
-            title="Lưu lại toàn bộ cuộc trò chuyện phục vụ Nhật ký ra quyết định"
+            title="Lưu lại nhật ký phản tư"
           >
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-700">Đã sao chép & Tải file!</span>
+                <span className="text-emerald-700">Đã lưu & Tải file!</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5" />
-                <span>Xuất / Copy hội thoại</span>
+                <span>Xuất Nhật ký</span>
                 <Download className="w-3 h-3 text-slate-400 ml-0.5" />
               </>
             )}
@@ -300,7 +362,6 @@ const DebiasAgent = () => {
             variant="outline"
             onClick={handleResetChat}
             className="text-xs font-bold py-1.5 px-3 flex items-center gap-1.5 text-slate-600 border-slate-300 hover:bg-slate-100"
-            title="Làm mới để bắt đầu phiên phản tư ngành nghề khác"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Làm mới</span>
@@ -308,64 +369,98 @@ const DebiasAgent = () => {
         </div>
       </div>
 
-      {/* BANNER NGUYÊN TẮC KHOA HỌC */}
-      <div className="bg-amber-50/90 border-2 border-amber-300 p-4 rounded-sm shadow-2xs flex items-start gap-3.5 text-amber-950">
-        <div className="p-2 bg-amber-200 text-amber-900 rounded-full shrink-0 mt-0.5">
-          <Sparkles className="w-4 h-4" />
+      {/* BANNER MỎ NEO NHẬN THỨC BAN ĐẦU (INITIAL ANCHOR TỪ BƯỚC 1) */}
+      {anchor?.targetMajor ? (
+        <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-sm shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-950">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-amber-500 text-white rounded-sm shrink-0 mt-0.5">
+              <Target className="w-4 h-4" />
+            </div>
+            <div className="space-y-0.5 text-xs">
+              <span className="font-extrabold uppercase tracking-wider text-amber-900 block">
+                🎯 MỎ NEO NHẬN THỨC BAN ĐẦU CỦA BẠN (TỪ BƯỚC 1):
+              </span>
+              <p className="font-semibold text-amber-950">
+                Ngành nhắm tới: <strong className="text-brand-900">{anchor.targetMajor}</strong>
+                {anchor.targetUniversity && <span> — Trường: <strong>{anchor.targetUniversity}</strong></span>}
+                {' | '}Nguồn tham khảo: <span className="italic">{anchor.choiceSource || 'Mạng xã hội'}</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 bg-white/90 border border-amber-300 px-3 py-1.5 rounded-sm">
+            <span className="text-[11px] font-bold text-slate-600">Độ tự tin ban đầu:</span>
+            <span className="text-xs font-black px-2 py-0.5 bg-amber-100 text-amber-900 rounded-sm">
+              {anchor.confidenceScore || 8}/10
+            </span>
+          </div>
         </div>
-        <div className="space-y-1">
-          <span className="font-extrabold text-xs uppercase tracking-wider block text-amber-900 flex items-center gap-1.5">
-            <span>💡 QUY TRÌNH 10 VÒNG ĐỒNG HÀNH KHƠI MỞ GÓC NHÌN HƯỚNG NGHIỆP</span>
-          </span>
-          <p className="text-xs leading-relaxed font-medium text-amber-900/90">
-            Người Đồng Hành Phản Tư sẽ cùng bạn qua từng lượt trao đổi: <strong>Thấu cảm</strong>, <strong>cung cấp dữ liệu thực tế cân bằng (mặt sáng & áp lực đời thường)</strong>, <strong>câu hỏi phản tư</strong> để tự nhận diện năng lực, và tổng kết khơi mở năng lực tự quyết kết hợp đối chứng thực tế 1-1.
-          </p>
+      ) : (
+        <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-sm text-xs text-blue-900 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>Chưa xác lập mỏ neo? Em có thể hoàn thành Bước 1 (Holland + Mỏ neo) để nhận chất vấn cá nhân hóa chính xác nhất.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/student/holland')}
+            className="text-[11px] font-bold text-blue-700 hover:underline shrink-0"
+          >
+            Làm Bước 1 ➔
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* KHUNG NỘI DUNG CHATBOT */}
+      {/* KHUNG NỘI DUNG CHATBOT SOCRATES */}
       <div className="bg-white border border-slate-200 rounded-sm shadow-xs flex flex-col h-[650px]">
-        {/* THANH TIẾN TRÌNH 10 VÒNG ĐỐI THOẠI */}
+        {/* THANH TIẾN TRÌNH 6-8 VÒNG ĐỐI THOẠI SOCRATES */}
         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 font-bold text-xs text-slate-800">
-              <span className={`w-2.5 h-2.5 rounded-full ${userRoundCount >= 10 ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
-              <span>Tiến trình đồng hành:</span>
+              <span className={`w-2.5 h-2.5 rounded-full ${isReadyForStep3 ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}></span>
+              <span>Tiến trình phản tư Socrates:</span>
               <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold border ${
-                userRoundCount >= 10 
+                isReadyForStep3 
                   ? 'bg-emerald-100 text-emerald-900 border-emerald-300' 
                   : 'bg-amber-100 text-amber-900 border-amber-300'
               }`}>
-                Vòng {Math.min(userRoundCount, 10)} / 10
+                Vòng {userRoundCount} / {TARGET_ROUNDS} (Tối thiểu {MIN_REQUIRED_ROUNDS} vòng)
               </span>
             </div>
 
             <span className="text-[11px] font-medium text-slate-500 hidden md:inline">
-              {userRoundCount >= 10 
-                ? '🎉 Đã hoàn thành lộ trình! Xem bản tổng hợp định hướng & gợi mở kết nối thực tế bên dưới.' 
-                : '(Sau các vòng đối thoại, AI sẽ tự động tổng hợp định hướng & gợi ý kết nối đối chứng thực tế)'}
+              {isReadyForStep3 
+                ? '✅ Đã hoàn thành các vòng chất vấn! Em có thể bấm nút bên phải để sang Bước 3.' 
+                : `(Cần thêm ${MIN_REQUIRED_ROUNDS - userRoundCount} vòng trao đổi thực chất để mở khóa Bước 3)`}
             </span>
           </div>
 
           <div className="flex items-center gap-2 self-stretch sm:self-auto">
-            {userRoundCount >= 4 && userRoundCount < 10 && (
+            {/* Nút Chuyển sang Bước 3 (Chặn nếu chưa đủ số vòng) */}
+            {isReadyForStep3 ? (
               <button
                 type="button"
-                disabled={isLoading}
-                onClick={() => handleSendMessage('Xin AI tổng hợp và gợi ý định hướng cho em dựa trên các trao đổi vừa qua', true)}
-                className="text-[10px] font-bold py-1 px-2 rounded-sm bg-amber-500 hover:bg-amber-600 text-white transition-all flex items-center gap-1 shrink-0 shadow-2xs"
-                title="Nhận tổng hợp và định hướng sớm từ các câu trả lời hiện tại"
+                onClick={() => navigate('/student/fact-check')}
+                className="text-xs font-bold py-1.5 px-3 rounded-sm bg-emerald-600 hover:bg-emerald-700 text-white transition-all flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer animate-pulse"
+                title="Chuyển sang Bước 3: Đối chứng Dữ liệu Khách quan"
               >
-                <BarChart3 className="w-3 h-3" />
-                <span>Nhận tổng kết sớm</span>
+                <span>Sang Bước 3: Đối chứng Dữ liệu</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
+            ) : (
+              <div 
+                className="text-[11px] font-bold py-1.5 px-2.5 rounded-sm bg-slate-200 text-slate-500 flex items-center gap-1.5 cursor-not-allowed"
+                title={`Em cần trao đổi thêm ${MIN_REQUIRED_ROUNDS - userRoundCount} lượt để bẻ gãy các thiên lệch nhận thức trước khi sang Bước 3`}
+              >
+                <Lock className="w-3 h-3 text-slate-400" />
+                <span>Bước 3 (Khóa: Cần {MIN_REQUIRED_ROUNDS - userRoundCount} vòng)</span>
+              </div>
             )}
 
             {/* Progress Bar */}
-            <div className="flex-1 sm:w-36 bg-slate-200 rounded-full h-2 overflow-hidden">
+            <div className="w-24 sm:w-32 bg-slate-200 rounded-full h-2 overflow-hidden">
               <div 
-                className={`h-full transition-all duration-500 ${userRoundCount >= 10 ? 'bg-emerald-500' : 'bg-amber-500'}`}
-                style={{ width: `${Math.min((userRoundCount / 10) * 100, 100)}%` }}
+                className={`h-full transition-all duration-500 ${isReadyForStep3 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                style={{ width: `${Math.min((userRoundCount / TARGET_ROUNDS) * 100, 100)}%` }}
               />
             </div>
           </div>
@@ -380,63 +475,59 @@ const DebiasAgent = () => {
                 msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
               }`}
             >
-              {/* Avatar Icon */}
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
                   msg.sender === 'user'
                     ? 'bg-brand-600 text-white'
                     : msg.isError
                     ? 'bg-rose-500 text-white'
-                    : msg.isAssessment
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-amber-500 text-white'
+                    : msg.isFinalChallenge
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-amber-600 text-white'
                 }`}
               >
                 {msg.sender === 'user' ? (
                   <User className="w-4 h-4" />
                 ) : msg.isError ? (
                   <AlertCircle className="w-4 h-4" />
-                ) : msg.isAssessment ? (
+                ) : msg.isFinalChallenge ? (
                   <Sparkles className="w-4 h-4" />
                 ) : (
                   <Bot className="w-4 h-4" />
                 )}
               </div>
 
-              {/* Bong bóng tin nhắn */}
               <div
                 className={`max-w-[85%] sm:max-w-[80%] rounded-sm p-4 text-xs leading-relaxed shadow-2xs space-y-2 ${
                   msg.sender === 'user'
                     ? 'bg-brand-600 text-white font-medium rounded-tr-none'
                     : msg.isError
                     ? 'bg-rose-50 border border-rose-200 text-rose-800 rounded-tl-none'
-                    : msg.isAssessment
-                    ? 'bg-emerald-50/60 border-2 border-emerald-300 text-slate-800 rounded-tl-none shadow-xs'
+                    : msg.isFinalChallenge
+                    ? 'bg-purple-50/90 border-2 border-purple-300 text-slate-900 rounded-tl-none shadow-xs'
                     : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'
                 }`}
               >
-                {msg.isAssessment && (
-                  <div className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-emerald-800 border-b border-emerald-200 pb-1.5 mb-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Tổng hợp Định hướng & Gợi mở Kết nối thực tế (Vòng 10)</span>
+                {msg.isFinalChallenge && (
+                  <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-purple-900 border-b border-purple-200 pb-1.5 mb-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                    <span>🏛️ THÁCH THỨC VÒNG CHỐT - TỰ TAY TÌM KIẾM BẰNG CHỨNG SỐ LIỆU</span>
                   </div>
                 )}
 
-                {/* Format nội dung tin nhắn */}
                 <div className="whitespace-pre-line font-medium leading-relaxed space-y-2">
                   {renderFormattedText(msg.text, msg.sender === 'user')}
                 </div>
 
-                {/* Nút Đăng ký tư vấn trực tiếp đính kèm ngay trong Báo cáo Vòng 10 */}
-                {msg.isAssessment && (
-                  <div className="pt-2 border-t border-emerald-200/80 mt-2">
+                {msg.isFinalChallenge && (
+                  <div className="pt-3 border-t border-purple-200 mt-3">
                     <button
                       type="button"
-                      onClick={() => navigate('/student/booking')}
-                      className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      onClick={() => navigate('/student/fact-check')}
+                      className="w-full py-2.5 px-4 bg-purple-700 hover:bg-purple-800 text-white rounded-sm font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
                     >
-                      <CalendarDays className="w-4 h-4 text-emerald-100" />
-                      <span>📅 Đặt lịch 'Tư vấn 1-1 Đối chứng Thực tế' ngay</span>
+                      <FileCheck2 className="w-4 h-4 text-purple-200" />
+                      <span>📊 BƯỚC 3: Mở Cổng Dữ liệu Khách quan & Nhập 3 Bằng chứng Thực tế ➔</span>
                     </button>
                   </div>
                 )}
@@ -452,8 +543,8 @@ const DebiasAgent = () => {
             </div>
           ))}
 
-          {/* Banner chúc mừng khi hoàn thành 10 vòng */}
-          {userRoundCount >= 10 && (
+          {/* Banner kích hoạt chuyển sang Bước 3 khi đủ điều kiện */}
+          {isReadyForStep3 && (
             <div className="bg-emerald-50 border-2 border-emerald-300 p-4 rounded-sm text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
               <div className="flex items-start gap-3">
                 <div className="p-1.5 bg-emerald-200 text-emerald-900 rounded-full shrink-0 mt-0.5">
@@ -461,20 +552,20 @@ const DebiasAgent = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="font-bold text-emerald-900 text-sm">
-                    🎉 Hoàn thành lộ trình đồng hành! Hãy kết nối đối chứng thực tế:
+                    🎉 Đã hoàn thành các vòng phản tư chất vấn Socrates!
                   </p>
                   <p className="text-[11px] text-emerald-800 leading-relaxed">
-                    Gặp trực tiếp Thầy/Cô cố vấn trường hoặc Anh/Chị sinh viên đang học ngành này để kiểm chứng thực tế và có thêm trải nghiệm trước khi ra quyết định.
+                    Bây giờ, em hãy chuyển từ suy nghĩ cảm tính sang phân tích số liệu thực tế bằng cách tra cứu Đề án tuyển sinh, học phí 4 năm và tỷ lệ việc làm ở Bước 3.
                   </p>
                 </div>
               </div>
               <Button
                 variant="primary"
-                onClick={() => navigate('/student/booking')}
+                onClick={() => navigate('/student/fact-check')}
                 className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 px-4 flex items-center gap-2 shadow-xs cursor-pointer"
               >
-                <CalendarDays className="w-4 h-4" />
-                <span>Đặt lịch tư vấn 1-1</span>
+                <span>Sang Bước 3: Đối chứng Dữ liệu</span>
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           )}
@@ -487,7 +578,7 @@ const DebiasAgent = () => {
               </div>
               <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-600 font-semibold flex items-center gap-2.5 shadow-2xs">
                 <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>{userRoundCount >= 9 ? 'AI Phản tư đang tổng hợp bức tranh hướng nghiệp cho bạn...' : 'AI Phản tư đang lắng nghe và suy ngẫm...'}</span>
+                <span>AI Socrates đang phân tích lỗ hổng nhận thức và chuẩn bị câu hỏi chất vấn tiếp theo...</span>
               </div>
             </div>
           )}
@@ -495,14 +586,14 @@ const DebiasAgent = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* BỘ NÚT GỢI Ý CÚ HÍCH PHẢN TƯ (QUICK NUDGE PROMPTS) */}
+        {/* BỘ NÚT GỢI Ý CÚ HÍCH PHẢN TƯ SOCRATES */}
         <div className="p-3 bg-slate-100/80 border-t border-slate-200 space-y-2">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 uppercase tracking-wider">
             <span className="flex items-center gap-1.5">
               <Flame className="w-3.5 h-3.5 text-amber-500" />
-              <span>GỢI Ý CÚ HÍCH PHẢN TƯ (BẤM ĐỂ HỎI NHANH)</span>
+              <span>GỢI Ý CÂU HỎI PHẢN TƯ (BẤM ĐỂ HỎI NHANH)</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-normal">Vòng {Math.min(userRoundCount, 10)}/10</span>
+            <span className="text-[10px] text-slate-400 font-normal">Vòng {userRoundCount}/{TARGET_ROUNDS}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -535,7 +626,7 @@ const DebiasAgent = () => {
           <input
             ref={inputRef}
             type="text"
-            placeholder={userRoundCount >= 10 ? "Bạn đã hoàn thành 10 vòng. Bạn có thể hỏi thêm hoặc bấm Làm mới để thử ngành khác..." : "Nhập câu trả lời hoặc suy nghĩ của bạn (VD: Em thích CNTT vì thấy bảo lương cao...)"}
+            placeholder="Nhập câu trả lời phản biện của em với Thầy Socrates (VD: Điểm Toán của em là 8.2, em đã thử học code Python...)"
             value={inputPrompt}
             onChange={(e) => setInputPrompt(e.target.value)}
             className="flex-1 px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold text-slate-800 placeholder:text-slate-400"

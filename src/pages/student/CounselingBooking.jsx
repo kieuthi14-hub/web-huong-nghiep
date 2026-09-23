@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
@@ -18,7 +19,11 @@ import {
   MapPin,
   ExternalLink,
   MessageSquare,
-  Phone
+  Phone,
+  ArrowRight,
+  ShieldCheck,
+  FileCheck,
+  MessageCircle
 } from 'lucide-react'
 
 // Hàm phân tích thông tin Nền tảng Gặp gỡ (Google Meet, Zoom, Địa điểm trực tiếp) từ ghi chú chuyên viên
@@ -599,7 +604,24 @@ const saveLocalSession = (userId, session) => {
 }
 
 const CounselingBooking = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
+  const [meetingFormat, setMeetingFormat] = useState('meet') // 'meet' | 'offline' | 'zalo'
+  const [question1, setQuestion1] = useState('')
+  const [question2, setQuestion2] = useState('')
+  
+  // Feedback Form State (Biên bản sau buổi gặp)
+  const [feedbackSessionId, setFeedbackSessionId] = useState(null)
+  const [feedbackIllusion, setFeedbackIllusion] = useState('reduced') // 'persisted' | 'reduced' | 'cleared'
+  const [feedbackReadiness, setFeedbackReadiness] = useState(8)
+  const [feedbackNotes, setFeedbackNotes] = useState('')
+  const [feedbackSaved, setFeedbackSaved] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('mentor_feedback_record') || 'null')
+    } catch (e) {
+      return null
+    }
+  })
   const [mySessions, setMySessions] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
@@ -726,6 +748,10 @@ const CounselingBooking = () => {
       setToast({ type: 'warning', message: 'Vui lòng nhập Số điện thoại hoặc Zalo để Chuyên viên gửi link Meet và liên hệ!' })
       return
     }
+    if (!question1.trim() || !question2.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng điền đủ 2 câu hỏi lớn nhất để chất vấn Mentor về mặt trái của nghề!' })
+      return
+    }
 
     if (!user) {
       setToast({ type: 'error', message: 'Bạn cần đăng nhập để đặt lịch hẹn!' })
@@ -739,9 +765,13 @@ const CounselingBooking = () => {
     const counselorFullName = expert ? expert.fullName : selectedCounselor
 
     // Ghép thông tin Tên Chuyên gia, SĐT/Zalo và Lớp/Trường vào student_notes để bảo toàn thông tin 100% trong CSDL Supabase
+    const formatLabel = meetingFormat === 'meet' ? 'Google Meet Trực tuyến' : meetingFormat === 'zalo' ? 'Zalo Video Call' : 'Trực tiếp tại phòng tư vấn'
     let formattedNotes = `[Chuyên gia/Mentor: ${counselorFullName}]`
+    formattedNotes += `\n[Hình thức gặp: ${formatLabel}]`
     if (studentPhone.trim()) formattedNotes += `\n[Liên hệ SĐT/Zalo: ${studentPhone.trim()}]`
     if (studentClass.trim()) formattedNotes += `\n[Lớp/Trường: ${studentClass.trim()}]`
+    if (question1.trim()) formattedNotes += `\n[Câu hỏi chất vấn 1: ${question1.trim()}]`
+    if (question2.trim()) formattedNotes += `\n[Câu hỏi chất vấn 2: ${question2.trim()}]`
     if (studentNotes.trim()) formattedNotes += `\n${studentNotes.trim()}`
 
     // Chuẩn hóa counselor_id sang UUID hợp lệ trong profiles
@@ -923,6 +953,45 @@ const CounselingBooking = () => {
             </select>
           </div>
 
+          {/* Hình thức gặp gỡ */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">
+              Hình thức tư vấn 1-1
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setMeetingFormat('meet')}
+                className={`p-2 text-center rounded-sm border text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                  meetingFormat === 'meet' ? 'border-brand-600 bg-brand-50 text-brand-800' : 'border-slate-200 bg-slate-50 text-slate-600'
+                }`}
+              >
+                <Video className="w-3.5 h-3.5 text-brand-600" />
+                <span>Google Meet</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingFormat('zalo')}
+                className={`p-2 text-center rounded-sm border text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                  meetingFormat === 'zalo' ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-slate-200 bg-slate-50 text-slate-600'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5 text-blue-600" />
+                <span>Zalo Call</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMeetingFormat('offline')}
+                className={`p-2 text-center rounded-sm border text-[11px] font-bold flex flex-col items-center gap-1 transition-all ${
+                  meetingFormat === 'offline' ? 'border-amber-600 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-600'
+                }`}
+              >
+                <MapPin className="w-3.5 h-3.5 text-amber-600" />
+                <span>Trực tiếp</span>
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Thời gian hẹn gặp</label>
             <input
@@ -968,11 +1037,47 @@ const CounselingBooking = () => {
             />
           </div>
 
+          {/* 2 CÂU HỎI LỚN CHẤT VẤN MENTOR VỀ MẶT TRÁI CỦA NGHỀ */}
+          <div className="space-y-2.5 p-3 bg-amber-50/70 border border-amber-300 rounded-sm">
+            <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 block flex items-center gap-1.5">
+              <span>🎯 2 CÂU HỎI LỚN CHẤT VẤN MENTOR VỀ MẶT TRÁI</span>
+              <span className="text-rose-500">*</span>
+            </span>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-700 block">
+                1. Câu hỏi chất vấn 1 về mặt trái / áp lực thực tế của nghề:
+              </label>
+              <input
+                type="text"
+                placeholder="VD: Anh/Chị từng chứng kiến bao nhiêu bạn bỏ cuộc hoặc hối hận vì chọn ngành này?"
+                value={question1}
+                onChange={(e) => setQuestion1(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 focus:border-brand-500 focus:outline-none rounded-sm font-medium text-slate-800"
+                required
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-700 block">
+                2. Câu hỏi chất vấn 2 về năng lực cốt lõi / nguy cơ đào thải:
+              </label>
+              <input
+                type="text"
+                placeholder="VD: Môn học nào khó nhất khiến sinh viên nợ môn nhiều nhất? Cần kỹ năng gì để không bị đào thải?"
+                value={question2}
+                onChange={(e) => setQuestion2(e.target.value)}
+                className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 focus:border-brand-500 focus:outline-none rounded-sm font-medium text-slate-800"
+                required
+              />
+            </div>
+          </div>
+
           <div className="space-y-1">
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi chú / Thắc mắc gửi chuyên viên</label>
+            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ghi chú bổ sung (Tùy chọn)</label>
             <textarea
-              rows={4}
-              placeholder="VD: Em muốn nhờ Thầy/Cô tư vấn chọn giữa ngành CNTT và An toàn thông tin, hoặc tư vấn môi trường học thực tế tại Bách Khoa..."
+              rows={2}
+              placeholder="VD: Em muốn hỏi thêm về chi phí học tập thực tế hoặc kinh nghiệm thi đầu vào..."
               value={studentNotes}
               onChange={(e) => setStudentNotes(e.target.value)}
               className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-semibold"
@@ -1180,6 +1285,124 @@ const CounselingBooking = () => {
               <p className="text-[11px] text-slate-400">Hãy chọn Cố vấn hoặc Mentor ở form bên trái để gửi đăng ký.</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* BIÊN BẢN SAU BUỔI GẶP (MENTOR FEEDBACK FORM) - BƯỚC 4 */}
+      <div className="bg-white border-2 border-violet-400 rounded-sm p-6 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-violet-600 text-white rounded-sm">
+              <FileCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                BIÊN BẢN SAU BUỔI TƯ VẤN 1-1 (MENTOR FEEDBACK FORM)
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Đánh giá sự chuyển biến nhận thức của học sinh sau khi đối thoại trực tiếp với Mentor/Chuyên gia
+              </p>
+            </div>
+          </div>
+
+          {feedbackSaved && (
+            <div className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-sm text-xs font-bold flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Đã hoàn tất Biên bản tư vấn</span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+          {/* Câu 1 */}
+          <div className="space-y-2 p-4 bg-slate-50 border border-slate-200 rounded-sm">
+            <label className="font-extrabold text-slate-900 block">
+              1. Học sinh có còn giữ ảo tưởng ban đầu về nghề sau buổi tư vấn không?
+            </label>
+            <div className="space-y-1.5">
+              {[
+                { val: 'persisted', label: 'Vẫn còn giữ nhiều ảo tưởng / kỳ vọng phi thực tế' },
+                { val: 'reduced', label: 'Đã giảm bớt ảo tưởng, bắt đầu nhìn nhận thực tế hơn' },
+                { val: 'cleared', label: 'Đã hoàn toàn tỉnh táo, thấu hiểu mặt trái & thách thức khốc liệt' }
+              ].map(opt => (
+                <label key={opt.val} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded cursor-pointer hover:bg-slate-100 transition-colors">
+                  <input
+                    type="radio"
+                    name="feedbackIllusion"
+                    value={opt.val}
+                    checked={feedbackIllusion === opt.val}
+                    onChange={(e) => setFeedbackIllusion(e.target.value)}
+                    className="text-violet-600"
+                  />
+                  <span className="font-semibold text-slate-800">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Câu 2 */}
+          <div className="space-y-2 p-4 bg-slate-50 border border-slate-200 rounded-sm">
+            <label className="font-extrabold text-slate-900 block">
+              2. Tinh thần sẵn sàng đón nhận thực tế sau buổi tư vấn: ({feedbackReadiness}/10)
+            </label>
+            <p className="text-[11px] text-slate-500">
+              Kéo thanh trượt để chấm điểm mức độ sẵn sàng vượt khó của học sinh:
+            </p>
+            <input
+              type="range"
+              min="1"
+              max="10"
+              value={feedbackReadiness}
+              onChange={(e) => setFeedbackReadiness(Number(e.target.value))}
+              className="w-full accent-violet-600 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400 font-bold">
+              <span>1: Rất e ngại / Sốc</span>
+              <span>5: Lưỡng lự</span>
+              <span>10: Sẵn sàng dấn thân</span>
+            </div>
+
+            <div className="pt-2">
+              <label className="font-bold text-slate-700 block mb-1">Nhận xét / Lời khuyên chốt của Mentor:</label>
+              <textarea
+                rows={2}
+                placeholder="Ghi nhận xét ngắn về tinh thần và sự chuẩn bị của học sinh..."
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                className="w-full p-2 bg-white border border-slate-200 rounded-sm font-medium text-slate-800 focus:outline-none focus:border-violet-500"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              const record = {
+                illusion: feedbackIllusion,
+                readiness: feedbackReadiness,
+                notes: feedbackNotes,
+                savedAt: new Date().toISOString()
+              }
+              localStorage.setItem('mentor_feedback_record', JSON.stringify(record))
+              setFeedbackSaved(record)
+              setToast({ type: 'success', message: '🎉 Đã lưu Biên bản tư vấn 1-1 thành công!' })
+            }}
+            className="w-full sm:w-auto px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-xs transition-all cursor-pointer"
+          >
+            Lưu Biên Bản Buổi Gặp
+          </button>
+
+          <Button
+            type="button"
+            variant="primary"
+            onClick={() => navigate('/student/reflection')}
+            className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-xs flex items-center justify-center gap-2 cursor-pointer animate-pulse"
+          >
+            <span>Sang Bước 5: Nhật Ký Phản Tư Ra Quyết Định</span>
+            <ArrowRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
 
