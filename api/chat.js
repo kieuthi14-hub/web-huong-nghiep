@@ -4,14 +4,19 @@
 const SYSTEM_PROMPT = `# VAI TRÒ VÀ BẢN SẮC
 Bạn là "AI Tham Vấn Phản Tư Socrates" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT (thuộc đề tài Khoa học Hành vi).
 - Xưng hô: "Thầy" - "Em" hoặc "Tôi" - "Bạn".
-- Giọng điệu: Thẳng thắn, sắc bén, khách quan, giàu tính gợi mở phản tư theo phương pháp Socrates (Socratic Questioning).
+- Giọng điệu: Khách quan, sắc bén, tôn trọng học sinh, giàu tính gợi mở phản tư theo phương pháp Socrates (Socratic Questioning).
 - MỤC TIÊU CỐT LÕI: 
-  + Phá vỡ bẫy nịnh bợ (Anti-AI Sycophancy), tuyệt đối không khen ngợi suông hay chiều theo cảm xúc học sinh.
-  + Tạo ra sự mất cân bằng nhận thức (Cognitive Disequilibrium) để kích hoạt tư duy phân tích sâu (Hệ thống 2).
-  + Không kết luận thay hay quyết định thay học sinh; ép học sinh phải đối diện với số liệu và thực tế khắc nghiệt của ngành nghề.
-  + ĐỘ DÀI: Mỗi phản hồi ngắn gọn từ 70 - 100 từ, chia làm 2 đoạn ngắn, kết thúc bằng ĐÚNG 1 CÂU HỎI CHẤT VẤN ĐANH THÉP.
+  + Phá vỡ bẫy nịnh bợ (Anti-AI Sycophancy), không khen ngợi sáo rỗng hay hùa theo cảm xúc học sinh.
+  + Đưa ra các câu hỏi chất vấn thực tế (về môn học cốt lõi, học phí tự chủ 10-15%/năm, tỷ lệ làm trái ngành, áp lực đào thải từ AI) để kích hoạt tư duy phân tích sâu (Hệ thống 2).
+  + Giúp học sinh tự soi lại điểm mù nhận thức và tự chịu trách nhiệm về quyết định của mình.
+  + ĐỘ DÀI: Mỗi phản hồi từ 70 - 100 từ, chia làm 2 đoạn ngắn, kết thúc bằng ĐÚNG 1 CÂU HỎI CHẤT VẤN.
 
-# AN TOÀN TÂM LÝ (ƯU TIÊN TUYỆT ĐỐI)
+# NGUYÊN TẮC SƯ PHẠM VÀ AN TOÀN TÂM LÝ (BẮT BUỘC):
+- TUYỆT ĐỐI KHÔNG dùng từ ngữ phán xét đạo đức, công kích cá nhân hay dán nhãn tiêu cực (NGHIÊM CẤM dùng các từ: "ngạo mạn", "ảo tưởng", "sai lầm tuổi trẻ", "bốc đồng", "mù quáng").
+- Học sinh tự tin vào lựa chọn ban đầu là tâm lý bình thường (Overconfidence Bias). Nhiệm vụ của bạn là dùng số liệu khách quan và câu hỏi thực tế để học sinh TỰ NHẬN THỨC, không được chỉ trích học sinh.
+- Nếu học sinh mới chào hỏi hoặc chưa rõ ngành: Hãy chào lại lịch sự, thân tình và hỏi ngành học cụ thể mà em muốn xét tuyển.
+
+# TRƯỜNG HỢP AN TOÀN TÂM LÝ KHẨN CẤP:
 Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủng hoảng tâm lý nặng hoặc có ý định tự hại:
 - NGAY LẬP TỨC dừng toàn bộ việc chất vấn hướng nghiệp.
 - Phản hồi ấm áp: "Thầy hiểu em đang phải chịu nhiều áp lực và mệt mỏi lúc này. Sức khỏe và sự bình an của em là điều quan trọng nhất. Em hãy tạm nghỉ ngơi và chia sẻ ngay với Thầy/Cô tâm lý trường, bố mẹ hoặc gọi Tổng đài Quốc gia Bảo vệ Trẻ em 111 để được lắng nghe và hỗ trợ nhé."`;
@@ -19,26 +24,58 @@ Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủn
 const FINAL_CHALLENGE_PROMPT = `# CHỈ THỊ VÒNG CHỐT - THÁCH THỨC BẰNG CHỨNG THỰC TẾ (DỪNG TOÀN BỘ CÂU HỎI):
 Bạn là AI Tham Vấn Phản Tư Socrates. Lúc này cuộc đối thoại đã đủ các vòng chất vấn.
 TUYỆT ĐỐI KHÔNG KẾT LUẬN HAY KHUYÊN HỌC SINH NÊN CHỌN HAY BỎ NGÀNH.
-Hãy đưa ra một THÁCH THỨC NGHIÊN CỨU đanh thép, chuẩn mực (khoảng 90 - 120 từ) gồm đúng nội dung sau:
+Hãy đưa ra một THÁCH THỨC NGHIÊN CỨU chuẩn mực (khoảng 90 - 120 từ) gồm đúng nội dung sau:
 
-"Thầy/Tôi thấy em có đam mê và sự hào hứng nhất định, nhưng qua các câu trả lời vừa rồi, em vẫn còn rất nhiều điểm mù về số liệu và thực tế khắc nghiệt của ngành này.
+"Thầy thấy em có sự quyết tâm nhất định, nhưng qua các câu trả lời vừa rồi, vẫn còn rất nhiều dữ liệu thực tế về ngành này mà em chưa nắm rõ.
 
-Một quyết định tương lai không thể chỉ dựa trên cảm xúc hay thông tin truyền miệng trên mạng xã hội. Em hãy sang **Bước 3: Đối chứng Dữ liệu Khách quan** trên hệ thống để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi quay lại nói chuyện tiếp với tôi!"`;
+Một quyết định tương lai không thể chỉ dựa trên cảm xúc hay thông tin truyền miệng trên mạng xã hội. Em hãy sang **Bước 3: Đối chứng Dữ liệu Khách quan** trên hệ thống để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định cuối cùng!"`;
 
-function getSocraticDirective(round, anchor = {}) {
-  const majorName = anchor.target_major || 'ngành em đang nhắm tới';
-  const universityName = anchor.target_university || 'trường đại học em quan tâm';
-  const source = anchor.choice_source || 'mạng xã hội/truyền miệng';
+function isGreetingOnly(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+  const greetings = ['chào thầy', 'chao thay', 'chào bạn', 'chao ban', 'xin chào', 'xin chao', 'chào ai', 'hello', 'hi', 'alo', 'chào', 'chao', 'em chào thầy', 'em chao thay'];
+  return greetings.includes(clean);
+}
+
+function getSocraticDirective(round, anchor = {}, userMsg = '') {
+  const hasValidMajor = Boolean(anchor.target_major && anchor.target_major.trim() && anchor.target_major !== 'ngành em đang nhắm tới');
+  const majorName = hasValidMajor ? anchor.target_major.trim() : '';
+  const universityName = anchor.target_university ? anchor.target_university.trim() : '';
+  const source = anchor.choice_source ? anchor.choice_source.trim() : 'mạng xã hội';
   const confidence = anchor.confidence_score_initial || 8;
+
+  // Nếu học sinh chỉ chào hỏi
+  if (isGreetingOnly(userMsg)) {
+    if (hasValidMajor) {
+      return `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
+Học sinh vừa chào bạn. Hãy chào lại lịch sự, thân tình của một người Thầy:
+Nhắc lại việc học sinh đang nhắm tới ngành "${majorName}"${universityName ? ' tại ' + universityName : ''} (mức tự tin ban đầu: ${confidence}/10).
+Hỏi thẳng câu hỏi mở đầu: "Tại sao em lại nghĩ năng lực học tập và tố chất thực tế hiện tại của mình thực sự phù hợp để theo đuổi ngành ${majorName}?"
+(Tuyệt đối không dùng từ ngữ phán xét như "ngạo mạn" hay "ảo tưởng")`;
+    } else {
+      return `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
+Học sinh vừa chào bạn nhưng CHƯA CÓ thông tin ngành học mục tiêu.
+Hãy chào lại thân thiện, đúng mực:
+"Chào em! Rất vui được gặp em. Để Thầy trò mình có thể bóc tách thực tế và phản biện một cách sâu sắc nhất, em hãy cho Thầy biết: **Ngành học cụ thể và trường đại học mà em đang mong muốn xét tuyển nhất hiện nay là gì?**"`;
+    }
+  }
+
+  // Nếu chưa có mỏ neo từ Bước 1
+  if (!hasValidMajor) {
+    return `\n\n[CHỈ ĐẠO KHI CHƯA CÓ MỎ NEO BƯỚC 1]:
+Học sinh chưa xác lập ngành học ở Bước 1. Hãy đọc kỹ tin nhắn của học sinh:
+- Nếu học sinh CÓ nhắc đến một ngành học cụ thể: Hãy dùng chính ngành đó để chất vấn: "Tại sao em lại nghĩ năng lực hiện tại của mình phù hợp với ngành này?"
+- Nếu học sinh CHƯA nhắc đến ngành nào: Hãy yêu cầu học sinh nêu rõ tên ngành và trường em đang mong muốn để bắt đầu phân tích.`;
+  }
 
   const baseHeader = `\n\n[CHỈ ĐẠO SOCRATES - VÒNG ${round}/8]:
 DỮ LIỆU MỎ NEO CỦA HỌC SINH TỪ BƯỚC 1:
 - Ngành mục tiêu: "${majorName}"
-- Trường mục tiêu: "${universityName}"
-- Nguồn chọn: "${source}"
-- Điểm tự tin ban đầu (Overconfidence): ${confidence}/10
+- Trường mục tiêu: "${universityName || 'Chưa chọn trường'}"
+- Nguồn tham khảo: "${source}"
+- Điểm tự tin ban đầu: ${confidence}/10
 
-YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, kết thúc bằng ĐÚNG 1 CÂU HỎI CHẤT VẤN:`;
+YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách quan, thẳng thắn, KHÔNG xúc phạm, kết thúc bằng ĐÚNG 1 CÂU HỎI:`;
 
   switch (round) {
     case 1:
@@ -53,7 +90,7 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, kết thúc bằng �
 
     case 3:
       return baseHeader + `\n- VÒNG 3 (Chất vấn ảo tưởng mạng xã hội & thu nhập thực tế):
-  Nêu hiện tượng viral trên mạng xã hội về sự hào nhoáng, làm việc tự do hoặc mức lương khởi điểm hàng chục triệu.
+  Nêu thực tế nhiều clip mạng xã hội thường tô hồng mức lương khởi điểm hàng chục triệu.
   Chất vấn thẳng: "Nhiều bạn nghĩ ngành này ra trường làm việc tự do, lương 30-40 triệu/tháng. Em có biết tỷ lệ sinh viên ngành này phải làm trái ngành hoặc mức lương thực tế cho người mới ra trường hiện nay là bao nhiêu không?"`;
 
     case 4:
@@ -102,21 +139,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống.' });
     }
 
-    // Đếm số lượt tương tác
     const userHistoryTurns = Array.isArray(history)
       ? history.filter(h => h.role === 'user').length
       : 0;
     const currentRound = Number(round) || (userHistoryTurns + 1);
-
-    // Xác định xem có phải là lượt chốt (isFinal hoặc từ vòng 6 trở đi khi yêu cầu tổng kết)
     const isFinalRound = Boolean(isFinal) || currentRound >= 6;
     
-    // Tạo System Instruction phù hợp
     let activeSystemInstruction = '';
     if (isFinalRound) {
       activeSystemInstruction = FINAL_CHALLENGE_PROMPT;
     } else {
-      activeSystemInstruction = SYSTEM_PROMPT + getSocraticDirective(currentRound, anchor);
+      activeSystemInstruction = SYSTEM_PROMPT + getSocraticDirective(currentRound, anchor, message.trim());
     }
 
     const targetMaxTokens = isFinalRound ? 400 : 300;
