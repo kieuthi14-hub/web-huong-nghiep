@@ -155,6 +155,26 @@ const FactCheckHub = () => {
     window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank')
   }
 
+  // Hàm mở thẳng tìm kiếm file PDF Đề án tuyển sinh chính thức của trường
+  const openAdmissionPDF = () => {
+    let uniName = ''
+    try {
+      const storedData = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor')
+      if (storedData) {
+        const anc = JSON.parse(storedData)
+        uniName = anc.target_university || anc.targetUniversity || ''
+      }
+    } catch (e) {}
+
+    if (!uniName && anchor?.target_university) {
+      uniName = anchor.target_university
+    }
+
+    // Mở thẳng tìm kiếm file PDF chính thức của trường
+    const query = encodeURIComponent(`"Đề án tuyển sinh" "${uniName}" filetype:pdf`)
+    window.open(`https://www.google.com/search?q=${query}`, '_blank')
+  }
+
   // Hàm lưu dữ liệu thực chứng và chuyển tiếp sang Bước 4 (Tư vấn 1-1)
   const handleCompleteStep3 = async () => {
     const cutoffInput = document.getElementById('cutoffScoreInput')?.value?.trim() || cutoffScore.trim()
@@ -216,9 +236,11 @@ const FactCheckHub = () => {
   // Đăng ký các hàm ra global window để hỗ trợ cả code vanilla inline nếu có
   useEffect(() => {
     window.searchUniversityAdmission = searchUniversityAdmission
+    window.openAdmissionPDF = openAdmissionPDF
     window.handleCompleteStep3 = handleCompleteStep3
     return () => {
       delete window.searchUniversityAdmission
+      delete window.openAdmissionPDF
       delete window.handleCompleteStep3
     }
   }, [cutoffScore, tuition, employmentRate, anchor])
@@ -400,6 +422,37 @@ const FactCheckHub = () => {
                 </div>
               </div>
             )}
+
+            {/* KHỐI HỖ TRỢ TRA CỨU NHANH BƯỚC 3 */}
+            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+              <h3 style={{ color: '#166534', marginTop: 0, fontSize: '16px' }}>
+                🎯 Hướng Dẫn Tìm Nhanh Số Liệu Thực Tế (Không Lo Bị Giấu)
+              </h3>
+              
+              <p style={{ fontSize: '14px', color: '#374151', marginBottom: '14px' }}>
+                Các trường thường giấu học phí và tỷ lệ việc làm trong file đề án PDF. Hãy làm theo 2 cách dưới đây để lấy số liệu chính xác:
+              </p>
+
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                {/* Nút 1: Xem điểm chuẩn 3 năm trên trang thống kê */}
+                <a href="https://diemthi.tuyensinh247.com/diem-chuan.html" target="_blank" rel="noopener noreferrer"
+                   style={{ background: '#2563eb', color: '#fff', textDecoration: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  📊 Tra cứu Điểm chuẩn 3 năm gần nhất
+                </a>
+
+                {/* Nút 2: Tự động mở Google tìm file Đề án tuyển sinh */}
+                <button type="button" onClick={openAdmissionPDF}
+                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  📑 Tải Đề án tuyển sinh {targetUniDisplay ? `(${targetUniDisplay})` : ''} (Xem Học phí & Việc làm)
+                </button>
+              </div>
+
+              <div style={{ background: '#ffffff', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#4b5563', lineHeight: '1.6' }}>
+                <strong>💡 Mẹo tìm nhanh trong file Đề án (PDF):</strong><br />
+                • Nhấn <strong>Ctrl + F</strong> và gõ chữ <code>học phí</code> để xem mức thu thực tế từng năm.<br />
+                • Nhấn <strong>Ctrl + F</strong> và gõ chữ <code>việc làm</code> để xem bảng khảo sát sinh viên ra trường.
+              </div>
+            </div>
 
             {/* KHỐI 2: BIỂU MẪU NHIỆM VỤ THỰC CHỨNG (HỌC SINH TỰ ĐIỀN) */}
             <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
