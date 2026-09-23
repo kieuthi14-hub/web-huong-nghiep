@@ -184,7 +184,8 @@ export default async function handler(req, res) {
       ? history.filter(h => h.role === 'user').length
       : 0;
     const currentRound = Number(round) || (userHistoryTurns + 1);
-    const isFinalRound = Boolean(isFinal) || currentRound >= 6;
+    const maxRoundsSetting = Number(body?.maxRounds) || 4;
+    const isFinalRound = Boolean(isFinal) || currentRound > maxRoundsSetting;
     
     let activeSystemInstruction = '';
     if (isFinalRound) {

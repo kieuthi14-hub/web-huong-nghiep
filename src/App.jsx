@@ -208,6 +208,16 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/student/step2-socratic-chat" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasAgent />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
 
           {/* 4. Đối chứng Dữ liệu Khách quan */}
           <Route 
@@ -254,6 +264,26 @@ const App = () => {
           />
           <Route 
             path="/student/doi-chung-du-lieu" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/evidence-check" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/evidence-check" 
             element={
               <ProtectedRoute>
                 <MainLayout>
