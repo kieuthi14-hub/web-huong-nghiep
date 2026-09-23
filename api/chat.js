@@ -232,7 +232,7 @@ export default async function handler(req, res) {
       activeSystemInstruction = getSocraticDirective(currentRound, anchor, message.trim());
     }
 
-    const targetMaxTokens = isFinalRound ? 280 : 200;
+    const targetMaxTokens = 1200; // Đặt 1200 tokens để bao gồm cả thinking tokens (~400) và câu trả lời hoàn chỉnh (~200)
     const targetTemperature = isFinalRound ? 0.3 : 0.4;
 
     const DEFAULT_ENCODED = 'QVEuQWI4Uk42S001OHFsaDJITEU0WktpSkt2dmZQVE1vd0ZLUjRHRU9GbE92X01iVERaRHc=';
@@ -297,7 +297,7 @@ export default async function handler(req, res) {
 
     for (const m of candidateModels) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3800); // 3.8s mỗi model để đảm bảo luôn nằm trong giới hạn serverless
+      const timeoutId = setTimeout(() => controller.abort(), 5500); // 5.5s mỗi model để đủ thời gian cho thinking và hoàn thành câu
 
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
@@ -326,9 +326,13 @@ export default async function handler(req, res) {
                 .trim();
             }
           }
-          if (replyText) {
-            console.log(`Successfully responded using model: ${m} (Round ${currentRound})`);
+          // Kiểm tra xem phản hồi có bị cắt ngang/cộc lốc không (ít hơn 35 ký tự)
+          if (replyText && replyText.length >= 35) {
+            console.log(`Successfully responded using model: ${m} (Round ${currentRound}, length: ${replyText.length})`);
             break;
+          } else if (replyText) {
+            console.warn(`Model ${m} trả lời quá ngắn/bị cắt ngang (${replyText.length} ký tự): "${replyText}". Bỏ qua để dùng câu hoàn chỉnh.`);
+            replyText = null;
           }
         } else {
           const errData = await response.json().catch(() => ({}));

@@ -157,15 +157,15 @@ Thầy đồng hành ở đây với vai trò phản biện độc lập để c
 
       if (serverlessRes.ok) {
         const data = await serverlessRes.json();
-        if (data?.reply) {
-          return data.reply;
+        if (data?.reply && data.reply.trim().length >= 35) {
+          return data.reply.trim();
         }
       }
     } catch (apiErr) {
       console.warn("Serverless /api/chat timeout/error, thử tầng tiếp theo:", apiErr?.message);
     }
 
-    // TẦNG 2: Gọi trực tiếp Google Gemini API với model gemini-3-flash-preview (tối đa 4 giây)
+    // TẦNG 2: Gọi trực tiếp Google Gemini API với model gemini-3-flash-preview (tối đa 5 giây)
     try {
       const DEFAULT_ENCODED = 'QVEuQWI4Uk42S001OHFsaDJITEU0WktpSkt2dmZQVE1vd0ZLUjRHRU9GbE92X01iVERaRHc=';
       const fallbackKey = typeof atob !== 'undefined' ? atob(DEFAULT_ENCODED) : '';
@@ -174,7 +174,7 @@ Thầy đồng hành ở đây với vai trò phản biện độc lập để c
 
       const systemInstruction = `Bạn là Trợ lý AI Tham Vấn Phản Tư Socrates hướng nghiệp cho học sinh THPT.
 Mục tiêu: Đặt câu hỏi truy vấn sâu vào mâu thuẫn điểm số, năng lực thực tế hoặc áp lực đào thải ngành "${anchor.target_career || 'đã chọn'}".
-Độ dài: Dưới 90 từ, chia làm 2 đoạn ngắn, kết thúc bằng đúng 1 câu hỏi phản tư sâu sắc. Không khen ngợi sáo rỗng.`;
+Độ dài: Khoảng 80 - 100 từ, chia làm 2 đoạn ngắn, kết thúc bằng đúng 1 câu hỏi phản tư sâu sắc. Không khen ngợi sáo rỗng.`;
 
       const formattedContents = chatHistory.slice(-4).map(msg => ({
         role: msg.role === 'model' ? 'model' : 'user',
@@ -183,7 +183,7 @@ Mục tiêu: Đặt câu hỏi truy vấn sâu vào mâu thuẫn điểm số, n
       formattedContents.push({ role: 'user', parts: [{ text: userText }] });
 
       const directCtrl = new AbortController();
-      const directTimeout = setTimeout(() => directCtrl.abort(), 4000);
+      const directTimeout = setTimeout(() => directCtrl.abort(), 5000);
 
       const directRes = await fetch(API_URL, {
         method: "POST",
@@ -191,7 +191,7 @@ Mục tiêu: Đặt câu hỏi truy vấn sâu vào mâu thuẫn điểm số, n
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemInstruction }] },
           contents: formattedContents,
-          generationConfig: { temperature: 0.3, maxOutputTokens: 250 }
+          generationConfig: { temperature: 0.3, maxOutputTokens: 1200 }
         }),
         signal: directCtrl.signal
       });
@@ -202,13 +202,13 @@ Mục tiêu: Đặt câu hỏi truy vấn sâu vào mâu thuẫn điểm số, n
         const parts = directData.candidates?.[0]?.content?.parts;
         const replyText = parts?.filter(p => !p.thought && p.text).map(p => p.text).join('\n\n')?.trim() 
           || parts?.[0]?.text?.trim();
-        if (replyText) return replyText;
+        if (replyText && replyText.length >= 35) return replyText;
       }
     } catch (directErr) {
       console.warn("Direct Gemini API error, kích hoạt bộ Socrates dự phòng tức thì:", directErr?.message);
     }
 
-    // TẦNG 3: BỘ SOCRATIC DỰ PHÒNG CHUẨN MỰC (Đảm bảo 100% trả lời ngay, không bao giờ để học sinh đứng chờ)
+    // TẦNG 3: BỘ SOCRATIC DỰ PHÒNG CHUẨN MỰC (Đảm bảo 100% trả lời câu trọn vẹn, không bao giờ cộc lốc)
     return generateClientSocraticReply(currentRound, anchor, userText, isFinalRound);
   };
 
