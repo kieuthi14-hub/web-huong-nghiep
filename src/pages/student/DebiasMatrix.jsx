@@ -286,6 +286,16 @@ const DebiasMatrix = () => {
   useEffect(() => {
     if (initialMajor) {
       setTargetMajor(initialMajor)
+    } else {
+      try {
+        const stored = localStorage.getItem('userAnchorData') || localStorage.getItem('cbas_anchor_data')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          if (parsed?.target_career) {
+            setTargetMajor(parsed.target_career)
+          }
+        }
+      } catch (e) {}
     }
   }, [initialMajor])
 

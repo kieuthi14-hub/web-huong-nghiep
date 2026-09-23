@@ -307,6 +307,26 @@ const App = () => {
 
           {/* 6. Bảng Nhật ký Phản tư Ra Quyết định & Lộ trình */}
           <Route 
+            path="/nhat-ky-ra-quyet-dinh" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/nhat-ky-ra-quyet-dinh" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasMatrix />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/student/reflection" 
             element={
               <ProtectedRoute>
