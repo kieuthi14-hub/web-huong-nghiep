@@ -97,6 +97,7 @@ const getStoredUserAnchor = () => {
           source_of_influence: parsed.source_of_influence || parsed.choice_source || "mạng xã hội",
           confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || "8"),
           holland_code: parsed.holland_code || parsed.primary_code || "chưa rõ",
+          holland_analysis: parsed.holland_analysis || "",
           targetMajor: parsed.target_career || parsed.target_major,
           targetUniversity: parsed.target_university || "",
           choiceSource: parsed.source_of_influence || parsed.choice_source || "",
@@ -236,6 +237,7 @@ const DebiasAgent = () => {
             source_of_influence: anchor.source_of_influence || anchor.choiceSource,
             confidence_score: String(anchor.confidence_score || anchor.confidenceScore || "8"),
             holland_code: anchor.holland_code || "",
+            holland_analysis: anchor.holland_analysis || "",
             target_major: anchor.target_career || anchor.targetMajor,
             choice_source: anchor.source_of_influence || anchor.choiceSource,
             confidence_score_initial: Number(anchor.confidence_score || anchor.confidenceScore || 8)

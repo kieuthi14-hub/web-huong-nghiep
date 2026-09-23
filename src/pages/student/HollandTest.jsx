@@ -67,6 +67,61 @@ export const DEFAULT_HOLLAND_QUESTIONS = [
   { id: 30, category: 'C', text: 'Thích công việc có kế hoạch làm việc cố định, rõ ràng và ổn định lâu dài.' }
 ]
 
+// Hệ thống ánh xạ mã Holland sang đặc tính môi trường làm việc thực tế:
+export const hollandDescriptions = {
+  'R': 'Thực tế / Kỹ thuật (Thích làm việc với máy móc, công cụ, không gian vật lý)',
+  'I': 'Nghiên cứu (Thích tư duy trừu tượng, phân tích dữ liệu, giải quyết vấn đề phức tạp)',
+  'A': 'Nghệ thuật (Thích sáng tạo, tự do, không gian thể hiện cái tôi thẩm mỹ)',
+  'S': 'Xã hội (Thích giúp đỡ, giảng dạy, giao tiếp và chăm sóc con người)',
+  'E': 'Quản lý / Doanh nhân (Thích lãnh đạo, thuyết phục, cạnh tranh đạt mục tiêu tài chính)',
+  'C': 'Nghiệp vụ / Văn phòng (Thích sự ngăn nắp, quy trình rõ ràng, xử lý giấy tờ, con số chính xác)'
+};
+
+// Hàm phân tích mức độ tương thích giữa Ngành mong muốn và Kết quả Holland
+export function analyzeHollandCompatibility(targetCareer, userHollandCodes) {
+  // userHollandCodes là mảng 3 chữ cái RIASEC của học sinh, ví dụ: ['R', 'I', 'A']
+  const codes = Array.isArray(userHollandCodes)
+    ? userHollandCodes
+    : (typeof userHollandCodes === 'string' ? userHollandCodes.replace(/[^RIASEC]/gi, '').split('') : ['A', 'S', 'E']);
+
+  const c1 = codes[0] || 'A';
+  const c2 = codes[1] || 'S';
+
+  let analysisResult = `
+    📊 KẾT QUẢ GIẢI MÃ THIÊN HƯỚNG HOLLAND CỦA EM:
+    - 3 nhóm tính cách nổi trội nhất: ${codes.join(', ')}
+    - Ý nghĩa thực tế: 
+      + Nhóm chủ đạo (${c1}): ${hollandDescriptions[c1] || c1}
+      + Nhóm hỗ trợ (${c2}): ${hollandDescriptions[c2] || c2}
+  `;
+
+  if (targetCareer && targetCareer.trim() && targetCareer !== 'chưa xác định') {
+    const careerLower = targetCareer.toLowerCase();
+    const techKeywords = ['công nghệ', 'phần mềm', 'it', 'kỹ thuật', 'lập trình', 'vi mạch', 'an ninh mạng', 'khoa học máy tính', 'ai', 'robot'];
+    const bizKeywords = ['kinh tế', 'quản trị', 'kinh doanh', 'marketing', 'tài chính', 'ngân hàng', 'thương mại', 'logistics', 'kế toán'];
+    const artKeywords = ['nghệ thuật', 'thiết kế', 'đồ họa', 'truyền thông', 'báo chí', 'kiến trúc', 'nhiếp ảnh', 'quay phim', 'nội dung'];
+    const socialKeywords = ['sư phạm', 'tâm lý', 'xã hội', 'giáo dục', 'y khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'y tế', 'luật'];
+
+    let expectedGroup = '';
+    let expectedCodes = [];
+    if (techKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'I/R (Nghiên cứu & Kỹ thuật)'; expectedCodes = ['I', 'R']; }
+    else if (bizKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'E/C (Quản lý & Nghiệp vụ)'; expectedCodes = ['E', 'C']; }
+    else if (artKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'A/S (Nghệ thuật & Xã hội)'; expectedCodes = ['A', 'S']; }
+    else if (socialKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'S/I (Xã hội & Nghiên cứu)'; expectedCodes = ['S', 'I']; }
+
+    if (expectedGroup) {
+      const isOverlap = expectedCodes.some(c => codes.includes(c));
+      const matchStatus = isOverlap ? '✅ Độ tương thích khá tốt' : '⚠️ Có độ lệch pha nhận thức (Cần phản tư)';
+      analysisResult += `
+    - Đối chiếu ngành "${targetCareer}":
+      + Môi trường ngành này thường đòi hỏi: ${expectedGroup}
+      + Đánh giá sơ bộ: ${matchStatus}. Em hãy cùng AI Socrates chất vấn sâu các điểm mù này ở Bước 2!`;
+    }
+  }
+
+  return analysisResult;
+}
+
 const HollandTest = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -174,19 +229,31 @@ const HollandTest = () => {
     }
   }
 
+  useEffect(() => {
+    window.analyzeHollandCompatibility = analyzeHollandCompatibility;
+    return () => {
+      delete window.analyzeHollandCompatibility;
+    };
+  }, []);
+
   // Đặt đoạn code này vào hàm xử lý khi bấm nút "Hoàn thành Bước 1"
   const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
     const finalChoiceSource = choiceSource === 'Khác' && customChoiceSource.trim() 
       ? customChoiceSource.trim() 
       : choiceSource;
 
+    const rawCareer = document.getElementById("targetCareerInput")?.value || targetMajor.trim() || "Truyền thông đa phương tiện";
+    const rawCodes = (result?.primaryCode || document.getElementById("hollandResultText")?.value || "AS").split('').filter(c => ['R','I','A','S','E','C'].includes(c));
+    const analysisText = analyzeHollandCompatibility(rawCareer, rawCodes);
+
     const userAnchorData = {
       // Lấy giá trị từ các ô input học sinh vừa nhập:
-      target_career: document.getElementById("targetCareerInput")?.value || targetMajor.trim() || "Truyền thông đa phương tiện",
+      target_career: rawCareer,
       target_university: document.getElementById("targetUniversityInput")?.value || targetUniversity.trim() || "Đại học Khoa học Xã hội và Nhân văn",
       source_of_influence: document.getElementById("influenceSourceInput")?.value || finalChoiceSource || "Mạng xã hội (TikTok, YouTube)",
       confidence_score: document.getElementById("confidenceScoreInput")?.value || String(confidenceScore) || "8",
-      holland_code: document.getElementById("hollandResultText")?.value || result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)"
+      holland_code: document.getElementById("hollandResultText")?.value || result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)",
+      holland_analysis: analysisText
     };
 
     // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 2 key)
@@ -198,7 +265,8 @@ const HollandTest = () => {
       choice_source: userAnchorData.source_of_influence,
       confidence_score_initial: Number(userAnchorData.confidence_score),
       holland_code: userAnchorData.holland_code,
-      primary_code: userAnchorData.holland_code
+      primary_code: userAnchorData.holland_code,
+      holland_analysis: analysisText
     }));
 
     // Chuyển hướng sang trang Bước 2 (AI Tham vấn phản tư)
@@ -405,6 +473,31 @@ const HollandTest = () => {
                   • {desc}
                 </p>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* THẺ GIẢI MÃ THIÊN HƯỚNG HOLLAND CHUẨN KHOA HỌC HÀNH VI */}
+        <div className="bg-sky-50 border-2 border-sky-300 p-5 rounded-sm shadow-xs space-y-3 text-sky-950">
+          <div className="flex items-center gap-2 border-b border-sky-200 pb-2">
+            <Sparkles className="w-5 h-5 text-sky-600" />
+            <h3 className="font-extrabold text-xs sm:text-sm text-sky-950 uppercase tracking-wider">
+              📊 KẾT QUẢ GIẢI MÃ THIÊN HƯỚNG HOLLAND CỦA EM
+            </h3>
+          </div>
+          <div className="text-xs space-y-2 leading-relaxed">
+            <p>
+              • <strong>3 nhóm tính cách nổi trội nhất:</strong> <span className="font-black text-brand-700 text-sm tracking-wide">{result.primaryCode.split('').join(', ')}</span>
+            </p>
+            <div className="space-y-1.5 bg-white p-3 rounded border border-sky-200">
+              <p className="font-semibold text-slate-800">
+                + <strong>Nhóm chủ đạo ({result.primaryCode[0]}):</strong> {hollandDescriptions[result.primaryCode[0]]}
+              </p>
+              {result.primaryCode[1] && (
+                <p className="font-semibold text-slate-800">
+                  + <strong>Nhóm hỗ trợ ({result.primaryCode[1]}):</strong> {hollandDescriptions[result.primaryCode[1]]}
+                </p>
+              )}
             </div>
           </div>
         </div>

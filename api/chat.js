@@ -38,13 +38,14 @@ function getSocraticDirective(round, anchor = {}, userMsg = '') {
   const sourceOfInfluence = (anchor.source_of_influence || anchor.choice_source || 'mạng xã hội').trim();
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
   const hollandCode = (anchor.holland_code || anchor.primary_code || 'chưa rõ').trim();
+  const hollandAnalysis = (anchor.holland_analysis || '').trim();
 
   const profileHeader = `\n\nHỒ SƠ MỎ NEO XUẤT PHÁT ĐIỂM CỦA HỌC SINH (Từ Bước 1):
 - Ngành học mục tiêu: "${targetCareer || 'chưa xác định'}"
 - Trường đại học mục tiêu: "${targetUniversity || 'chưa xác định'}"
 - Nguồn ảnh hưởng chính: "${sourceOfInfluence}"
 - Mức độ tự tin ban đầu: ${confidenceScore}/10
-- Thiên hướng Holland: "${hollandCode}"`;
+- Thiên hướng Holland: "${hollandCode}"${hollandAnalysis ? '\n- Giải mã thiên hướng: "' + hollandAnalysis.replace(/\s+/g, ' ') + '"' : ''}`;
 
   // 1. Xử lý câu chào hỏi
   if (isGreetingOnly(userMsg)) {
@@ -79,9 +80,10 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
   Hỏi: "Ngoài những hình ảnh hào nhoáng trên truyền thông, điểm số thực tế môn học nào và trải nghiệm cụ thể nào khiến em tin tưởng mình phù hợp với ngành ${targetCareer}?"`;
 
     case 2:
-      return baseDirective + `\n- VÒNG 2 (Chất vấn môn học cốt lõi & độ khó chương trình):
+      return baseDirective + `\n- VÒNG 2 (Chất vấn môn học cốt lõi & đối chiếu thiên hướng Holland):
+  Đối chiếu giữa thiên hướng Holland "${hollandCode}" với yêu cầu thực tế của ngành "${targetCareer}".
   Nêu môn học chuyên sâu nặng nhất của ngành "${targetCareer}" (Toán/Lý/Tiếng Anh/Văn/Lập trình...).
-  Hỏi: "Ngành ${targetCareer} đòi hỏi rất nặng về [môn cốt lõi]. Điểm tổng kết môn này gần đây của em ra sao, và em đã từng tự học chuyên sâu chủ đề nào chưa hay chỉ dừng ở sở thích bề nổi?"`;
+  Hỏi: "Ngành ${targetCareer} đòi hỏi rất nặng về [môn cốt lõi / đặc tính môi trường]. So với nhóm thiên hướng ${hollandCode} của em, điểm tổng kết môn này gần đây của em ra sao, và em đã từng tự học chuyên sâu chủ đề nào chưa hay chỉ dừng ở sở thích bề nổi?"`;
 
     case 3:
       return baseDirective + `\n- VÒNG 3 (Đối chiếu kỳ vọng thị trường & thu nhập thực tế):
