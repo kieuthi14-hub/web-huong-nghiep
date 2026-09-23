@@ -201,9 +201,9 @@ export default async function handler(req, res) {
             }
             if (replyText) {
               replyText = replyText
-                .replace(/^(AI Tham Vấn Phản Tư|AI Phản tư|Người Đồng Hành Phản Tư)[:\s-]*/i, '')
-                .replace(/^[.*?CHỈ (ĐẠO|THỊ).*?]s*/i, '')
-                .replace(/^#+.*?CHỈ (ĐẠO|THỊ).*?\n/i, '')
+                .replace(/^(AI Tham Vấn Phản Tư|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
+                .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ).*?\]\s*/i, '')
+                .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
                 .trim();
             }
           }
