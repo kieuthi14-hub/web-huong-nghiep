@@ -8,10 +8,7 @@ import {
   FileCheck2, 
   ExternalLink, 
   BookOpen, 
-  Building2, 
-  Sparkles,
-  Info,
-  ChevronDown,
+  ChevronDown, 
   ChevronUp
 } from 'lucide-react'
 
@@ -135,124 +132,6 @@ const FactCheckHub = () => {
   const [activeTab, setActiveTab] = useState('hub') // 'hub' | 'majors_db' | 'unis_db'
   const [showGuide, setShowGuide] = useState(false)
 
-  // Hàm hỗ trợ tìm kiếm nhanh đề án tuyển sinh theo ngành/trường đã lưu từ Bước 1
-  const searchUniversityAdmission = () => {
-    let uniName = ''
-    try {
-      const storedData = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor')
-      if (storedData) {
-        const anc = JSON.parse(storedData)
-        const raw = anc.target_university || anc.targetUniversity || ''
-        if (raw && !raw.toLowerCase().includes('chưa xác định')) {
-          uniName = raw.trim()
-        }
-      }
-    } catch (e) {}
-
-    if (!uniName && anchor?.target_university && !anchor.target_university.toLowerCase().includes('chưa xác định')) {
-      uniName = anchor.target_university.trim()
-    }
-
-    const queryTerm = uniName ? `Đề án tuyển sinh ${uniName} filetype:pdf` : 'Đề án tuyển sinh đại học filetype:pdf'
-    const searchQuery = encodeURIComponent(queryTerm)
-    window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank')
-  }
-
-  // Hàm mở thẳng tìm kiếm file PDF Đề án tuyển sinh chính thức của trường
-  const openAdmissionPDF = () => {
-    let uniName = ''
-    try {
-      const storedData = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor')
-      if (storedData) {
-        const anc = JSON.parse(storedData)
-        const raw = anc.target_university || anc.targetUniversity || ''
-        if (raw && !raw.toLowerCase().includes('chưa xác định')) {
-          uniName = raw.trim()
-        }
-      }
-    } catch (e) {}
-
-    if (!uniName && anchor?.target_university && !anchor.target_university.toLowerCase().includes('chưa xác định')) {
-      uniName = anchor.target_university.trim()
-    }
-
-    // Mở thẳng tìm kiếm file PDF chính thức của trường
-    const query = uniName 
-      ? encodeURIComponent(`"Đề án tuyển sinh" "${uniName}" filetype:pdf`)
-      : encodeURIComponent(`"Đề án tuyển sinh" filetype:pdf`)
-    window.open(`https://www.google.com/search?q=${query}`, '_blank')
-  }
-
-  // Hàm lưu dữ liệu thực chứng và chuyển tiếp sang Bước 4 (Tư vấn 1-1)
-  const handleCompleteStep3 = async () => {
-    const cutoffInput = document.getElementById('cutoffScoreInput')?.value?.trim() || cutoffScore.trim()
-    const tuitionInput = document.getElementById('tuitionInput')?.value?.trim() || tuition.trim()
-    const employmentInput = document.getElementById('employmentRateInput')?.value?.trim() || employmentRate.trim()
-
-    // Kiểm tra tính hoàn thiện dữ liệu
-    if (!cutoffInput || !tuitionInput) {
-      alert('Em hãy tra cứu và điền đầy đủ thông tin điểm chuẩn và học phí để tiếp tục nhé!')
-      return
-    }
-
-    // Thu thập dữ liệu Bước 3
-    const step3EvidenceData = {
-      cutoff_score: cutoffInput,
-      tuition: tuitionInput,
-      employment_rate: employmentInput || 'Chưa có số liệu',
-      verified_at: new Date().toISOString()
-    }
-
-    // Lưu vào localStorage theo chuẩn cbas_step3_evidence
-    localStorage.setItem('cbas_step3_evidence', JSON.stringify(step3EvidenceData))
-
-    // Đồng bộ tương thích cho các tính năng cũ (career_evidence_task)
-    localStorage.setItem('career_evidence_task', JSON.stringify({
-      cutoffScores: cutoffInput,
-      tuitionFees: tuitionInput,
-      admissionQuota: employmentInput || 'Chưa có số liệu',
-      completedAt: step3EvidenceData.verified_at
-    }))
-
-    // Lưu vào Supabase nếu đã đăng nhập (phục vụ nghiên cứu & báo cáo)
-    if (user?.id) {
-      try {
-        await supabase.from('metacognitive_matrix').insert([
-          {
-            student_id: user.id,
-            target_major: anchor?.target_career || 'Chưa rõ',
-            evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU THỰC TẾ]\n1. Điểm chuẩn 3 năm: ${cutoffInput}\n2. Mức học phí thực tế: ${tuitionInput}\n3. Tỷ lệ việc làm & Chuẩn đầu ra: ${employmentInput || 'Chưa có số liệu'}`,
-            verified_sources: 'Cổng tuyển sinh Bộ GD&ĐT và Đề án tuyển sinh công khai các trường ĐH',
-            risk_analysis: 'Đã hoàn thành đối chứng số liệu thực tế qua Đề án tuyển sinh.',
-            bias_check: 'Chuyển hóa từ trực giác cảm tính sang phân tích định lượng (System 2).',
-            detected_bias: 'DEBIASED_SYSTEM_2',
-            final_decision: 'PENDING_CONSULTATION'
-          }
-        ])
-      } catch (dbErr) {
-        console.warn('Lỗi ghi Supabase Bước 3:', dbErr)
-      }
-    }
-
-    // Chuyển hướng sang Bước 4
-    alert('Đã lưu dữ liệu đối chứng thực tế thành công!')
-    
-    // Điều hướng sang Bước 4
-    navigate('/student/booking')
-  }
-
-  // Đăng ký các hàm ra global window để hỗ trợ cả code vanilla inline nếu có
-  useEffect(() => {
-    window.searchUniversityAdmission = searchUniversityAdmission
-    window.openAdmissionPDF = openAdmissionPDF
-    window.handleCompleteStep3 = handleCompleteStep3
-    return () => {
-      delete window.searchUniversityAdmission
-      delete window.openAdmissionPDF
-      delete window.handleCompleteStep3
-    }
-  }, [cutoffScore, tuition, employmentRate, anchor])
-
   const isUniDetermined = Boolean(
     anchor?.target_university && 
     anchor.target_university.trim() !== '' &&
@@ -267,10 +146,99 @@ const FactCheckHub = () => {
   )
   const targetCareerDisplay = isCareerDetermined ? anchor.target_career.trim() : ''
 
+  // Mở tìm kiếm Đề án tuyển sinh kèm học phí
+  const openAdmissionPDF = () => {
+    const storedData = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor")
+    let uniName = ""
+    if (storedData) {
+      try {
+        const anc = JSON.parse(storedData)
+        const raw = anc.target_university || anc.targetUniversity || ""
+        if (raw && !raw.toLowerCase().includes('chưa xác định')) {
+          uniName = raw.trim()
+        }
+      } catch (e) {}
+    }
+
+    if (!uniName && targetUniDisplay) {
+      uniName = targetUniDisplay
+    }
+
+    const query = uniName 
+      ? encodeURIComponent(`"Đề án tuyển sinh" "${uniName}" "học phí" filetype:pdf`)
+      : encodeURIComponent(`"Đề án tuyển sinh" "học phí" filetype:pdf`)
+    window.open(`https://www.google.com/search?q=${query}`, "_blank")
+  }
+
+  // Xử lý kiểm tra dữ liệu bắt buộc và chuyển tiếp
+  const handleCompleteStep3 = async () => {
+    const cutoffVal = document.getElementById("cutoffScoreInput")?.value?.trim() || cutoffScore.trim()
+    const tuitionVal = document.getElementById("tuitionInput")?.value?.trim() || tuition.trim()
+    const employmentVal = document.getElementById("employmentRateInput")?.value?.trim() || employmentRate.trim()
+
+    // Kiểm tra bắt buộc điền cả 3 mục
+    if (!cutoffVal || !tuitionVal || !employmentVal) {
+      alert("Em bắt buộc phải điền đầy đủ cả 3 mục số liệu để mở khóa Bước 4 nhé!")
+      return
+    }
+
+    // Đóng gói dữ liệu thực chứng
+    const step3Evidence = {
+      cutoff_score: cutoffVal,
+      tuition: tuitionVal,
+      employment_rate: employmentVal,
+      timestamp: new Date().toLocaleString(),
+      verified_at: new Date().toISOString()
+    }
+
+    localStorage.setItem("cbas_step3_evidence", JSON.stringify(step3Evidence))
+    
+    // Đồng bộ tương thích cho các tính năng cũ (career_evidence_task)
+    localStorage.setItem("career_evidence_task", JSON.stringify({
+      cutoffScores: cutoffVal,
+      tuitionFees: tuitionVal,
+      admissionQuota: employmentVal,
+      completedAt: step3Evidence.timestamp
+    }))
+
+    // Lưu vào Supabase nếu đã đăng nhập (phục vụ nghiên cứu & báo cáo)
+    if (user?.id) {
+      try {
+        await supabase.from('metacognitive_matrix').insert([
+          {
+            student_id: user.id,
+            target_major: targetCareerDisplay || 'Chưa rõ',
+            evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU THỰC TẾ]\n1. Điểm chuẩn 3 năm: ${cutoffVal}\n2. Mức học phí thực tế: ${tuitionVal}\n3. Tỷ lệ việc làm & Chuẩn đầu ra: ${employmentVal}`,
+            verified_sources: 'Cổng thông tin tuyển sinh và Đề án tuyển sinh công khai các trường ĐH',
+            risk_analysis: 'Đã hoàn thành đối chứng số liệu thực tế qua Đề án tuyển sinh.',
+            bias_check: 'Chuyển hóa từ trực giác cảm tính sang phân tích định lượng (System 2).',
+            detected_bias: 'DEBIASED_SYSTEM_2',
+            final_decision: 'PENDING_CONSULTATION'
+          }
+        ])
+      } catch (dbErr) {
+        console.warn('Lỗi ghi Supabase Bước 3:', dbErr)
+      }
+    }
+
+    alert("Dữ liệu thực chứng đã được ghi nhận thành công! Chuẩn bị chuyển sang Bước 4.")
+    navigate('/student/booking')
+  }
+
+  // Đăng ký các hàm ra global window để hỗ trợ cả code vanilla inline nếu có
+  useEffect(() => {
+    window.openAdmissionPDF = openAdmissionPDF
+    window.handleCompleteStep3 = handleCompleteStep3
+    return () => {
+      delete window.openAdmissionPDF
+      delete window.handleCompleteStep3
+    }
+  }, [cutoffScore, tuition, employmentRate, anchor, targetUniDisplay])
+
   return (
     <div className="py-6 px-4 bg-slate-50 min-h-screen">
       {/* THANH CHUYỂN TAB MỞ RỘNG */}
-      <div className="max-w-[900px] mx-auto mb-4 flex items-center justify-between gap-2 flex-wrap">
+      <div className="max-w-[850px] mx-auto mb-4 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 bg-slate-200/80 p-1 rounded-lg text-xs font-bold">
           <button
             type="button"
@@ -302,7 +270,7 @@ const FactCheckHub = () => {
             className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>{showGuide ? 'Ẩn Hướng Dẫn Đọc Đề Án' : '📖 Xem Mẹo Đọc Đề Án Tuyển Sinh'}</span>
+            <span>{showGuide ? 'Ẩn Cổng Tra Cứu Khác' : '🔗 Xem Cổng Tuyển Sinh Bộ GD&ĐT'}</span>
             {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
         )}
@@ -322,28 +290,54 @@ const FactCheckHub = () => {
 
       {activeTab === 'hub' && (
         <>
+          {/* CỔNG TRA CỨU KHÁC (KHI BẬT) */}
+          {showGuide && (
+            <div style={{ maxWidth: '850px', margin: '0 auto 20px auto', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <strong style={{ fontSize: '13px', color: '#1e293b' }}>🏛️ Cổng Tuyển sinh Chính thức & Đề án mẫu:</strong>
+                <a href="https://tuyensinh.moet.gov.vn/" target="_blank" rel="noopener noreferrer" 
+                   style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
+                  Cổng Bộ GD&ĐT ➜
+                </a>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {VERIFICATION_LINKS.map((item, idx) => (
+                  <a
+                    key={idx}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '11px', textDecoration: 'none', padding: '4px 10px', borderRadius: '4px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <span>{item.badge}</span>
+                    <ExternalLink style={{ width: '10px', height: '10px', color: '#64748b' }} />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ========================================================================= */}
-          {/* BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU KHÁCH QUAN (CHUẨN HÓA KHOA HỌC HÀNH VI)        */}
+          {/* KHỐI TRA CỨU ĐỐI CHỨNG DỮ LIỆU BƯỚC 3                                     */}
           {/* ========================================================================= */}
-          <div className="step3-container" style={{ maxWidth: '900px', margin: '0 auto', padding: '24px', fontFamily: "'Segoe UI', Tahoma, sans-serif" }}>
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', maxWidth: '850px', margin: '0 auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
             
-            {/* TIÊU ĐỀ BƯỚC 3 */}
-            <div style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '16px', marginBottom: '24px' }}>
-              <span style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, padding: '4px 12px', borderRadius: '9999px', fontSize: '13px' }}>BƯỚC 3</span>
-              <h2 style={{ color: '#0f172a', marginTop: '12px', fontSize: '24px' }}>Đối Chứng Dữ Liệu Khách Quan</h2>
-              <p style={{ color: '#64748b', fontSize: '15px', margin: '4px 0 0 0' }}>
-                Sau khi phản tư cùng AI, hãy kiểm chứng lại lựa chọn của mình bằng các số liệu chính thức từ đề án tuyển sinh để đưa ra quyết định vững chắc.
+            <div style={{ marginBottom: '20px' }}>
+              <span style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 700, padding: '4px 12px', borderRadius: '9999px', fontSize: '12px' }}>BƯỚC 3: BẮT BUỘC THỰC HIỆN</span>
+              <h2 style={{ color: '#0f172a', marginTop: '10px', fontSize: '22px' }}>Đối Chứng Dữ Liệu Khách Quan</h2>
+              <p style={{ color: '#64748b', fontSize: '14px' }}>
+                Để mở khóa buổi Tư vấn 1-1 (Bước 4), em <strong>bắt buộc phải tra cứu và điền đầy đủ</strong> các số liệu thực tế dưới đây để đối soát với mức độ tự tin ban đầu.
               </p>
             </div>
 
             {/* BANNER MỎ NEO XUẤT PHÁT ĐIỂM (TỰ ĐỘNG ĐỒNG BỘ TỪ BƯỚC 1) */}
-            {targetCareerDisplay && targetCareerDisplay !== 'Chưa xác định' && (
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px 18px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            {targetCareerDisplay && (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
                   <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#1e40af', letterSpacing: '0.05em' }}>
                     🎯 Mục tiêu đối chứng từ Bước 1 & Bước 2:
                   </span>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
                     Ngành: <span style={{ color: '#2563eb' }}>{targetCareerDisplay}</span>
                     {targetUniDisplay && <span> — Trường: <span style={{ color: '#0d9488' }}>{targetUniDisplay}</span></span>}
                   </div>
@@ -363,181 +357,72 @@ const FactCheckHub = () => {
               </div>
             )}
 
-            {/* KHỐI 1: CÁC NGUỒN TRA CỨU CÔNG KHAI (KHÔNG CẦN TÀI KHOẢN ĐĂNG NHẬP) */}
-            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '16px', color: '#1e293b', marginTop: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🔗 Cổng Thông Tin Tuyển Sinh & Đề Án Chính Thức
-              </h3>
-              <p style={{ fontSize: '14px', color: '#475569', marginBottom: '16px' }}>
-                Học sinh bấm vào liên kết bên dưới để tra cứu thông tin công khai mà không cần đăng nhập:
+            {/* NÚT MỞ TRANG TRA CỨU ĐIỂM 3 NĂM */}
+            <div style={{ background: '#f8fafc', borderLeft: '4px solid #3b82f6', padding: '16px', borderRadius: '0 8px 8px 0', marginBottom: '24px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>
+                🔍 Công cụ hỗ trợ lấy số liệu nhanh:
               </p>
-              
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <a href="https://tuyensinh.moet.gov.vn/" target="_blank" rel="noopener noreferrer" 
-                   style={{ background: '#2563eb', color: '#ffffff', textDecoration: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  🏛️ Cổng Tuyển sinh Bộ GD&ĐT
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <a href="https://diemthi.vnexpress.net/tra-cuu-diem-chuan" target="_blank" rel="noopener noreferrer"
+                   style={{ background: '#2563eb', color: '#ffffff', textDecoration: 'none', padding: '9px 15px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  📊 Mở Bảng So Sánh Điểm Chuẩn Các Năm (VnExpress)
                 </a>
-                
-                <button type="button" onClick={searchUniversityAdmission} 
-                        style={{ background: '#ffffff', border: '1px solid #0284c7', color: '#0284c7', padding: '10px 18px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  🔍 Tìm Đề Án Tuyển Sinh {targetUniDisplay ? `(${targetUniDisplay})` : 'Của Trường'}
-                </button>
-              </div>
-              <small style={{ display: 'block', marginTop: '10px', color: '#64748b', fontSize: '12px' }}>
-                *Mẹo: Tìm file PDF <strong>"Đề án tuyển sinh"</strong> của trường để xem chính xác bảng học phí từng kỳ và tỷ lệ sinh viên có việc làm.
-              </small>
-            </div>
-
-            {/* MẸO HƯỚNG DẪN 3 BƯỚC ĐỌC SỐ LIỆU ĐỀ ÁN (COLLAPSIBLE HOẶC HIỂN THỊ KHI BẬT) */}
-            {showGuide && (
-              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-                <h4 style={{ fontSize: '15px', color: '#0f172a', marginTop: 0, marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <BookOpen style={{ width: '16px', height: '16px', color: '#2563eb' }} />
-                  <span>Hướng Dẫn 3 Bước Đọc Báo Cáo 3 Công Khai & Đề Án Tuyển Sinh</span>
-                </h4>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', fontSize: '13px' }}>
-                  <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', borderLeft: '4px solid #2563eb' }}>
-                    <strong style={{ color: '#0f172a' }}>1. Học phí thực tế & Lộ trình tăng:</strong>
-                    <p style={{ margin: '4px 0 0 0', color: '#475569', lineHeight: 1.5 }}>
-                      Tìm bảng học phí trong đề án (xem theo tín chỉ hoặc theo năm). Chú ý lộ trình tăng tối đa 10 - 15%/năm theo Nghị định 97. Đừng quên cộng chi phí sinh hoạt 4 năm (4-5 triệu/tháng tại TP lớn).
-                    </p>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
-                    <strong style={{ color: '#0f172a' }}>2. Tỷ lệ việc làm ĐÚNG NGÀNH:</strong>
-                    <p style={{ margin: '4px 0 0 0', color: '#475569', lineHeight: 1.5 }}>
-                      Xem tỷ lệ sinh viên có việc làm sau 1 năm tốt nghiệp. Đặc biệt chú ý con số làm <strong>đúng chuyên ngành đào tạo</strong> và các chuẩn đầu ra bắt buộc (ngoại ngữ IELTS/TOEIC, tin học).
-                    </p>
-                  </div>
-
-                  <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
-                    <strong style={{ color: '#0f172a' }}>3. Điểm chuẩn 3 năm gần nhất:</strong>
-                    <p style={{ margin: '4px 0 0 0', color: '#475569', lineHeight: 1.5 }}>
-                      Tra cứu điểm trúng tuyển 3 năm liên tiếp theo đúng tổ hợp em định xét (A00, A01, D01...). So sánh với điểm thi thử hiện tại để biết khoảng cách an toàn.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Các link đại học tiêu biểu */}
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '8px' }}>
-                    Một số Cổng Tuyển sinh & Đề án trực tiếp:
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {VERIFICATION_LINKS.slice(1).map((item, idx) => (
-                      <a
-                        key={idx}
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ fontSize: '11px', textDecoration: 'none', padding: '4px 10px', borderRadius: '4px', background: '#f1f5f9', color: '#0f172a', border: '1px solid #cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      >
-                        <span>{item.badge}</span>
-                        <ExternalLink style={{ width: '10px', height: '10px', color: '#64748b' }} />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* KHỐI HỖ TRỢ TRA CỨU NHANH BƯỚC 3 */}
-            <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
-              <h3 style={{ color: '#166534', marginTop: 0, fontSize: '16px' }}>
-                🎯 Hướng Dẫn Tra Cứu Nhanh Số Liệu Chính Thức
-              </h3>
-              
-              <p style={{ fontSize: '14px', color: '#374151', marginBottom: '14px' }}>
-                Các bảng số liệu chi tiết về học phí, chỉ tiêu và tỷ lệ việc làm được công bố chính thức trong file Đề án tuyển sinh (PDF). Hãy làm theo 2 cách dưới đây để tra cứu nhanh và chính xác:
-              </p>
-
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                {/* Nút 1: Xem điểm chuẩn 3 năm trên trang thống kê */}
-                <a href="https://diemthi.tuyensinh247.com/diem-chuan.html" target="_blank" rel="noopener noreferrer"
-                   style={{ background: '#2563eb', color: '#fff', textDecoration: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  📊 Tra cứu Điểm chuẩn 3 năm gần nhất
-                </a>
-
-                {/* Nút 2: Tự động mở Google tìm file Đề án tuyển sinh */}
                 <button type="button" onClick={openAdmissionPDF}
-                        style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 600, fontSize: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  📑 Tải Đề án tuyển sinh {targetUniDisplay ? `(${targetUniDisplay}) ` : ''}(Xem Học phí & Việc làm)
+                        style={{ background: '#0d9488', color: '#ffffff', border: 'none', padding: '9px 15px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  📑 Tìm Đề Án Tuyển Sinh {targetUniDisplay ? `(${targetUniDisplay})` : 'Của Trường'} (Xem Học Phí)
                 </button>
-              </div>
-
-              <div style={{ background: '#ffffff', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#4b5563', lineHeight: '1.6' }}>
-                <strong>💡 Mẹo tìm nhanh trong file Đề án (PDF):</strong><br />
-                • Nhấn <strong>Ctrl + F</strong> và gõ chữ <code>học phí</code> để xem mức thu thực tế từng năm.<br />
-                • Nhấn <strong>Ctrl + F</strong> và gõ chữ <code>việc làm</code> để xem bảng khảo sát sinh viên ra trường.
               </div>
             </div>
 
-            {/* KHỐI 2: BIỂU MẪU NHIỆM VỤ THỰC CHỨNG (HỌC SINH TỰ ĐIỀN) */}
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-              <h3 style={{ fontSize: '17px', color: '#0f172a', marginTop: 0, marginBottom: '18px' }}>
-                📝 Xác Nhận Số Liệu Thực Tế
-              </h3>
-
-              {/* Câu 1: Điểm chuẩn */}
+            {/* BIỂU MẪU BẮT BUỘC ĐIỀN (REQUIRED) */}
+            <form id="step3Form" onSubmit={(e) => { e.preventDefault(); handleCompleteStep3(); }}>
+              
+              {/* Mục 1: Điểm chuẩn */}
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#334155', marginBottom: '6px' }}>
-                  1. Điểm chuẩn 3 năm gần nhất của ngành em chọn là bao nhiêu?
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#1e293b', marginBottom: '6px' }}>
+                  1. Điểm chuẩn ngành em chọn (Năm gần nhất hoặc so sánh các năm gần đây) <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <input 
-                  type="text" 
-                  id="cutoffScoreInput" 
-                  value={cutoffScore}
-                  onChange={(e) => setCutoffScore(e.target.value)}
-                  placeholder="Ví dụ: 2023: 25.5đ | 2024: 26.0đ | 2025: 25.8đ (Tổ hợp A00)" 
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} 
-                />
-                <small style={{ color: '#64748b', fontSize: '12px', display: 'block', marginTop: '4px' }}>
-                  So sánh với học lực hiện tại: Em đang thừa hay thiếu bao nhiêu điểm?
-                </small>
+                <input type="text" id="cutoffScoreInput" required
+                       value={cutoffScore}
+                       onChange={(e) => setCutoffScore(e.target.value)}
+                       placeholder="Ví dụ: Năm ngoái lấy 25.5đ, năm trước 24.8đ (Tổ hợp D01)"
+                       style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+                <small style={{ color: '#64748b', fontSize: '12px' }}>So với học lực hiện tại của em thì đang thừa hay thiếu bao nhiêu điểm?</small>
               </div>
 
-              {/* Câu 2: Khung học phí */}
+              {/* Mục 2: Học phí */}
               <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#334155', marginBottom: '6px' }}>
-                  2. Mức học phí thực tế của trường (năm nhất và dự kiến toàn khóa):
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#1e293b', marginBottom: '6px' }}>
+                  2. Mức học phí thực tế của ngành/trường (ước tính 1 năm hoặc cả khóa) <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <input 
-                  type="text" 
-                  id="tuitionInput" 
-                  value={tuition}
-                  onChange={(e) => setTuition(e.target.value)}
-                  placeholder="Ví dụ: Khoảng 28 triệu/năm, tăng tối đa 10%/năm theo đề án" 
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} 
-                />
+                <input type="text" id="tuitionInput" required
+                       value={tuition}
+                       onChange={(e) => setTuition(e.target.value)}
+                       placeholder="Ví dụ: Khoảng 30 - 35 triệu/năm (Chưa tính chi phí sinh hoạt)"
+                       style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
+                <small style={{ color: '#64748b', fontSize: '12px' }}>Gia đình em có đáp ứng được mức chi phí này trong suốt 4 năm không?</small>
               </div>
 
-              {/* Câu 3: Tỷ lệ việc làm & chuẩn đầu ra */}
+              {/* Mục 3: Cơ hội việc làm & Thách thức */}
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#334155', marginBottom: '6px' }}>
-                  3. Tỷ lệ sinh viên có việc làm đúng ngành hoặc chuẩn đầu ra yêu cầu:
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '14px', color: '#1e293b', marginBottom: '6px' }}>
+                  3. Tỷ lệ việc làm công bố hoặc yêu cầu khắt khe nhất của ngành <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <input 
-                  type="text" 
-                  id="employmentRateInput" 
-                  value={employmentRate}
-                  onChange={(e) => setEmploymentRate(e.target.value)}
-                  placeholder="Ví dụ: Tỷ lệ việc làm công bố 89%, yêu cầu chuẩn tiếng Anh IELTS 5.5" 
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} 
-                />
+                <input type="text" id="employmentRateInput" required
+                       value={employmentRate}
+                       onChange={(e) => setEmploymentRate(e.target.value)}
+                       placeholder="Ví dụ: Tỷ lệ việc làm 88%, đòi hỏi tiếng Anh tốt và kỹ năng chịu áp lực cao"
+                       style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }} />
               </div>
 
-              {/* NÚT BẤM HOÀN THÀNH BƯỚC 3 */}
+              {/* NÚT BẤM XÁC NHẬN */}
               <div style={{ textAlign: 'right' }}>
-                <button 
-                  type="button" 
-                  onClick={handleCompleteStep3} 
-                  style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', transition: 'background 0.2s' }}
-                >
-                  Lưu Dữ Liệu & Tiếp Tục Sang Bước 4 ➜
+                <button type="submit" 
+                        style={{ background: '#10b981', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 700, fontSize: '15px', cursor: 'pointer', transition: 'background 0.2s' }}>
+                  Xác Nhận Số Liệu & Mở Khóa Bước 4 ➜
                 </button>
               </div>
-            </div>
+            </form>
 
           </div>
         </>
