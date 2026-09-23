@@ -122,6 +122,70 @@ export function analyzeHollandCompatibility(targetCareer, userHollandCodes) {
   return analysisResult;
 }
 
+// Hàm tóm tắt ngắn gọn mức độ tương thích giữa Ngành mong muốn và Kết quả Holland
+export function getCompatibilitySummary(targetCareer, userHollandCodes) {
+  const codes = Array.isArray(userHollandCodes)
+    ? userHollandCodes
+    : (typeof userHollandCodes === 'string' ? userHollandCodes.replace(/[^RIASEC]/gi, '').split('') : ['A', 'S', 'E']);
+
+  if (!targetCareer || targetCareer === 'chưa xác định') {
+    return 'Chưa xác định ngành học để đối chiếu với nhóm tính cách.';
+  }
+
+  const c1 = codes[0] || 'A';
+  const c2 = codes[1] || 'S';
+
+  const careerLower = targetCareer.toLowerCase();
+  const techKeywords = ['công nghệ', 'phần mềm', 'it', 'kỹ thuật', 'lập trình', 'vi mạch', 'an ninh mạng', 'khoa học máy tính', 'ai', 'robot', 'khoa học dữ liệu', 'điện tử', 'cơ khí'];
+  const bizKeywords = ['kinh tế', 'quản trị', 'kinh doanh', 'marketing', 'tài chính', 'ngân hàng', 'thương mại', 'logistics', 'kế toán', 'ngoại thương', 'bất động sản'];
+  const artKeywords = ['nghệ thuật', 'thiết kế', 'đồ họa', 'truyền thông', 'báo chí', 'kiến trúc', 'nhiếp ảnh', 'quay phim', 'nội dung', 'âm nhạc', 'mỹ thuật', 'điện ảnh'];
+  const socialKeywords = ['sư phạm', 'tâm lý', 'xã hội', 'giáo dục', 'y khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'y tế', 'luật', 'công tác xã hội', 'ngôn ngữ'];
+
+  let expectedGroup = '';
+  let expectedCodes = [];
+  let expectedDesc = '';
+
+  if (techKeywords.some(k => careerLower.includes(k))) {
+    expectedGroup = 'I/R';
+    expectedCodes = ['I', 'R'];
+    expectedDesc = 'Nghiên cứu & Kỹ thuật (tư duy logic, giải quyết bài toán phức tạp, làm việc máy móc/hệ thống)';
+  } else if (bizKeywords.some(k => careerLower.includes(k))) {
+    expectedGroup = 'E/C';
+    expectedCodes = ['E', 'C'];
+    expectedDesc = 'Quản lý & Doanh nhân (giao tiếp thuyết phục, chịu áp lực số liệu, cạnh tranh thị trường)';
+  } else if (artKeywords.some(k => careerLower.includes(k))) {
+    expectedGroup = 'A/S';
+    expectedCodes = ['A', 'S'];
+    expectedDesc = 'Nghệ thuật & Xã hội (tự do sáng tạo, ý tưởng thẩm mỹ, thấu cảm người nghe/xem)';
+  } else if (socialKeywords.some(k => careerLower.includes(k))) {
+    expectedGroup = 'S/I';
+    expectedCodes = ['S', 'I'];
+    expectedDesc = 'Xã hội & Nghiên cứu (giảng dạy, đồng hành, tư vấn, chăm sóc con người)';
+  }
+
+  const codeNames = {
+    R: 'Thực tế/Kỹ thuật',
+    I: 'Nghiên cứu/Phân tích',
+    A: 'Nghệ thuật/Sáng tạo',
+    S: 'Xã hội/Giao tiếp',
+    E: 'Quản lý/Kinh doanh',
+    C: 'Nghiệp vụ/Quy củ'
+  };
+
+  const userGroupStr = `${codeNames[c1] || c1}${c2 ? ' & ' + (codeNames[c2] || c2) : ''}`;
+
+  if (!expectedGroup) {
+    return `Học sinh có thiên hướng [${codes.join(', ')}] (${userGroupStr}). Cần đối chiếu xem thói quen học tập có tương thích với đặc thù thực tế của ngành ${targetCareer} hay không.`;
+  }
+
+  const isOverlap = expectedCodes.some(c => codes.includes(c));
+  if (isOverlap) {
+    return `Độ tương thích tương đối tốt: Tính cách nổi trội [${codes.join(', ')}] (${userGroupStr}) có nét tương đồng với đặc tính nhóm ${expectedGroup} của ngành ${targetCareer}. Cần đối chất xem học sinh có ngộ nhận giữa sở thích bề nổi và năng lực bền bỉ thực tế.`;
+  } else {
+    return `Lệch pha nhận thức: Tính cách đo được nổi trội là [${codes.join(', ')}] (${userGroupStr}), trong khi ngành ${targetCareer} lại đòi hỏi đặc tính môi trường nhóm ${expectedGroup} (${expectedDesc}). Nguy cơ chọn ngành theo trào lưu, mạng xã hội hoặc cảm xúc nhất thời.`;
+  }
+}
+
 const HollandTest = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -245,6 +309,7 @@ const HollandTest = () => {
     const rawCareer = document.getElementById("targetCareerInput")?.value || targetMajor.trim() || "Truyền thông đa phương tiện";
     const rawCodes = (result?.primaryCode || document.getElementById("hollandResultText")?.value || "AS").split('').filter(c => ['R','I','A','S','E','C'].includes(c));
     const analysisText = analyzeHollandCompatibility(rawCareer, rawCodes);
+    const compatStatus = getCompatibilitySummary(rawCareer, rawCodes);
 
     const userAnchorData = {
       // Lấy giá trị từ các ô input học sinh vừa nhập:
@@ -252,11 +317,13 @@ const HollandTest = () => {
       target_university: document.getElementById("targetUniversityInput")?.value || targetUniversity.trim() || "Đại học Khoa học Xã hội và Nhân văn",
       source_of_influence: document.getElementById("influenceSourceInput")?.value || finalChoiceSource || "Mạng xã hội (TikTok, YouTube)",
       confidence_score: document.getElementById("confidenceScoreInput")?.value || String(confidenceScore) || "8",
-      holland_code: document.getElementById("hollandResultText")?.value || result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)",
+      holland_codes: rawCodes,
+      holland_code: rawCodes.join('') || "AS",
+      compatibility_status: compatStatus,
       holland_analysis: analysisText
     };
 
-    // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 2 key)
+    // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 3 key)
     localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
     localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData));
     localStorage.setItem("career_initial_anchor", JSON.stringify({
@@ -264,8 +331,10 @@ const HollandTest = () => {
       target_university: userAnchorData.target_university,
       choice_source: userAnchorData.source_of_influence,
       confidence_score_initial: Number(userAnchorData.confidence_score),
+      holland_codes: rawCodes,
       holland_code: userAnchorData.holland_code,
       primary_code: userAnchorData.holland_code,
+      compatibility_status: compatStatus,
       holland_analysis: analysisText
     }));
 
@@ -326,16 +395,30 @@ const HollandTest = () => {
         timestamp: new Date().toISOString()
       }
 
-      // 4. Lưu vào localStorage cả 2 key (userAnchorData và career_initial_anchor)
+      // 4. Lưu vào localStorage cả 3 key (userAnchorData, cbas_anchor_data và career_initial_anchor)
+      const rawCodes = primaryCode.split('');
+      const compatStatus = getCompatibilitySummary(anchorData.target_major, rawCodes);
+      const analysisText = analyzeHollandCompatibility(anchorData.target_major, rawCodes);
+
       const userAnchorData = {
         target_career: anchorData.target_major,
         target_university: anchorData.target_university,
         source_of_influence: anchorData.choice_source,
         confidence_score: String(anchorData.confidence_score_initial),
-        holland_code: primaryCode
+        holland_codes: rawCodes,
+        holland_code: primaryCode,
+        compatibility_status: compatStatus,
+        holland_analysis: analysisText
       };
       localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
-      localStorage.setItem('career_initial_anchor', JSON.stringify(anchorData))
+      localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData));
+      localStorage.setItem('career_initial_anchor', JSON.stringify({
+        ...anchorData,
+        holland_codes: rawCodes,
+        holland_code: primaryCode,
+        compatibility_status: compatStatus,
+        holland_analysis: analysisText
+      }));
 
       // 5. Lưu vào CSDL Supabase (nếu có kết nối)
       try {
@@ -499,6 +582,12 @@ const HollandTest = () => {
                 </p>
               )}
             </div>
+            {result?.anchorData?.target_major && (
+              <div className="bg-sky-100/80 p-3 rounded border border-sky-300 text-sky-950 font-medium">
+                <span className="font-bold text-sky-900">🔍 Đánh giá tương thích sơ bộ với ngành "{result.anchorData.target_major}":</span>{' '}
+                <span>{getCompatibilitySummary(result.anchorData.target_major, result.primaryCode.split(''))}</span>
+              </div>
+            )}
           </div>
         </div>
 

@@ -25,6 +25,7 @@ import {
   FileCheck2,
   Lock
 } from 'lucide-react'
+import { getCompatibilitySummary, hollandDescriptions } from './HollandTest'
 
 // 4 Nút gợi ý Cú hích Phản tư Socrates (Socratic Funneling Quick Nudges)
 const QUICK_NUDGES = [
@@ -68,57 +69,85 @@ const getInitialGreeting = (anc) => {
   const sourceOfInfluence = anc?.source_of_influence || anc?.choiceSource || 'Mạng xã hội (TikTok, YouTube)';
   const confidenceScore = anc?.confidence_score || anc?.confidenceScore || '8';
 
+  let hollandCodes = [];
+  if (Array.isArray(anc?.holland_codes) && anc?.holland_codes.length > 0) {
+    hollandCodes = anc.holland_codes;
+  } else if (typeof anc?.holland_code === 'string') {
+    hollandCodes = anc.holland_code.replace(/[^RIASEC]/gi, '').split('');
+  }
+  if (hollandCodes.length === 0) hollandCodes = ['A', 'S', 'E'];
+
+  const hollandMap = {
+    R: 'Thực tế / Kỹ thuật (thích máy móc, công cụ, không gian vật lý)',
+    I: 'Nghiên cứu (thích tư duy trừu tượng, phân tích số liệu, giải quyết vấn đề phức tạp)',
+    A: 'Nghệ thuật (thích sáng tạo tự do, thể hiện cái tôi thẩm mỹ)',
+    S: 'Xã hội (thích giúp đỡ, giảng dạy, giao tiếp và kết nối con người)',
+    E: 'Quản lý / Doanh nhân (thích lãnh đạo, thuyết phục, cạnh tranh mục tiêu)',
+    C: 'Nghiệp vụ / Quy củ (thích ngăn nắp, quy trình rõ ràng, tính toán chính xác)'
+  };
+
+  const primaryGroup = hollandMap[hollandCodes[0]] || hollandDescriptions?.[hollandCodes[0]] || hollandCodes[0];
+  const secondaryGroup = hollandCodes[1] ? (hollandMap[hollandCodes[1]] || hollandDescriptions?.[hollandCodes[1]] || hollandCodes[1]) : '';
+
   if (targetCareer && targetCareer !== 'chưa xác định') {
-    return `Chào em! Thầy đã ghi nhận kết quả khảo sát từ Bước 1: Em đang hướng tới ngành **${targetCareer}** tại **${targetUniversity || 'trường đại học mong muốn'}**, với mức độ tự tin **${confidenceScore}/10**, lấy cảm hứng từ **${sourceOfInfluence}**.
+    return `Chào em! Thầy là **Trợ lý AI Tham Vấn Phản Tư Socrates**.
 
-Thầy đồng hành ở đây không phải để đánh giá đam mê này đúng hay sai, mà để giúp em soi chiếu lại những góc nhìn thực tế trước khi đưa ra quyết định.
+Thầy đã ghi nhận hồ sơ xuất phát điểm của em từ Bước 1:
+- **Ngành học mục tiêu ban đầu:** "${targetCareer}"${targetUniversity && targetUniversity !== 'chưa xác định' ? ` tại ${targetUniversity}` : ''}
+- **Mức độ tự tin ban đầu:** ${confidenceScore}/10 (Nguồn ảnh hưởng: ${sourceOfInfluence})
+- **Kiểu hình tính cách Holland thực tế:** [${hollandCodes.join(', ')}]
+  + *Nhóm chủ đạo (${hollandCodes[0]}):* ${primaryGroup}
+  ${secondaryGroup ? `+ *Nhóm hỗ trợ (${hollandCodes[1]}):* ${secondaryGroup}` : ''}
 
-Để bắt đầu, em hãy chia sẻ: **Ngoài những hình ảnh năng động thường thấy trên truyền thông, điều gì cụ thể về năng lực học tập hoặc trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình sẽ theo học tốt ngành này?**`;
+${anc?.compatibility_status ? `🔍 **Đánh giá sự tương thích (Analysis):**\n${anc.compatibility_status}\n\n` : ''}Thầy đồng hành ở đây không phải để đánh giá đam mê này đúng hay sai, mà để giúp em soi chiếu lại những góc nhìn thực tế trước khi đưa ra quyết định.
+
+Để bắt đầu, em hãy chia sẻ thẳng thắn: **Nhìn vào đặc tính thiên hướng tính cách thực tế vừa đo được ở trên so với môi trường làm việc thật của ngành "${targetCareer}", điều gì cụ thể về thói quen học tập và trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình thực sự hợp ngành này chứ không phải chọn theo cảm tính hay xu hướng mạng xã hội?**`;
   }
 
-  return `Chào em! Thầy là "Trợ lý AI Tham Vấn Phản Tư Socrates" hướng nghiệp dành cho học sinh THPT.
+  return `Chào em! Thầy là **Trợ lý AI Tham Vấn Phản Tư Socrates** hướng nghiệp dành cho học sinh THPT.
 
-Thầy ở đây để cùng em bóc tách những góc khuất và thực tế nghề nghiệp trước khi đưa ra quyết định.
+Thầy ở đây để cùng em đối chiếu đặc tính tính cách Holland thực tế với yêu cầu môi trường nghề nghiệp trước khi đưa ra quyết định.
 
 Em hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**`;
 };
 
-
 // 1. Lấy dữ liệu mỏ neo đã lưu từ Bước 1
 const getStoredUserAnchor = () => {
   try {
-    const storedData = localStorage.getItem("userAnchorData");
-    if (storedData) {
-      const parsed = JSON.parse(storedData);
-      if (parsed && (parsed.target_career || parsed.target_major)) {
+    const raw = localStorage.getItem("userAnchorData") || localStorage.getItem("cbas_anchor_data") || localStorage.getItem("career_initial_anchor");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed) {
+        const targetCareer = (parsed.target_career || parsed.target_major || "").trim() || "chưa xác định";
+        const targetUniversity = (parsed.target_university || "").trim() || "chưa xác định";
+        const sourceOfInfluence = (parsed.source_of_influence || parsed.choice_source || "").trim() || "mạng xã hội (TikTok, YouTube)";
+        const confidenceScore = String(parsed.confidence_score || parsed.confidence_score_initial || "8");
+
+        let hollandCodes = [];
+        if (Array.isArray(parsed.holland_codes) && parsed.holland_codes.length > 0) {
+          hollandCodes = parsed.holland_codes;
+        } else if (typeof parsed.holland_code === 'string') {
+          hollandCodes = parsed.holland_code.replace(/[^RIASEC]/gi, '').split('');
+        } else if (typeof parsed.primary_code === 'string') {
+          hollandCodes = parsed.primary_code.replace(/[^RIASEC]/gi, '').split('');
+        }
+        if (hollandCodes.length === 0) hollandCodes = ['A', 'S', 'E'];
+
+        const compatibilityStatus = (parsed.compatibility_status || getCompatibilitySummary(targetCareer, hollandCodes)).trim();
+
         return {
-          target_career: parsed.target_career || parsed.target_major,
-          target_university: parsed.target_university || "chưa xác định",
-          source_of_influence: parsed.source_of_influence || parsed.choice_source || "mạng xã hội",
-          confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || "8"),
-          holland_code: parsed.holland_code || parsed.primary_code || "chưa rõ",
+          target_career: targetCareer,
+          target_university: targetUniversity,
+          source_of_influence: sourceOfInfluence,
+          confidence_score: confidenceScore,
+          holland_codes: hollandCodes,
+          holland_code: hollandCodes.join(''),
+          compatibility_status: compatibilityStatus,
           holland_analysis: parsed.holland_analysis || "",
-          targetMajor: parsed.target_career || parsed.target_major,
-          targetUniversity: parsed.target_university || "",
-          choiceSource: parsed.source_of_influence || parsed.choice_source || "",
-          confidenceScore: Number(parsed.confidence_score || parsed.confidence_score_initial || 8)
-        };
-      }
-    }
-    const legacy = localStorage.getItem("career_initial_anchor");
-    if (legacy) {
-      const parsed = JSON.parse(legacy);
-      if (parsed && (parsed.target_major || parsed.target_career)) {
-        return {
-          target_career: parsed.target_major || parsed.target_career,
-          target_university: parsed.target_university || "chưa xác định",
-          source_of_influence: parsed.choice_source || parsed.source_of_influence || "mạng xã hội",
-          confidence_score: String(parsed.confidence_score_initial || parsed.confidence_score || "8"),
-          holland_code: parsed.primary_code || parsed.holland_code || "chưa rõ",
-          targetMajor: parsed.target_major || parsed.target_career,
-          targetUniversity: parsed.target_university || "",
-          choiceSource: parsed.choice_source || parsed.source_of_influence || "",
-          confidenceScore: Number(parsed.confidence_score_initial || parsed.confidence_score || 8)
+          targetMajor: targetCareer,
+          targetUniversity: targetUniversity,
+          choiceSource: sourceOfInfluence,
+          confidenceScore: Number(confidenceScore)
         };
       }
     }
@@ -130,7 +159,10 @@ const getStoredUserAnchor = () => {
     target_university: "chưa xác định",
     source_of_influence: "mạng xã hội",
     confidence_score: "8",
-    holland_code: "chưa rõ",
+    holland_codes: ["A", "S", "E"],
+    holland_code: "ASE",
+    compatibility_status: "Chưa xác định",
+    holland_analysis: "",
     targetMajor: "",
     targetUniversity: "",
     choiceSource: "",
@@ -236,7 +268,9 @@ const DebiasAgent = () => {
             target_university: anchor.target_university || anchor.targetUniversity,
             source_of_influence: anchor.source_of_influence || anchor.choiceSource,
             confidence_score: String(anchor.confidence_score || anchor.confidenceScore || "8"),
+            holland_codes: anchor.holland_codes || [],
             holland_code: anchor.holland_code || "",
+            compatibility_status: anchor.compatibility_status || "",
             holland_analysis: anchor.holland_analysis || "",
             target_major: anchor.target_career || anchor.targetMajor,
             choice_source: anchor.source_of_influence || anchor.choiceSource,
@@ -418,28 +452,51 @@ const DebiasAgent = () => {
 
       {/* BANNER MỎ NEO NHẬN THỨC BAN ĐẦU (INITIAL ANCHOR TỪ BƯỚC 1) */}
       {anchor?.targetMajor ? (
-        <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-sm shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-950">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-amber-500 text-white rounded-sm shrink-0 mt-0.5">
-              <Target className="w-4 h-4" />
+        <div className="bg-amber-50 border-2 border-amber-300 p-4 rounded-sm shadow-2xs space-y-2.5 text-amber-950">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-500 text-white rounded-sm shrink-0 mt-0.5">
+                <Target className="w-4 h-4" />
+              </div>
+              <div className="space-y-0.5 text-xs">
+                <span className="font-extrabold uppercase tracking-wider text-amber-900 block">
+                  🎯 MỎ NEO NHẬN THỨC BAN ĐẦU CỦA BẠN (TỪ BƯỚC 1):
+                </span>
+                <p className="font-semibold text-amber-950">
+                  Ngành nhắm tới: <strong className="text-brand-900">{anchor.targetMajor}</strong>
+                  {anchor.targetUniversity && <span> — Trường: <strong>{anchor.targetUniversity}</strong></span>}
+                  {' | '}Nguồn tham khảo: <span className="italic">{anchor.choiceSource || 'Mạng xã hội'}</span>
+                </p>
+              </div>
             </div>
-            <div className="space-y-0.5 text-xs">
-              <span className="font-extrabold uppercase tracking-wider text-amber-900 block">
-                🎯 MỎ NEO NHẬN THỨC BAN ĐẦU CỦA BẠN (TỪ BƯỚC 1):
+            <div className="flex items-center gap-2 shrink-0 bg-white/90 border border-amber-300 px-3 py-1.5 rounded-sm">
+              <span className="text-[11px] font-bold text-slate-600">Độ tự tin ban đầu:</span>
+              <span className="text-xs font-black px-2 py-0.5 bg-amber-100 text-amber-900 rounded-sm">
+                {anchor.confidenceScore || 8}/10
               </span>
-              <p className="font-semibold text-amber-950">
-                Ngành nhắm tới: <strong className="text-brand-900">{anchor.targetMajor}</strong>
-                {anchor.targetUniversity && <span> — Trường: <strong>{anchor.targetUniversity}</strong></span>}
-                {' | '}Nguồn tham khảo: <span className="italic">{anchor.choiceSource || 'Mạng xã hội'}</span>
-              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 bg-white/90 border border-amber-300 px-3 py-1.5 rounded-sm">
-            <span className="text-[11px] font-bold text-slate-600">Độ tự tin ban đầu:</span>
-            <span className="text-xs font-black px-2 py-0.5 bg-amber-100 text-amber-900 rounded-sm">
-              {anchor.confidenceScore || 8}/10
-            </span>
-          </div>
+
+          {/* DÒNG ĐỐI CHIẾU KIỂU HÌNH TÍNH CÁCH HOLLAND VÀ ĐÁNH GIÁ TƯƠNG THÍCH */}
+          {anchor?.holland_codes && anchor.holland_codes.length > 0 && (
+            <div className="pt-2 border-t border-amber-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-extrabold text-amber-900">Kiểu hình Holland thực tế:</span>
+                <div className="flex items-center gap-1">
+                  {anchor.holland_codes.map((code, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-amber-200 text-amber-950 font-black rounded-xs text-xs border border-amber-300">
+                      {code}
+                    </span>
+                  ))}
+                </div>
+                {anchor.compatibility_status && (
+                  <span className="text-slate-800 font-medium text-[11px] bg-white/70 px-2 py-0.5 rounded border border-amber-200">
+                    {anchor.compatibility_status}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-blue-50 border border-blue-200 p-3.5 rounded-sm text-xs text-blue-900 flex items-center justify-between gap-3">

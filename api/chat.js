@@ -33,29 +33,73 @@ function isGreetingOnly(text) {
 }
 
 function getSocraticDirective(round, anchor = {}, userMsg = '') {
-  const targetCareer = (anchor.target_career || anchor.target_major || '').trim();
-  const targetUniversity = (anchor.target_university || '').trim();
-  const sourceOfInfluence = (anchor.source_of_influence || anchor.choice_source || 'mạng xã hội').trim();
+  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'chưa xác định';
+  const targetUniversity = (anchor.target_university || '').trim() || 'chưa xác định';
+  const sourceOfInfluence = (anchor.source_of_influence || anchor.choice_source || 'mạng xã hội (TikTok, YouTube)').trim();
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
-  const hollandCode = (anchor.holland_code || anchor.primary_code || 'chưa rõ').trim();
-  const hollandAnalysis = (anchor.holland_analysis || '').trim();
 
-  const profileHeader = `\n\nHỒ SƠ MỎ NEO XUẤT PHÁT ĐIỂM CỦA HỌC SINH (Từ Bước 1):
-- Ngành học mục tiêu: "${targetCareer || 'chưa xác định'}"
-- Trường đại học mục tiêu: "${targetUniversity || 'chưa xác định'}"
+  let hollandCodes = [];
+  if (Array.isArray(anchor.holland_codes) && anchor.holland_codes.length > 0) {
+    hollandCodes = anchor.holland_codes;
+  } else if (typeof anchor.holland_code === 'string') {
+    hollandCodes = anchor.holland_code.replace(/[^RIASEC]/gi, '').split('');
+  } else if (typeof anchor.primary_code === 'string') {
+    hollandCodes = anchor.primary_code.replace(/[^RIASEC]/gi, '').split('');
+  }
+  if (hollandCodes.length === 0) hollandCodes = ['A', 'S', 'E'];
+
+  let compatibilityStatus = (anchor.compatibility_status || anchor.holland_analysis || '').trim();
+  if (!compatibilityStatus) {
+    compatibilityStatus = `Tính cách nổi trội [${hollandCodes.join(', ')}] cần đối chiếu xem có tương thích hay lệch pha với đặc thù thực tế của ngành "${targetCareer}".`;
+  }
+
+  const hollandMap = {
+    R: 'Thực tế / Kỹ thuật (thích máy móc, công cụ, không gian vật lý)',
+    I: 'Nghiên cứu (thích tư duy trừu tượng, phân tích dữ liệu, giải quyết vấn đề phức tạp)',
+    A: 'Nghệ thuật (thích tự do sáng tạo, thể hiện cái tôi thẩm mỹ)',
+    S: 'Xã hội (thích giúp đỡ, giảng dạy, giao tiếp và kết nối con người)',
+    E: 'Quản lý / Doanh nhân (thích lãnh đạo, thuyết phục, cạnh tranh mục tiêu)',
+    C: 'Nghiệp vụ / Quy củ (thích ngăn nắp, quy trình rõ ràng, tính toán chính xác)'
+  };
+
+  const decodedTraits = hollandCodes.map(c => `${c}: ${hollandMap[c] || c}`).join('; ');
+
+  const SYSTEM_INSTRUCTION_STEP2 = `Bạn là Trợ lý AI Tham Vấn Phản Tư Socrates. 
+HỒ SƠ TÂM LÝ VÀ MỤC TIÊU CỦA HỌC SINH:
+- Ngành học mục tiêu ban đầu: "${targetCareer}" (Mức tự tin: ${confidenceScore}/10)
+- Kiểu hình tính cách Holland thực tế đo được: [${hollandCodes.join(', ')}] (${decodedTraits})
+- Đánh giá sự tương thích (Analysis): ${compatibilityStatus} 
+  (Ví dụ: Lệch pha giữa tính cách Nghiên cứu/Kỹ thuật nhưng lại chọn ngành Quản trị Kinh doanh thiên về giao tiếp/thương mại).
+- Trường đại học mục tiêu: "${targetUniversity}"
 - Nguồn ảnh hưởng chính: "${sourceOfInfluence}"
-- Mức độ tự tin ban đầu: ${confidenceScore}/10
-- Thiên hướng Holland: "${hollandCode}"${hollandAnalysis ? '\n- Giải mã thiên hướng: "' + hollandAnalysis.replace(/\s+/g, ' ') + '"' : ''}`;
+
+NHIỆM VỤ BẮT BUỘC CỦA AI:
+1. KHÔNG BAO GIỜ để học sinh đọc biểu đồ trắc nghiệm một cách mơ hồ. AI phải chủ động "giải mã" hộ học sinh bằng ngôn ngữ đời thường nhất (Ví dụ: "Kết quả cho thấy em thuộc nhóm Nghiên cứu, thích ngồi tĩnh lặng phân tích số liệu, trái ngược với môi trường giao tiếp liên tục của ngành Kinh doanh em chọn").
+2. Kích hoạt câu hỏi phản tư (Socratic Questioning) xoáy thẳng vào điểm mâu thuẫn này để buộc học sinh phải tự đánh giá lại xem mình có đang chọn ngành theo trào lưu hay thực sự hợp tính cách không.
+3. Giữ thái độ khách quan, khoa học, điềm đạm, tuyệt đối không dùng từ ngữ miệt thị hoặc nịnh bợ (Anti-sycophancy).
+
+QUY TẮC BẮT BUỘC TRONG MỌI PHẢN HỒI:
+1. TUYỆT ĐỐI KHÔNG KHEN NGỢI SÁO RỖNG (Triệt tiêu Sycophancy): Không dùng các câu như "Ước mơ tuyệt vời", "Bạn rất hợp với ngành này".
+2. TUYỆT ĐỐI KHÔNG CÔNG KÍCH, PHÁN XÉT (Bảo đảm an toàn tâm lý): Cấm dùng từ "ngạo mạn", "sai lầm tuổi trẻ", "ảo tưởng". Giữ phong thái cố vấn điềm tĩnh, tôn trọng, gợi mở.
+3. KHÔNG BẮT HỌC SINH NÓI LẠI TÊN NGÀNH VÀ TÊN TRƯỜNG.
+4. MỖI LẦN CHỈ ĐẶT 1 ĐẾN 2 CÂU HỎI TRUY VẤN NGẮN GỌN để học sinh tự bóc tách mâu thuẫn lập luận của chính mình.
+5. ĐỘ DÀI: Khoảng 70 - 100 từ, chia làm 2 đoạn ngắn gọn, kết thúc bằng câu hỏi truy vấn.
+
+# ĐIỀU KHOẢN AN TOÀN TÂM LÝ BẮT BUỘC (ƯU TIÊN TUYỆT ĐỐI):
+Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủng hoảng tâm lý nặng hoặc có ý định tự hại:
+- DỪNG NGAY TOÀN BỘ VIỆC PHẢN BIỆN HƯỚNG NGHIỆP.
+- Phản hồi ấm áp: "Thầy hiểu em đang phải chịu nhiều áp lực và mệt mỏi lúc này. Sức khỏe và sự bình an của em là điều quan trọng nhất. Em hãy tạm nghỉ ngơi và chia sẻ ngay với Thầy/Cô tâm lý trường, bố mẹ hoặc gọi Tổng đài Quốc gia Bảo vệ Trẻ em 111 để được lắng nghe và hỗ trợ nhé."`;
 
   // 1. Xử lý câu chào hỏi
   if (isGreetingOnly(userMsg)) {
     if (targetCareer && targetCareer !== 'chưa xác định') {
-      return profileHeader + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
+      return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
 Học sinh vừa chào bạn. Hãy chào lại lịch sự, điềm tĩnh:
-Nhắc lại việc học sinh đang hướng tới ngành "${targetCareer}"${targetUniversity ? ' tại ' + targetUniversity : ''} với mức tự tin ${confidenceScore}/10.
-Hỏi thẳng câu hỏi mở đầu: "Ngoài những hình ảnh thường thấy trên truyền thông, điều gì cụ thể về năng lực học tập hoặc trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình sẽ theo học tốt ngành này?"`;
+Nhắc lại việc học sinh đang hướng tới ngành "${targetCareer}"${targetUniversity !== 'chưa xác định' ? ' tại ' + targetUniversity : ''} với mức tự tin ${confidenceScore}/10.
+Chủ động giải mã ngắn gọn kiểu hình tính cách [${hollandCodes.join(', ')}] bằng ngôn ngữ đời thường và đối chiếu với ngành "${targetCareer}".
+Hỏi câu hỏi mở đầu: "Ngoài những hình ảnh hào nhoáng trên truyền thông, điều gì cụ thể về thói quen học tập hoặc trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng tính cách của mình thực sự hòa hợp với môi trường làm việc ngành ${targetCareer}?"`;
     } else {
-      return `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
+      return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
 Học sinh vừa chào bạn nhưng chưa có ngành học mục tiêu. Hãy chào lại thân thiện:
 "Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Em hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**"`;
     }
@@ -63,46 +107,47 @@ Học sinh vừa chào bạn nhưng chưa có ngành học mục tiêu. Hãy ch�
 
   // 2. Nếu chưa có ngành học
   if (!targetCareer || targetCareer === 'chưa xác định') {
-    return `\n\n[CHỈ ĐẠO KHI CHƯA RÕ NGÀNH]:
+    return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO KHI CHƯA RÕ NGÀNH]:
 Học sinh chưa xác lập ngành học ở Bước 1. Đọc tin nhắn học sinh:
-- Nếu học sinh nêu tên ngành: Dùng ngành đó để chất vấn: "Điều gì cụ thể về năng lực học tập khiến em tự tin mình phù hợp với ngành này?"
+- Nếu học sinh nêu tên ngành: Dùng ngành đó đối chiếu với nhóm tính cách [${hollandCodes.join(', ')}] và chất vấn: "Điều gì cụ thể về năng lực học tập khiến em tự tin mình phù hợp với ngành này?"
 - Nếu học sinh chưa nêu: Mời em nêu rõ tên ngành và trường muốn xét tuyển.`;
   }
 
   // 3. Tiến trình phễu phản tư từng vòng
-  const baseDirective = profileHeader + `\n\n[CHỈ ĐẠO SOCRATES - VÒNG ${round}/8]:
+  const baseDirective = SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO SOCRATES - VÒNG ${round}/8]:
 YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách quan, KHÔNG phán xét, kết thúc bằng 1 đến 2 câu hỏi truy vấn:`;
 
   switch (round) {
     case 1:
-      return baseDirective + `\n- VÒNG 1 (Truy vấn năng lực thực chất):
-  Chất vấn việc chọn ngành "${targetCareer}" (nguồn: "${sourceOfInfluence}", tự tin: ${confidenceScore}/10).
-  Hỏi: "Ngoài những hình ảnh hào nhoáng trên truyền thông, điểm số thực tế môn học nào và trải nghiệm cụ thể nào khiến em tin tưởng mình phù hợp với ngành ${targetCareer}?"`;
+      return baseDirective + `\n- VÒNG 1 (Giải mã thiên hướng Holland & truy vấn mâu thuẫn nhận thức ban đầu):
+  Chủ động "giải mã" nhóm tính cách [${hollandCodes.join(', ')}] bằng ngôn ngữ đời thường so với môi trường ngành "${targetCareer}".
+  Xoáy thẳng vào điểm lệch pha hoặc mâu thuẫn nhận thức (như ghi trong Đánh giá: ${compatibilityStatus}).
+  Hỏi: "Kết quả cho thấy em thuộc nhóm [${hollandCodes.join(', ')}]. So với môi trường làm việc thực tế của ngành ${targetCareer}, điều gì khiến em tin rằng sự tự tin ${confidenceScore}/10 này xuất phát từ bản chất tính cách chứ không phải do hiệu ứng lan truyền từ ${sourceOfInfluence}?"`;
 
     case 2:
-      return baseDirective + `\n- VÒNG 2 (Chất vấn môn học cốt lõi & đối chiếu thiên hướng Holland):
-  Đối chiếu giữa thiên hướng Holland "${hollandCode}" với yêu cầu thực tế của ngành "${targetCareer}".
-  Nêu môn học chuyên sâu nặng nhất của ngành "${targetCareer}" (Toán/Lý/Tiếng Anh/Văn/Lập trình...).
-  Hỏi: "Ngành ${targetCareer} đòi hỏi rất nặng về [môn cốt lõi / đặc tính môi trường]. So với nhóm thiên hướng ${hollandCode} của em, điểm tổng kết môn này gần đây của em ra sao, và em đã từng tự học chuyên sâu chủ đề nào chưa hay chỉ dừng ở sở thích bề nổi?"`;
+      return baseDirective + `\n- VÒNG 2 (Chất vấn môn học cốt lõi & đối chiếu năng lực thực chất):
+  Nêu môn học chuyên sâu hoặc kỹ năng nặng nhất của ngành "${targetCareer}" (Ví dụ: Toán giải tích, thuật toán lập trình, áp lực sáng tạo liên tục, ngoại ngữ chuyên ngành...).
+  Đối chiếu xem nhóm tính cách [${hollandCodes.join(', ')}] có dễ nản lòng trước khối lượng bài tập môn này không.
+  Hỏi: "Ngành ${targetCareer} đòi hỏi cường độ rất nặng về [môn/kỹ năng cốt lõi]. Điểm số thực tế môn này và thói quen tự học của em ra sao, hay em mới chỉ dừng lại ở sở thích và sự hào nhoáng bề ngoài?"`;
 
     case 3:
       return baseDirective + `\n- VÒNG 3 (Đối chiếu kỳ vọng thị trường & thu nhập thực tế):
-  Nêu thực tế nhiều nội dung truyền thông thường tập trung vào các trường hợp nổi bật thay vì bức tranh phổ quát.
-  Hỏi: "Em có biết tỷ lệ sinh viên ngành này làm việc đúng chuyên ngành hoặc mức thu nhập khởi điểm thực tế cho người mới tốt nghiệp hiện nay là bao nhiêu không?"`;
+  Nêu thực tế nhiều clip mạng xã hội chỉ khoe thành công vượt trội, trong khi thực tế có tỷ lệ cạnh tranh và làm trái ngành đáng kể.
+  Hỏi: "Em có biết tỷ lệ sinh viên ngành này tốt nghiệp làm đúng chuyên ngành hoặc mức thu nhập khởi điểm thực tế cho người mới ra trường hiện nay là bao nhiêu không?"`;
 
     case 4:
-      return baseDirective + `\n- VÒNG 4 (Chất vấn chi phí & học phí tự chủ):
-  Nêu thực tế học phí tự chủ tăng 10-15%/năm và chi phí sinh hoạt 4 năm đại học.
-  Hỏi: "Học phí đại học tự chủ thường tăng 10-15% mỗi năm. Em và gia đình đã cùng trao đổi và chuẩn bị nguồn lực tài chính chủ động cho 4 năm học chưa?"`;
+      return baseDirective + `\n- VÒNG 4 (Chất vấn chi phí & học phí tự chủ 4 năm):
+  Nêu thực tế học phí đại học tự chủ thường tăng 10-15%/năm kèm theo chi phí sinh hoạt đắt đỏ.
+  Hỏi: "Học phí đại học tự chủ hiện nay tăng 10-15% mỗi năm. Em và gia đình đã cùng ngồi lại tính toán kế hoạch tài chính cụ thể cho toàn bộ 4 năm học chưa?"`;
 
     case 5:
       return baseDirective + `\n- VÒNG 5 (Thách thức thích ứng & nâng cao năng lực cạnh tranh trước AI):
-  Nêu áp lực tự động hóa từ AI và yêu cầu chuyên môn ngày càng cao.
-  Hỏi: "Khi công nghệ AI đang tự động hóa nhiều tác vụ cơ bản của ngành này, em dự định rèn luyện thêm kỹ năng chuyên sâu nào để tạo ra giá trị khác biệt và duy trì năng lực cạnh tranh lâu dài?"`;
+  Nêu áp lực tự động hóa từ công nghệ AI đối với các tác vụ cơ bản của ngành ${targetCareer}.
+  Hỏi: "Khi AI đang tự động hóa nhiều công việc cơ bản của ngành này, em dự định rèn luyện thêm năng lực đặc thù nào để tạo ra giá trị khác biệt và duy trì lợi thế cạnh tranh lâu dài?"`;
 
     default:
-      return baseDirective + `\n- VÒNG ĐÀO SÂU:
-  Đào sâu vào sự ngập ngừng hoặc thiếu dữ liệu trong câu trả lời vừa rồi, yêu cầu học sinh đưa ra bằng chứng thực tế thay vì cảm tính.`;
+      return baseDirective + `\n- VÒNG ĐÀO SÂU (Bóc tách dữ liệu còn mơ hồ):
+  Đào sâu vào sự ngập ngừng hoặc thiếu dữ liệu số liệu trong câu trả lời vừa rồi của học sinh, yêu cầu đưa ra bằng chứng thực tế thay vì cảm tính.`;
   }
 }
 
