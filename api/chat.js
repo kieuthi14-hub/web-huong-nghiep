@@ -151,6 +151,44 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
   }
 }
 
+function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFinal = false) {
+  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+  const targetUniversity = (anchor.target_university || '').trim();
+  const univText = targetUniversity && targetUniversity !== 'chưa xác định' ? ` tại ${targetUniversity}` : '';
+  const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+  
+  let hollandCodes = [];
+  if (Array.isArray(anchor.holland_codes) && anchor.holland_codes.length > 0) {
+    hollandCodes = anchor.holland_codes;
+  } else if (typeof anchor.holland_code === 'string') {
+    hollandCodes = anchor.holland_code.replace(/[^RIASEC]/gi, '').split('');
+  }
+  const codeStr = hollandCodes.length > 0 ? `[${hollandCodes.join(', ')}]` : '';
+
+  if (isFinal || round > 4) {
+    return `Thầy ghi nhận tinh thần phản biện và sự nghiêm túc của em qua các câu trả lời vừa rồi. Tuy nhiên, một quyết định tương lai không thể chỉ dựa trên suy đoán lý thuyết hay cảm xúc nhất thời.\n\nVẫn còn nhiều dữ liệu thực tế về ngành **${targetCareer}** mà em cần tự tay kiểm chứng. Em hãy bấm nút chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+  }
+
+  if (isGreetingOnly(userMsg)) {
+    return `Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Dữ liệu ghi nhận em đang hướng tới ngành **${targetCareer}**${univText} với mức tự tin **${confidenceScore}/10** ${codeStr ? `(Mã Holland: ${codeStr})` : ''}.\n\nĐể bắt đầu, em hãy chia sẻ: Ngoài những thông tin chung trên mạng, điều gì cụ thể về kết quả học tập các môn liên quan khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình sẽ học tốt ngành này?`;
+  }
+
+  switch (round) {
+    case 1:
+      return `Thầy đã đọc lập luận của em về lý do chọn ngành **${targetCareer}**. Tuy nhiên, giữa sự tự tin ban đầu (${confidenceScore}/10) với thực tế môi trường đào tạo chuyên sâu thường có khoảng cách khá lớn.\n\nĐối với ngành **${targetCareer}**, các môn chuyên ngành đòi hỏi tư duy phân tích và áp lực bài tập rất nặng. Điểm số các môn học liên quan hiện tại ở trường THPT và thói quen tự giải quyết vấn đề của em thực chất ra sao?`;
+
+    case 2:
+      return `Em đã giải thích về năng lực học tập, nhưng một góc khuất khác là sự tương thích tính cách lâu dài. Đặc thù công việc ngành **${targetCareer}** đòi hỏi sự kiên nhẫn đối mặt với thất bại và áp lực cạnh tranh sau 2-3 năm ra trường.\n\nNếu công việc thực tế không năng động như kỳ vọng mà đòi hỏi sự kiên trì xử lý lỗi chuyên môn và họp hành liên tục, tính cách của em có thực sự phù hợp để trụ lại lâu dài không?`;
+
+    case 3:
+      return `Lý do em đưa ra thể hiện sự quyết tâm, nhưng chúng ta cần đối diện với mỏ neo chi phí và rủi ro tuyển sinh. Hiện nay học phí đại học tự chủ ngành **${targetCareer}** tăng 10-15%/năm kèm chi phí sinh hoạt đắt đỏ.\n\nEm và gia đình đã có kế hoạch tài chính cụ thể cho 4 năm học chưa? Và nếu điểm chuẩn năm nay bất ngờ biến động tăng cao, phương án nguyện vọng dự phòng của em là gì?`;
+
+    case 4:
+    default:
+      return `Qua các vòng trao đổi, thầy nhận thấy em đã bắt đầu nhìn nhận vấn đề nhiều chiều hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp nghiêm túc đòi hỏi sự kiểm chứng khách quan. Em hãy bấm nút chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn và học phí thực tế nhé!`;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -203,10 +241,12 @@ export default async function handler(req, res) {
       : (typeof atob !== 'undefined' ? atob(DEFAULT_ENCODED) : '');
 
     const apiKey = process.env.GEMINI_API_KEY || fallbackKey;
+    // Thứ tự ưu tiên model có tốc độ phản hồi nhanh nhất và còn quota khả dụng
     const candidateModels = [
       process.env.GEMINI_MODEL,
-      'gemini-3.5-flash',
-      'gemini-3.6-flash'
+      'gemini-3-flash-preview',
+      'gemini-flash-latest',
+      'gemini-3.5-flash'
     ].filter(Boolean);
 
     const contents = [];
@@ -248,10 +288,7 @@ export default async function handler(req, res) {
       contents,
       generationConfig: {
         temperature: targetTemperature,
-        maxOutputTokens: targetMaxTokens,
-        thinkingConfig: {
-          thinkingBudget: 0
-        }
+        maxOutputTokens: targetMaxTokens
       }
     };
 
@@ -260,7 +297,7 @@ export default async function handler(req, res) {
 
     for (const m of candidateModels) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 9500); // Tối đa 9.5s cho mỗi model để tránh treo request
+      const timeoutId = setTimeout(() => controller.abort(), 3800); // 3.8s mỗi model để đảm bảo luôn nằm trong giới hạn serverless
 
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
@@ -290,7 +327,7 @@ export default async function handler(req, res) {
             }
           }
           if (replyText) {
-            console.log(`Successfully responded using model: ${m} (Round ${currentRound}, isFinal=${isFinalRound})`);
+            console.log(`Successfully responded using model: ${m} (Round ${currentRound})`);
             break;
           }
         } else {
@@ -306,11 +343,10 @@ export default async function handler(req, res) {
       }
     }
 
+    // Nếu các model Gemini đều bận/hết quota (429/503), kích hoạt bộ phản hồi Socrates dự phòng chuẩn hóa
     if (!replyText) {
-      return res.status(500).json({ 
-        error: 'Hệ thống AI hiện đang bận. Vui lòng thử lại sau vài giây!',
-        details: lastError 
-      });
+      console.warn('Tất cả model Gemini bận/hết quota. Sử dụng Socratic Heuristic Fallback để không làm gián đoạn học sinh.');
+      replyText = generateSocraticHeuristicReply(currentRound, anchor, message.trim(), isFinalRound);
     }
 
     return res.status(200).json({ 
@@ -320,9 +356,13 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('API /api/chat Exception:', error);
-    return res.status(500).json({ 
-      error: 'Lỗi máy chủ nội bộ khi gọi AI. Vui lòng thử lại sau.',
-      details: error?.message || String(error)
+    // Luôn trả về phản hồi Socrates thay vì lỗi 500 để người dùng không bao giờ bị đứng yên
+    const fallbackReply = generateSocraticHeuristicReply(1, {}, '', false);
+    return res.status(200).json({ 
+      reply: fallbackReply,
+      round: 1,
+      isFinal: false,
+      fallback: true
     });
   }
 }
