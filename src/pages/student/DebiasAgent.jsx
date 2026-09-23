@@ -63,62 +63,78 @@ const QUICK_NUDGES = [
 ]
 
 const getInitialGreeting = (anc) => {
-  if (anc?.targetMajor) {
-    const major = anc.targetMajor
-    const uni = anc.targetUniversity ? ` tại trường ${anc.targetUniversity}` : ''
-    const src = anc.choiceSource ? `nguồn từ: ${anc.choiceSource}` : 'mạng xã hội/truyền miệng'
-    const conf = anc.confidenceScore ? `${anc.confidenceScore}/10` : '8/10'
-    return `Chào em! Thầy là "AI Tham Vấn Phản Tư Socrates" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT (thuộc Đề tài Khoa học Hành vi).
+  const targetCareer = anc?.target_career || anc?.targetMajor;
+  const targetUniversity = anc?.target_university || anc?.targetUniversity;
+  const sourceOfInfluence = anc?.source_of_influence || anc?.choiceSource || 'Mạng xã hội (TikTok, YouTube)';
+  const confidenceScore = anc?.confidence_score || anc?.confidenceScore || '8';
 
-Ở Bước 1, em đã xác lập **Mỏ neo nhận thức ban đầu**:
-🎯 Ngành mục tiêu: **${major}**${uni}
-📌 Nguồn tham khảo: **${src}**
-🔥 Điểm tự tin ban đầu (Overconfidence): **${conf}**
+  if (targetCareer && targetCareer !== 'chưa xác định') {
+    return `Chào em! Thầy đã ghi nhận kết quả khảo sát từ Bước 1: Em đang hướng tới ngành **${targetCareer}** tại **${targetUniversity || 'trường đại học mong muốn'}**, với mức độ tự tin **${confidenceScore}/10**, lấy cảm hứng từ **${sourceOfInfluence}**.
 
-Một quyết định quan trọng cho cả cuộc đời không thể xây dựng trên cảm xúc nhất thời hay sự hào nhoáng trên mạng xã hội. Thầy ở đây không phải để khen ngợi hay hùa theo em, mà để giúp em nhìn thẳng vào số liệu và thực tế khắt khe.
+Thầy đồng hành ở đây không phải để đánh giá đam mê này đúng hay sai, mà để giúp em soi chiếu lại những góc nhìn thực tế trước khi đưa ra quyết định.
 
-Thầy hỏi thẳng em câu đầu tiên: **Tại sao em lại tin rằng năng lực học tập và tố chất thực tế hiện tại của mình thực sự phù hợp để theo đuổi ngành ${major}?**`
+Để bắt đầu, em hãy chia sẻ: **Ngoài những hình ảnh năng động thường thấy trên truyền thông, điều gì cụ thể về năng lực học tập hoặc trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình sẽ theo học tốt ngành này?**`;
   }
-  return `Chào em! Thầy là "AI Tham Vấn Phản Tư Socrates" — Cố vấn phản biện hướng nghiệp độc lập cho học sinh THPT (thuộc Đề tài Khoa học Hành vi). 
 
-Thầy ở đây để cùng em bóc tách những góc khuất, áp lực đào thải và số liệu thực tế khắc nghiệt của ngành nghề em dự định chọn, phá vỡ các thiên lệch nhận thức cảm tính trước khi em ra quyết định.
+  return `Chào em! Thầy là "Trợ lý AI Tham Vấn Phản Tư Socrates" hướng nghiệp dành cho học sinh THPT.
 
-Hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**`
-}
+Thầy ở đây để cùng em bóc tách những góc khuất và thực tế nghề nghiệp trước khi đưa ra quyết định.
 
-// Hàm helper đọc mỏ neo hỗ trợ cả 2 chuẩn lưu trữ (userAnchorData & career_initial_anchor)
-const readSavedAnchor = () => {
+Em hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**`;
+};
+
+
+// 1. Lấy dữ liệu mỏ neo đã lưu từ Bước 1
+const getStoredUserAnchor = () => {
   try {
-    const rawUser = localStorage.getItem('userAnchorData');
-    if (rawUser) {
-      const u = JSON.parse(rawUser);
-      if (u && (u.target_career || u.target_major)) {
+    const storedData = localStorage.getItem("userAnchorData");
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      if (parsed && (parsed.target_career || parsed.target_major)) {
         return {
-          targetMajor: u.target_career || u.target_major,
-          targetUniversity: u.target_university || '',
-          choiceSource: u.source_of_influence || u.choice_source || '',
-          confidenceScore: Number(u.confidence_score || u.confidence_score_initial || 8),
-          hollandCode: u.holland_code || u.primary_code || ''
+          target_career: parsed.target_career || parsed.target_major,
+          target_university: parsed.target_university || "chưa xác định",
+          source_of_influence: parsed.source_of_influence || parsed.choice_source || "mạng xã hội",
+          confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || "8"),
+          holland_code: parsed.holland_code || parsed.primary_code || "chưa rõ",
+          targetMajor: parsed.target_career || parsed.target_major,
+          targetUniversity: parsed.target_university || "",
+          choiceSource: parsed.source_of_influence || parsed.choice_source || "",
+          confidenceScore: Number(parsed.confidence_score || parsed.confidence_score_initial || 8)
         };
       }
     }
-    const rawCareer = localStorage.getItem('career_initial_anchor');
-    if (rawCareer) {
-      const c = JSON.parse(rawCareer);
-      if (c && (c.target_major || c.target_career)) {
+    const legacy = localStorage.getItem("career_initial_anchor");
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (parsed && (parsed.target_major || parsed.target_career)) {
         return {
-          targetMajor: c.target_major || c.target_career,
-          targetUniversity: c.target_university || '',
-          choiceSource: c.choice_source || c.source_of_influence || '',
-          confidenceScore: Number(c.confidence_score_initial || c.confidence_score || 8),
-          hollandCode: c.primary_code || c.holland_code || ''
+          target_career: parsed.target_major || parsed.target_career,
+          target_university: parsed.target_university || "chưa xác định",
+          source_of_influence: parsed.choice_source || parsed.source_of_influence || "mạng xã hội",
+          confidence_score: String(parsed.confidence_score_initial || parsed.confidence_score || "8"),
+          holland_code: parsed.primary_code || parsed.holland_code || "chưa rõ",
+          targetMajor: parsed.target_major || parsed.target_career,
+          targetUniversity: parsed.target_university || "",
+          choiceSource: parsed.choice_source || parsed.source_of_influence || "",
+          confidenceScore: Number(parsed.confidence_score_initial || parsed.confidence_score || 8)
         };
       }
     }
   } catch (e) {
-    console.warn('Lỗi đọc mỏ neo:', e);
+    console.warn("Lỗi đọc userAnchorData:", e);
   }
-  return null;
+  return {
+    target_career: "chưa xác định",
+    target_university: "chưa xác định",
+    source_of_influence: "mạng xã hội",
+    confidence_score: "8",
+    holland_code: "chưa rõ",
+    targetMajor: "",
+    targetUniversity: "",
+    choiceSource: "",
+    confidenceScore: 8
+  };
 };
 
 const DebiasAgent = () => {
@@ -126,7 +142,7 @@ const DebiasAgent = () => {
   const { user, profile } = useAuth()
 
   // 1. Đọc Mỏ neo nhận thức ban đầu (Initial Anchor) từ Bước 1
-  const [anchor, setAnchor] = useState(() => readSavedAnchor())
+  const [anchor, setAnchor] = useState(() => getStoredUserAnchor())
 
   const [messages, setMessages] = useState(() => [
     {
@@ -147,7 +163,7 @@ const DebiasAgent = () => {
   // Cập nhật lại tin nhắn chào đầu nếu anchor được load trễ
   useEffect(() => {
     if (!anchor) {
-      const parsed = readSavedAnchor();
+      const parsed = getStoredUserAnchor();
       if (parsed) {
         setAnchor(parsed);
         setMessages([
@@ -214,12 +230,16 @@ const DebiasAgent = () => {
           history: historyPayload,
           round: nextRound,
           isFinal: forceAssessment || nextRound >= TARGET_ROUNDS,
-          anchor: anchor ? {
-            target_major: anchor.targetMajor,
-            target_university: anchor.targetUniversity,
-            choice_source: anchor.choiceSource,
-            confidence_score_initial: anchor.confidenceScore
-          } : {}
+          anchor: {
+            target_career: anchor.target_career || anchor.targetMajor,
+            target_university: anchor.target_university || anchor.targetUniversity,
+            source_of_influence: anchor.source_of_influence || anchor.choiceSource,
+            confidence_score: String(anchor.confidence_score || anchor.confidenceScore || "8"),
+            holland_code: anchor.holland_code || "",
+            target_major: anchor.target_career || anchor.targetMajor,
+            choice_source: anchor.source_of_influence || anchor.choiceSource,
+            confidence_score_initial: Number(anchor.confidence_score || anchor.confidenceScore || 8)
+          }
         })
       })
 
