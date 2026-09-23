@@ -357,21 +357,33 @@ const FactCheckHub = () => {
               </div>
             )}
 
-            {/* NÚT MỞ TRANG TRA CỨU ĐIỂM 3 NĂM */}
-            <div style={{ background: '#f8fafc', borderLeft: '4px solid #3b82f6', padding: '16px', borderRadius: '0 8px 8px 0', marginBottom: '24px' }}>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>
-                🔍 Công cụ hỗ trợ lấy số liệu nhanh:
+            {/* CÁC NÚT TRA CỨU ĐÃ ĐƯỢC CHUẨN HÓA ĐƯỜNG DẪN CHÍNH XÁC */}
+            <div style={{ background: '#f8fafc', borderLeft: '4px solid #2563eb', padding: '16px', borderRadius: '0 8px 8px 0', marginBottom: '24px' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
+                🔍 Cổng dữ liệu đối chứng trực tiếp (Bấm để tra cứu):
               </p>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <a href="https://diemthi.vnexpress.net/tra-cuu-diem-chuan" target="_blank" rel="noopener noreferrer"
-                   style={{ background: '#2563eb', color: '#ffffff', textDecoration: 'none', padding: '9px 15px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  📊 Mở Bảng So Sánh Điểm Chuẩn Các Năm (VnExpress)
+                {/* Nút 1: Vào thẳng cổng tra cứu điểm chuẩn & học phí của VnExpress */}
+                <a href="https://diemthi.vnexpress.net/tra-cuu-dai-hoc" target="_blank" rel="noopener noreferrer"
+                   style={{ background: '#2563eb', color: '#ffffff', textDecoration: 'none', padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  📊 Tra cứu Điểm chuẩn & Học phí (VnExpress)
                 </a>
+
+                {/* Nút 2: Cổng Tuyensinh247 có lịch sử điểm chuẩn đa năm */}
+                <a href="https://diemthi.tuyensinh247.com/diem-chuan.html" target="_blank" rel="noopener noreferrer"
+                   style={{ background: '#0284c7', color: '#ffffff', textDecoration: 'none', padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  📈 Xem Lịch Sử Điểm Chuẩn (Tuyensinh247)
+                </a>
+
+                {/* Nút 3: Tìm file Đề án tuyển sinh gốc của trường */}
                 <button type="button" onClick={openAdmissionPDF}
-                        style={{ background: '#0d9488', color: '#ffffff', border: 'none', padding: '9px 15px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
-                  📑 Tìm Đề Án Tuyển Sinh {targetUniDisplay ? `(${targetUniDisplay})` : 'Của Trường'} (Xem Học Phí)
+                        style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                  📑 Tải Đề Án Tuyển Sinh {targetUniDisplay ? `(${targetUniDisplay})` : '(Gốc)'}
                 </button>
               </div>
+              <small style={{ display: 'block', marginTop: '8px', color: '#64748b', fontSize: '12px' }}>
+                *Lưu ý: Học sinh mở các cổng trên để tìm số liệu thật, sau đó điền vào 3 ô bắt buộc bên dưới để mở khóa Bước 4.
+              </small>
             </div>
 
             {/* BIỂU MẪU BẮT BUỘC ĐIỀN (REQUIRED) */}
