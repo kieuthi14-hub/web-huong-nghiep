@@ -86,19 +86,47 @@ Thầy ở đây để cùng em bóc tách những góc khuất, áp lực đào
 Hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**`
 }
 
+// Hàm helper đọc mỏ neo hỗ trợ cả 2 chuẩn lưu trữ (userAnchorData & career_initial_anchor)
+const readSavedAnchor = () => {
+  try {
+    const rawUser = localStorage.getItem('userAnchorData');
+    if (rawUser) {
+      const u = JSON.parse(rawUser);
+      if (u && (u.target_career || u.target_major)) {
+        return {
+          targetMajor: u.target_career || u.target_major,
+          targetUniversity: u.target_university || '',
+          choiceSource: u.source_of_influence || u.choice_source || '',
+          confidenceScore: Number(u.confidence_score || u.confidence_score_initial || 8),
+          hollandCode: u.holland_code || u.primary_code || ''
+        };
+      }
+    }
+    const rawCareer = localStorage.getItem('career_initial_anchor');
+    if (rawCareer) {
+      const c = JSON.parse(rawCareer);
+      if (c && (c.target_major || c.target_career)) {
+        return {
+          targetMajor: c.target_major || c.target_career,
+          targetUniversity: c.target_university || '',
+          choiceSource: c.choice_source || c.source_of_influence || '',
+          confidenceScore: Number(c.confidence_score_initial || c.confidence_score || 8),
+          hollandCode: c.primary_code || c.holland_code || ''
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Lỗi đọc mỏ neo:', e);
+  }
+  return null;
+};
+
 const DebiasAgent = () => {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
 
   // 1. Đọc Mỏ neo nhận thức ban đầu (Initial Anchor) từ Bước 1
-  const [anchor, setAnchor] = useState(() => {
-    try {
-      const saved = localStorage.getItem('career_initial_anchor')
-      return saved ? JSON.parse(saved) : null
-    } catch (e) {
-      return null
-    }
-  })
+  const [anchor, setAnchor] = useState(() => readSavedAnchor())
 
   const [messages, setMessages] = useState(() => [
     {
@@ -119,21 +147,18 @@ const DebiasAgent = () => {
   // Cập nhật lại tin nhắn chào đầu nếu anchor được load trễ
   useEffect(() => {
     if (!anchor) {
-      try {
-        const saved = localStorage.getItem('career_initial_anchor')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          setAnchor(parsed)
-          setMessages([
-            {
-              id: 'welcome-msg',
-              sender: 'ai',
-              text: getInitialGreeting(parsed),
-              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            }
-          ])
-        }
-      } catch (e) {}
+      const parsed = readSavedAnchor();
+      if (parsed) {
+        setAnchor(parsed);
+        setMessages([
+          {
+            id: 'welcome-msg',
+            sender: 'ai',
+            text: getInitialGreeting(parsed),
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]);
+      }
     }
   }, [])
 

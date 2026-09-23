@@ -174,6 +174,40 @@ const HollandTest = () => {
     }
   }
 
+  // Đặt đoạn code này vào hàm xử lý khi bấm nút "Hoàn thành Bước 1"
+  const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
+    const finalChoiceSource = choiceSource === 'Khác' && customChoiceSource.trim() 
+      ? customChoiceSource.trim() 
+      : choiceSource;
+
+    const userAnchorData = {
+      // Lấy giá trị từ các ô input học sinh vừa nhập:
+      target_career: document.getElementById("targetCareerInput")?.value || targetMajor.trim() || "Truyền thông đa phương tiện",
+      target_university: document.getElementById("targetUniversityInput")?.value || targetUniversity.trim() || "Đại học Khoa học Xã hội và Nhân văn",
+      source_of_influence: document.getElementById("influenceSourceInput")?.value || finalChoiceSource || "Mạng xã hội (TikTok, YouTube)",
+      confidence_score: document.getElementById("confidenceScoreInput")?.value || String(confidenceScore) || "8",
+      holland_code: document.getElementById("hollandResultText")?.value || result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)"
+    };
+
+    // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 2 key)
+    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
+    localStorage.setItem("career_initial_anchor", JSON.stringify({
+      target_major: userAnchorData.target_career,
+      target_university: userAnchorData.target_university,
+      choice_source: userAnchorData.source_of_influence,
+      confidence_score_initial: Number(userAnchorData.confidence_score),
+      holland_code: userAnchorData.holland_code,
+      primary_code: userAnchorData.holland_code
+    }));
+
+    // Chuyển hướng sang trang Bước 2 (AI Tham vấn phản tư)
+    if (customRedirectUrl.startsWith('http')) {
+      window.location.href = customRedirectUrl;
+    } else {
+      navigate(customRedirectUrl);
+    }
+  };
+
   // Nộp bài và lưu Mỏ Neo + Kết quả RIASEC
   const handleSubmit = async () => {
     // 1. Kiểm tra toàn bộ câu hỏi đã làm
@@ -223,7 +257,15 @@ const HollandTest = () => {
         timestamp: new Date().toISOString()
       }
 
-      // 4. Lưu vào localStorage để nạp tức thì vào Bước 2 (AI Phản tư)
+      // 4. Lưu vào localStorage cả 2 key (userAnchorData và career_initial_anchor)
+      const userAnchorData = {
+        target_career: anchorData.target_major,
+        target_university: anchorData.target_university,
+        source_of_influence: anchorData.choice_source,
+        confidence_score: String(anchorData.confidence_score_initial),
+        holland_code: primaryCode
+      };
+      localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
       localStorage.setItem('career_initial_anchor', JSON.stringify(anchorData))
 
       // 5. Lưu vào CSDL Supabase (nếu có kết nối)
@@ -381,10 +423,10 @@ const HollandTest = () => {
             </Button>
             <button
               type="button"
-              onClick={() => navigate('/student/debias-agent')}
+              onClick={() => saveStep1DataAndNext('/student/debias-agent')}
               className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
             >
-              <span>🤖 Sang Bước 2: AI Phản Tư Socrates</span>
+              <span>🤖 Hoàn Thành Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -507,6 +549,7 @@ const HollandTest = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <input
+                    id="targetCareerInput"
                     type="text"
                     value={targetMajor}
                     onChange={(e) => setTargetMajor(e.target.value)}
@@ -517,6 +560,7 @@ const HollandTest = () => {
                 </div>
                 <div>
                   <input
+                    id="targetUniversityInput"
                     type="text"
                     value={targetUniversity}
                     onChange={(e) => setTargetUniversity(e.target.value)}
@@ -571,6 +615,12 @@ const HollandTest = () => {
                 />
               )}
             </div>
+
+            
+            {/* Hidden inputs phục vụ DOM retrieval chuẩn xác theo ID */}
+            <input type="hidden" id="influenceSourceInput" value={choiceSource === 'Khác' && customChoiceSource ? customChoiceSource : choiceSource} />
+            <input type="hidden" id="confidenceScoreInput" value={String(confidenceScore)} />
+            <input type="hidden" id="hollandResultText" value={result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)"} />
 
             {/* CÂU HỎI 3: OVERCONFIDENCE BIAS MEASURE */}
             <div className="space-y-2.5 bg-slate-50 p-4 rounded-sm border border-slate-200">

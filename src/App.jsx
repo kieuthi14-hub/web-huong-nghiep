@@ -188,6 +188,26 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/ai-tham-van" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasAgent />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/ai-tham-van" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasAgent />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
 
           {/* 4. Đối chứng Dữ liệu Khách quan */}
           <Route 
