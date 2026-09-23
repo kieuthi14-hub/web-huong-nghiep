@@ -241,6 +241,48 @@ const App = () => {
             } 
           />
 
+          {/* Alias Routes cho Bước 3 & Bước 4 chuẩn hoá Khoa học hành vi */}
+          <Route 
+            path="/doi-chung-du-lieu" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/doi-chung-du-lieu" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tu-van-1-1" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CounselingBooking />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/tu-van-1-1" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <CounselingBooking />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+
           {/* 5. Tư vấn 1-1 Đối chứng Thực tế */}
           <Route 
             path="/student/booking" 

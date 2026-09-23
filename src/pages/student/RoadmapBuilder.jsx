@@ -131,6 +131,15 @@ const RoadmapBuilder = () => {
 
   const [evidenceData] = useState(() => {
     try {
+      const cbas = localStorage.getItem('cbas_step3_evidence')
+      if (cbas) {
+        const s = JSON.parse(cbas)
+        return {
+          cutoffScores: s.cutoff_score,
+          tuitionFees: s.tuition,
+          admissionQuota: s.employment_rate
+        }
+      }
       return JSON.parse(localStorage.getItem('career_evidence_task') || 'null')
     } catch (e) {
       return null

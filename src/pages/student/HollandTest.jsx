@@ -191,6 +191,7 @@ const HollandTest = () => {
 
     // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 2 key)
     localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
+    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData));
     localStorage.setItem("career_initial_anchor", JSON.stringify({
       target_major: userAnchorData.target_career,
       target_university: userAnchorData.target_university,
