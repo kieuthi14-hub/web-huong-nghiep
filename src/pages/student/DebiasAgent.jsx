@@ -188,10 +188,25 @@ const DebiasAgent = () => {
 
   const [inputPrompt, setInputPrompt] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [elapsedSec, setElapsedSec] = useState(0)
   const [copied, setCopied] = useState(false)
   const [errorMessage, setErrorMessage] = useState(null)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Đếm giây phản hồi thực tế của AI
+  useEffect(() => {
+    let interval = null
+    if (isLoading) {
+      setElapsedSec(0)
+      interval = setInterval(() => {
+        setElapsedSec(prev => prev + 1)
+      }, 1000)
+    } else {
+      setElapsedSec(0)
+    }
+    return () => clearInterval(interval)
+  }, [isLoading])
 
   // Cập nhật lại tin nhắn chào đầu nếu anchor được load trễ
   useEffect(() => {
@@ -674,15 +689,24 @@ const DebiasAgent = () => {
             </div>
           )}
 
-          {/* Đang phản hồi Indicator */}
+          {/* Đang phản hồi Indicator với bộ đếm giây thực tế */}
           {isLoading && (
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-3 animate-fade-in">
               <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <Bot className="w-4 h-4 animate-pulse" />
+                <Bot className="w-4 h-4 animate-bounce" />
               </div>
-              <div className="bg-white border border-slate-200 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-600 font-semibold flex items-center gap-2.5 shadow-2xs">
-                <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
-                <span>AI Socrates đang phân tích lỗ hổng nhận thức và chuẩn bị câu hỏi chất vấn tiếp theo...</span>
+              <div className="bg-white border border-amber-300 p-3.5 rounded-sm rounded-tl-none text-xs text-slate-700 shadow-2xs space-y-1 max-w-[85%] sm:max-w-[70%]">
+                <div className="flex items-center gap-2 font-bold text-amber-950">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                  <span>Trợ lý AI Socrates đang phản tư... ({elapsedSec}s)</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  {elapsedSec < 3 
+                    ? "🔍 Đang phân tích hồ sơ mỏ neo và thiên hướng Holland..." 
+                    : elapsedSec < 6 
+                    ? "⚡ Đang đối chiếu mâu thuẫn giữa tính cách và đặc thù ngành..." 
+                    : "✍️ Đang đúc kết câu hỏi truy vấn phản tư..."}
+                </p>
               </div>
             </div>
           )}

@@ -190,11 +190,11 @@ export default async function handler(req, res) {
     if (isFinalRound) {
       activeSystemInstruction = FINAL_CHALLENGE_PROMPT;
     } else {
-      activeSystemInstruction = SYSTEM_PROMPT + getSocraticDirective(currentRound, anchor, message.trim());
+      activeSystemInstruction = getSocraticDirective(currentRound, anchor, message.trim());
     }
 
-    const targetMaxTokens = isFinalRound ? 400 : 300;
-    const targetTemperature = isFinalRound ? 0.3 : 0.6;
+    const targetMaxTokens = isFinalRound ? 280 : 200;
+    const targetTemperature = isFinalRound ? 0.3 : 0.4;
 
     const DEFAULT_ENCODED = 'QVEuQWI4Uk42S001OHFsaDJITEU0WktpSkt2dmZQVE1vd0ZLUjRHRU9GbE92X01iVERaRHc=';
     const fallbackKey = typeof Buffer !== 'undefined'
@@ -204,30 +204,30 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY || fallbackKey;
     const candidateModels = [
       process.env.GEMINI_MODEL,
-      'gemini-3.5-flash-lite',
       'gemini-3.5-flash',
       'gemini-3.6-flash'
     ].filter(Boolean);
 
     const contents = [];
 
-    if (Array.isArray(history)) {
-      for (const item of history) {
-        if (!item || !item.text || typeof item.text !== 'string') continue;
-        const role = item.role === 'model' || item.role === 'ai' ? 'model' : 'user';
+    // Chỉ giữ lại tối đa 6 lượt chat gần nhất để tránh độ trễ xử lý context dài
+    const trimmedHistory = Array.isArray(history) ? history.slice(-6) : [];
 
-        if (contents.length === 0 && role === 'model') {
-          continue;
-        }
+    for (const item of trimmedHistory) {
+      if (!item || !item.text || typeof item.text !== 'string') continue;
+      const role = item.role === 'model' || item.role === 'ai' ? 'model' : 'user';
 
-        if (contents.length > 0 && contents[contents.length - 1].role === role) {
-          contents[contents.length - 1].parts[0].text += `\n\n${item.text}`;
-        } else {
-          contents.push({
-            role,
-            parts: [{ text: item.text }]
-          });
-        }
+      if (contents.length === 0 && role === 'model') {
+        continue;
+      }
+
+      if (contents.length > 0 && contents[contents.length - 1].role === role) {
+        contents[contents.length - 1].parts[0].text += `\n\n${item.text}`;
+      } else {
+        contents.push({
+          role,
+          parts: [{ text: item.text }]
+        });
       }
     }
 
@@ -247,7 +247,10 @@ export default async function handler(req, res) {
       contents,
       generationConfig: {
         temperature: targetTemperature,
-        maxOutputTokens: targetMaxTokens
+        maxOutputTokens: targetMaxTokens,
+        thinkingConfig: {
+          thinkingBudget: 0
+        }
       }
     };
 
@@ -255,12 +258,16 @@ export default async function handler(req, res) {
     let lastError = null;
 
     for (const m of candidateModels) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 9500); // Tối đa 9.5s cho mỗi model để tránh treo request
+
       try {
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: controller.signal
         });
 
         if (response.ok) {
@@ -293,6 +300,8 @@ export default async function handler(req, res) {
       } catch (err) {
         lastError = err?.message || String(err);
         console.warn(`Model ${m} request exception:`, lastError);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
