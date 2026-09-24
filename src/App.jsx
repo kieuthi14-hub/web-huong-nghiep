@@ -218,10 +218,30 @@ const App = () => {
               </ProtectedRoute>
             } 
           />
+          <Route 
+            path="/student/socratic-agent" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DebiasAgent />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
 
           {/* 4. Đối chứng Dữ liệu Khách quan */}
           <Route 
             path="/student/fact-check" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/evidence-check" 
             element={
               <ProtectedRoute>
                 <MainLayout>

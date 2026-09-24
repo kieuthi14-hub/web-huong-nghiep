@@ -1,4 +1,4 @@
-import Step2SocraticChat from './Step2SocraticChat';
+import Step2SocraticAgent from './Step2SocraticAgent';
 
-export default Step2SocraticChat;
-export { Step2SocraticChat, Step2SocraticChat as DebiasAgent };
+export default Step2SocraticAgent;
+export { Step2SocraticAgent, Step2SocraticAgent as DebiasAgent };

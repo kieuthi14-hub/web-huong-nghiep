@@ -119,35 +119,25 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
 
   switch (round) {
     case 1:
-      return baseDirective + `\n- VÒNG 1 (Giải mã thiên hướng Holland & truy vấn mâu thuẫn nhận thức ban đầu):
-  Chủ động "giải mã" nhóm tính cách [${hollandCodes.join(', ')}] bằng ngôn ngữ đời thường so với môi trường ngành "${targetCareer}".
-  Xoáy thẳng vào điểm lệch pha hoặc mâu thuẫn nhận thức (như ghi trong Đánh giá: ${compatibilityStatus}).
-  Hỏi: "Kết quả cho thấy em thuộc nhóm [${hollandCodes.join(', ')}]. So với môi trường làm việc thực tế của ngành ${targetCareer}, điều gì khiến em tin rằng sự tự tin ${confidenceScore}/10 này xuất phát từ bản chất tính cách chứ không phải do hiệu ứng lan truyền từ ${sourceOfInfluence}?"`;
+      return baseDirective + `\n- VÒNG 1 (Chất vấn môn học cốt lõi & đối chiếu năng lực thực chất):
+  Truy vấn điểm số môn học cụ thể hoặc trải nghiệm thực tế khiến học sinh tin rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành "${targetCareer}".
+  Đối chiếu với nhóm tính cách [${hollandCodes.join(', ')}].
+  Hỏi: "Ngoài những hình ảnh năng động thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành ${targetCareer}?"`;
 
     case 2:
-      return baseDirective + `\n- VÒNG 2 (Chất vấn môn học cốt lõi & đối chiếu năng lực thực chất):
-  Nêu môn học chuyên sâu hoặc kỹ năng nặng nhất của ngành "${targetCareer}" (Ví dụ: Toán giải tích, thuật toán lập trình, áp lực sáng tạo liên tục, ngoại ngữ chuyên ngành...).
-  Đối chiếu xem nhóm tính cách [${hollandCodes.join(', ')}] có dễ nản lòng trước khối lượng bài tập môn này không.
-  Hỏi: "Ngành ${targetCareer} đòi hỏi cường độ rất nặng về [môn/kỹ năng cốt lõi]. Điểm số thực tế môn này và thói quen tự học của em ra sao, hay em mới chỉ dừng lại ở sở thích và sự hào nhoáng bề ngoài?"`;
+      return baseDirective + `\n- VÒNG 2 (Truy vấn nguy cơ tự động hóa bởi AI & kỹ năng chuyên sâu không thể thay thế):
+  Truy vấn về nguy cơ tự động hóa bởi AI trong 4-5 năm tới đối với các tác vụ cơ bản của ngành "${targetCareer}".
+  Hỏi: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
 
     case 3:
-      return baseDirective + `\n- VÒNG 3 (Đối chiếu kỳ vọng thị trường & thu nhập thực tế):
-  Nêu thực tế nhiều clip mạng xã hội chỉ khoe thành công vượt trội, trong khi thực tế có tỷ lệ cạnh tranh và làm trái ngành đáng kể.
-  Hỏi: "Em có biết tỷ lệ sinh viên ngành này tốt nghiệp làm đúng chuyên ngành hoặc mức thu nhập khởi điểm thực tế cho người mới ra trường hiện nay là bao nhiêu không?"`;
+      return baseDirective + `\n- VÒNG 3 (Truy vấn Bộ kỹ năng chuyển đổi & kế hoạch việc làm linh hoạt):
+  Truy vấn về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt để sinh tồn nếu thị trường biến động sau tốt nghiệp.
+  Hỏi: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"`;
 
     case 4:
-      return baseDirective + `\n- VÒNG 4 (Chất vấn chi phí & học phí tự chủ 4 năm):
-  Nêu thực tế học phí đại học tự chủ thường tăng 10-15%/năm kèm theo chi phí sinh hoạt đắt đỏ.
-  Hỏi: "Học phí đại học tự chủ hiện nay tăng 10-15% mỗi năm. Em và gia đình đã cùng ngồi lại tính toán kế hoạch tài chính cụ thể cho toàn bộ 4 năm học chưa?"`;
-
-    case 5:
-      return baseDirective + `\n- VÒNG 5 (Thách thức thích ứng & nâng cao năng lực cạnh tranh trước AI):
-  Nêu áp lực tự động hóa từ công nghệ AI đối với các tác vụ cơ bản của ngành ${targetCareer}.
-  Hỏi: "Khi AI đang tự động hóa nhiều công việc cơ bản của ngành này, em dự định rèn luyện thêm năng lực đặc thù nào để tạo ra giá trị khác biệt và duy trì lợi thế cạnh tranh lâu dài?"`;
-
     default:
-      return baseDirective + `\n- VÒNG ĐÀO SÂU (Bóc tách dữ liệu còn mơ hồ):
-  Đào sâu vào sự ngập ngừng hoặc thiếu dữ liệu số liệu trong câu trả lời vừa rồi của học sinh, yêu cầu đưa ra bằng chứng thực tế thay vì cảm tính.`;
+      return baseDirective + `\n- VÒNG 4 (Tóm lược khoảng trống nhận thức & điều hướng Bước 3):
+  Tóm lược 2 câu về các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3 để đối chứng dữ liệu thực tế (Đề án tuyển sinh, học phí, điểm chuẩn).`;
   }
 }
 
@@ -165,12 +155,12 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   }
   const codeStr = hollandCodes.length > 0 ? `[${hollandCodes.join(', ')}]` : '';
 
-  if (isFinal || round > 4) {
-    return `Thầy ghi nhận tinh thần phản biện và sự nghiêm túc của em qua các câu trả lời vừa rồi. Tuy nhiên, một quyết định tương lai không thể chỉ dựa trên suy đoán lý thuyết hay cảm xúc nhất thời.\n\nVẫn còn nhiều dữ liệu thực tế về ngành **${targetCareer}** mà em cần tự tay kiểm chứng. Em hãy bấm nút chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+  if (isFinal || round >= 4) {
+    return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy em đã bắt đầu nhìn nhận vấn đề nhiều chiều hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính quyết định mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời đòi hỏi sự kiểm chứng khách quan. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
   }
 
   if (isGreetingOnly(userMsg)) {
-    return `Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Dữ liệu ghi nhận em đang hướng tới ngành **${targetCareer}**${univText} với mức tự tin **${confidenceScore}/10** ${codeStr ? `(Mã Holland: ${codeStr})` : ''}.\n\nĐể bắt đầu, em hãy chia sẻ: Ngoài những thông tin chung trên mạng, điều gì cụ thể về kết quả học tập các môn liên quan khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình sẽ học tốt ngành này?`;
+    return `Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Dữ liệu ghi nhận em đang hướng tới ngành **${targetCareer}**${univText} với mức tự tin **${confidenceScore}/10** ${codeStr ? `(Mã Holland: ${codeStr})` : ''}.\n\nĐể bắt đầu, em hãy chia sẻ: Ngoài những thông tin chung trên mạng, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo ngành này?`;
   }
 
   switch (round) {
@@ -178,14 +168,14 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
       return `Thầy đã đọc lập luận của em về lý do chọn ngành **${targetCareer}**. Tuy nhiên, giữa sự tự tin ban đầu (${confidenceScore}/10) với thực tế môi trường đào tạo chuyên sâu thường có khoảng cách khá lớn.\n\nĐối với ngành **${targetCareer}**, các môn chuyên ngành đòi hỏi tư duy phân tích và áp lực bài tập rất nặng. Điểm số các môn học liên quan hiện tại ở trường THPT và thói quen tự giải quyết vấn đề của em thực chất ra sao?`;
 
     case 2:
-      return `Em đã giải thích về năng lực học tập, nhưng một góc khuất khác là sự tương thích tính cách lâu dài. Đặc thù công việc ngành **${targetCareer}** đòi hỏi sự kiên nhẫn đối mặt với thất bại và áp lực cạnh tranh sau 2-3 năm ra trường.\n\nNếu công việc thực tế không năng động như kỳ vọng mà đòi hỏi sự kiên trì xử lý lỗi chuyên môn và họp hành liên tục, tính cách của em có thực sự phù hợp để trụ lại lâu dài không?`;
+      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng. Tuy nhiên, một thách thức rất lớn trong 4-5 năm tới là làn sóng tự động hóa từ trí tuệ nhân tạo (AI).\n\nNhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Em đã tìm hiểu xem đâu là kỹ năng chuyên sâu độc thù, mang tính tư duy chiến lược mà AI không thể thay thế được trong ngành này chưa?`;
 
     case 3:
-      return `Lý do em đưa ra thể hiện sự quyết tâm, nhưng chúng ta cần đối diện với mỏ neo chi phí và rủi ro tuyển sinh. Hiện nay học phí đại học tự chủ ngành **${targetCareer}** tăng 10-15%/năm kèm chi phí sinh hoạt đắt đỏ.\n\nEm và gia đình đã có kế hoạch tài chính cụ thể cho 4 năm học chưa? Và nếu điểm chuẩn năm nay bất ngờ biến động tăng cao, phương án nguyện vọng dự phòng của em là gì?`;
+      return `Lập luận của em có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường. Một tấm bằng chuyên ngành không còn là bảo chứng tuyệt đối cho việc làm.\n\nEm đã trang bị Bộ kỹ năng chuyển đổi (như ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp - đàm phán) và có kế hoạch việc làm linh hoạt như thế nào nếu thị trường ngành **${targetCareer}** bước vào chu kỳ bão hòa khi em ra trường?`;
 
     case 4:
     default:
-      return `Qua các vòng trao đổi, thầy nhận thấy em đã bắt đầu nhìn nhận vấn đề nhiều chiều hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp nghiêm túc đòi hỏi sự kiểm chứng khách quan. Em hãy bấm nút chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn và học phí thực tế nhé!`;
+      return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
   }
 }
 
