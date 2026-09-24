@@ -267,6 +267,90 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
     }
   };
 
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Hàm trích xuất và định dạng toàn bộ nhật ký phản tư thành văn bản chuẩn mực
+  const generateExportText = () => {
+    const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor");
+    let anchor = {};
+    if (rawAnchor) {
+      try { anchor = JSON.parse(rawAnchor); } catch (e) {}
+    }
+
+    const targetCareer = anchor.target_career || anchor.target_major || 'Công nghệ thông tin';
+    const targetUniv = anchor.target_university || 'Đại học Bách Khoa';
+    const confidence = anchor.confidence_score || '8';
+    const holland = anchor.holland_code || 'Nghiên cứu - Kỹ thuật';
+    const dateStr = new Date().toLocaleString('vi-VN');
+
+    let content = `=================================================================\n`;
+    content += `   BIÊN BẢN PHẢN TƯ HƯỚNG NGHIỆP SOCRATES (BƯỚC 2 - CBAS)\n`;
+    content += `       Dự án Nghiên cứu Khoa học Hành vi (ViSEF 2026)\n`;
+    content += `=================================================================\n\n`;
+    content += `📅 Thời gian xuất: ${dateStr}\n`;
+    content += `🎯 Ngành mục tiêu: ${targetCareer}\n`;
+    content += `🏛️ Trường đại học mục tiêu: ${targetUniv}\n`;
+    content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
+    content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
+    content += `🔄 Tiến trình hoàn thành: ${Math.min(currentRound, maxRounds)} / ${maxRounds} vòng phản tư\n\n`;
+    content += `-----------------------------------------------------------------\n`;
+    content += `CHI TIẾT NỘI DUNG ĐỐI THOẠI PHẢN BIỆN SOCRATES:\n`;
+    content += `-----------------------------------------------------------------\n\n`;
+
+    messages.forEach((msg, idx) => {
+      const sender = msg.role === 'model' ? '🤖 Thầy Socrates (AI)' : '🧑‍🎓 Học sinh';
+      content += `[${msg.time || ''}] ${sender}:\n${msg.text}\n\n`;
+    });
+
+    content += `=================================================================\n`;
+    content += `📌 HƯỚNG DẪN TIẾP THEO DÀNH CHO HỌC SINH:\n`;
+    content += `1. Dùng các câu hỏi truy vấn ở trên để tra cứu số liệu tại Bước 3 (Điểm chuẩn 3 năm, Học phí tự chủ, Đề án tuyển sinh).\n`;
+    content += `2. Mang biên bản này đối chất trực tiếp với Cố vấn / Sinh viên trong buổi Tư vấn 1-1 ở Bước 4.\n`;
+    content += `=================================================================\n`;
+
+    return content;
+  };
+
+  // 1. Tải về file văn bản (.txt)
+  const handleDownloadTxt = () => {
+    const text = generateExportText();
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    const rawAnchor = localStorage.getItem("cbas_anchor_data");
+    let careerSlug = 'huong_nghiep';
+    if (rawAnchor) {
+      try {
+        careerSlug = (JSON.parse(rawAnchor).target_career || '').trim().replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_') || careerSlug;
+      } catch(e) {}
+    }
+    
+    link.href = url;
+    link.download = `Nhat_ky_phan_tu_Socrates_${careerSlug}_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // 2. Sao chép vào bộ nhớ tạm (Clipboard)
+  const handleCopyText = async () => {
+    try {
+      const text = generateExportText();
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2500);
+    } catch (err) {
+      console.error('Lỗi sao chép:', err);
+    }
+  };
+
+  // 3. In hoặc Lưu file PDF chuẩn A4
+  const handlePrint = () => {
+    window.print();
+  };
+
   const handleGoToStep3 = () => {
     navigate('/student/evidence-check');
   };
@@ -274,19 +358,71 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: '88vh', fontFamily: 'sans-serif' }}>
       
-      {/* HEADER THEO DÕI TIẾN TRÌNH CAN THIỆP */}
-      <div style={{ padding: '14px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* CSS CHO CHẾ ĐỘ IN / LƯU PDF */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #socratic-chat-export-area, #socratic-chat-export-area * {
+            visibility: visible;
+          }
+          #socratic-chat-export-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: auto;
+            overflow: visible !important;
+            background: #ffffff !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* HEADER THEO DÕI TIẾN TRÌNH CAN THIỆP & CỤM NÚT XUẤT */}
+      <div style={{ padding: '14px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#dbeafe', color: '#1e40af', padding: '3px 10px', borderRadius: '12px' }}>BƯỚC 2: CAN THIỆP HÀNH VI</span>
           <h2 style={{ fontSize: '18px', margin: '4px 0 0 0', color: '#0f172a' }}>AI Tham Vấn Phản Tư (Socrates)</h2>
         </div>
-        <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>
-          Tiến trình phản tư: <span style={{ color: '#2563eb' }}>{Math.min(currentRound, maxRounds)}</span> / {maxRounds} vòng
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>
+            Tiến trình: <span style={{ color: '#2563eb' }}>{Math.min(currentRound, maxRounds)}</span> / {maxRounds} vòng
+          </div>
+          
+          {/* CỤM NÚT XUẤT DỮ LIỆU NHANH TRÊN HEADER */}
+          <div style={{ display: 'flex', gap: '6px' }} className="no-print">
+            <button
+              type="button"
+              onClick={handleCopyText}
+              title="Sao chép toàn bộ nhật ký đối thoại vào bộ nhớ tạm"
+              style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: '600', color: '#334155', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              {copySuccess ? '✅ Đã chép' : '📋 Sao chép'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadTxt}
+              title="Tải file nhật ký phản tư (.txt) về máy"
+              style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: '600', color: '#334155', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              📥 Tải .TXT
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              title="Mở hộp thoại in hoặc Lưu file PDF"
+              style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', fontWeight: '600', color: '#334155', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              🖨️ Lưu PDF
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* KHUNG NỘI DUNG ĐỐI THOẠI */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {/* KHUNG NỘI DUNG ĐỐI THOẠI (VÙNG IN VÀ HIỂN THỊ) */}
+      <div id="socratic-chat-export-area" style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {messages.map((m, i) => (
           <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
             <div style={{
@@ -307,7 +443,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
         ))}
 
         {isLoading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }} className="no-print">
             <div style={{ background: '#fff', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#64748b' }}>
               🤖 Thầy Socrates đang phân tích luận điểm phản biện của em...
             </div>
@@ -315,7 +451,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
         )}
 
         {errorMessage && (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }}>
+          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }} className="no-print">
             {errorMessage}
           </div>
         )}
@@ -323,18 +459,50 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
         <div ref={messagesEndRef} />
       </div>
 
-      {/* MỞ KHÓA BƯỚC 3 SAU KHI HOÀN THÀNH 4 VÒNG */}
+      {/* MỞ KHÓA BƯỚC 3 & KHỐI XUẤT TÀI LIỆU SAU KHI HOÀN THÀNH 4 VÒNG */}
       {currentRound > maxRounds && (
-        <div style={{ padding: '12px 20px', background: '#ecfdf5', borderTop: '1px solid #a7f3d0', textAlign: 'center' }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#065f46', fontWeight: 'bold' }}>
-            🎯 Em đã hoàn thành phiên phản tư nhận thức! Hãy bắt tay vào kiểm chứng thực tế.
-          </p>
-          <button 
-            type="button"
-            onClick={handleGoToStep3}
-            style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Chuyển Sang Bước 3: Đối Chứng Dữ Liệu Tuyển Sinh Thực Tế ➜
-          </button>
+        <div style={{ padding: '14px 20px', background: '#ecfdf5', borderTop: '1px solid #a7f3d0' }} className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+            <div>
+              <p style={{ margin: '0 0 4px 0', fontSize: '13.5px', color: '#065f46', fontWeight: 'bold' }}>
+                🎯 Em đã hoàn thành phiên phản tư nhận thức!
+              </p>
+              <p style={{ margin: 0, fontSize: '12px', color: '#047857' }}>
+                Em có thể xuất biên bản này để làm tài liệu chuẩn bị cho buổi tư vấn 1-1 ở Bước 4.
+              </p>
+            </div>
+            
+            {/* CỤM NÚT XUẤT FILE NỔI BẬT */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleCopyText}
+                style={{ background: '#ffffff', color: '#065f46', border: '1px solid #a7f3d0', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                {copySuccess ? '✅ Đã sao chép!' : '📋 Sao chép'}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadTxt}
+                style={{ background: '#ffffff', color: '#065f46', border: '1px solid #a7f3d0', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                📥 Tải File .TXT
+              </button>
+              <button
+                type="button"
+                onClick={handlePrint}
+                style={{ background: '#ffffff', color: '#065f46', border: '1px solid #a7f3d0', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+                🖨️ Lưu File PDF
+              </button>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <button 
+              type="button"
+              onClick={handleGoToStep3}
+              style={{ background: '#059669', color: '#fff', border: 'none', padding: '10px 24px', borderRadius: '6px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(5,150,105,0.2)' }}>
+              Chuyển Sang Bước 3: Đối Chứng Dữ Liệu Tuyển Sinh Thực Tế ➜
+            </button>
+          </div>
         </div>
       )}
 
