@@ -1,29 +1,12 @@
 // api/chat.js - Vercel Serverless Function kết nối Gemini API
-// Hệ thống AI Tham Vấn Phản Tư Socrates - Kỹ thuật Socratic Funneling (Khoa học Hành vi)
+// Hệ thống AI Chuyên gia Phản tư Hành vi Socrates (Nghiên cứu Khoa học Hành vi ViSEF 2026)
 
-const SYSTEM_PROMPT = `Bạn là "Trợ lý AI Tham Vấn Phản Tư Socrates" hướng nghiệp dành cho học sinh THPT.
-Mục tiêu duy nhất của bạn: Giúp học sinh tự nhận diện các thiên lệch nhận thức (tự tin thái quá, mỏ neo hào nhoáng, bầy đàn) bằng phương pháp truy vấn ngược Socrates, kích hoạt tư duy phân tích sâu.
+const FINAL_CHALLENGE_PROMPT = (targetCareer) => `# CHỈ THỊ LƯỢT 4 - KẾT THÚC PHIÊN (ĐÃ ĐỦ DỮ KIỆN):
+TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
+BẮT BUỘC đưa ra đúng phản hồi đúc kết sau:
+"Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành ${targetCareer} đến sự thiếu hụt dữ liệu tuyển sinh chính thức.
 
-NGUYÊN TẮC BẮT BUỘC TRONG MỌI PHẢN HỒI:
-1. TUYỆT ĐỐI KHÔNG KHEN NGỢI SÁO RỖNG (Triệt tiêu Sycophancy): Không dùng các câu như "Ước mơ tuyệt vời", "Bạn rất hợp với ngành này".
-2. TUYỆT ĐỐI KHÔNG CÔNG KÍCH, PHÁN XÉT (Bảo đảm an toàn tâm lý): Cấm dùng từ "ngạo mạn", "sai lầm tuổi trẻ", "ảo tưởng". Giữ phong thái cố vấn điềm tĩnh, tôn trọng, gợi mở.
-3. KHÔNG BẮT HỌC SINH NÓI LẠI TÊN NGÀNH VÀ TÊN TRƯỜNG.
-4. MỖI LẦN CHỈ ĐẶT 1 ĐẾN 2 CÂU HỎI TRUY VẤN NGẮN GỌN để học sinh tự bóc tách mâu thuẫn lập luận của chính mình.
-5. ĐỘ DÀI: Khoảng 70 - 100 từ, chia làm 2 đoạn ngắn gọn, kết thúc bằng câu hỏi truy vấn.
-
-# ĐIỀU KHOẢN AN TOÀN TÂM LÝ BẮT BUỘC (ƯU TIÊN TUYỆT ĐỐI):
-Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủng hoảng tâm lý nặng hoặc có ý định tự hại:
-- DỪNG NGAY TOÀN BỘ VIỆC PHẢN BIỆN HƯỚNG NGHIỆP.
-- Phản hồi ấm áp: "Thầy hiểu em đang phải chịu nhiều áp lực và mệt mỏi lúc này. Sức khỏe và sự bình an của em là điều quan trọng nhất. Em hãy tạm nghỉ ngơi và chia sẻ ngay với Thầy/Cô tâm lý trường, bố mẹ hoặc gọi Tổng đài Quốc gia Bảo vệ Trẻ em 111 để được lắng nghe và hỗ trợ nhé."`;
-
-const FINAL_CHALLENGE_PROMPT = `# CHỈ THỊ VÒNG CHỐT - THÁCH THỨC BẰNG CHỨNG THỰC TẾ (DỪNG TOÀN BỘ CÂU HỎI):
-Bạn là Trợ lý AI Tham Vấn Phản Tư Socrates. Lúc này cuộc đối thoại đã đủ các vòng chất vấn.
-TUYỆT ĐỐI KHÔNG KẾT LUẬN HAY KHUYÊN HỌC SINH NÊN CHỌN HAY BỎ NGÀNH.
-Hãy đưa ra một THÁCH THỨC NGHIÊN CỨU chuẩn mực (khoảng 90 - 120 từ) gồm đúng nội dung sau:
-
-"Thầy thấy em có sự quyết tâm nhất định, nhưng qua các câu trả lời vừa rồi, vẫn còn rất nhiều dữ liệu thực tế về ngành này mà em chưa nắm rõ.
-
-Một quyết định tương lai không thể chỉ dựa trên cảm xúc hay thông tin truyền miệng trên mạng xã hội. Em hãy sang **Bước 3: Đối chứng Dữ liệu Khách quan** trên hệ thống để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định cuối cùng!"`;
+Bây giờ, em hãy chuyển sang Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!"`;
 
 function isGreetingOnly(text) {
   if (!text || typeof text !== 'string') return false;
@@ -37,9 +20,20 @@ function isGreetingOnly(text) {
   return greetings.includes(clean);
 }
 
+function isConfusionOrAnxiety(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+  const anxietyKeywords = [
+    'hoang mang', 'lo lắng', 'lo lang', 'bối rối', 'boi roi', 'sợ', 'so hai',
+    'băn khoăn', 'ban khoan', 'lo sợ', 'mơ hồ', 'mo ho', 'rối bời', 'roi boi',
+    'áp lực', 'ap luc', 'lo quá', 'lo qua', 'em lo', 'hoang mang quá'
+  ];
+  return anxietyKeywords.some(k => clean.includes(k));
+}
+
 function isUncertaintyOrHelpRequest(text) {
   if (!text || typeof text !== 'string') return false;
-  const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+  const clean = text.toLowerCase().trim().replace(/[!.,?~:;\-_]/g, '');
   const keywords = [
     'chưa biết', 'chua biet', 'không biết', 'khong biet', 'chưa rõ', 'chua ro',
     'chưa nghĩ', 'chua nghi', 'chưa tìm hiểu', 'chua tim hieu', 'chưa có', 'chua co',
@@ -47,7 +41,9 @@ function isUncertaintyOrHelpRequest(text) {
     'giúp em', 'giup em', 'chỉ em với', 'chi em voi', 'tư vấn giúp', 'tu van giup',
     'chưa tính', 'chua tinh', 'không rõ', 'khong ro', 'bí quá', 'em không rõ',
     'chưa thể', 'chua the', 'giúp với', 'giup voi', 'giúp em với', 'giup em voi',
-    'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong'
+    'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong', 'khó quá', 'kho qua',
+    'không biết nguồn', 'khong biet nguon', 'chưa biết nguồn', 'chua biet nguon',
+    'tìm ở đâu', 'tim o dau', 'không biết tra', 'khong biet tra'
   ];
   return keywords.some(k => clean.includes(k));
 }
@@ -57,12 +53,13 @@ function isTooShortOrEvasive(text) {
   const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
   if (isGreetingOnly(text)) return false;
   if (isUncertaintyOrHelpRequest(text)) return false;
+  if (isConfusionOrAnxiety(text)) return false;
 
   const evasivePhrases = [
     'thích thì học', 'thich thi hoc', 'thích', 'thich', 'tùy', 'tuy', 'sao cũng được',
     'sao cung duoc', 'ok', 'ừ', 'u', 'uh', 'uhm', 'ko', 'k', 'không', 'khong',
-    'bình thường', 'binh thuong', 'chả biết', 'cha biet', 'không có gì', 'khong co gi',
-    'chịu', 'chiu', 'thích thế', 'thich the', 'kệ', 'ke', 'ai biết', 'ai biet',
+    'bình thường', 'binh thuong', 'không có gì', 'khong co gi',
+    'thích thế', 'thich the', 'kệ', 'ke', 'ai biết', 'ai biet',
     'được', 'duoc', 'chắc thế', 'chac the'
   ];
   if (evasivePhrases.includes(clean)) return true;
@@ -75,165 +72,141 @@ function isTooShortOrEvasive(text) {
 }
 
 function getSocraticDirective(round, anchor = {}, userMsg = '') {
-  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'chưa xác định';
-  const targetUniversity = (anchor.target_university || '').trim() || 'chưa xác định';
-  const sourceOfInfluence = (anchor.source_of_influence || anchor.choice_source || 'mạng xã hội (TikTok, YouTube)').trim();
+  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
+  const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
 
-  let hollandCodes = [];
+  let hollandCode = anchor.holland_code || '';
   if (Array.isArray(anchor.holland_codes) && anchor.holland_codes.length > 0) {
-    hollandCodes = anchor.holland_codes;
-  } else if (typeof anchor.holland_code === 'string') {
-    hollandCodes = anchor.holland_code.replace(/[^RIASEC]/gi, '').split('');
-  } else if (typeof anchor.primary_code === 'string') {
-    hollandCodes = anchor.primary_code.replace(/[^RIASEC]/gi, '').split('');
-  }
-  if (hollandCodes.length === 0) hollandCodes = ['A', 'S', 'E'];
-
-  let compatibilityStatus = (anchor.compatibility_status || anchor.holland_analysis || '').trim();
-  if (!compatibilityStatus) {
-    compatibilityStatus = `Tính cách nổi trội [${hollandCodes.join(', ')}] cần đối chiếu xem có tương thích hay lệch pha với đặc thù thực tế của ngành "${targetCareer}".`;
+    hollandCode = anchor.holland_codes.join(', ');
+  } else if (!hollandCode) {
+    hollandCode = 'Nghiên cứu - Kỹ thuật';
   }
 
-  const hollandMap = {
-    R: 'Thực tế / Kỹ thuật (thích máy móc, công cụ, không gian vật lý)',
-    I: 'Nghiên cứu (thích tư duy trừu tượng, phân tích dữ liệu, giải quyết vấn đề phức tạp)',
-    A: 'Nghệ thuật (thích tự do sáng tạo, thể hiện cái tôi thẩm mỹ)',
-    S: 'Xã hội (thích giúp đỡ, giảng dạy, giao tiếp và kết nối con người)',
-    E: 'Quản lý / Doanh nhân (thích lãnh đạo, thuyết phục, cạnh tranh mục tiêu)',
-    C: 'Nghiệp vụ / Quy củ (thích ngăn nắp, quy trình rõ ràng, tính toán chính xác)'
-  };
+  const baseDirective = `BẠN LÀ: "Chuyên gia Phản tư Hành vi Socrates" (Nghiên cứu Khoa học Hành vi ViSEF 2026).
+DỮ LIỆU ĐÃ XÁC THỰC:
+- Ngành chọn: ${targetCareer} (BẮT BUỘC dùng đúng tên ngành "${targetCareer}" trong mọi câu phản hồi, TUYỆT ĐỐI KHÔNG dùng cụm từ "ngành em chọn" hay "ngành đã chọn").
+- Trường: ${targetUniversity}
+- Mức tự tin: ${confidenceScore}/10
+- Thiên hướng Holland: ${hollandCode}
 
-  const decodedTraits = hollandCodes.map(c => `${c}: ${hollandMap[c] || c}`).join('; ');
+QUY TẮC PHẢN ỨNG TÂM LÝ BẮT BUỘC:
+1. Khi học sinh bộc lộ sự bối rối hoặc nói "em hoang mang", "em lo lắng":
+   - Phải có 1 câu trấn an duy lý: "Sự băn khoăn là phản ứng tự nhiên khi nhận ra khoảng trống thông tin. Nhìn thẳng vào thực tế là bước đầu tiên để em ra quyết định có trách nhiệm."
+   - Tuyệt đối không nói "Thầy ghi nhận kế hoạch thích ứng" khi học sinh chưa đưa ra kế hoạch.
+2. Khi học sinh nói "em chưa biết" hoặc "không biết nguồn":
+   - Công nhận sự trung thực, không trách móc, không mớm câu trả lời. Hướng dẫn học sinh đưa câu hỏi này vào danh mục chất vấn Mentor tại Bước 4.
 
-  const SYSTEM_INSTRUCTION_STEP2 = `Bạn là Trợ lý AI Tham Vấn Phản Tư Socrates. 
-HỒ SƠ TÂM LÝ VÀ MỤC TIÊU CỦA HỌC SINH:
-- Ngành học mục tiêu ban đầu: "${targetCareer}" (Mức tự tin: ${confidenceScore}/10)
-- Kiểu hình tính cách Holland thực tế đo được: [${hollandCodes.join(', ')}] (${decodedTraits})
-- Đánh giá sự tương thích (Analysis): ${compatibilityStatus} 
-  (Ví dụ: Lệch pha giữa tính cách Nghiên cứu/Kỹ thuật nhưng lại chọn ngành Quản trị Kinh doanh thiên về giao tiếp/thương mại).
-- Trường đại học mục tiêu: "${targetUniversity}"
-- Nguồn ảnh hưởng chính: "${sourceOfInfluence}"
+QUY TẮC BẮT BUỘC:
+1. KHÔNG khen ngợi sáo rỗng, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
+2. Trả lời dưới 100 từ, tối đa 2 đoạn ngắn.
+3. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI (trừ Lượt 4 thì đưa ra lời đúc kết và DỪNG CÂU HỎI).
+4. BẮT BUỘC dùng tên ngành "${targetCareer}".
 
-NHIỆM VỤ BẮT BUỘC CỦA AI:
-1. KHÔNG BAO GIỜ để học sinh đọc biểu đồ trắc nghiệm một cách mơ hồ. AI phải chủ động "giải mã" hộ học sinh bằng ngôn ngữ đời thường nhất (Ví dụ: "Kết quả cho thấy em thuộc nhóm Nghiên cứu, thích ngồi tĩnh lặng phân tích số liệu, trái ngược với môi trường giao tiếp liên tục của ngành Kinh doanh em chọn").
-2. Kích hoạt câu hỏi phản tư (Socratic Questioning) xoáy thẳng vào điểm mâu thuẫn này để buộc học sinh phải tự đánh giá lại xem mình có đang chọn ngành theo trào lưu hay thực sự hợp tính cách không.
-3. Giữ thái độ khách quan, khoa học, điềm đạm, tuyệt đối không dùng từ ngữ miệt thị hoặc nịnh bợ (Anti-sycophancy).
+LỘ TRÌNH ĐỐI THOẠI 4 LƯỢT NGHIÊM NGẶT:
+- LƯỢT 1 (Đang xử lý câu trả lời về năng lực): Soi chiếu năng lực phổ thông với độ khó đại học. Chuyển tiếp bằng câu hỏi về nguy cơ tự động hóa của AI đối với ngành ${targetCareer} trong 4-5 năm tới.
+- LƯỢT 2 (Đang xử lý câu trả lời về tự động hóa): Đánh giá nhận thức về công nghệ. Đặt câu hỏi về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt để thích ứng nếu ngành ${targetCareer} biến động.
+- LƯỢT 3 (Đang xử lý câu trả lời về kỹ năng thích ứng): Nhận diện mức độ chuẩn bị của học sinh. Đặt câu hỏi chốt: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"
+- LƯỢT 4 (KẾT THÚC PHIÊN - ĐÃ ĐỦ DỮ KIỆN): 
+  TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
+  Đưa ra phản hồi đúc kết:
+  "Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành ${targetCareer} đến sự thiếu hụt dữ liệu tuyển sinh chính thức. 
+  Bây giờ, em hãy chuyển sang Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!"`;
 
-QUY TẮC BẮT BUỘC TRONG MỌI PHẢN HỒI:
-1. TUYỆT ĐỐI KHÔNG KHEN NGỢI SÁO RỖNG (Triệt tiêu Sycophancy): Không dùng các câu như "Ước mơ tuyệt vời", "Bạn rất hợp với ngành này".
-2. TUYỆT ĐỐI KHÔNG CÔNG KÍCH, PHÁN XÉT (Bảo đảm an toàn tâm lý): Cấm dùng từ "ngạo mạn", "sai lầm tuổi trẻ", "ảo tưởng". Giữ phong thái cố vấn điềm tĩnh, tôn trọng, gợi mở.
-3. KHÔNG BẮT HỌC SINH NÓI LẠI TÊN NGÀNH VÀ TÊN TRƯỜNG.
-4. MỖI LẦN CHỈ ĐẶT 1 ĐẾN 2 CÂU HỎI TRUY VẤN NGẮN GỌN để học sinh tự bóc tách mâu thuẫn lập luận của chính mình.
-5. ĐỘ DÀI: Khoảng 70 - 100 từ, chia làm 2 đoạn ngắn gọn, kết thúc bằng câu hỏi truy vấn.
+  if (isConfusionOrAnxiety(userMsg)) {
+    return baseDirective + `\n\n[CHỈ THỊ KHI HỌC SINH HOANG MANG / LO LẮNG]:
+Học sinh đang bộc lộ bối rối / lo lắng.
+BẮT BUỘC mở đầu bằng câu trấn an duy lý: "Sự băn khoăn là phản ứng tự nhiên khi nhận ra khoảng trống thông tin. Nhìn thẳng vào thực tế là bước đầu tiên để em ra quyết định có trách nhiệm."
+TUYỆT ĐỐI KHÔNG nói "Thầy ghi nhận kế hoạch thích ứng" vì học sinh chưa đưa ra kế hoạch.
+Sau đó, tiếp tục câu hỏi định hướng của Lượt ${round}.`;
+  }
 
-# ĐIỀU KHOẢN AN TOÀN TÂM LÝ BẮT BUỘC (ƯU TIÊN TUYỆT ĐỐI):
-Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủng hoảng tâm lý nặng hoặc có ý định tự hại:
-- DỪNG NGAY TOÀN BỘ VIỆC PHẢN BIỆN HƯỚNG NGHIỆP.
-- Phản hồi ấm áp: "Thầy hiểu em đang phải chịu nhiều áp lực và mệt mỏi lúc này. Sức khỏe và sự bình an của em là điều quan trọng nhất. Em hãy tạm nghỉ ngơi và chia sẻ ngay với Thầy/Cô tâm lý trường, bố mẹ hoặc gọi Tổng đài Quốc gia Bảo vệ Trẻ em 111 để được lắng nghe và hỗ trợ nhé."`;
-
-  // 1. Xử lý khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
   if (isUncertaintyOrHelpRequest(userMsg)) {
-    return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ THỊ ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ"]:
-Học sinh vừa phản hồi rằng chưa biết, chưa rõ hoặc cần sự giúp đỡ. BẮT BUỘC TUÂN THỦ 4 ĐIỀU SAU:
-- Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
-- KHÔNG khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh (Ví dụ: "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này.").
-- Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
-- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${targetCareer} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.`;
+    return baseDirective + `\n\n[CHỈ THỊ KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "KHÔNG BIẾT NGUỒN"]:
+Công nhận sự trung thực của học sinh, không trách móc, không mớm câu trả lời.
+Hướng dẫn học sinh đưa câu hỏi này vào danh mục chất vấn Mentor tại Bước 4.
+Sau đó tiếp tục câu hỏi định hướng của Lượt ${round}.`;
   }
-
-  // 2. Xử lý câu chào hỏi
-  if (isGreetingOnly(userMsg)) {
-    if (targetCareer && targetCareer !== 'chưa xác định') {
-      return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
-Học sinh vừa chào bạn. Hãy chào lại lịch sự, điềm tĩnh:
-Nhắc lại việc học sinh đang hướng tới ngành "${targetCareer}"${targetUniversity !== 'chưa xác định' ? ' tại ' + targetUniversity : ''} với mức tự tin ${confidenceScore}/10.
-Chủ động giải mã ngắn gọn kiểu hình tính cách [${hollandCodes.join(', ')}] bằng ngôn ngữ đời thường và đối chiếu với ngành "${targetCareer}".
-Hỏi câu hỏi mở đầu: "Ngoài những hình ảnh hào nhoáng trên truyền thông, điều gì cụ thể về thói quen học tập hoặc trải nghiệm thực tế khiến em tin tưởng ở mức ${confidenceScore}/10 rằng tính cách của mình thực sự hòa hợp với môi trường làm việc ngành ${targetCareer}?"`;
-    } else {
-      return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
-Học sinh vừa chào bạn nhưng chưa có ngành học mục tiêu. Hãy chào lại thân thiện:
-"Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Em hãy cho Thầy biết: **Ngành học cụ thể và trường đại học em đang mong muốn xét tuyển nhất hiện nay là gì?**"`;
-    }
-  }
-
-  // 2. Nếu chưa có ngành học
-  if (!targetCareer || targetCareer === 'chưa xác định') {
-    return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO KHI CHƯA RÕ NGÀNH]:
-Học sinh chưa xác lập ngành học ở Bước 1. Đọc tin nhắn học sinh:
-- Nếu học sinh nêu tên ngành: Dùng ngành đó đối chiếu với nhóm tính cách [${hollandCodes.join(', ')}] và chất vấn: "Điều gì cụ thể về năng lực học tập khiến em tự tin mình phù hợp với ngành này?"
-- Nếu học sinh chưa nêu: Mời em nêu rõ tên ngành và trường muốn xét tuyển.`;
-  }
-
-  // 3. Tiến trình phễu phản tư từng vòng
-  const baseDirective = SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO SOCRATES - VÒNG ${round}/8]:
-YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách quan, KHÔNG phán xét, kết thúc bằng 1 đến 2 câu hỏi truy vấn:`;
 
   switch (round) {
     case 1:
-      return baseDirective + `\n- VÒNG 1 (Đã chất vấn xong về Năng lực học tập thực tế ➜ Tiến hành chất vấn Vòng 2 về Nguy cơ tự động hóa 4.0):
-  Học sinh vừa trả lời câu hỏi Vòng 1 về điểm số môn học hoặc trải nghiệm thực tế đối với ngành "${targetCareer}".
-  Hãy phản hồi ngắn gọn (dưới 40 từ), ghi nhận thực tế của học sinh (KHÔNG khen ngợi sáo rỗng, triệt tiêu sycophancy).
-  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
+      return baseDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 1]:
+Học sinh vừa trả lời về năng lực học tập thực tế và điểm số đối với ngành "${targetCareer}".
+Nhiệm vụ:
+- Soi chiếu năng lực phổ thông với độ khó đại học của ngành "${targetCareer}" (dưới 40 từ, khách quan, không phán xét).
+- Chuyển tiếp bằng câu hỏi về nguy cơ tự động hóa của AI đối với ngành "${targetCareer}" trong 4-5 năm tới: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
 
     case 2:
-      return baseDirective + `\n- VÒNG 2 (Đã chất vấn xong về Nguy cơ tự động hóa 4.0 ➜ Tiến hành chất vấn Vòng 3 về Bộ kỹ năng thích ứng sinh tồn):
-  Học sinh vừa trả lời câu hỏi Vòng 2 về nguy cơ AI và kỹ năng chuyên sâu trong ngành "${targetCareer}".
-  Hãy phản hồi ngắn gọn (dưới 40 từ), điềm đạm, không phán xét.
-  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 3: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"`;
+      return baseDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 2]:
+Học sinh vừa trả lời về nguy cơ AI và kỹ năng chuyên sâu trong ngành "${targetCareer}".
+Nhiệm vụ:
+- Đánh giá nhận thức về công nghệ của học sinh (dưới 40 từ).
+- Đặt câu hỏi về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt để thích ứng nếu ngành "${targetCareer}" biến động: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng?"`;
 
     case 3:
-      return baseDirective + `\n- VÒNG 3 (Đã chất vấn xong về Bộ kỹ năng sinh tồn ➜ Tiến hành chất vấn Vòng 4 về Đối chứng dữ liệu thực tế):
-  Học sinh vừa trả lời câu hỏi Vòng 3 về kỹ năng thích ứng sinh tồn và kế hoạch việc làm của ngành "${targetCareer}".
-  Hãy phản hồi ngắn gọn (dưới 40 từ), ghi nhận và giữ thái độ khách quan.
-  Sau đó chuyển sang câu hỏi chất vấn Vòng 4: "Để đưa ra quyết định chắc chắn ở mức ${confidenceScore}/10, em đã từng trực tiếp tra cứu các số liệu khách quan như Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${targetCareer} chưa, hay vẫn chủ yếu dựa trên cảm tính và mạng xã hội?"`;
+      return baseDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 3]:
+Học sinh vừa trả lời về kỹ năng thích ứng và phương án việc làm.
+Nhiệm vụ:
+- Nhận diện mức độ chuẩn bị của học sinh (dưới 40 từ, TUYỆT ĐỐI KHÔNG nói "Thầy ghi nhận kế hoạch thích ứng" khi học sinh chưa đưa ra kế hoạch cụ thể).
+- Đặt câu hỏi chốt: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"`;
 
     case 4:
     default:
-      return FINAL_CHALLENGE_PROMPT;
+      return FINAL_CHALLENGE_PROMPT(targetCareer);
   }
 }
 
 function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFinal = false) {
-  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
-  const targetUniversity = (anchor.target_university || '').trim();
-  const univText = targetUniversity && targetUniversity !== 'chưa xác định' ? ` tại ${targetUniversity}` : '';
+  const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
+  const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
-  
-  let hollandCodes = [];
-  if (Array.isArray(anchor.holland_codes) && anchor.holland_codes.length > 0) {
-    hollandCodes = anchor.holland_codes;
-  } else if (typeof anchor.holland_code === 'string') {
-    hollandCodes = anchor.holland_code.replace(/[^RIASEC]/gi, '').split('');
-  }
-  const codeStr = hollandCodes.length > 0 ? `[${hollandCodes.join(', ')}]` : '';
 
   if (isFinal || round >= 4) {
-    return `Qua 4 vòng phản biện vừa rồi, Thầy nhận thấy em có sự quyết tâm nhất định, nhưng giữa lý thuyết và số liệu thực tế vẫn còn nhiều khoảng trống thông tin mang tính sống còn mà em chưa có dữ liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết hay truyền thông. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+    return `Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành **${targetCareer}** đến sự thiếu hụt dữ liệu tuyển sinh chính thức.\n\nBây giờ, em hãy chuyển sang **Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế** để xây dựng cơ sở vững chắc cho quyết định của mình!`;
   }
 
-  // Phản hồi đặc biệt khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
+  // 1. Phản ứng tâm lý khi học sinh bộc lộ bối rối / hoang mang / lo lắng
+  if (isConfusionOrAnxiety(userMsg)) {
+    const reassurance = "Sự băn khoăn là phản ứng tự nhiên khi nhận ra khoảng trống thông tin. Nhìn thẳng vào thực tế là bước đầu tiên để em ra quyết định có trách nhiệm.";
+    if (round === 1) {
+      return `${reassurance}\n\nBên cạnh độ khó học thuật ở bậc đại học, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ AI đối với ngành **${targetCareer}**. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+    } else if (round === 2) {
+      return `${reassurance}\n\nĐể chủ động trước sự phát triển của công nghệ, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** biến động sau khi tốt nghiệp?`;
+    } else {
+      return `${reassurance}\n\nMột quyết định nghề nghiệp có trách nhiệm cần điểm tựa số liệu vững chắc. Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+    }
+  }
+
+  // 2. Phản ứng tâm lý khi học sinh nói "chưa biết" hoặc "không biết nguồn"
   if (isUncertaintyOrHelpRequest(userMsg)) {
-    return `Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này. Các thao tác kỹ thuật lặp lại rất dễ bị AI thay thế; giá trị cốt lõi bền vững thuộc về tư duy chiến lược, năng lực giải quyết vấn đề phức tạp và giao tiếp giữa con người với con người.\n\nEm hãy ghi ngay băn khoăn này vào sổ tay để đối chất trực tiếp cùng cố vấn chuyên môn ở Bước 4. Còn bây giờ, để chuẩn bị cho tương lai, em dự định rèn luyện Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giao tiếp) như thế nào để không bị đào thải nếu thị trường ngành **${targetCareer}** biến động sau tốt nghiệp?`;
+    const guidance = "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống thông tin này. Em hãy đưa câu hỏi này vào danh mục chất vấn Mentor tại Bước 4.";
+    if (round === 1) {
+      return `${guidance}\n\nBên cạnh độ khó học thuật ở bậc đại học, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ AI đối với ngành **${targetCareer}**. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+    } else if (round === 2) {
+      return `${guidance}\n\nCòn bây giờ, để chuẩn bị cho tương lai nếu ngành **${targetCareer}** biến động, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng?`;
+    } else {
+      return `${guidance}\n\nĐể hoàn thiện cơ sở dữ liệu cho quyết định của mình, em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+    }
   }
 
   if (isGreetingOnly(userMsg)) {
-    return `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành này?`;
+    return `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`;
   }
 
+  // 3. Phản hồi đối thoại 4 lượt chuẩn hóa
   switch (round) {
     case 1:
-      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
+      return `Thầy đã ghi nhận phản hồi của em về năng lực phổ thông. Tuy nhiên, chương trình đại học ngành **${targetCareer}** đòi hỏi tính tự học và độ khó học thuật vượt trội hơn nhiều.\n\nBên cạnh đó, trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
 
     case 2:
-      return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
+      return `Nhận thức về tác động của công nghệ trong ngành **${targetCareer}** là rất cần thiết, nhưng thị trường việc làm luôn biến động khó lường.\n\nEm đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp?`;
 
     case 3:
-      return `Thầy ghi nhận kế hoạch thích ứng linh hoạt của em. Tuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** đòi hỏi phải dựa trên số liệu xác thực thay vì ước đoán.\n\nEm đã từng đối chiếu trực tiếp Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và biểu phí đào tạo thực tế của ngành **${targetCareer}** chưa, hay phần lớn thông tin em có vẫn đến từ suy đoán và mạng xã hội?`;
+      return `Mức độ chuẩn bị cho thấy em đã bắt đầu suy nghĩ về khả năng thích ứng. Tuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** cần được xây dựng trên dữ liệu xác thực thay vì ước đoán.\n\nEm đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
 
     case 4:
     default:
-      return `Qua 4 vòng phản biện vừa rồi, Thầy nhận thấy em có sự quyết tâm nhất định, nhưng giữa lý thuyết và số liệu thực tế vẫn còn nhiều khoảng trống thông tin mang tính sống còn mà em chưa có dữ liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết hay truyền thông. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+      return `Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành **${targetCareer}** đến sự thiếu hụt dữ liệu tuyển sinh chính thức.\n\nBây giờ, em hãy chuyển sang **Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế** để xây dựng cơ sở vững chắc cho quyết định của mình!`;
   }
 }
 
@@ -275,16 +248,18 @@ export default async function handler(req, res) {
     const isFinalRound = Boolean(isFinal) || currentRound > maxRoundsSetting;
 
     const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
-    const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+    const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
 
     // QUY TẮC 1: Nếu học sinh chỉ chào hỏi (Ví dụ: "chào thầy", "hello", "dạ")
     // Tuyệt đối KHÔNG tính đây là một vòng phản tư, KHÔNG tăng biến đếm vòng.
     if (isGreetingOnly(trimmedMessage)) {
       const greetingReply = currentRound === 1
-        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành này?`
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`
         : currentRound === 2
-        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu không thể thay thế của em trong ngành ${targetCareer}.`
-        : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về Bộ kỹ năng chuyển đổi và kế hoạch việc làm linh hoạt để thích ứng sinh tồn.`;
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu đặc thù không thể thay thế của em trong ngành **${targetCareer}**.`
+        : currentRound === 3
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về Bộ kỹ năng chuyển đổi và kế hoạch việc làm linh hoạt để thích ứng nếu ngành **${targetCareer}** biến động.`
+        : `Chào em. Cuộc đối thoại đã hoàn thành. Em hãy chuyển sang Bước 3: Tra cứu dữ liệu khách quan để kiểm chứng thông tin nhé.`;
 
       return res.status(200).json({
         reply: greetingReply,
@@ -298,7 +273,7 @@ export default async function handler(req, res) {
     // Giữ nguyên câu hỏi và yêu cầu học sinh làm rõ, KHÔNG tăng biến đếm vòng.
     if (isTooShortOrEvasive(trimmedMessage)) {
       return res.status(200).json({
-        reply: `Câu trả lời này chưa đủ dữ kiện để phản biện. Em hãy đưa ra dẫn chứng cụ thể hơn.`,
+        reply: `Câu trả lời này chưa đủ dữ kiện để phản biện. Em hãy đưa ra dẫn chứng cụ thể hơn về ngành **${targetCareer}**.`,
         round: currentRound,
         isFinal: false,
         advanced: false
@@ -307,7 +282,7 @@ export default async function handler(req, res) {
     
     let activeSystemInstruction = '';
     if (isFinalRound) {
-      activeSystemInstruction = FINAL_CHALLENGE_PROMPT;
+      activeSystemInstruction = FINAL_CHALLENGE_PROMPT(targetCareer);
     } else {
       activeSystemInstruction = getSocraticDirective(currentRound, anchor, trimmedMessage);
     }
@@ -400,7 +375,7 @@ export default async function handler(req, res) {
             }
             if (replyText) {
               replyText = replyText
-                .replace(/^(Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
+                .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
                 .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ).*?\]\s*/i, '')
                 .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
                 .trim();

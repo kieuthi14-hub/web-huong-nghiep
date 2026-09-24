@@ -71,7 +71,7 @@ export default function Step2SocraticAgent() {
 
 Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực tế mà mạng xã hội thường không nói tới.
 
-Để bắt đầu Vòng 1, em hãy chia sẻ: **Ngoài những hình ảnh năng động thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${anchor.confidence_score}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành này?**`;
+Để bắt đầu Lượt 1, em hãy chia sẻ: **Ngoài những hình ảnh hào nhoáng thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${anchor.confidence_score}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành ${anchor.target_career}?**`;
 
     const initialMessages = [
       { role: 'model', text: initialGreeting, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -80,21 +80,16 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     localStorage.setItem("cbas_step2_messages", JSON.stringify(initialMessages));
   }, []);
 
-  // 2. CHỐT CHẶN KIỂM DUYỆT TIN NHẮN ĐẦU VÀO (CHỐNG SPAM / CHỐNG CHÀO HỎI RỖNG)
-  const validateInput = (text) => {
-    const cleanText = text.trim();
-    if (!cleanText) {
-      return "⚠️ Vui lòng nhập câu trả lời của em.";
-    }
-    if (cleanText.length < 8) {
-      return "⚠️ Câu trả lời của em quá ngắn. Hãy trình bày rõ suy nghĩ hoặc căn cứ cụ thể để Thầy Socrates phản biện nhé!";
-    }
-    const spamPhrases = ["chào thầy", "hello", "hi", "dạ", "ok", "ừ", "chưa biết", "chao thay", "da", "u", "uhm"];
-    if (spamPhrases.includes(cleanText.toLowerCase().replace(/[!.,?~]/g, ''))) {
-      return "⚠️ Em hãy đi thẳng vào câu hỏi truy vấn ở trên, đưa ra dẫn chứng thay vì chỉ chào hỏi hoặc trả lời ngắn!";
-    }
-    return null;
-  };
+  function isConfusionOrAnxiety(text) {
+    if (!text || typeof text !== 'string') return false;
+    const clean = text.toLowerCase().trim();
+    const anxietyKeywords = [
+      'hoang mang', 'lo lắng', 'lo lang', 'bối rối', 'boi roi', 'sợ', 'so hai',
+      'băn khoăn', 'ban khoan', 'lo sợ', 'mơ hồ', 'mo ho', 'rối bời', 'roi boi',
+      'áp lực', 'ap luc', 'lo quá', 'lo qua', 'em lo', 'hoang mang quá'
+    ];
+    return anxietyKeywords.some(k => clean.includes(k));
+  }
 
   function isUncertaintyOrHelpRequest(text) {
     if (!text || typeof text !== 'string') return false;
@@ -106,34 +101,81 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       'giúp em', 'giup em', 'chỉ em với', 'chi em voi', 'tư vấn giúp', 'tu van giup',
       'chưa tính', 'chua tinh', 'không rõ', 'khong ro', 'bí quá', 'em không rõ',
       'chưa thể', 'chua the', 'giúp với', 'giup voi', 'giúp em với', 'giup em voi',
-      'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong', 'khó quá', 'kho qua'
+      'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong', 'khó quá', 'kho qua',
+      'không biết nguồn', 'khong biet nguon', 'chưa biết nguồn', 'chua biet nguon',
+      'tìm ở đâu', 'tim o dau', 'không biết tra', 'khong biet tra'
     ];
     return keywords.some(k => clean.includes(k));
   }
 
+  // 2. CHỐT CHẶN KIỂM DUYỆT TIN NHẮN ĐẦU VÀO (CHỐNG SPAM / CHỐNG CHÀO HỎI RỖNG)
+  const validateInput = (text) => {
+    const cleanText = text.trim();
+    if (!cleanText) {
+      return "⚠️ Vui lòng nhập câu trả lời của em.";
+    }
+    // Cho phép học sinh bộc lộ sự bối rối, lo lắng hoặc nói chưa biết
+    if (isUncertaintyOrHelpRequest(cleanText) || isConfusionOrAnxiety(cleanText)) {
+      return null;
+    }
+    if (cleanText.length < 5) {
+      return "⚠️ Câu trả lời của em quá ngắn. Hãy chia sẻ cụ thể hơn để Thầy Socrates phản biện nhé!";
+    }
+    const pureSpamPhrases = ["chào thầy", "hello", "hi", "dạ", "ok", "ừ", "chao thay", "da", "u", "uhm"];
+    if (pureSpamPhrases.includes(cleanText.toLowerCase().replace(/[!.,?~]/g, ''))) {
+      return "⚠️ Em hãy đi thẳng vào câu hỏi truy vấn ở trên, đưa ra dẫn chứng thay vì chỉ chào hỏi nhé!";
+    }
+    return null;
+  };
+
   // Bộ phản biện Socrates dự phòng chuẩn hóa CBAS ViSEF 2026 (Cam kết 100% không bao giờ treo/đứng máy)
   const generateHeuristicSocraticReply = (round, anchor = {}, userReply = '') => {
-    const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+    const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
+    const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
     const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
 
-    // XỬ LÝ ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ"
-    if (isUncertaintyOrHelpRequest(userReply)) {
-      return `Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này. Các thao tác kỹ thuật lặp lại rất dễ bị AI thay thế; giá trị cốt lõi bền vững thuộc về tư duy chiến lược, năng lực giải quyết vấn đề phức tạp và giao tiếp giữa con người với con người.\n\nEm hãy ghi ngay băn khoăn này vào sổ tay để đối chất trực tiếp cùng cố vấn chuyên môn ở Bước 4. Còn bây giờ, để chuẩn bị cho tương lai, em dự định rèn luyện Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giao tiếp) như thế nào để không bị đào thải nếu thị trường ngành **${targetCareer}** biến động sau tốt nghiệp?`;
+    if (round >= 4) {
+      return `Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành **${targetCareer}** đến sự thiếu hụt dữ liệu tuyển sinh chính thức.\n\nBây giờ, em hãy chuyển sang **Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế** để xây dựng cơ sở vững chắc cho quyết định của mình!`;
     }
 
+    // 1. Phản ứng tâm lý khi học sinh bộc lộ sự bối rối hoặc nói "em hoang mang", "em lo lắng"
+    if (isConfusionOrAnxiety(userReply)) {
+      const reassurance = "Sự băn khoăn là phản ứng tự nhiên khi nhận ra khoảng trống thông tin. Nhìn thẳng vào thực tế là bước đầu tiên để em ra quyết định có trách nhiệm.";
+      if (round === 1) {
+        return `${reassurance}\n\nBên cạnh độ khó học thuật ở bậc đại học, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ AI đối với ngành **${targetCareer}**. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+      } else if (round === 2) {
+        return `${reassurance}\n\nĐể chủ động trước sự phát triển của công nghệ, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** biến động sau khi tốt nghiệp?`;
+      } else {
+        return `${reassurance}\n\nMột quyết định nghề nghiệp có trách nhiệm cần điểm tựa số liệu vững chắc. Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+      }
+    }
+
+    // 2. Phản ứng tâm lý khi học sinh nói "em chưa biết" hoặc "không biết nguồn"
+    if (isUncertaintyOrHelpRequest(userReply)) {
+      const guidance = "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống thông tin này. Em hãy đưa câu hỏi này vào danh mục chất vấn Mentor tại Bước 4.";
+      if (round === 1) {
+        return `${guidance}\n\nBên cạnh độ khó học thuật ở bậc đại học, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ AI đối với ngành **${targetCareer}**. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+      } else if (round === 2) {
+        return `${guidance}\n\nCòn bây giờ, để chuẩn bị cho tương lai nếu ngành **${targetCareer}** biến động, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng?`;
+      } else {
+        return `${guidance}\n\nĐể hoàn thiện cơ sở dữ liệu cho quyết định của mình, em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+      }
+    }
+
+    // 3. Phản hồi chuẩn hóa theo 4 Lượt
     switch (round) {
       case 1:
-        return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
+        return `Thầy đã ghi nhận phản hồi của em về năng lực phổ thông. Tuy nhiên, chương trình đại học ngành **${targetCareer}** đòi hỏi tính tự học và độ khó học thuật vượt trội hơn nhiều.\n\nBên cạnh đó, trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
 
       case 2:
-        return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
+        return `Nhận thức về tác động của công nghệ trong ngành **${targetCareer}** là rất cần thiết, nhưng thị trường việc làm luôn biến động khó lường.\n\nEm đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp?`;
 
       case 3:
-        return `Thầy ghi nhận kế hoạch thích ứng linh hoạt của em. Tuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** đòi hỏi phải dựa trên số liệu xác thực thay vì ước đoán.\n\nEm đã từng đối chiếu trực tiếp Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và biểu phí đào tạo thực tế của ngành **${targetCareer}** chưa, hay phần lớn thông tin em có vẫn đến từ suy đoán và mạng xã hội?`;
+        return `Mức độ chuẩn bị cho thấy em đã bắt đầu suy nghĩ về khả năng thích ứng. Tuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** cần được xây dựng trên dữ liệu xác thực thay vì ước đoán.\n\nEm đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
 
       case 4:
       default:
-        return `Qua 4 vòng phản biện vừa rồi, Thầy nhận thấy em có sự quyết tâm nhất định, nhưng giữa lý thuyết và số liệu thực tế vẫn còn nhiều khoảng trống thông tin mang tính sống còn mà em chưa có dữ liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết hay truyền thông. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+        return `Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành **${targetCareer}** đến sự thiếu hụt dữ liệu tuyển sinh chính thức.\n\nBây giờ, em hãy chuyển sang **Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế** để xây dựng cơ sở vững chắc cho quyết định của mình!`;
     }
   };
 
@@ -197,26 +239,41 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
 
+      const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || "Công nghệ thông tin";
+      const targetUniversity = (anchor.target_university || '').trim() || "Đại học Bách Khoa";
+      const confidenceScore = anchor.confidence_score || "8";
+      const hollandCode = anchor.holland_code || "Nghiên cứu - Kỹ thuật";
+
       const systemPrompt = `
-BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Nghiên cứu CBAS ViSEF 2026).
-HỒ SƠ HỌC SINH TỪ BƯỚC 1:
-- Ngành: "${anchor.target_career || 'Công nghệ thông tin'}" | Trường: "${anchor.target_university || 'Đại học Bách Khoa'}"
-- Điểm tự tin: ${anchor.confidence_score || '8'}/10 | Mã Holland: "${anchor.holland_code || 'Nghiên cứu - Kỹ thuật'}"
+BẠN LÀ: "Chuyên gia Phản tư Hành vi Socrates" (Nghiên cứu Khoa học Hành vi ViSEF 2026).
+DỮ LIỆU ĐÃ XÁC THỰC:
+- Ngành chọn: ${targetCareer} (BẮT BUỘC dùng đúng tên ngành "${targetCareer}" trong mọi câu phản hồi, TUYỆT ĐỐI KHÔNG dùng cụm từ "ngành em chọn" hay "ngành đã chọn").
+- Trường: ${targetUniversity}
+- Mức tự tin: ${confidenceScore}/10
+- Thiên hướng Holland: ${hollandCode}
 
-QUY TẮC CHUNG:
+QUY TẮC PHẢN ỨNG TÂM LÝ BẮT BUỘC:
+1. Khi học sinh bộc lộ sự bối rối hoặc nói "em hoang mang", "em lo lắng":
+   - Phải có 1 câu trấn an duy lý: "Sự băn khoăn là phản ứng tự nhiên khi nhận ra khoảng trống thông tin. Nhìn thẳng vào thực tế là bước đầu tiên để em ra quyết định có trách nhiệm."
+   - Tuyệt đối không nói "Thầy ghi nhận kế hoạch thích ứng" khi học sinh chưa đưa ra kế hoạch.
+2. Khi học sinh nói "em chưa biết" hoặc "không biết nguồn":
+   - Công nhận sự trung thực, không trách móc, không mớm câu trả lời. Hướng dẫn học sinh đưa câu hỏi này vào danh mục chất vấn Mentor tại Bước 4.
+
+LỘ TRÌNH ĐỐI THOẠI 4 LƯỢT NGHIÊM NGẶT:
+- LƯỢT 1 (Đang xử lý câu trả lời về năng lực): Soi chiếu năng lực phổ thông với độ khó đại học. Chuyển tiếp bằng câu hỏi về nguy cơ tự động hóa của AI đối với ngành ${targetCareer} trong 4-5 năm tới.
+- LƯỢT 2 (Đang xử lý câu trả lời về tự động hóa): Đánh giá nhận thức về công nghệ. Đặt câu hỏi về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt để thích ứng nếu ngành ${targetCareer} biến động.
+- LƯỢT 3 (Đang xử lý câu trả lời về kỹ năng thích ứng): Nhận diện mức độ chuẩn bị của học sinh. Đặt câu hỏi chốt: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"
+- LƯỢT 4 (KẾT THÚC PHIÊN - ĐÃ ĐỦ DỮ KIỆN): 
+  TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
+  Đưa ra phản hồi đúc kết:
+  "Qua 4 vòng đối thoại, em đã dũng cảm nhìn nhận các khoảng trống: từ năng lực thực tế, rủi ro tự động hóa của ngành ${targetCareer} đến sự thiếu hụt dữ liệu tuyển sinh chính thức. 
+  Bây giờ, em hãy chuyển sang Bước 3: Tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!"
+
+QUY TẮC BẮT BUỘC:
 1. KHÔNG khen ngợi sáo rỗng, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
-2. Trả lời dưới 100 từ. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI (trừ Vòng 4 thì đưa ra kết luận và dừng toàn bộ câu hỏi).
-3. TIẾN TRÌNH 4 VÒNG PHẢN TƯ BẮT BUỘC:
-   - Học sinh vừa trả lời Vòng 1 (Năng lực học tập thực tế): Phản hồi ngắn gọn ghi nhận thực tế (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"
-   - Học sinh vừa trả lời Vòng 2 (Nguy cơ tự động hóa 4.0): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 3: "Nếu thị trường lao động ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"
-   - Học sinh vừa trả lời Vòng 3 (Kỹ năng thích ứng sinh tồn): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 4: "Để đưa ra quyết định chắc chắn ở mức ${anchor.confidence_score || '8'}/10, em đã từng trực tiếp tra cứu các số liệu khách quan như Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} chưa, hay vẫn chủ yếu dựa trên cảm tính và mạng xã hội?"
-   - Học sinh vừa trả lời Vòng 4 (Đối chứng dữ liệu): ĐƯA RA LỜI KẾT LUẬN CHỐT & DỪNG CÂU HỎI. Tóm lược các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3: Đối chứng Dữ liệu Khách quan để tra cứu Đề án tuyển sinh, điểm chuẩn và học phí thực tế.
-
-QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ":
-- Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
-- Không khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh.
-- Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
-- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.
+2. Trả lời dưới 100 từ, tối đa 2 đoạn ngắn.
+3. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI (trừ Lượt 4 thì đưa ra lời đúc kết và DỪNG CÂU HỎI).
+4. BẮT BUỘC dùng đúng tên ngành "${targetCareer}".
       `;
 
       const contents = chatHistory.slice(-4).map(m => ({
@@ -290,14 +347,18 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
     const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor");
     let anchor = {
       target_career: "Công nghệ thông tin",
-      confidence_score: "8"
+      target_university: "Đại học Bách Khoa",
+      confidence_score: "8",
+      holland_code: "Nghiên cứu - Kỹ thuật"
     };
     if (rawAnchor) {
       try {
         const parsed = JSON.parse(rawAnchor);
         anchor = {
           target_career: parsed.target_career || parsed.target_major || anchor.target_career,
-          confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || anchor.confidence_score)
+          target_university: parsed.target_university || anchor.target_university,
+          confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || anchor.confidence_score),
+          holland_code: parsed.holland_code || (Array.isArray(parsed.holland_codes) ? parsed.holland_codes.join(', ') : anchor.holland_code)
         };
       } catch (e) {}
     }
