@@ -28,7 +28,12 @@ Một quyết định tương lai không thể chỉ dựa trên cảm xúc hay 
 function isGreetingOnly(text) {
   if (!text || typeof text !== 'string') return false;
   const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
-  const greetings = ['chào thầy', 'chao thay', 'chào bạn', 'chao ban', 'xin chào', 'xin chao', 'chào ai', 'hello', 'hi', 'alo', 'chào', 'chao', 'em chào thầy', 'em chao thay'];
+  const greetings = [
+    'chào thầy', 'chao thay', 'chào bạn', 'chao ban', 'xin chào', 'xin chao',
+    'chào ai', 'hello', 'hi', 'alo', 'chào', 'chao', 'em chào thầy', 'em chao thay',
+    'dạ', 'da', 'dạ thầy', 'da thay', 'vâng', 'vang', 'dạ em chào thầy', 'thầy ơi', 'thay oi',
+    'dạ vâng', 'da vang', 'vâng ạ', 'vang a'
+  ];
   return greetings.includes(clean);
 }
 
@@ -45,6 +50,28 @@ function isUncertaintyOrHelpRequest(text) {
     'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong'
   ];
   return keywords.some(k => clean.includes(k));
+}
+
+function isTooShortOrEvasive(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+  if (isGreetingOnly(text)) return false;
+  if (isUncertaintyOrHelpRequest(text)) return false;
+
+  const evasivePhrases = [
+    'thích thì học', 'thich thi hoc', 'thích', 'thich', 'tùy', 'tuy', 'sao cũng được',
+    'sao cung duoc', 'ok', 'ừ', 'u', 'uh', 'uhm', 'ko', 'k', 'không', 'khong',
+    'bình thường', 'binh thuong', 'chả biết', 'cha biet', 'không có gì', 'khong co gi',
+    'chịu', 'chiu', 'thích thế', 'thich the', 'kệ', 'ke', 'ai biết', 'ai biet',
+    'được', 'duoc', 'chắc thế', 'chac the'
+  ];
+  if (evasivePhrases.includes(clean)) return true;
+
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length < 3 || clean.length < 10) {
+    return true;
+  }
+  return false;
 }
 
 function getSocraticDirective(round, anchor = {}, userMsg = '') {
@@ -144,25 +171,21 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
 
   switch (round) {
     case 1:
-      return baseDirective + `\n- VÒNG 1 (Chất vấn môn học cốt lõi & đối chiếu năng lực thực chất):
-  Truy vấn điểm số môn học cụ thể hoặc trải nghiệm thực tế khiến học sinh tin rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành "${targetCareer}".
-  Đối chiếu với nhóm tính cách [${hollandCodes.join(', ')}].
-  Hỏi: "Ngoài những hình ảnh năng động thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành ${targetCareer}?"`;
+      return baseDirective + `\n- VÒNG 1 (Đã chất vấn xong về Năng lực học tập thực tế ➜ Tiến hành chất vấn Vòng 2 về Nguy cơ tự động hóa 4.0):
+  Học sinh vừa trả lời câu hỏi Vòng 1 về điểm số môn học hoặc trải nghiệm thực tế đối với ngành "${targetCareer}".
+  Hãy phản hồi ngắn gọn (dưới 40 từ), ghi nhận thực tế của học sinh (KHÔNG khen ngợi sáo rỗng, triệt tiêu sycophancy).
+  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
 
     case 2:
-      return baseDirective + `\n- VÒNG 2 (Truy vấn nguy cơ tự động hóa bởi AI & kỹ năng chuyên sâu không thể thay thế):
-  Truy vấn về nguy cơ tự động hóa bởi AI trong 4-5 năm tới đối với các tác vụ cơ bản của ngành "${targetCareer}".
-  Hỏi: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
+      return baseDirective + `\n- VÒNG 2 (Đã chất vấn xong về Nguy cơ tự động hóa 4.0 ➜ Tiến hành chất vấn Vòng 3 về Bộ kỹ năng thích ứng sinh tồn):
+  Học sinh vừa trả lời câu hỏi Vòng 2 về nguy cơ AI và kỹ năng chuyên sâu trong ngành "${targetCareer}".
+  Hãy phản hồi ngắn gọn (dưới 40 từ), điềm đạm, không phán xét.
+  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 3: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"`;
 
     case 3:
-      return baseDirective + `\n- VÒNG 3 (Truy vấn Bộ kỹ năng chuyển đổi & kế hoạch việc làm linh hoạt):
-  Truy vấn về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt để sinh tồn nếu thị trường biến động sau tốt nghiệp.
-  Hỏi: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"`;
-
     case 4:
     default:
-      return baseDirective + `\n- VÒNG 4 (Tóm lược khoảng trống nhận thức & điều hướng Bước 3):
-  Tóm lược 2 câu về các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3 để đối chứng dữ liệu thực tế (Đề án tuyển sinh, học phí, điểm chuẩn).`;
+      return FINAL_CHALLENGE_PROMPT;
   }
 }
 
@@ -180,8 +203,8 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   }
   const codeStr = hollandCodes.length > 0 ? `[${hollandCodes.join(', ')}]` : '';
 
-  if (isFinal || round >= 4) {
-    return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy em đã bắt đầu nhìn nhận vấn đề nhiều chiều hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính quyết định mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời đòi hỏi sự kiểm chứng khách quan. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+  if (isFinal || round >= 3) {
+    return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
   }
 
   // Phản hồi đặc biệt khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
@@ -190,19 +213,17 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   }
 
   if (isGreetingOnly(userMsg)) {
-    return `Chào em! Thầy là Trợ lý AI Tham Vấn Phản Tư Socrates. Dữ liệu ghi nhận em đang hướng tới ngành **${targetCareer}**${univText} với mức tự tin **${confidenceScore}/10** ${codeStr ? `(Mã Holland: ${codeStr})` : ''}.\n\nĐể bắt đầu, em hãy chia sẻ: Ngoài những thông tin chung trên mạng, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${confidenceScore}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo ngành này?`;
+    return `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành này?`;
   }
 
   switch (round) {
     case 1:
-      return `Thầy đã đọc lập luận của em về lý do chọn ngành **${targetCareer}**. Tuy nhiên, giữa sự tự tin ban đầu (${confidenceScore}/10) với thực tế môi trường đào tạo chuyên sâu thường có khoảng cách khá lớn.\n\nĐối với ngành **${targetCareer}**, các môn chuyên ngành đòi hỏi tư duy phân tích và áp lực bài tập rất nặng. Điểm số các môn học liên quan hiện tại ở trường THPT và thói quen tự giải quyết vấn đề của em thực chất ra sao?`;
+      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
 
     case 2:
-      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng. Tuy nhiên, một thách thức rất lớn trong 4-5 năm tới là làn sóng tự động hóa từ trí tuệ nhân tạo (AI).\n\nNhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Em đã tìm hiểu xem đâu là kỹ năng chuyên sâu độc thù, mang tính tư duy chiến lược mà AI không thể thay thế được trong ngành này chưa?`;
+      return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
 
     case 3:
-      return `Lập luận của em có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường. Một tấm bằng chuyên ngành không còn là bảo chứng tuyệt đối cho việc làm.\n\nEm đã trang bị Bộ kỹ năng chuyển đổi (như ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp - đàm phán) và có kế hoạch việc làm linh hoạt như thế nào nếu thị trường ngành **${targetCareer}** bước vào chu kỳ bão hòa khi em ra trường?`;
-
     case 4:
     default:
       return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
@@ -238,18 +259,50 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống.' });
     }
 
+    const trimmedMessage = message.trim();
     const userHistoryTurns = Array.isArray(history)
       ? history.filter(h => h.role === 'user').length
       : 0;
     const currentRound = Number(round) || (userHistoryTurns + 1);
     const maxRoundsSetting = Number(body?.maxRounds) || 4;
     const isFinalRound = Boolean(isFinal) || currentRound > maxRoundsSetting;
+
+    const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+    const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+
+    // QUY TẮC 1: Nếu học sinh chỉ chào hỏi (Ví dụ: "chào thầy", "hello", "dạ")
+    // Tuyệt đối KHÔNG tính đây là một vòng phản tư, KHÔNG tăng biến đếm vòng.
+    if (isGreetingOnly(trimmedMessage)) {
+      const greetingReply = currentRound === 1
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành này?`
+        : currentRound === 2
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu không thể thay thế của em trong ngành ${targetCareer}.`
+        : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về Bộ kỹ năng chuyển đổi và kế hoạch việc làm linh hoạt để thích ứng sinh tồn.`;
+
+      return res.status(200).json({
+        reply: greetingReply,
+        round: currentRound,
+        isFinal: false,
+        advanced: false
+      });
+    }
+
+    // QUY TẮC 2: Nếu học sinh né tránh hoặc trả lời quá ngắn (Dưới 1 câu hoàn chỉnh / < 3 từ / < 10 ký tự)
+    // Giữ nguyên câu hỏi và yêu cầu học sinh làm rõ, KHÔNG tăng biến đếm vòng.
+    if (isTooShortOrEvasive(trimmedMessage)) {
+      return res.status(200).json({
+        reply: `Câu trả lời này chưa đủ dữ kiện để phản biện. Em hãy đưa ra dẫn chứng cụ thể hơn.`,
+        round: currentRound,
+        isFinal: false,
+        advanced: false
+      });
+    }
     
     let activeSystemInstruction = '';
     if (isFinalRound) {
       activeSystemInstruction = FINAL_CHALLENGE_PROMPT;
     } else {
-      activeSystemInstruction = getSocraticDirective(currentRound, anchor, message.trim());
+      activeSystemInstruction = getSocraticDirective(currentRound, anchor, trimmedMessage);
     }
 
     const targetMaxTokens = 1200; // Đặt 1200 tokens để bao gồm cả thinking tokens (~400) và câu trả lời hoàn chỉnh (~200)

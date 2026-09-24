@@ -8,6 +8,7 @@ export default function Step2SocraticAgent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [currentRound, setCurrentRound] = useState(1);
+  const [isCompleted, setIsCompleted] = useState(false);
   const maxRounds = 4;
 
   const messagesEndRef = useRef(null);
@@ -42,6 +43,10 @@ export default function Step2SocraticAgent() {
       }
     }
 
+    if (localStorage.getItem("cbas_step2_completed") === "true") {
+      setIsCompleted(true);
+    }
+
     const initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm **${anchor.holland_code}**.
 
 Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực tế mà mạng xã hội thường không nói tới.
@@ -53,9 +58,23 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     ]);
   }, []);
 
+  function isGreetingOnly(text) {
+    if (!text || typeof text !== 'string') return false;
+    const clean = text.toLowerCase().trim().replace(/[!.,?~:;\-_]/g, '');
+    const greetings = [
+      'chào thầy', 'chao thay', 'chào bạn', 'chao ban', 'xin chào', 'xin chao',
+      'chào ai', 'chao ai', 'hello', 'hi', 'alo', 'chào', 'chao',
+      'em chào thầy', 'em chao thay', 'con chào thầy', 'con chao thay',
+      'dạ', 'da', 'dạ thầy', 'da thay', 'vâng', 'vang', 'dạ em chào thầy', 'da em chao thay',
+      'thầy ơi', 'thay oi', 'dạ vâng', 'da vang', 'vâng ạ', 'vang a',
+      'hi thầy', 'hi thay', 'hello thầy', 'hello thay'
+    ];
+    return greetings.includes(clean);
+  }
+
   function isUncertaintyOrHelpRequest(text) {
     if (!text || typeof text !== 'string') return false;
-    const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+    const clean = text.toLowerCase().trim().replace(/[!.,?~:;\-_]/g, '');
     const keywords = [
       'chưa biết', 'chua biet', 'không biết', 'khong biet', 'chưa rõ', 'chua ro',
       'chưa nghĩ', 'chua nghi', 'chưa tìm hiểu', 'chua tim hieu', 'chưa có', 'chua co',
@@ -63,27 +82,62 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       'giúp em', 'giup em', 'chỉ em với', 'chi em voi', 'tư vấn giúp', 'tu van giup',
       'chưa tính', 'chua tinh', 'không rõ', 'khong ro', 'bí quá', 'em không rõ',
       'chưa thể', 'chua the', 'giúp với', 'giup voi', 'giúp em với', 'giup em voi',
-      'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong'
+      'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong', 'khó quá', 'kho qua'
     ];
     return keywords.some(k => clean.includes(k));
+  }
+
+  function isTooShortOrEvasive(text) {
+    if (!text || typeof text !== 'string') return false;
+    if (isGreetingOnly(text)) return false;
+    if (isUncertaintyOrHelpRequest(text)) return false;
+
+    const clean = text.toLowerCase().trim().replace(/[!.,?~:;\-_]/g, '');
+    const evasivePhrases = [
+      'thích thì học', 'thich thi hoc', 'thích', 'thich', 'tùy', 'tuy',
+      'sao cũng được', 'sao cung duoc', 'sao cũng đc', 'sao cung dc',
+      'ok', 'ừ', 'u', 'uh', 'uhm', 'umm', 'ko', 'k',
+      'không', 'khong', 'bình thường', 'binh thuong', 'chả biết', 'cha biet',
+      'không có gì', 'khong co gi', 'chịu', 'chiu', 'thích thế', 'thich the',
+      'kệ', 'ke', 'ai biết', 'ai biet', 'được', 'duoc', 'chắc thế', 'chac the',
+      'chắc vậy', 'chac vay', 'đúng rồi', 'dung roi', 'chuẩn', 'chuan', 'thế thôi', 'the thoi',
+      'cũng vậy', 'cung vay', 'thường thôi', 'thuong thoi', 'tàm tạm', 'tam tam'
+    ];
+    if (evasivePhrases.includes(clean)) return true;
+
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length < 3 || clean.length < 10) {
+      return true;
+    }
+    return false;
   }
 
   // Bộ phản biện Socrates dự phòng chuẩn hóa CBAS ViSEF 2026 (Cam kết 100% không bao giờ treo/đứng máy)
   const generateHeuristicSocraticReply = (round, anchor = {}, userReply = '') => {
     const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+    const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
 
     // XỬ LÝ ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ"
     if (isUncertaintyOrHelpRequest(userReply)) {
       return `Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này. Các thao tác kỹ thuật lặp lại rất dễ bị AI thay thế; giá trị cốt lõi bền vững thuộc về tư duy chiến lược, năng lực giải quyết vấn đề phức tạp và giao tiếp giữa con người với con người.\n\nEm hãy ghi ngay băn khoăn này vào sổ tay để đối chất trực tiếp cùng cố vấn chuyên môn ở Bước 4. Còn bây giờ, để chuẩn bị cho tương lai, em dự định rèn luyện Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giao tiếp) như thế nào để không bị đào thải nếu thị trường ngành **${targetCareer}** biến động sau tốt nghiệp?`;
     }
 
+    if (isGreetingOnly(userReply)) {
+      return `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành này?`;
+    }
+
+    if (isTooShortOrEvasive(userReply)) {
+      return `Câu trả lời này chưa đủ dữ kiện để phản biện. Em hãy đưa ra dẫn chứng cụ thể hơn.`;
+    }
+
     switch (round) {
+      case 1:
+        return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
+
       case 2:
-        return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng. Tuy nhiên, một thách thức rất lớn trong 4-5 năm tới là làn sóng tự động hóa từ trí tuệ nhân tạo (AI).\n\nNhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Em đã tìm hiểu xem đâu là kỹ năng chuyên sâu độc thù, mang tính tư duy chiến lược mà AI không thể thay thế được trong ngành này chưa?`;
+        return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
 
       case 3:
-        return `Lập luận của em có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường. Một tấm bằng chuyên ngành không còn là bảo chứng tuyệt đối cho việc làm.\n\nEm đã trang bị Bộ kỹ năng chuyển đổi (như ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp - đàm phán) và có kế hoạch việc làm linh hoạt như thế nào nếu thị trường ngành **${targetCareer}** bước vào chu kỳ bão hòa khi em ra trường?`;
-
       case 4:
       default:
         return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
@@ -100,7 +154,7 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       } catch (e) {}
     }
 
-    const isFinalRound = round >= maxRounds;
+    const isFinalRound = round >= 3;
 
     // TẦNG 1: Gọi endpoint serverless /api/chat với timeout 5.5s
     try {
@@ -140,7 +194,7 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       console.warn("Serverless /api/chat failover to direct:", apiErr?.message);
     }
 
-    // TẦNG 2: Gọi trực tiếp Google Gemini API với maxOutputTokens 1200 (tránh cộc lốc/thiếu tokens)
+    // TẦNG 2: Gọi trực tiếp Google Gemini API với maxOutputTokens 1200
     try {
       const DEFAULT_ENCODED = 'QVEuQWI4Uk42S001OHFsaDJITEU0WktpSkt2dmZQVE1vd0ZLUjRHRU9GbE92X01iVERaRHc=';
       const fallbackKey = typeof atob !== 'undefined' ? atob(DEFAULT_ENCODED) : '';
@@ -153,20 +207,20 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       const systemPrompt = `
 BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Nghiên cứu CBAS ViSEF 2026).
 HỒ SƠ HỌC SINH TỪ BƯỚC 1:
-- Ngành: "${anchor.target_career || 'Chưa rõ'}" | Trường: "${anchor.target_university || 'Chưa rõ'}"
-- Điểm tự tin: ${anchor.confidence_score || '8'}/10 | Mã Holland: "${anchor.holland_code || 'Chưa rõ'}"
+- Ngành: "${anchor.target_career || 'Công nghệ thông tin'}" | Trường: "${anchor.target_university || 'Đại học Bách Khoa'}"
+- Điểm tự tin: ${anchor.confidence_score || '8'}/10 | Mã Holland: "${anchor.holland_code || 'Nghiên cứu - Kỹ thuật'}"
 
 QUY TẮC CHUNG:
 1. KHÔNG khen ngợi sáo rỗng, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
-2. Trả lời dưới 120 từ. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI.
-3. Điều hướng theo tiến trình:
-   - Đang ở Vòng 2: Truy vấn về nguy cơ tự động hóa bởi AI trong 4-5 năm tới và kỹ năng chuyên sâu không thể thay thế của ngành ${anchor.target_career || 'đã chọn'}.
-   - Đang ở Vòng 3: Truy vấn về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt để sinh tồn nếu thị trường biến động sau tốt nghiệp.
-   - Đang ở Vòng 4: Tóm lược 2 câu về các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3 để đối chứng dữ liệu thực tế (Đề án tuyển sinh, học phí, điểm chuẩn).
+2. Trả lời dưới 100 từ. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI (trừ Vòng 4 thì đưa ra kết luận và dừng toàn bộ câu hỏi).
+3. TIẾN TRÌNH 4 VÒNG PHẢN TƯ BẮT BUỘC:
+   - Học sinh vừa trả lời Vòng 1 (Năng lực học tập thực tế): Phản hồi ngắn gọn ghi nhận thực tế (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${anchor.target_career || 'đã chọn'}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"
+   - Học sinh vừa trả lời Vòng 2 (Nguy cơ tự động hóa 4.0): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 3: "Nếu thị trường lao động ngành ${anchor.target_career || 'đã chọn'} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"
+   - Học sinh vừa trả lời Vòng 3 (Kỹ năng thích ứng sinh tồn): ĐƯA RA VÒNG 4 (KẾT LUẬN & DỪNG CÂU HỎI). Tóm lược các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3: Đối chứng Dữ liệu Khách quan để tra cứu Đề án tuyển sinh, điểm chuẩn và học phí thực tế.
 
 QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ":
 - Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
-- Không khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh (Ví dụ: "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống này.").
+- Không khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh.
 - Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
 - Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${anchor.target_career || 'đã chọn'} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.
       `;
@@ -192,7 +246,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
           contents: contents,
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 1200 // Đủ room cho thinking tokens + câu trả lời hoàn chỉnh
+            maxOutputTokens: 1200
           }
         }),
         signal: directCtrl.signal
@@ -221,7 +275,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
   const handleSend = async (e) => {
     e.preventDefault();
     const text = inputValue.trim();
-    if (!text || isLoading || currentRound > maxRounds) return;
+    if (!text || isLoading || isCompleted) return;
 
     setErrorMessage('');
     const userMsg = {
@@ -230,13 +284,63 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
+    const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor");
+    let anchor = {
+      target_career: "Công nghệ thông tin",
+      confidence_score: "8"
+    };
+    if (rawAnchor) {
+      try {
+        const parsed = JSON.parse(rawAnchor);
+        anchor = {
+          target_career: parsed.target_career || parsed.target_major || anchor.target_career,
+          confidence_score: String(parsed.confidence_score || parsed.confidence_score_initial || anchor.confidence_score)
+        };
+      } catch (e) {}
+    }
+
+    // 1. QUY TẮC 1: NẾU HỌC SINH CHỈ CHÀO HỎI (Ví dụ: "chào thầy", "hello", "dạ")
+    // Tuyệt đối KHÔNG tính đây là một vòng phản tư, KHÔNG tăng biến đếm vòng.
+    if (isGreetingOnly(text)) {
+      const greetingReply = currentRound === 1
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${anchor.confidence_score}/10 vào ngành này?`
+        : currentRound === 2
+        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu không thể thay thế của em trong ngành ${anchor.target_career}.`
+        : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về Bộ kỹ năng chuyển đổi và kế hoạch việc làm linh hoạt để thích ứng sinh tồn.`;
+
+      const aiMsg = {
+        role: 'model',
+        text: greetingReply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setInputValue('');
+      return; // Không tăng currentRound!
+    }
+
+    // 2. QUY TẮC 2: NẾU HỌC SINH NÉ TRÁNH HOẶC TRẢ LỜI QUÁ NGẮN (Dưới 1 câu hoàn chỉnh)
+    // Giữ nguyên câu hỏi và yêu cầu học sinh làm rõ, KHÔNG tăng biến đếm vòng.
+    if (isTooShortOrEvasive(text)) {
+      const evasiveReply = `Câu trả lời này chưa đủ dữ kiện để phản biện. Em hãy đưa ra dẫn chứng cụ thể hơn.`;
+      const aiMsg = {
+        role: 'model',
+        text: evasiveReply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setInputValue('');
+      return; // Không tăng currentRound!
+    }
+
+    // 3. QUY TẮC 3: TIẾN TRÌNH PHẢN TƯ THẬT SỰ (CHỈ KẾT THÚC KHI ĐỦ 4 VÒNG)
     const nextMessages = [...messages, userMsg];
     setMessages(nextMessages);
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const nextRound = currentRound + 1;
       const aiReply = await callSocraticAPI(messages, text, currentRound);
       
       const aiMsg = {
@@ -246,22 +350,30 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
       };
 
       setMessages([...nextMessages, aiMsg]);
-      setCurrentRound(nextRound);
 
-      if (nextRound > maxRounds) {
+      if (currentRound >= 3) {
+        // Vòng 3 đã chất vấn xong -> AI vừa đưa ra Vòng 4 (Kết luận & Chuyển sang Bước 3)
+        setCurrentRound(4);
+        setIsCompleted(true);
         localStorage.setItem("cbas_step2_completed", "true");
+      } else {
+        setCurrentRound(prev => prev + 1);
       }
     } catch (err) {
       console.error("Lỗi AI Socrates:", err);
-      // Fallback an toàn không bao giờ làm gián đoạn học sinh
-      const rawAnchor = localStorage.getItem("cbas_anchor_data");
-      const fallbackReply = generateHeuristicSocraticReply(currentRound, rawAnchor ? JSON.parse(rawAnchor) : {}, text);
+      const fallbackReply = generateHeuristicSocraticReply(currentRound, anchor, text);
       setMessages([...nextMessages, {
         role: 'model',
         text: fallbackReply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }]);
-      setCurrentRound(prev => prev + 1);
+      if (currentRound >= 3) {
+        setCurrentRound(4);
+        setIsCompleted(true);
+        localStorage.setItem("cbas_step2_completed", "true");
+      } else {
+        setCurrentRound(prev => prev + 1);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -292,7 +404,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
     content += `🏛️ Trường đại học mục tiêu: ${targetUniv}\n`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
     content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
-    content += `🔄 Tiến trình hoàn thành: ${Math.min(currentRound, maxRounds)} / ${maxRounds} vòng phản tư\n\n`;
+    content += `🔄 Tiến trình hoàn thành: ${isCompleted ? 4 : Math.min(currentRound, maxRounds)} / ${maxRounds} vòng phản tư${isCompleted ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
     content += `-----------------------------------------------------------------\n`;
     content += `CHI TIẾT NỘI DUNG ĐỐI THOẠI PHẢN BIỆN SOCRATES:\n`;
     content += `-----------------------------------------------------------------\n\n`;
@@ -391,7 +503,10 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>
-            Tiến trình: <span style={{ color: '#2563eb' }}>{Math.min(currentRound, maxRounds)}</span> / {maxRounds} vòng
+            Tiến trình: <span style={{ color: '#2563eb' }}>{isCompleted ? 4 : currentRound}</span> / {maxRounds} vòng
+            <span style={{ marginLeft: '8px', fontSize: '12px', color: isCompleted ? '#059669' : '#2563eb', fontWeight: 'normal', background: isCompleted ? '#ecfdf5' : '#eff6ff', padding: '2px 8px', borderRadius: '8px' }}>
+              {isCompleted ? '✓ Hoàn thành đủ 4 vòng' : currentRound === 1 ? 'Vòng 1: Năng lực học tập' : currentRound === 2 ? 'Vòng 2: Nguy cơ AI 4.0' : currentRound === 3 ? 'Vòng 3: Kỹ năng sinh tồn' : 'Vòng 4: Kết luận'}
+            </span>
           </div>
           
           {/* CỤM NÚT XUẤT DỮ LIỆU NHANH TRÊN HEADER */}
@@ -459,13 +574,13 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
         <div ref={messagesEndRef} />
       </div>
 
-      {/* MỞ KHÓA BƯỚC 3 & KHỐI XUẤT TÀI LIỆU SAU KHI HOÀN THÀNH 4 VÒNG */}
-      {currentRound > maxRounds && (
+      {/* MỞ KHÓA BƯỚC 3 & KHỐI XUẤT TÀI LIỆU SAU KHI HOÀN THÀNH ĐỦ 4 VÒNG */}
+      {isCompleted && (
         <div style={{ padding: '14px 20px', background: '#ecfdf5', borderTop: '1px solid #a7f3d0' }} className="no-print">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
             <div>
               <p style={{ margin: '0 0 4px 0', fontSize: '13.5px', color: '#065f46', fontWeight: 'bold' }}>
-                🎯 Em đã hoàn thành phiên phản tư nhận thức!
+                🎯 Em đã hoàn thành đủ 4 vòng phản tư nhận thức Socrates!
               </p>
               <p style={{ margin: 0, fontSize: '12px', color: '#047857' }}>
                 Em có thể xuất biên bản này để làm tài liệu chuẩn bị cho buổi tư vấn 1-1 ở Bước 4.
@@ -513,8 +628,8 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || currentRound > maxRounds}
-            placeholder={currentRound > maxRounds ? "Phiên phản tư đã kết thúc. Em hãy chuyển sang Bước 3." : "Tự tay nhập câu trả lời phản biện của em (VD: Điểm Toán của em là 8.5, em đã tìm hiểu...)"}
+            disabled={isLoading || isCompleted}
+            placeholder={isCompleted ? "Phiên phản tư đã kết thúc. Em hãy chuyển sang Bước 3." : "Tự tay nhập câu trả lời phản biện của em (VD: Điểm Toán của em là 8.5, em đã tìm hiểu...)"}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -526,7 +641,7 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
           />
           <button
             type="submit"
-            disabled={isLoading || !inputValue.trim() || currentRound > maxRounds}
+            disabled={isLoading || !inputValue.trim() || isCompleted}
             style={{
               background: '#10b981',
               color: '#ffffff',
@@ -534,8 +649,8 @@ QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP �
               padding: '0 24px',
               borderRadius: '8px',
               fontWeight: 'bold',
-              cursor: isLoading || currentRound > maxRounds ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !inputValue.trim() || currentRound > maxRounds ? 0.6 : 1
+              cursor: isLoading || isCompleted ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !inputValue.trim() || isCompleted ? 0.6 : 1
             }}
           >
             GỬI ➔
