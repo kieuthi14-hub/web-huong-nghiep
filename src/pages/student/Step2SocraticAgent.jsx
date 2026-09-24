@@ -410,10 +410,12 @@ QUY TẮC BẮT BUỘC:
 
   // Nút khẩn cấp để Reset phiên phản tư khi cần test lại
   const handleResetSession = () => {
-    localStorage.removeItem("cbas_step2_messages");
-    localStorage.removeItem("cbas_step2_round");
-    localStorage.removeItem("cbas_step2_completed");
-    window.location.reload();
+    if (window.confirm("Em có muốn xóa dữ liệu phiên hiện tại và bắt đầu lại cuộc trò chuyện từ Lượt 1 không?")) {
+      localStorage.removeItem("cbas_step2_messages");
+      localStorage.removeItem("cbas_step2_round");
+      localStorage.removeItem("cbas_step2_completed");
+      window.location.reload();
+    }
   };
 
   const [copySuccess, setCopySuccess] = useState(false);
@@ -551,18 +553,22 @@ QUY TẮC BẮT BUỘC:
           <button 
             type="button"
             onClick={handleResetSession} 
-            title="Xóa dữ liệu kẹt và bắt đầu lại phiên phản tư từ Vòng 1"
+            title="Bắt đầu lại cuộc trò chuyện từ Lượt 1"
             style={{ 
-              fontSize: '11px', 
+              fontSize: '12px', 
+              fontWeight: '600',
               marginLeft: '6px', 
-              color: '#64748b', 
-              background: '#f1f5f9', 
-              border: '1px solid #cbd5e1', 
+              color: '#1d4ed8', 
+              background: '#eff6ff', 
+              border: '1px solid #bfdbfe', 
               borderRadius: '6px', 
-              padding: '4px 8px', 
-              cursor: 'pointer' 
+              padding: '5px 12px', 
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
             }}>
-            🔄 Làm lại phiên
+            🔄 Bắt đầu lại từ đầu
           </button>
           
           {/* CỤM NÚT XUẤT DỮ LIỆU NHANH TRÊN HEADER */}
@@ -666,7 +672,13 @@ QUY TẮC BẮT BUỘC:
             </div>
           </div>
 
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
+            <button 
+              type="button"
+              onClick={handleResetSession}
+              style={{ background: '#ffffff', color: '#1e293b', border: '1px solid #cbd5e1', padding: '11px 20px', borderRadius: '6px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              🔄 Bắt đầu lại từ đầu (Thử nghiệm)
+            </button>
             <button 
               type="button"
               onClick={handleGoToStep3}
@@ -688,7 +700,7 @@ QUY TẮC BẮT BUỘC:
               if (errorMessage) setErrorMessage('');
             }}
             disabled={isLoading || currentRound > maxRounds}
-            placeholder={currentRound > maxRounds ? "Phiên phản tư đã kết thúc. Em hãy chuyển sang Bước 3." : "Tự tay nhập câu trả lời phản biện của em (VD: Điểm Toán của em là 8.5, em đã tìm hiểu...)"}
+            placeholder={currentRound > maxRounds ? "Phiên phản tư đã kết thúc. Em hãy chuyển sang Bước 3 hoặc bấm 'Bắt đầu lại'." : "Tự tay nhập câu trả lời phản biện của em (VD: Điểm Toán của em là 8.5, em đã tìm hiểu...)"}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -715,9 +727,28 @@ QUY TẮC BẮT BUỘC:
             GỬI ➔
           </button>
         </form>
-        <small style={{ display: 'block', marginTop: '6px', color: '#94a3b8', fontSize: '12px' }}>
-          *Hệ thống yêu cầu học sinh tự trình bày lập luận để kích hoạt tư duy phản tư sâu sắc nhất.
-        </small>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', flexWrap: 'wrap', gap: '8px' }}>
+          <small style={{ color: '#94a3b8', fontSize: '12px' }}>
+            *Hệ thống yêu cầu học sinh tự trình bày lập luận để kích hoạt tư duy phản tư sâu sắc nhất.
+          </small>
+          {messages.length > 1 && (
+            <button
+              type="button"
+              onClick={handleResetSession}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#2563eb',
+                fontSize: '12px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                padding: '2px 4px'
+              }}>
+              🔄 Bắt đầu lại từ Lượt 1
+            </button>
+          )}
+        </div>
       </div>
 
     </div>
