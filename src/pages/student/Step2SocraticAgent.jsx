@@ -53,9 +53,29 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     ]);
   }, []);
 
+  function isUncertaintyOrHelpRequest(text) {
+    if (!text || typeof text !== 'string') return false;
+    const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+    const keywords = [
+      'chưa biết', 'chua biet', 'không biết', 'khong biet', 'chưa rõ', 'chua ro',
+      'chưa nghĩ', 'chua nghi', 'chưa tìm hiểu', 'chua tim hieu', 'chưa có', 'chua co',
+      'em chịu', 'chịu thôi', 'thầy giúp', 'thay giup', 'nhờ thầy', 'nho thay',
+      'giúp em', 'giup em', 'chỉ em với', 'chi em voi', 'tư vấn giúp', 'tu van giup',
+      'chưa tính', 'chua tinh', 'không rõ', 'khong ro', 'bí quá', 'em không rõ',
+      'chưa thể', 'chua the', 'giúp với', 'giup voi', 'giúp em với', 'giup em voi',
+      'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong'
+    ];
+    return keywords.some(k => clean.includes(k));
+  }
+
   // Bộ phản biện Socrates dự phòng chuẩn hóa CBAS ViSEF 2026 (Cam kết 100% không bao giờ treo/đứng máy)
   const generateHeuristicSocraticReply = (round, anchor = {}, userReply = '') => {
     const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'ngành em chọn';
+
+    // XỬ LÝ ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ"
+    if (isUncertaintyOrHelpRequest(userReply)) {
+      return `Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này. Các thao tác kỹ thuật lặp lại rất dễ bị AI thay thế; giá trị cốt lõi bền vững thuộc về tư duy chiến lược, năng lực giải quyết vấn đề phức tạp và giao tiếp giữa con người với con người.\n\nEm hãy ghi ngay băn khoăn này vào sổ tay để đối chất trực tiếp cùng cố vấn chuyên môn ở Bước 4. Còn bây giờ, để chuẩn bị cho tương lai, em dự định rèn luyện Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giao tiếp) như thế nào để không bị đào thải nếu thị trường ngành **${targetCareer}** biến động sau tốt nghiệp?`;
+    }
 
     switch (round) {
       case 2:
@@ -136,13 +156,19 @@ HỒ SƠ HỌC SINH TỪ BƯỚC 1:
 - Ngành: "${anchor.target_career || 'Chưa rõ'}" | Trường: "${anchor.target_university || 'Chưa rõ'}"
 - Điểm tự tin: ${anchor.confidence_score || '8'}/10 | Mã Holland: "${anchor.holland_code || 'Chưa rõ'}"
 
-QUY TẮC:
-1. KHÔNG khen ngợi, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
+QUY TẮC CHUNG:
+1. KHÔNG khen ngợi sáo rỗng, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
 2. Trả lời dưới 120 từ. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI.
 3. Điều hướng theo tiến trình:
    - Đang ở Vòng 2: Truy vấn về nguy cơ tự động hóa bởi AI trong 4-5 năm tới và kỹ năng chuyên sâu không thể thay thế của ngành ${anchor.target_career || 'đã chọn'}.
    - Đang ở Vòng 3: Truy vấn về Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt để sinh tồn nếu thị trường biến động sau tốt nghiệp.
    - Đang ở Vòng 4: Tóm lược 2 câu về các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3 để đối chứng dữ liệu thực tế (Đề án tuyển sinh, học phí, điểm chuẩn).
+
+QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ":
+- Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
+- Không khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh (Ví dụ: "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống này.").
+- Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
+- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${anchor.target_career || 'đã chọn'} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.
       `;
 
       const contents = chatHistory.slice(-4).map(m => ({

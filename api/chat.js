@@ -32,6 +32,21 @@ function isGreetingOnly(text) {
   return greetings.includes(clean);
 }
 
+function isUncertaintyOrHelpRequest(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
+  const keywords = [
+    'chưa biết', 'chua biet', 'không biết', 'khong biet', 'chưa rõ', 'chua ro',
+    'chưa nghĩ', 'chua nghi', 'chưa tìm hiểu', 'chua tim hieu', 'chưa có', 'chua co',
+    'em chịu', 'chịu thôi', 'thầy giúp', 'thay giup', 'nhờ thầy', 'nho thay',
+    'giúp em', 'giup em', 'chỉ em với', 'chi em voi', 'tư vấn giúp', 'tu van giup',
+    'chưa tính', 'chua tinh', 'không rõ', 'khong ro', 'bí quá', 'em không rõ',
+    'chưa thể', 'chua the', 'giúp với', 'giup voi', 'giúp em với', 'giup em voi',
+    'chưa xác định', 'chua xac dinh', 'chưa lường', 'chua luong'
+  ];
+  return keywords.some(k => clean.includes(k));
+}
+
 function getSocraticDirective(round, anchor = {}, userMsg = '') {
   const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'chưa xác định';
   const targetUniversity = (anchor.target_university || '').trim() || 'chưa xác định';
@@ -90,7 +105,17 @@ Nếu học sinh chia sẻ về bế tắc cuộc sống nghiêm trọng, khủn
 - DỪNG NGAY TOÀN BỘ VIỆC PHẢN BIỆN HƯỚNG NGHIỆP.
 - Phản hồi ấm áp: "Thầy hiểu em đang phải chịu nhiều áp lực và mệt mỏi lúc này. Sức khỏe và sự bình an của em là điều quan trọng nhất. Em hãy tạm nghỉ ngơi và chia sẻ ngay với Thầy/Cô tâm lý trường, bố mẹ hoặc gọi Tổng đài Quốc gia Bảo vệ Trẻ em 111 để được lắng nghe và hỗ trợ nhé."`;
 
-  // 1. Xử lý câu chào hỏi
+  // 1. Xử lý khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
+  if (isUncertaintyOrHelpRequest(userMsg)) {
+    return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ THỊ ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ"]:
+Học sinh vừa phản hồi rằng chưa biết, chưa rõ hoặc cần sự giúp đỡ. BẮT BUỘC TUÂN THỦ 4 ĐIỀU SAU:
+- Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
+- KHÔNG khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh (Ví dụ: "Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này.").
+- Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
+- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${targetCareer} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.`;
+  }
+
+  // 2. Xử lý câu chào hỏi
   if (isGreetingOnly(userMsg)) {
     if (targetCareer && targetCareer !== 'chưa xác định') {
       return SYSTEM_INSTRUCTION_STEP2 + `\n\n[CHỈ ĐẠO XỬ LÝ LỜI CHÀO]:
@@ -157,6 +182,11 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
 
   if (isFinal || round >= 4) {
     return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy em đã bắt đầu nhìn nhận vấn đề nhiều chiều hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính quyết định mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời đòi hỏi sự kiểm chứng khách quan. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+  }
+
+  // Phản hồi đặc biệt khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
+  if (isUncertaintyOrHelpRequest(userMsg)) {
+    return `Thầy ghi nhận sự trung thực của em khi nhìn nhận khoảng trống kiến thức này. Các thao tác kỹ thuật lặp lại rất dễ bị AI thay thế; giá trị cốt lõi bền vững thuộc về tư duy chiến lược, năng lực giải quyết vấn đề phức tạp và giao tiếp giữa con người với con người.\n\nEm hãy ghi ngay băn khoăn này vào sổ tay để đối chất trực tiếp cùng cố vấn chuyên môn ở Bước 4. Còn bây giờ, để chuẩn bị cho tương lai, em dự định rèn luyện Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giao tiếp) như thế nào để không bị đào thải nếu thị trường ngành **${targetCareer}** biến động sau tốt nghiệp?`;
   }
 
   if (isGreetingOnly(userMsg)) {
