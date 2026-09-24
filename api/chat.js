@@ -174,7 +174,7 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
       return baseDirective + `\n- VÒNG 1 (Đã chất vấn xong về Năng lực học tập thực tế ➜ Tiến hành chất vấn Vòng 2 về Nguy cơ tự động hóa 4.0):
   Học sinh vừa trả lời câu hỏi Vòng 1 về điểm số môn học hoặc trải nghiệm thực tế đối với ngành "${targetCareer}".
   Hãy phản hồi ngắn gọn (dưới 40 từ), ghi nhận thực tế của học sinh (KHÔNG khen ngợi sáo rỗng, triệt tiêu sycophancy).
-  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
+  Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
 
     case 2:
       return baseDirective + `\n- VÒNG 2 (Đã chất vấn xong về Nguy cơ tự động hóa 4.0 ➜ Tiến hành chất vấn Vòng 3 về Bộ kỹ năng thích ứng sinh tồn):
@@ -223,7 +223,7 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
 
   switch (round) {
     case 1:
-      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
+      return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
 
     case 2:
       return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;

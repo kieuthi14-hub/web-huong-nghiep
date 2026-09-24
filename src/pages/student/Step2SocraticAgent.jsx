@@ -123,7 +123,7 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
 
     switch (round) {
       case 1:
-        return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
+        return `Thầy đã ghi nhận phản hồi của em về năng lực nền tảng và điểm số môn học đối với ngành **${targetCareer}**.\n\nTuy nhiên, một thách thức lớn trong 4-5 năm tới là làn sóng tự động hóa từ Trí tuệ nhân tạo (AI). Nhiều tác vụ kỹ thuật cơ bản của ngành **${targetCareer}** đang dần bị thay thế nhanh chóng. Đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em trong ngành này?`;
 
       case 2:
         return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
@@ -207,16 +207,16 @@ QUY TẮC CHUNG:
 1. KHÔNG khen ngợi sáo rỗng, KHÔNG nịnh bợ. Giữ thái độ phản biện khách quan, điềm đạm.
 2. Trả lời dưới 100 từ. Mỗi lượt CHỈ ĐẶT ĐÚNG 1 CÂU HỎI (trừ Vòng 4 thì đưa ra kết luận và dừng toàn bộ câu hỏi).
 3. TIẾN TRÌNH 4 VÒNG PHẢN TƯ BẮT BUỘC:
-   - Học sinh vừa trả lời Vòng 1 (Năng lực học tập thực tế): Phản hồi ngắn gọn ghi nhận thực tế (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${anchor.target_career || 'đã chọn'}, đâu là kỹ năng chuyên sâu độc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"
-   - Học sinh vừa trả lời Vòng 2 (Nguy cơ tự động hóa 4.0): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 3: "Nếu thị trường lao động ngành ${anchor.target_career || 'đã chọn'} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"
-   - Học sinh vừa trả lời Vòng 3 (Kỹ năng thích ứng sinh tồn): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 4: "Để đưa ra quyết định chắc chắn ở mức ${anchor.confidence_score || '8'}/10, em đã từng trực tiếp tra cứu các số liệu khách quan như Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${anchor.target_career || 'đã chọn'} chưa, hay vẫn chủ yếu dựa trên cảm tính và mạng xã hội?"
+   - Học sinh vừa trả lời Vòng 1 (Năng lực học tập thực tế): Phản hồi ngắn gọn ghi nhận thực tế (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 2: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"
+   - Học sinh vừa trả lời Vòng 2 (Nguy cơ tự động hóa 4.0): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 3: "Nếu thị trường lao động ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"
+   - Học sinh vừa trả lời Vòng 3 (Kỹ năng thích ứng sinh tồn): Phản hồi ngắn gọn (dưới 40 từ), sau đó chuyển sang chất vấn Vòng 4: "Để đưa ra quyết định chắc chắn ở mức ${anchor.confidence_score || '8'}/10, em đã từng trực tiếp tra cứu các số liệu khách quan như Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} chưa, hay vẫn chủ yếu dựa trên cảm tính và mạng xã hội?"
    - Học sinh vừa trả lời Vòng 4 (Đối chứng dữ liệu): ĐƯA RA LỜI KẾT LUẬN CHỐT & DỪNG CÂU HỎI. Tóm lược các khoảng trống nhận thức và yêu cầu học sinh chuyển sang Bước 3: Đối chứng Dữ liệu Khách quan để tra cứu Đề án tuyển sinh, điểm chuẩn và học phí thực tế.
 
 QUY TẮC ĐẶC BIỆT KHI HỌC SINH NÓI "CHƯA BIẾT" HOẶC "NHỜ GIÚP ĐỠ":
 - Tuyệt đối KHÔNG lặp lại câu hỏi trước đó.
 - Không khen ngợi sáo rỗng, nhưng công nhận sự trung thực nhận thức của học sinh.
 - Cung cấp một gợi mở tư duy ngắn gọn (DƯỚI 40 TỪ) về sự khác biệt giữa "kỹ năng thao tác kỹ thuật dễ bị AI thay thế" và "năng lực tư duy chiến lược/giao tiếp con người".
-- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${anchor.target_career || 'đã chọn'} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.
+- Sau đó: Đặt câu hỏi điều hướng sang vòng tiếp theo (về Bộ kỹ năng thích ứng sinh tồn: ngoại ngữ, năng lực số, giao tiếp linh hoạt nếu ngành ${anchor.target_career || anchor.target_major || 'em đã chọn'} bão hòa), HOẶC yêu cầu học sinh ghi lại băn khoăn này vào sổ tay để chất vấn trực tiếp chuyên gia ở Bước 4.
       `;
 
       const contents = chatHistory.slice(-4).map(m => ({
