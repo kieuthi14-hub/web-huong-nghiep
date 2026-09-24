@@ -183,6 +183,11 @@ YÊU CẦU: Ngắn gọn (70 - 100 từ), 2 đoạn ngắn, giọng văn khách 
   Sau đó chuyển ngay sang câu hỏi chất vấn Vòng 3: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và kế hoạch việc làm linh hoạt nào để không bị đào thải?"`;
 
     case 3:
+      return baseDirective + `\n- VÒNG 3 (Đã chất vấn xong về Bộ kỹ năng sinh tồn ➜ Tiến hành chất vấn Vòng 4 về Đối chứng dữ liệu thực tế):
+  Học sinh vừa trả lời câu hỏi Vòng 3 về kỹ năng thích ứng sinh tồn và kế hoạch việc làm của ngành "${targetCareer}".
+  Hãy phản hồi ngắn gọn (dưới 40 từ), ghi nhận và giữ thái độ khách quan.
+  Sau đó chuyển sang câu hỏi chất vấn Vòng 4: "Để đưa ra quyết định chắc chắn ở mức ${confidenceScore}/10, em đã từng trực tiếp tra cứu các số liệu khách quan như Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${targetCareer} chưa, hay vẫn chủ yếu dựa trên cảm tính và mạng xã hội?"`;
+
     case 4:
     default:
       return FINAL_CHALLENGE_PROMPT;
@@ -203,8 +208,8 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   }
   const codeStr = hollandCodes.length > 0 ? `[${hollandCodes.join(', ')}]` : '';
 
-  if (isFinal || round >= 3) {
-    return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+  if (isFinal || round >= 4) {
+    return `Qua 4 vòng phản biện vừa rồi, Thầy nhận thấy em có sự quyết tâm nhất định, nhưng giữa lý thuyết và số liệu thực tế vẫn còn nhiều khoảng trống thông tin mang tính sống còn mà em chưa có dữ liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết hay truyền thông. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
   }
 
   // Phản hồi đặc biệt khi học sinh nói "chưa biết" hoặc "nhờ giúp đỡ"
@@ -224,9 +229,11 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
       return `Lập luận của em về kỹ năng chuyên sâu có sự chuẩn bị, nhưng thị trường lao động sau tốt nghiệp luôn biến động khôn lường.\n\nNếu thị trường lao động ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ chuyên sâu, năng lực số ứng dụng, kỹ năng giao tiếp linh hoạt) và kế hoạch việc làm linh hoạt nào để không bị đào thải?`;
 
     case 3:
+      return `Thầy ghi nhận kế hoạch thích ứng linh hoạt của em. Tuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** đòi hỏi phải dựa trên số liệu xác thực thay vì ước đoán.\n\nEm đã từng đối chiếu trực tiếp Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và biểu phí đào tạo thực tế của ngành **${targetCareer}** chưa, hay phần lớn thông tin em có vẫn đến từ suy đoán và mạng xã hội?`;
+
     case 4:
     default:
-      return `Qua các vòng phản biện vừa rồi, Thầy nhận thấy nhận thức của em đã mở rộng hơn, nhưng vẫn còn nhiều khoảng trống thông tin thực tế mang tính sống còn mà em chưa có số liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
+      return `Qua 4 vòng phản biện vừa rồi, Thầy nhận thấy em có sự quyết tâm nhất định, nhưng giữa lý thuyết và số liệu thực tế vẫn còn nhiều khoảng trống thông tin mang tính sống còn mà em chưa có dữ liệu chứng minh.\n\nMột quyết định nghề nghiệp trọn đời không thể chỉ dựa trên suy đoán lý thuyết hay truyền thông. Em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế của các trường trước khi đưa ra quyết định!`;
   }
 }
 
