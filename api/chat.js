@@ -3,15 +3,15 @@
 
 const FINAL_CHALLENGE_PROMPT = (targetCareer, targetUniversity = 'Đại học Bách Khoa', confidenceScore = '8') => `# CHỈ THỊ LƯỢT 4 - ĐÚC KẾT PHẢN TƯ (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
 TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
-Nhiệm vụ: Tổng kết ngắn gọn 3 khoảng trống nhận thức THỰC TẾ mà học sinh vừa nêu trong phiên chat này (trích đúng từ khóa học sinh đã nói, ví dụ: sợ giao tiếp, rào cản môn học, ngại công nghệ AI, chưa có phương án dự phòng, chưa tra số liệu tuyển sinh):
+Nhiệm vụ: Tổng kết ngắn gọn 3 khoảng trống nhận thức THỰC TẾ mà học sinh vừa nêu trong phiên chat này (trích đúng từ khóa học sinh đã nói, ví dụ: sợ giao tiếp, rào cản môn học, nguy cơ tự động hóa 4.0, chưa có phương án kỹ năng chuyển đổi, chưa tra số liệu tuyển sinh):
 
-Phản hồi mẫu chuẩn hóa (dưới 120 từ):
-"Qua 4 lượt đối thoại, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức thực tế:
-1. **Khoảng trống năng lực:** [Trích ngắn gọn rào cản năng lực mà học sinh đã thừa nhận, ví dụ: kỹ năng giao tiếp, học lực môn chuyên hay nguyên nhân do dự khi chọn ngành ${targetCareer}].
-2. **Khoảng trống công nghệ & sinh tồn:** [Trích ngắn nhận thức về AI và sự thiếu hụt phương án kỹ năng chuyển đổi dự phòng nếu chưa có vị trí chính thức].
-3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin ${confidenceScore}/10 nhưng chưa tự tay đối chứng Điểm chuẩn 3 năm, Học phí thực tế và Chỉ tiêu tuyển sinh của ${targetCareer} tại ${targetUniversity}.
+Phản hồi mẫu chuẩn hóa (dưới 130 từ):
+"Qua 4 vòng phản tư Socrates, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức thực tế:
+1. **Khoảng trống năng lực:** [Trích ngắn gọn rào cản năng lực mà học sinh đã thừa nhận, ví dụ: học lực môn chuyên, kỹ năng hay nguyên nhân do dự khi chọn ngành ${targetCareer}].
+2. **Khoảng trống công nghệ & sinh tồn:** [Trích ngắn nhận thức về nguy cơ tự động hóa và sự thiếu hụt Bộ kỹ năng chuyển đổi để tìm công việc linh hoạt nếu thị trường biến động].
+3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin ${confidenceScore}/10 nhưng chưa từng trực tiếp tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${targetCareer} tại ${targetUniversity}.
 
-Bây giờ, em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế nhằm xây dựng cơ sở vững chắc cho quyết định của mình!"`;
+Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay truy vết Đề án tuyển sinh, điểm chuẩn và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!"`;
 
 function isGreetingOnly(text) {
   if (!text || typeof text !== 'string') return false;
@@ -301,26 +301,26 @@ LỘ TRÌNH 4 VÒNG CAN THIỆP CHẶT CHẼ:
     case 1:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 1 - NĂNG LỰC & RÀO CẢN DO DỰ]:
 Học sinh vừa trả lời câu hỏi khởi đầu.
-Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
+Áp dụng đúng cấu trúc 3 câu (dưới 110 từ, không khen ngợi sáo rỗng):
 - Câu 1: ${mismatch && mismatch.isMismatch ? `BẮT BUỘC nêu ngay điểm lệch pha Holland: ngành "${targetCareer}" đòi hỏi nhóm ${mismatch.letterName} trong khi mã RIASEC của em (${hollandCode}) lại thiếu chữ cái này.` : `Phản hồi trực diện điều học sinh vừa chia sẻ về năng lực học tập hoặc lý do chọn ngành "${targetCareer}".`}
 - Câu 2: ${isOverconfident ? (isEduOrHealth ? `Chỉ ra nghịch lý giữa sự tự tin với áp lực học thuật, chỉ tiêu tuyển sinh và kỳ thi tuyển viên chức cạnh tranh khắt khe của ngành "${targetCareer}".` : `Bóc tách mỏ neo hào nhoáng, đưa ra nghịch lý giữa sự tự tin thái quá với độ khó học thuật và áp lực đào thải của ngành "${targetCareer}".`) : `Bóc tách tâm lý do dự, chỉ ra rằng mức tự tin ${confidenceScore}/10 phản ánh sự thiếu hụt dữ liệu thực chứng và lo ngại rào cản năng lực trong ngành "${targetCareer}".`}
-- Câu 3: Đặt 1 câu hỏi truy vấn sâu chuyển tiếp sang Lượt 2: ${isEduOrHealth ? `"Trong 4-5 năm tới khi AI và công nghệ tự động hóa mạnh mẽ các việc như soạn giáo án, giảng bài tự động (hoặc chẩn đoán hình ảnh, phân tích bệnh án) trong ngành ${targetCareer}, đâu là năng lực con người đặc thù mà em tin AI không thể thay thế ở bản thân em?"` : `"Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`}`;
+- Câu 3: Đặt 1 câu hỏi truy vấn sâu chuyển tiếp sang Lượt 2: ${isEduOrHealth ? `"Trong 4-5 năm tới, khi AI và tự động hóa có thể đảm nhận các việc như soạn giáo án, giảng bài số (hoặc chẩn đoán hình ảnh, phân tích bệnh án) trong ngành ${targetCareer}, đâu là năng lực chuyên sâu hoặc tư duy đặc thù của bản thân mà em tin rằng công nghệ không thể thay thế?"` : `"Trong 4-5 năm tới, khi AI và tự động hóa có thể đảm nhận các tác vụ cơ bản của ngành ${targetCareer}, đâu là năng lực chuyên sâu hoặc tư duy đặc thù của bản thân mà em tin rằng công nghệ không thể thay thế?"`}`;
 
     case 2:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 2 - KỸ NĂNG ĐỐI DIỆN CÔNG NGHỆ]:
 Học sinh vừa trả lời về AI và kỹ năng trong ngành "${targetCareer}".
-Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
+Áp dụng đúng cấu trúc 3 câu (dưới 110 từ, phản biện điềm đạm):
 - Câu 1: Phản hồi trực diện nhận thức của học sinh về công nghệ AI (tuyệt đối không khen ngợi sáo rỗng, không lặp lại câu hỏi trước).
 - Câu 2: Đưa ra nghịch lý thực tế về việc AI và công nghệ đang tự động hóa các tác vụ quy chuẩn trong ngành "${targetCareer}".
-- Câu 3: Đặt 1 câu hỏi truy vấn sâu chuyển tiếp sang Lượt 3: ${isEduOrHealth ? `"Nếu sau khi tốt nghiệp ngành ${targetCareer}, kỳ thi viên chức cạnh tranh gay gắt và em chưa xin được biên chế hay vị trí chính thức tại trường học/bệnh viện công lập, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, xử lý tình huống, tự học) và phương án mưu sinh dự phòng cụ thể nào?"` : `"Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, năng lực số, giải quyết vấn đề) và phương án việc làm linh hoạt nào để không bị đào thải?"`}`;
+- Câu 3: Đặt 1 câu hỏi truy vấn sâu chuyển tiếp sang Lượt 3: ${isEduOrHealth ? `"Nếu sau khi tốt nghiệp ngành ${targetCareer}, kỳ thi viên chức cạnh tranh gay gắt và em chưa xin được biên chế hay vị trí chính thức tại trường học/bệnh viện công lập, em đã chuẩn bị Bộ kỹ năng thích ứng sinh tồn (ngoại ngữ, xử lý tình huống, tự học) và phương án mưu sinh dự phòng cụ thể nào?"` : `"Nếu sau khi tốt nghiệp ${targetCareer}, thị trường biến động hoặc chưa thể tìm được việc làm chuyên môn ngay, em đã chuẩn bị Bộ kỹ năng chuyển đổi nào (ngoại ngữ, kỹ năng số, giao tiếp) để tìm các công việc linh hoạt nhằm tự nuôi sống bản thân?"`}`;
 
     case 3:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở LƯỢT 3 - PHƯƠNG ÁN DỰ PHÒNG & DỮ LIỆU THỰC TẾ]:
 Học sinh vừa trả lời về phương án dự phòng và kỹ năng thích ứng.
-Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
+Áp dụng đúng cấu trúc 3 câu (dưới 100 từ):
 - Câu 1: Phản hồi trực diện mức độ chuẩn bị của học sinh (nếu học sinh hỏi thuật ngữ/chưa có kế hoạch thì ghi nhận khoảng trống nhận thức).
 - Câu 2: Đưa ra nghịch lý giữa kế hoạch trên lý thuyết với tính khốc liệt của thực tế tuyển sinh và việc làm.
-- Câu 3: Đặt đúng câu chốt tuyển sinh: "Em đã tự tay kiểm chứng Điểm chuẩn 3 năm gần nhất, Học phí thực tế và Chỉ tiêu tuyển sinh của ${targetCareer} tại ${targetUniversity} chưa?"`;
+- Câu 3: Đặt đúng câu chốt truy vấn dữ liệu: "Một quyết định ở mức tự tin ${confidenceScore}/10 cần dựa trên số liệu xác thực. Em đã từng trực tiếp tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành ${targetCareer} tại ${targetUniversity} chưa, hay vẫn chủ yếu nghe qua truyền thông mạng xã hội?"`;
 
     case 4:
     default:
@@ -340,17 +340,17 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   // VÒNG 4 (ĐÚC KẾT & CHUYỂN GIAO - TUYỆT ĐỐI KHÔNG HỎI THÊM)
   if (isFinal || round >= 4) {
     if (isEduOrHealth) {
-      return `Qua 4 vòng phản tư Socrates, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức cốt lõi:\n` +
-        `1. **Khoảng trống năng lực & yêu cầu khắt khe:** Giữa nhận thức ban đầu với áp lực học thuật, thi tuyển viên chức và chỉ tiêu biên chế công lập thực tế của ngành **${targetCareer}**.\n` +
-        `2. **Khoảng trống thích ứng công nghệ & phương án mưu sinh:** Nguy cơ tự động hóa từ AI đối với các tác vụ giảng dạy/khám chữa bệnh và sự thiếu hụt phương án mưu sinh dự phòng nếu chưa có biên chế ngay sau tốt nghiệp.\n` +
-        `3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin **${confidenceScore}/10** nhưng vẫn chưa tự tay kiểm chứng Điểm chuẩn 3 năm gần nhất, Học phí thực tế và Chỉ tiêu tuyển sinh của **${targetCareer}** tại **${targetUniversity}**.\n\n` +
-        `Bây giờ, em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế nhằm xây dựng cơ sở vững chắc cho quyết định của mình!`;
+      return `Qua 4 vòng phản tư Socrates, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức thực tế:\n` +
+        `1. **Khoảng trống năng lực:** Giữa nhận thức ban đầu với áp lực học thuật, thi tuyển viên chức và chỉ tiêu biên chế công lập thực tế của ngành **${targetCareer}**.\n` +
+        `2. **Khoảng trống công nghệ & sinh tồn:** Nguy cơ tự động hóa từ AI đối với các tác vụ giảng dạy/khám chữa bệnh và sự thiếu hụt phương án mưu sinh dự phòng nếu chưa có biên chế ngay sau tốt nghiệp.\n` +
+        `3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin **${confidenceScore}/10** nhưng vẫn chưa từng trực tiếp tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành **${targetCareer}** tại **${targetUniversity}**.\n\n` +
+        `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay truy vết Đề án tuyển sinh, điểm chuẩn và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!`;
     }
-    return `Qua 4 vòng phản tư Socrates, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức cốt lõi:\n` +
-      `1. **Khoảng trống năng lực & kỳ vọng thu nhập:** Giữa hình ảnh hào nhoáng trên truyền thông với độ khó học thuật và phân hóa thu nhập thực tế của ngành **${targetCareer}**.\n` +
-      `2. **Khoảng trống thích ứng công nghệ:** Nguy cơ tự động hóa từ AI đối với các tác vụ cơ bản và sự thiếu hụt Bộ kỹ năng chuyển đổi sinh tồn.\n` +
-      `3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin **${confidenceScore}/10** nhưng vẫn chưa đối chiếu số liệu thực tế về điểm chuẩn 3 năm, học phí và đề án tuyển sinh tại **${targetUniversity}**.\n\n` +
-      `Bây giờ, em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí thực tế nhằm xây dựng cơ sở vững chắc cho quyết định của mình!`;
+    return `Qua 4 vòng phản tư Socrates, em đã dũng cảm nhìn thẳng vào 3 khoảng trống nhận thức thực tế:\n` +
+      `1. **Khoảng trống năng lực:** Giữa kỳ vọng ban đầu với độ khó học thuật và áp lực thực tế của ngành **${targetCareer}**.\n` +
+      `2. **Khoảng trống công nghệ & sinh tồn:** Nguy cơ tự động hóa từ AI đối với các tác vụ cơ bản và sự thiếu hụt Bộ kỹ năng chuyển đổi sinh tồn để tìm các công việc linh hoạt nếu thị trường biến động.\n` +
+      `3. **Khoảng trống dữ liệu tuyển sinh:** Quyết định ở mức tự tin **${confidenceScore}/10** nhưng vẫn chưa từng trực tiếp tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và học phí thực tế của ngành **${targetCareer}** tại **${targetUniversity}**.\n\n` +
+      `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay truy vết Đề án tuyển sinh, điểm chuẩn và học phí thực tế để xây dựng cơ sở vững chắc cho quyết định của mình!`;
   }
 
   // 1. KHI HỌC SINH HỎI LẠI THUẬT NGỮ ("...là gì?", "chưa hiểu")
