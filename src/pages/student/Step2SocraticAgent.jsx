@@ -1,6 +1,100 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+function checkHollandSignatureMismatch(targetCareer = '', hollandData = '') {
+  if (!targetCareer) return { isMismatch: false };
+  const careerLower = targetCareer.toLowerCase();
+
+  let codesStr = '';
+  let fullHollandText = '';
+  if (Array.isArray(hollandData)) {
+    codesStr = hollandData.join('').toUpperCase();
+    fullHollandText = hollandData.join(' ').toLowerCase();
+  } else if (typeof hollandData === 'string') {
+    codesStr = hollandData.toUpperCase();
+    fullHollandText = hollandData.toLowerCase();
+  }
+
+  // Danh mục ngành và chữ cái đặc trưng bắt buộc theo chuẩn RIASEC
+  const rules = [
+    {
+      keywords: ['sư phạm', 'su pham', 'giáo dục', 'giao duc', 'tâm lý', 'tam ly', 'công tác xã hội', 'cong tac xa hoi', 'điều dưỡng', 'dieu duong'],
+      requiredLetter: 'S',
+      letterName: 'S (Xã hội)',
+      vietnameseKeywords: ['xã hội', 'xa hoi', 'giảng dạy', 'giup do'],
+      desc: 'tương tác, hỗ trợ, giảng dạy và thấu cảm con người'
+    },
+    {
+      keywords: ['kỹ thuật', 'ky thuat', 'cơ khí', 'co khi', 'xây dựng', 'xay dung', 'cơ điện tử', 'co dien tu', 'điện tử', 'dien tu', 'điện', 'dien', 'tự động hóa', 'tu dong hoa', 'chế tạo', 'che tao', 'ô tô', 'o to', 'nông nghiệp', 'nong nghiep', 'hàng không'],
+      requiredLetter: 'R',
+      letterName: 'R (Kỹ thuật / Thực tế)',
+      vietnameseKeywords: ['kỹ thuật', 'ky thuat', 'thực tế', 'thuc te'],
+      desc: 'thao tác thực tế với máy móc, công cụ vật lý và hệ thống quy chuẩn'
+    },
+    {
+      keywords: ['công nghệ thông tin', 'cong nghe thong tin', 'phần mềm', 'phan mem', 'khoa học máy tính', 'khoa hoc may tinh', 'lập trình', 'lap trinh', 'cntt', 'it', 'trí tuệ nhân tạo', 'tri tue nhan tao', 'an ninh mạng', 'an ninh mang', 'khoa học dữ liệu', 'khoa hoc du lieu'],
+      requiredLetter: 'I hoặc R',
+      letterName: 'I (Nghiên cứu) hoặc R (Kỹ thuật)',
+      requireAnyOf: ['I', 'R'],
+      vietnameseKeywords: ['nghiên cứu', 'nghien cuu', 'kỹ thuật', 'ky thuat', 'thực tế', 'thuc te'],
+      desc: 'tư duy phân tích thuật toán logic và thao tác kỹ thuật máy tính chuyên sâu'
+    },
+    {
+      keywords: ['bác sĩ', 'bac si', 'y khoa', 'y khoa', 'dược', 'duoc', 'y học', 'y hoc', 'công nghệ sinh học', 'cong nghe sinh hoc', 'sinh học', 'hóa học'],
+      requiredLetter: 'I',
+      letterName: 'I (Nghiên cứu)',
+      vietnameseKeywords: ['nghiên cứu', 'nghien cuu', 'khám phá'],
+      desc: 'đào sâu nghiên cứu khoa học, giải phẫu thực nghiệm và phân tích dữ liệu chuyên sâu'
+    },
+    {
+      keywords: ['nghệ thuật', 'nghe thuat', 'thiết kế', 'thiet ke', 'đồ họa', 'do hoa', 'kiến trúc', 'kien truc', 'mỹ thuật', 'my thuat', 'âm nhạc', 'am nhac', 'truyền thông đa phương tiện', 'truyen thong da phuong tien', 'điện ảnh', 'dien anh'],
+      requiredLetter: 'A',
+      letterName: 'A (Nghệ thuật)',
+      vietnameseKeywords: ['nghệ thuật', 'nghe thuat', 'sáng tạo', 'sang tao'],
+      desc: 'sáng tạo thẩm mỹ thị giác, trực giác nghệ thuật và tư duy phi quy chuẩn'
+    },
+    {
+      keywords: ['kinh doanh', 'kinh doanh', 'quản trị', 'quan tri', 'marketing', 'thương mại', 'thuong mai', 'ngoại thương', 'ngoai thuong', 'bất động sản', 'bat dong san'],
+      requiredLetter: 'E',
+      letterName: 'E (Quản lý / Doanh nhân)',
+      vietnameseKeywords: ['quản lý', 'quan ly', 'doanh nhân', 'doanh nhan', 'khởi nghiệp', 'khoi nghiep'],
+      desc: 'năng động, thương lượng, thuyết phục khách hàng và chấp nhận áp lực cạnh tranh thương trường'
+    },
+    {
+      keywords: ['kế toán', 'ke toan', 'kiểm toán', 'kiem toan', 'ngân hàng', 'ngan hang', 'hành chính', 'hanh chinh', 'văn phòng', 'van phong'],
+      requiredLetter: 'C',
+      letterName: 'C (Nghiệp vụ / Quy củ)',
+      vietnameseKeywords: ['nghiệp vụ', 'nghiep vu', 'quy củ', 'quy cu', 'chi tiết'],
+      desc: 'tính chính xác chi tiết, xử lý số liệu quy chuẩn và tuân thủ nguyên tắc chặt chẽ'
+    }
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some(k => careerLower.includes(k))) {
+      let hasSignature = false;
+      if (rule.requireAnyOf) {
+        hasSignature = rule.requireAnyOf.some(lettr => codesStr.includes(lettr)) ||
+          rule.vietnameseKeywords.some(vk => fullHollandText.includes(vk));
+      } else {
+        hasSignature = codesStr.includes(rule.requiredLetter) ||
+          rule.vietnameseKeywords.some(vk => fullHollandText.includes(vk));
+      }
+
+      if (!hasSignature) {
+        return {
+          isMismatch: true,
+          expectedLetter: rule.requiredLetter,
+          letterName: rule.letterName,
+          desc: rule.desc
+        };
+      }
+      return { isMismatch: false };
+    }
+  }
+
+  return { isMismatch: false };
+}
+
 export default function Step2SocraticAgent() {
   const navigate = useNavigate();
   // KHỞI TẠO LUÔN TỪ VÒNG 1 (KHÔNG ĐỌC BỪA BÃI TỪ CACHE CŨ NẾU CHƯA CÓ DỮ LIỆU THẬT)
@@ -67,11 +161,23 @@ export default function Step2SocraticAgent() {
     localStorage.setItem("cbas_step2_round", "1");
     localStorage.removeItem("cbas_step2_completed");
 
-    const initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm **${anchor.holland_code}**.
+    const numScore = parseFloat(anchor.confidence_score) || 8;
+    const isOverconfident = numScore >= 7;
+    const mismatch = checkHollandSignatureMismatch(anchor.target_career, anchor.holland_code || anchor.holland_codes);
 
-Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực tế mà mạng xã hội thường không nói tới.
+    let initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm **${anchor.holland_code}**.\n\n`;
 
-Để bắt đầu Lượt 1, em hãy chia sẻ: **Ngoài những hình ảnh hào nhoáng thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${anchor.confidence_score}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành ${anchor.target_career}?**`;
+    if (mismatch && mismatch.isMismatch) {
+      initialGreeting += `Thầy nhận thấy ngay một điểm lệch pha nhận thức: Ngành **${anchor.target_career}** đòi hỏi đặc trưng nhóm **${mismatch.letterName}** (${mismatch.desc}), nhưng hồ sơ RIASEC của em lại thiếu chữ cái này.\n\n`;
+    } else {
+      initialGreeting += `Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực tế mà mạng xã hội thường không nói tới.\n\n`;
+    }
+
+    if (isOverconfident) {
+      initialGreeting += `Để bắt đầu Lượt 1, em hãy chia sẻ: **Ngoài những hình ảnh hào nhoáng thường thấy trên truyền thông, điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng ở mức ${anchor.confidence_score}/10 rằng mình có năng lực thực sự để hoàn thành tốt chương trình đào tạo của ngành ${anchor.target_career}?**`;
+    } else {
+      initialGreeting += `Để bắt đầu Lượt 1, với mức tự tin chỉ **${anchor.confidence_score}/10** (khá do dự và dè dặt), Thầy muốn hỏi thẳng: **Rào cản năng lực cụ thể nào hoặc sự thiếu hụt thông tin nào về ngành ${anchor.target_career} đang là nguyên nhân chính khiến em băn khoăn và chưa dám chắc chắn vào quyết định của mình?**`;
+    }
 
     const initialMessages = [
       { role: 'model', text: initialGreeting, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -174,6 +280,9 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
     const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
     const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+    const numScore = parseFloat(confidenceScore) || 8;
+    const isOverconfident = numScore >= 7;
+    const mismatch = checkHollandSignatureMismatch(targetCareer, anchor.holland_code || anchor.holland_codes);
 
     // VÒNG 4 (ĐÚC KẾT & CHUYỂN GIAO - TUYỆT ĐỐI KHÔNG HỎI THÊM)
     if (round >= 4) {
@@ -235,14 +344,24 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
 
     // 6. PHẢN HỒI CHUẨN THEO 4 VÒNG (3 CÂU - DƯỚI 120 TỪ)
     switch (round) {
-      case 1:
-        return `Thầy ghi nhận những chia sẻ của em về nền tảng năng lực học tập ban đầu.\n\nTuy nhiên, chương trình đại học và thị trường việc làm ngành **${targetCareer}** có mức độ đào thải rất cao đối với nhân sự chỉ dừng ở mức biết làm cơ bản.\n\nTrong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+      case 1: {
+        let sentence1 = `Thầy ghi nhận những chia sẻ của em về nền tảng năng lực học tập ban đầu đối với ngành **${targetCareer}**.`;
+        if (mismatch && mismatch.isMismatch) {
+          sentence1 = `Thầy nhận thấy ngay điểm lệch pha: Ngành **${targetCareer}** đòi hỏi đặc trưng nhóm **${mismatch.letterName}** (${mismatch.desc}), nhưng kết quả Holland của em lại thiếu chữ cái này.`;
+        }
+
+        if (isOverconfident) {
+          return `${sentence1}\n\nĐộ khó học thuật ở bậc đại học và sự phân hóa thu nhập thực tế khắt khe hơn rất nhiều so với những hình ảnh hào nhoáng trên truyền thông.\n\nTrong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+        } else {
+          return `${sentence1}\n\nMức tự tin **${confidenceScore}/10** phản ánh sự do dự và nhận thức rõ về khoảng trống thông tin của em trước ngưỡng cửa đại học.\n\nRào cản năng lực học tập cụ thể nào hay sự thiếu hụt dữ liệu nào về ngành **${targetCareer}** đang là nguyên nhân chính khiến em băn khoăn và chưa dám chắc chắn?`;
+        }
+      }
 
       case 2:
-        return `Nhận thức về tác động của công nghệ trong ngành **${targetCareer}** là bước đầu tiên để tránh bị thụ động trước thị trường.\n\nThực tế cho thấy các doanh nghiệp đang tái cấu trúc tinh gọn và chỉ giữ lại những nhân sự có năng lực chuyển đổi linh hoạt.\n\nEm đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp?`;
+        return `Nhận thức về tác động của công nghệ trong ngành **${targetCareer}** là bước đầu tiên để tránh bị thụ động trước thị trường.\n\nThực tế cho thấy các doanh nghiệp đang tái cấu trúc tinh gọn và chỉ giữ lại những nhân sự có năng lực chuyển đổi linh hoạt.\n\n${isOverconfident ? `Em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu ngành **${targetCareer}** bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp?` : `Trước nguy cơ AI tự động hóa, rào cản kỹ năng nào ở bản thân khiến em lo lắng nhất nếu ngành **${targetCareer}** bước vào chu kỳ biến động khi em tốt nghiệp?`}`;
 
       case 3:
-        return `Mức độ chuẩn bị cho thấy em đã bắt đầu hình thành ý thức dự phòng rủi ro nghề nghiệp.\n\nTuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** không thể đứng vững nếu thiếu đi sự kiểm chứng thực tế từ đề án tuyển sinh.\n\nEm đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+        return `Mức độ chuẩn bị cho thấy em đã bắt đầu hình thành ý thức dự phòng rủi ro nghề nghiệp.\n\nTuy nhiên, một quyết định ở mức tự tin **${confidenceScore}/10** không thể đứng vững nếu thiếu đi sự kiểm chứng thực tế từ đề án tuyển sinh.\n\n${isOverconfident ? `Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?` : `Việc em do dự **${confidenceScore}/10** có phải vì chưa từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** không?`}`;
 
       case 4:
       default:
@@ -318,14 +437,33 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
       const targetUniversity = (anchor.target_university || '').trim() || "Đại học Bách Khoa";
       const confidenceScore = anchor.confidence_score || "8";
       const hollandCode = anchor.holland_code || "Nghiên cứu - Kỹ thuật";
+      const numScore = parseFloat(confidenceScore) || 8;
+      const isOverconfident = numScore >= 7;
+      const mismatch = checkHollandSignatureMismatch(targetCareer, anchor.holland_code || anchor.holland_codes);
 
       const systemPrompt = `
 BẠN LÀ: "Chuyên gia Phản tư Hành vi Socrates" (Nghiên cứu CBAS - ViSEF Quốc gia 2026).
 HỒ SƠ HỌC SINH TỪ BƯỚC 1:
 - Ngành mục tiêu: ${targetCareer} (BẮT BUỘC dùng đúng tên ngành "${targetCareer}" trong mọi câu phản hồi, TUYỆT ĐỐI KHÔNG dùng cụm từ "ngành em chọn" hay "ngành đã chọn").
 - Cơ sở đào tạo: ${targetUniversity}
-- Mức tự tin ban đầu: ${confidenceScore}/10
+- Mức tự tin ban đầu: ${confidenceScore}/10 (${isOverconfident ? 'Tự tin thái quá' : 'Do dự, mơ hồ'})
 - Mã RIASEC: ${hollandCode}
+
+QUY TẮC RẼ NHÁNH BẮT BUỘC THEO MỨC TỰ TIN & TÍNH CHẤT NGÀNH:
+1. SOI CHIẾU MÃ HOLLAND (RIASEC):
+${mismatch && mismatch.isMismatch
+  ? `⚠️ CẢNH BÁO LỆCH PHA HOLLAND: Học sinh chọn ngành "${targetCareer}" (đòi hỏi chữ cái đặc trưng ${mismatch.letterName} - ${mismatch.desc}), nhưng mã RIASEC của học sinh (${hollandCode}) lại THIẾU chữ cái đặc trưng này!
+👉 BẮT BUỘC: Em PHẢI nêu ra điểm lệch pha nhận thức này ngay câu đầu tiên của câu trả lời!`
+  : `Mã Holland (${hollandCode}) tương đối phù hợp hoặc có nhóm hỗ trợ cho ngành "${targetCareer}". Tiếp tục soi chiếu năng lực thực tế.`}
+
+2. RẼ NHÁNH THEO MỨC ĐIỂM TỰ TIN (${confidenceScore}/10):
+${isOverconfident
+  ? `[NHÁNH TỰ TIN THÁI QUÁ (Điểm tự tin >= 7/10 - Hiện tại: ${confidenceScore}/10)]:
+- Truy vấn thẳng vào điểm tựa thực tế, bóc tách triệt để ảo tưởng hoặc mỏ neo hào nhoáng từ truyền thông mạng xã hội.
+- Yêu cầu học sinh chỉ ra bằng chứng thực tế đo đếm được (điểm số môn chuyên sâu, giải thưởng, sản phẩm cụ thể) chứng minh mình đủ năng lực vượt qua độ khó đào thải của ngành "${targetCareer}".`
+  : `[NHÁNH DO DỰ, MƠ HỒ (Điểm tự tin <= 6/10 - Hiện tại: ${confidenceScore}/10)]:
+- TUYỆT ĐỐI KHÔNG chất vấn "tại sao tin" hay "tại sao em tự tin".
+- TRUY VẤN THẲNG vào nguyên nhân do dự, rào cản năng lực cụ thể hoặc sự thiếu hụt thông tin: Rào cản nào (học lực môn nào, áp lực chi phí, hay chưa hiểu rõ thị trường việc làm) đang khiến em phân vân và chưa dám khẳng định quyết định của mình?`}
 
 NGUYÊN TẮC PHẢN TƯ NÂNG CAO (CHẠM ĐỘ CHÍN HỌC THUẬT):
 1. BẮT BUỘC ĐỐI THOẠI TRỰC DIỆN VỚI TỪ KHÓA CỦA HỌC SINH:
@@ -336,14 +474,14 @@ NGUYÊN TẮC PHẢN TƯ NÂNG CAO (CHẠM ĐỘ CHÍN HỌC THUẬT):
    - Khi học sinh nói "chưa biết" hoặc "không biết nguồn": Công nhận sự trung thực, hướng dẫn ghi vào sổ tay chất vấn Mentor tại Bước 4.
 
 2. CẤU TRÚC PHẢN HỒI CHUẨN MỰC (ĐÚNG 3 CÂU - DƯỚI 120 TỪ):
-   - Câu 1: Phản hồi trực diện nhận định/từ khóa của học sinh.
-   - Câu 2: Đưa ra nghịch lý/mâu thuẫn thực tế giữa kỳ vọng và thực tế đào tạo/thị trường việc làm của ngành "${targetCareer}".
+   - Câu 1: Phản hồi trực diện nhận định/từ khóa của học sinh ${mismatch && mismatch.isMismatch ? '(BẮT BUỘC nêu điểm lệch pha Holland ngay câu này)' : ''}.
+   - Câu 2: Đưa ra nghịch lý/mâu thuẫn thực tế giữa kỳ vọng/sự do dự với thực tế đào tạo và thị trường việc làm của ngành "${targetCareer}".
    - Câu 3: Đặt duy nhất 1 câu hỏi truy vấn sâu theo lộ trình can thiệp.
 
 3. LỘ TRÌNH 4 VÒNG CAN THIỆP NGHIÊM NGẶT:
-   - VÒNG 1 (Năng lực & Thu nhập thực tế): Phản biện kỳ vọng cảm tính. Đặt câu hỏi truy vấn sâu: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"
-   - VÒNG 2 (Công nghệ & Tự động hóa): Phản biện nguy cơ cắt giảm nhân sự mới của AI. Đặt câu hỏi truy vấn sâu: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để không bị đào thải?"
-   - VÒNG 3 (Kỹ năng chuyển đổi & Sinh tồn linh hoạt): Giải thích ngắn gọn nếu học sinh chưa hiểu. Đặt câu hỏi chốt về dữ liệu: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"
+   - VÒNG 1 (Năng lực & Thu nhập thực tế): ${isOverconfident ? `Phản biện kỳ vọng cảm tính/hào nhoáng. Đặt câu hỏi truy vấn sâu: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"` : `Truy vấn thẳng vào nguyên nhân do dự. Đặt câu hỏi: "Nguyên nhân do dự lớn nhất khiến em chỉ tự tin ${confidenceScore}/10 vào ngành ${targetCareer} là do rào cản năng lực môn học cụ thể nào, hay do em đang thiếu thông tin về mức độ cạnh tranh và tự động hóa của AI trong ngành này?"`}
+   - VÒNG 2 (Công nghệ & Tự động hóa): Phản biện nguy cơ cắt giảm nhân sự mới của AI. Đặt câu hỏi truy vấn sâu: ${isOverconfident ? `"Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để không bị đào thải?"` : `"Trước nguy cơ AI tự động hóa các tác vụ cơ bản, rào cản kỹ năng nào ở bản thân khiến em lo lắng nhất nếu ngành ${targetCareer} bước vào chu kỳ biến động khi em tốt nghiệp?"`}
+   - VÒNG 3 (Kỹ năng chuyển đổi & Sinh tồn linh hoạt): Giải thích ngắn gọn nếu học sinh chưa hiểu. Đặt câu hỏi chốt về dữ liệu: ${isOverconfident ? `"Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"` : `"Việc em do dự ${confidenceScore}/10 có phải vì chưa từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} không, và em dự định xác thực các số liệu này ở đâu?"`}
    - VÒNG 4 (ĐÚC KẾT & CHUYỂN GIAO - KẾT THÚC PHIÊN):
      TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO.
      Đưa ra phản hồi đúc kết:

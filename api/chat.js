@@ -112,10 +112,106 @@ function isTooShortOrEvasive(text) {
   return false;
 }
 
+function checkHollandSignatureMismatch(targetCareer = '', hollandData = '') {
+  if (!targetCareer) return { isMismatch: false };
+  const careerLower = targetCareer.toLowerCase();
+
+  let codesStr = '';
+  let fullHollandText = '';
+  if (Array.isArray(hollandData)) {
+    codesStr = hollandData.join('').toUpperCase();
+    fullHollandText = hollandData.join(' ').toLowerCase();
+  } else if (typeof hollandData === 'string') {
+    codesStr = hollandData.toUpperCase();
+    fullHollandText = hollandData.toLowerCase();
+  }
+
+  // Danh mục ngành và chữ cái đặc trưng bắt buộc theo chuẩn RIASEC
+  const rules = [
+    {
+      keywords: ['sư phạm', 'su pham', 'giáo dục', 'giao duc', 'tâm lý', 'tam ly', 'công tác xã hội', 'cong tac xa hoi', 'điều dưỡng', 'dieu duong'],
+      requiredLetter: 'S',
+      letterName: 'S (Xã hội)',
+      vietnameseKeywords: ['xã hội', 'xa hoi', 'giảng dạy', 'giup do'],
+      desc: 'tương tác, hỗ trợ, giảng dạy và thấu cảm con người'
+    },
+    {
+      keywords: ['kỹ thuật', 'ky thuat', 'cơ khí', 'co khi', 'xây dựng', 'xay dung', 'cơ điện tử', 'co dien tu', 'điện tử', 'dien tu', 'điện', 'dien', 'tự động hóa', 'tu dong hoa', 'chế tạo', 'che tao', 'ô tô', 'o to', 'nông nghiệp', 'nong nghiep', 'hàng không'],
+      requiredLetter: 'R',
+      letterName: 'R (Kỹ thuật / Thực tế)',
+      vietnameseKeywords: ['kỹ thuật', 'ky thuat', 'thực tế', 'thuc te'],
+      desc: 'thao tác thực tế với máy móc, công cụ vật lý và hệ thống quy chuẩn'
+    },
+    {
+      keywords: ['công nghệ thông tin', 'cong nghe thong tin', 'phần mềm', 'phan mem', 'khoa học máy tính', 'khoa hoc may tinh', 'lập trình', 'lap trinh', 'cntt', 'it', 'trí tuệ nhân tạo', 'tri tue nhan tao', 'an ninh mạng', 'an ninh mang', 'khoa học dữ liệu', 'khoa hoc du lieu'],
+      requiredLetter: 'I hoặc R',
+      letterName: 'I (Nghiên cứu) hoặc R (Kỹ thuật)',
+      requireAnyOf: ['I', 'R'],
+      vietnameseKeywords: ['nghiên cứu', 'nghien cuu', 'kỹ thuật', 'ky thuat', 'thực tế', 'thuc te'],
+      desc: 'tư duy phân tích thuật toán logic và thao tác kỹ thuật máy tính chuyên sâu'
+    },
+    {
+      keywords: ['bác sĩ', 'bac si', 'y khoa', 'y khoa', 'dược', 'duoc', 'y học', 'y hoc', 'công nghệ sinh học', 'cong nghe sinh hoc', 'sinh học', 'hóa học'],
+      requiredLetter: 'I',
+      letterName: 'I (Nghiên cứu)',
+      vietnameseKeywords: ['nghiên cứu', 'nghien cuu', 'khám phá'],
+      desc: 'đào sâu nghiên cứu khoa học, giải phẫu thực nghiệm và phân tích dữ liệu chuyên sâu'
+    },
+    {
+      keywords: ['nghệ thuật', 'nghe thuat', 'thiết kế', 'thiet ke', 'đồ họa', 'do hoa', 'kiến trúc', 'kien truc', 'mỹ thuật', 'my thuat', 'âm nhạc', 'am nhac', 'truyền thông đa phương tiện', 'truyen thong da phuong tien', 'điện ảnh', 'dien anh'],
+      requiredLetter: 'A',
+      letterName: 'A (Nghệ thuật)',
+      vietnameseKeywords: ['nghệ thuật', 'nghe thuat', 'sáng tạo', 'sang tao'],
+      desc: 'sáng tạo thẩm mỹ thị giác, trực giác nghệ thuật và tư duy phi quy chuẩn'
+    },
+    {
+      keywords: ['kinh doanh', 'kinh doanh', 'quản trị', 'quan tri', 'marketing', 'thương mại', 'thuong mai', 'ngoại thương', 'ngoai thuong', 'bất động sản', 'bat dong san'],
+      requiredLetter: 'E',
+      letterName: 'E (Quản lý / Doanh nhân)',
+      vietnameseKeywords: ['quản lý', 'quan ly', 'doanh nhân', 'doanh nhan', 'khởi nghiệp', 'khoi nghiep'],
+      desc: 'năng động, thương lượng, thuyết phục khách hàng và chấp nhận áp lực cạnh tranh thương trường'
+    },
+    {
+      keywords: ['kế toán', 'ke toan', 'kiểm toán', 'kiem toan', 'ngân hàng', 'ngan hang', 'hành chính', 'hanh chinh', 'văn phòng', 'van phong'],
+      requiredLetter: 'C',
+      letterName: 'C (Nghiệp vụ / Quy củ)',
+      vietnameseKeywords: ['nghiệp vụ', 'nghiep vu', 'quy củ', 'quy cu', 'chi tiết'],
+      desc: 'tính chính xác chi tiết, xử lý số liệu quy chuẩn và tuân thủ nguyên tắc chặt chẽ'
+    }
+  ];
+
+  for (const rule of rules) {
+    if (rule.keywords.some(k => careerLower.includes(k))) {
+      let hasSignature = false;
+      if (rule.requireAnyOf) {
+        hasSignature = rule.requireAnyOf.some(lettr => codesStr.includes(lettr)) ||
+          rule.vietnameseKeywords.some(vk => fullHollandText.includes(vk));
+      } else {
+        hasSignature = codesStr.includes(rule.requiredLetter) ||
+          rule.vietnameseKeywords.some(vk => fullHollandText.includes(vk));
+      }
+
+      if (!hasSignature) {
+        return {
+          isMismatch: true,
+          expectedLetter: rule.requiredLetter,
+          letterName: rule.letterName,
+          desc: rule.desc
+        };
+      }
+      return { isMismatch: false };
+    }
+  }
+
+  return { isMismatch: false };
+}
+
 function getSocraticDirective(round, anchor = {}, userMsg = '') {
   const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
   const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+  const numScore = parseFloat(confidenceScore) || 8;
+  const isOverconfident = numScore >= 7;
 
   let hollandCode = anchor.holland_code || '';
   if (Array.isArray(anchor.holland_codes) && anchor.holland_codes.length > 0) {
@@ -124,12 +220,30 @@ function getSocraticDirective(round, anchor = {}, userMsg = '') {
     hollandCode = 'Nghiên cứu - Kỹ thuật';
   }
 
+  const mismatch = checkHollandSignatureMismatch(targetCareer, anchor.holland_code || anchor.holland_codes);
+
   const baseDirective = `BẠN LÀ: "Chuyên gia Phản tư Hành vi Socrates" (Nghiên cứu CBAS - ViSEF Quốc gia 2026).
 HỒ SƠ HỌC SINH TỪ BƯỚC 1:
 - Ngành mục tiêu: ${targetCareer} (BẮT BUỘC dùng đúng tên ngành "${targetCareer}" trong mọi câu phản hồi, TUYỆT ĐỐI KHÔNG dùng cụm từ "ngành em chọn" hay "ngành đã chọn").
 - Cơ sở đào tạo: ${targetUniversity}
-- Mức tự tin ban đầu: ${confidenceScore}/10
+- Mức tự tin ban đầu: ${confidenceScore}/10 (${isOverconfident ? 'Tự tin thái quá' : 'Do dự, mơ hồ'})
 - Mã RIASEC: ${hollandCode}
+
+QUY TẮC RẼ NHÁNH BẮT BUỘC THEO MỨC TỰ TIN & TÍNH CHẤT NGÀNH:
+1. SOI CHIẾU MÃ HOLLAND (RIASEC):
+${mismatch && mismatch.isMismatch
+  ? `⚠️ CẢNH BÁO LỆCH PHA HOLLAND: Học sinh chọn ngành "${targetCareer}" (đòi hỏi chữ cái đặc trưng ${mismatch.letterName} - ${mismatch.desc}), nhưng mã RIASEC của học sinh (${hollandCode}) lại THIẾU chữ cái đặc trưng này!
+👉 BẮT BUỘC: Em PHẢI nêu ra điểm lệch pha nhận thức này ngay câu đầu tiên của câu trả lời!`
+  : `Mã Holland (${hollandCode}) tương đối phù hợp hoặc có nhóm hỗ trợ cho ngành "${targetCareer}". Tiếp tục soi chiếu năng lực thực tế.`}
+
+2. RẼ NHÁNH THEO MỨC ĐIỂM TỰ TIN (${confidenceScore}/10):
+${isOverconfident
+  ? `[NHÁNH TỰ TIN THÁI QUÁ (Điểm tự tin >= 7/10 - Hiện tại: ${confidenceScore}/10)]:
+- Truy vấn thẳng vào điểm tựa thực tế, bóc tách triệt để ảo tưởng hoặc mỏ neo hào nhoáng từ truyền thông mạng xã hội.
+- Yêu cầu học sinh chỉ ra bằng chứng thực tế đo đếm được (điểm số môn chuyên sâu, giải thưởng, sản phẩm cụ thể) chứng minh mình đủ năng lực vượt qua độ khó đào thải của ngành "${targetCareer}".`
+  : `[NHÁNH DO DỰ, MƠ HỒ (Điểm tự tin <= 6/10 - Hiện tại: ${confidenceScore}/10)]:
+- TUYỆT ĐỐI KHÔNG chất vấn "tại sao tin" hay "tại sao em tự tin".
+- TRUY VẤN THẲNG vào nguyên nhân do dự, rào cản năng lực cụ thể hoặc sự thiếu hụt thông tin: Rào cản nào (học lực môn nào, áp lực chi phí, hay chưa hiểu rõ thị trường việc làm) đang khiến em phân vân và chưa dám khẳng định quyết định của mình?`}
 
 NGUYÊN TẮC PHẢN TƯ NÂNG CAO (CHẠM ĐỘ CHÍN HỌC THUẬT):
 1. BẮT BUỘC ĐỐI THOẠI TRỰC DIỆN VỚI TỪ KHÓA CỦA HỌC SINH:
@@ -137,13 +251,13 @@ NGUYÊN TẮC PHẢN TƯ NÂNG CAO (CHẠM ĐỘ CHÍN HỌC THUẬT):
    - Nếu học sinh dùng từ mơ hồ ("cố gắng", "quyết tâm"): Hãy truy vấn xem sự cố gắng đó cụ thể là hành động gì trong tuần này, tháng này.
    - Nếu học sinh hỏi lại thuật ngữ ("...là gì?", "chưa hiểu"): Dành đúng 1 câu định nghĩa bình dân, dễ hiểu nhất cho học sinh THPT, sau đó mới đặt câu hỏi tiếp.
 
-2. CẤU TRÚC PHẢN HỒI CHUẨN MỰC (TỐI ĐA 120 TỪ):
-   - Câu 1: Phản hồi/giải nghĩa trực diện điều học sinh vừa nói (không khen ngợi vu vơ).
-   - Câu 2: Đưa ra nghịch lý thực tế giữa kỳ vọng và số liệu thị trường của ngành ${targetCareer}.
+2. CẤU TRÚC PHẢN HỒI CHUẨN MỰC (ĐÚNG 3 CÂU - DƯỚI 120 TỪ):
+   - Câu 1: Phản hồi/giải nghĩa trực diện điều học sinh vừa nói ${mismatch && mismatch.isMismatch ? '(BẮT BUỘC nêu điểm lệch pha Holland ngay câu này)' : '(không khen ngợi vu vơ)'}.
+   - Câu 2: Đưa ra nghịch lý thực tế giữa kỳ vọng/sự do dự với số liệu thị trường và độ khó của ngành ${targetCareer}.
    - Câu 3: Đặt DUY NHẤT 1 câu hỏi truy vấn sâu theo đúng lộ trình vòng.
 
 3. LỘ TRÌNH 4 VÒNG CAN THIỆP CHẶT CHẼ:
-   - Vòng 1 (Năng lực & Thu nhập thực tế): Truy vấn căn cứ khách quan đối lập với hình ảnh hào nhoáng trên mạng xã hội.
+   - Vòng 1 (Năng lực & Thu nhập thực tế): Truy vấn căn cứ khách quan đối lập với hình ảnh hào nhoáng (nếu >= 7/10) hoặc truy vấn thẳng vào rào cản năng lực/nguyên nhân do dự (nếu <= 6/10).
    - Vòng 2 (Thách thức công nghệ & Tự động hóa): Truy vấn về khả năng bị AI thay thế đối với các tác vụ cơ bản của ${targetCareer}.
    - Vòng 3 (Kỹ năng chuyển đổi & Sinh tồn linh hoạt): Giải thích ngắn gọn nếu học sinh chưa hiểu, sau đó truy vấn phương án thích ứng nếu thị trường biến động hoặc chưa có việc làm đúng ngành ngay sau tốt nghiệp.
    - Vòng 4 (Đúc kết & Chuyển giao): Tuyệt đối KHÔNG hỏi thêm. Liệt kê 3 khoảng trống nhận thức học sinh đã bộc lộ và chỉ định sang Bước 3 tra cứu số liệu thực tế.
@@ -175,9 +289,9 @@ QUY TẮC BỔ TRỢ:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở VÒNG 1 - NĂNG LỰC & THU NHẬP THỰC TẾ]:
 Học sinh vừa trả lời câu hỏi Vòng 1.
 Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
-- Câu 1: Phản hồi trực diện điều học sinh vừa nói về năng lực học tập hoặc lý do chọn ngành.
-- Câu 2: Đưa ra nghịch lý thực tế giữa kỳ vọng thu nhập/hào nhoáng truyền thông với độ khó học thuật của ngành "${targetCareer}".
-- Câu 3: Đặt 1 câu hỏi truy vấn sâu: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"`;
+- Câu 1: ${mismatch && mismatch.isMismatch ? `BẮT BUỘC nêu ngay điểm lệch pha Holland: ngành "${targetCareer}" đòi hỏi nhóm ${mismatch.letterName} trong khi mã Holland của em (${hollandCode}) lại thiếu chữ cái này.` : `Phản hồi trực diện điều học sinh vừa chia sẻ về năng lực học tập hoặc lý do chọn ngành.`}
+- Câu 2: ${isOverconfident ? `Bóc tách mỏ neo hào nhoáng, đưa ra nghịch lý giữa sự tự tin thái quá với độ khó học thuật và áp lực đào thải của ngành "${targetCareer}".` : `Bóc tách tâm lý do dự, chỉ ra rằng mức tự tin ${confidenceScore}/10 phản ánh sự thiếu hụt dữ liệu thực chứng và lo ngại rào cản năng lực trong ngành "${targetCareer}".`}
+- Câu 3: ${isOverconfident ? `Đặt 1 câu hỏi truy vấn sâu: "Trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành ${targetCareer}, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?"` : `Đặt 1 câu hỏi truy vấn sâu: "Nguyên nhân do dự lớn nhất khiến em chỉ tự tin ${confidenceScore}/10 vào ngành ${targetCareer} là do rào cản năng lực môn học cụ thể nào, hay do em đang thiếu thông tin về mức độ cạnh tranh và tự động hóa của AI trong ngành này?"`}`;
 
     case 2:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở VÒNG 2 - THÁCH THỨC CÔNG NGHỆ & TỰ ĐỘNG HÓA]:
@@ -185,7 +299,7 @@ Học sinh vừa trả lời về AI và kỹ năng trong ngành "${targetCareer
 Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
 - Câu 1: Phản hồi trực diện nhận thức của học sinh về công nghệ AI.
 - Câu 2: Đưa ra nghịch lý thực tế về việc AI đang cắt giảm các tác vụ cơ bản và vị trí thực tập/nhân sự mới trong ngành "${targetCareer}".
-- Câu 3: Đặt 1 câu hỏi truy vấn sâu về Bộ kỹ năng chuyển đổi: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để không bị đào thải?"`;
+- Câu 3: ${isOverconfident ? `Đặt 1 câu hỏi truy vấn sâu về Bộ kỹ năng chuyển đổi: "Nếu thị trường lao động ngành ${targetCareer} bước vào chu kỳ biến động hoặc bão hòa khi em tốt nghiệp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để không bị đào thải?"` : `Đặt 1 câu hỏi truy vấn sâu: "Trước nguy cơ AI tự động hóa các tác vụ cơ bản, rào cản kỹ năng nào ở bản thân khiến em lo lắng nhất nếu ngành ${targetCareer} bước vào chu kỳ biến động khi em tốt nghiệp?"`}`;
 
     case 3:
       return baseDirective + specificDirective + `\n\n[HIỆN TẠI ĐANG Ở VÒNG 3 - KỸ NĂNG CHUYỂN ĐỔI & SINH TỒN LINH HOẠT]:
@@ -193,7 +307,7 @@ Học sinh vừa trả lời về kỹ năng thích ứng và phương án việ
 Áp dụng đúng cấu trúc 3 câu (dưới 120 từ):
 - Câu 1: Phản hồi trực diện mức độ chuẩn bị của học sinh (nếu học sinh hỏi thuật ngữ thì định nghĩa ngắn gọn).
 - Câu 2: Đưa ra nghịch lý giữa kế hoạch trên lý thuyết với tính khốc liệt của thị trường việc làm và tuyển sinh.
-- Câu 3: Đặt 1 câu hỏi chốt về dữ liệu thực tế: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"`;
+- Câu 3: ${isOverconfident ? `Đặt 1 câu hỏi chốt về dữ liệu thực tế: "Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} chưa, hay vẫn dựa trên cảm nhận cá nhân?"` : `Đặt 1 câu hỏi chốt về dữ liệu: "Việc em do dự ${confidenceScore}/10 có phải vì chưa từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của ${targetCareer} tại ${targetUniversity} không, và em dự định xác thực các số liệu này ở đâu?"`}`;
 
     case 4:
     default:
@@ -205,6 +319,9 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
   const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+  const numScore = parseFloat(confidenceScore) || 8;
+  const isOverconfident = numScore >= 7;
+  const mismatch = checkHollandSignatureMismatch(targetCareer, anchor.holland_code || anchor.holland_codes);
 
   // VÒNG 4 (ĐÚC KẾT & CHUYỂN GIAO - TUYỆT ĐỐI KHÔNG HỎI THÊM)
   if (isFinal || round >= 4) {
@@ -265,19 +382,31 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
   }
 
   if (isGreetingOnly(userMsg)) {
-    return `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`;
+    return isOverconfident
+      ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`
+      : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Mức tự tin của em chỉ ở mức ${confidenceScore}/10: Rào cản năng lực cụ thể nào hoặc sự thiếu hụt thông tin nào về ngành **${targetCareer}** đang khiến em do dự?`;
   }
 
   // 6. PHẢN HỒI THEO TIẾN TRÌNH 4 VÒNG CAN THIỆP CHUẨN MỰC (CẤU TRÚC 3 CÂU)
   switch (round) {
-    case 1:
-      return `Thầy ghi nhận chia sẻ của em về năng lực phổ thông đối với ngành **${targetCareer}**.\n\nTuy nhiên, độ khó học thuật ở bậc đại học và sự phân hóa thu nhập thực tế khắt khe hơn rất nhiều so với những hình ảnh hào nhoáng trên truyền thông.\n\nBên cạnh đó, trong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+    case 1: {
+      let sentence1 = `Thầy ghi nhận chia sẻ của em về nền tảng năng lực học tập ban đầu đối với ngành **${targetCareer}**.`;
+      if (mismatch && mismatch.isMismatch) {
+        sentence1 = `Thầy nhận thấy ngay điểm lệch pha: Ngành **${targetCareer}** đòi hỏi đặc trưng nhóm **${mismatch.letterName}** (${mismatch.desc}), nhưng kết quả Holland của em lại thiếu chữ cái này.`;
+      }
+
+      if (isOverconfident) {
+        return `${sentence1}\n\nĐộ khó học thuật ở bậc đại học và sự phân hóa thu nhập thực tế khắt khe hơn rất nhiều so với những hình ảnh hào nhoáng trên truyền thông.\n\nTrong 4-5 năm tới khi AI tự động hóa mạnh mẽ các công việc cơ bản của ngành **${targetCareer}**, đâu là kỹ năng chuyên sâu đặc thù mà em tin rằng AI không thể thay thế được ở bản thân em?`;
+      } else {
+        return `${sentence1}\n\nMức tự tin **${confidenceScore}/10** phản ánh sự do dự và nhận thức rõ về khoảng trống thông tin của em trước ngưỡng cửa đại học.\n\nRào cản năng lực học tập cụ thể nào hay sự thiếu hụt dữ liệu nào về ngành **${targetCareer}** đang là nguyên nhân chính khiến em băn khoăn và chưa dám chắc chắn?`;
+      }
+    }
 
     case 2:
-      return `Nhận thức của em về tác động của công nghệ trong ngành **${targetCareer}** là điểm khởi đầu cần thiết.\n\nTuy nhiên, các thao tác kỹ thuật lặp lại sẽ bị AI thay thế rất nhanh, tạo nên áp lực đào thải lớn cho nhân sự mới.\n\nEm đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu thị trường ngành **${targetCareer}** biến động khi em tốt nghiệp?`;
+      return `Nhận thức của em về tác động của công nghệ trong ngành **${targetCareer}** là điểm khởi đầu cần thiết.\n\nTuy nhiên, các thao tác kỹ thuật lặp lại sẽ bị AI thay thế rất nhanh, tạo nên áp lực đào thải lớn cho nhân sự mới.\n\n${isOverconfident ? `Em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm linh hoạt nào để thích ứng nếu thị trường ngành **${targetCareer}** biến động khi em tốt nghiệp?` : `Trước nguy cơ AI tự động hóa, rào cản kỹ năng nào ở bản thân khiến em lo lắng nhất nếu ngành **${targetCareer}** biến động việc làm khi em tốt nghiệp?`}`;
 
     case 3:
-      return `Mức độ chuẩn bị cho thấy em đã bắt đầu quan tâm đến khả năng thích ứng linh hoạt trong tương lai.\n\nDù vậy, một quyết định ở mức tự tin **${confidenceScore}/10** đòi hỏi phải được xây dựng trên dữ liệu xác thực chứ không thể chỉ là dự định cảm tính.\n\nEm đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?`;
+      return `Mức độ chuẩn bị cho thấy em đã bắt đầu quan tâm đến khả năng thích ứng linh hoạt trong tương lai.\n\nDù vậy, một quyết định ở mức tự tin **${confidenceScore}/10** đòi hỏi phải được xây dựng trên dữ liệu xác thực chứ không thể chỉ là ước đoán.\n\n${isOverconfident ? `Em đã từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** chưa, hay vẫn dựa trên cảm nhận cá nhân?` : `Việc em do dự **${confidenceScore}/10** có phải vì chưa từng đối chiếu số liệu tuyển sinh thực tế (điểm chuẩn 3 năm, học phí, chỉ tiêu) của **${targetCareer}** tại **${targetUniversity}** không?`}`;
 
     case 4:
     default:
@@ -329,12 +458,17 @@ export default async function handler(req, res) {
     const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
     const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
     const targetUniversity = (anchor.target_university || anchor.target_school || '').trim() || 'đơn vị đào tạo mục tiêu';
+    const numScore = parseFloat(confidenceScore) || 8;
+    const isOverconfident = numScore >= 7;
 
     // QUY TẮC 1: Nếu học sinh chỉ chào hỏi (Ví dụ: "chào thầy", "hello", "dạ")
     // Tuyệt đối KHÔNG tính đây là một vòng phản tư, KHÔNG tăng biến đếm vòng.
     if (isGreetingOnly(trimmedMessage)) {
       const greetingReply = currentRound === 1
-        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`
+        ? (isOverconfident
+            ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`
+            : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Mức tự tin của em chỉ ở mức ${confidenceScore}/10: Rào cản năng lực cụ thể nào hoặc sự thiếu hụt thông tin nào về ngành **${targetCareer}** đang khiến em do dự?`
+          )
         : currentRound === 2
         ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu đặc thù không thể thay thế của em trong ngành **${targetCareer}**.`
         : currentRound === 3
