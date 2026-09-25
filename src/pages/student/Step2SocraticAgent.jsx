@@ -46,7 +46,19 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     setCurrentRound(1);
   }, []);
 
-  // 2. BỘ ĐIỀU PHỐI PROMPT 4 VÒNG TÁCH BIỆT (CHẠM ĐỘ CHÍN CBAS)
+  // CẤU HÌNH PHONG CÁCH VÀ NGUYÊN TẮC HÀNH VI CHUẨN CBAS
+  const SOCRATIC_PERSONA = `
+BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
+VĂN PHONG VÀ BẢN SẮC BẮT BUỘC:
+1. ĐIỀM ĐẠM, SẮC BÉN, NHÂN VĂN: Không phán xét, không mắng mỏ, không dùng từ ngữ sáo rỗng ("rất tốt", "tuyệt vời", "hình ảnh hào nhoáng"). 
+2. NÓI THẲNG VÀO BẢN CHẤT: Luôn phản hồi trực tiếp vào chi tiết học sinh vừa nói. Nếu học sinh nói về TikTok, nói thẳng về thuật toán và thiên lệch sống sót. Nếu học sinh nói về điểm số, phân biệt rõ giữa điểm số lý thuyết với năng lực thực chiến.
+3. KHÔNG THỎA HIỆP CẢM TÍNH: Tuyệt đối không nhượng bộ trước các câu trả lời chung chung ("em sẽ cố gắng", "em tin mình làm được"). Phải đòi hỏi phương án cụ thể, kỹ năng chuyển đổi và dữ liệu pháp lý.
+4. CẤU TRÚC 1 PHẢN HỒI:
+   - Phần 1: Ghi nhận trung thực điều học sinh vừa chia sẻ.
+   - Phần 2: Chỉ ra ngay điểm mâu thuẫn giữa hồ sơ RIASEC, năng lực thực tế với áp lực nghề nghiệp.
+   - Phần 3: Đặt ĐÚNG 1 CÂU HỎI dẫn dắt duy lý.
+`;
+
   const generatePromptForRound = (round, profile, userText) => {
     const career = profile?.target_career || "ngành đã chọn";
     const uni = profile?.target_university || "trường đại học mục tiêu";
@@ -55,48 +67,49 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
 
     switch (round) {
       case 1:
-        return `BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
-BỐI CẢNH: Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, mã RIASEC: ${holland}.
-HỌC SINH VỪA NÊU CĂN CỨ NĂNG LỰC: "${userText}".
-NHIỆM VỤ VÒNG 1:
-1. Đọc kỹ câu trả lời của học sinh: Trích dẫn và phản hồi trực tiếp vào dữ kiện học sinh vừa nêu (ví dụ: điểm môn học, trải nghiệm bán hàng, ngoại giao, sở thích). Tuyệt đối KHÔNG dùng văn mẫu sáo rỗng như "hình ảnh hào nhoáng truyền thông" nếu học sinh không hề nhắc tới.
-2. Đối chiếu thực chứng: Phân tích sự khác biệt giữa năng lực phổ thông/trải nghiệm cá nhân đơn giản với độ khó học thuật, tính chuẩn mực pháp lý và áp lực chuyên môn thực tế của ngành ${career}.
-3. CUỐI PHẢN HỒI, ĐẶT DUY NHẤT 1 CÂU HỎI DẪN SANG VÒNG 2: "Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn các tác vụ xử lý kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc kỹ năng đặc thù mà em tin công nghệ không thể làm thay ở bản thân em?"
-Quy chuẩn: Dưới 110 từ. Giữ thái độ phản biện nghiêm cẩn.`;
+        return `${SOCRATIC_PERSONA}
+BỐI CẢNH VÒNG 1 (NĂNG LỰC THỰC CHỨNG):
+Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, nhóm Holland là ${holland}.
+Học sinh vừa phản hồi: "${userText}".
+NHIỆM VỤ:
+1. Trích dẫn trực tiếp chi tiết năng lực học sinh vừa nêu.
+2. Đối chiếu thực tế: Chỉ ra khoảng cách giữa trải nghiệm cá nhân/điểm số phổ thông với độ khó học thuật và kỷ luật chuyên môn thực tế của ngành ${career}.
+3. ĐẶT DUY NHẤT 1 CÂU HỎI VÒNG 2: "Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn tác vụ kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc kỹ năng đặc thù mà em tin công nghệ không thể thay thế ở bản thân em?"
+Độ dài: Dưới 110 từ.`;
 
       case 2:
-        return `BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
-BỐI CẢNH: Ngành ${career}, mã RIASEC của học sinh là ${holland}.
-HỌC SINH PHẢN HỒI VỀ NĂNG LỰC CẠNH TRANH VỚI AI: "${userText}".
-NHIỆM VỤ VÒNG 2:
-1. Phản biện sắc bén: 
-   - Nếu học sinh nêu "truyền cảm hứng, thấu cảm, cảm xúc": Công nhận đó là giá trị nhân văn của con người, nhưng chỉ ra rằng công nghệ AI đang hỗ trợ giáo án cá nhân hóa rất hấp dẫn. Để đứng vững, giáo viên hiện đại cần cả năng lực thiết kế dạy học số và phương pháp chuyên sâu, không thể chỉ dựa vào cảm tính.
-   - Nếu học sinh nói "cố gắng sẽ vượt qua": Chỉ rõ áp lực đào thải và tỷ lệ cạnh tranh viên chức gay gắt.
-2. CUỐI PHẢN HỒI, ĐẶT DUY NHẤT 1 CÂU HỎI SANG VÒNG 3: "Nếu sau khi tốt nghiệp ngành ${career}, chưa đỗ viên chức hoặc chỉ tiêu công lập bị thu hẹp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, biên tập nội dung) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?"
-Quy chuẩn: Dưới 110 từ. Giữ văn phong Socrates điềm đạm, sắc sảo.`;
+        return `${SOCRATIC_PERSONA}
+BỐI CẢNH VÒNG 2 (TÁC ĐỘNG CÔNG NGHỆ & CẠNH TRANH):
+Ngành: ${career}, mã Holland: ${holland}.
+Học sinh vừa phản hồi về vũ khí cạnh tranh với AI: "${userText}".
+NHIỆM VỤ:
+1. Nếu học sinh dựa vào cảm xúc, đam mê, sự chăm chỉ: Nhắc nhở quy luật khốc liệt về chi phí và năng suất của thị trường lao động 4.0.
+2. Nếu học sinh có sự lệch pha Holland (ví dụ: ngành cần kỹ thuật nhưng tính cách thiên về cảm xúc/kinh doanh): Chỉ rõ sự nhầm lẫn vai trò nghề nghiệp.
+3. ĐẶT DUY NHẤT 1 CÂU HỎI VÒNG 3: "Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?"
+Độ dài: Dưới 110 từ.`;
 
       case 3:
-        return `BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
-BỐI CẢNH: Ngành ${career} tại ${uni}, điểm tự tin ban đầu ${score}/10.
-HỌC SINH PHẢN HỒI VỀ KẾ HOẠCH DỰ PHÒNG & THÍCH ỨNG: "${userText}".
-NHIỆM VỤ VÒNG 3:
-1. Đánh giá tính thực tế của phương án học sinh vừa nêu (chỉ rõ sự chủ động hay còn mang tính phỏng đoán).
-2. CUỐI PHẢN HỒI, ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN DỮ LIỆU TUYỂN SINH THỰC TẾ: "Mức tự tin ${score}/10 cần dựa trên những con số pháp lý cụ thể. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, nắm rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?"
-Quy chuẩn: Dưới 85 từ. Súc tích, đanh thép.`;
+        return `${SOCRATIC_PERSONA}
+BỐI CẢNH VÒNG 3 (KỸ NĂNG THÍCH ỨNG & DỰ PHÒNG):
+Học sinh vừa phản hồi về phương án dự phòng: "${userText}".
+NHIỆM VỤ:
+1. Đánh giá tính khả thi: Chỉ ra phương án của học sinh là chủ động thực chất hay mới dừng ở giả định, phỏng đoán.
+2. ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN DỮ LIỆU THỰC TẾ: "Mức tự tin ${score}/10 cần điểm tựa số liệu pháp lý. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, biết rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?"
+Độ dài: Dưới 85 từ.`;
 
       case 4:
-        return `BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
-BỐI CẢNH: ĐÂY LÀ VÒNG ĐÚC KẾT CUỐI CÙNG (KẾT THÚC BƯỚC 2).
-HỌC SINH VỪA TRẢ LỜI CÂU HỎI DỮ LIỆU: "${userText}".
-NHIỆM VỤ VÒNG 4:
-1. Ghi nhận trung thực phản hồi: Nhắc lại việc học sinh thừa nhận chưa biết tìm hiểu hoặc nghe bạn bè nói.
-2. TỔNG KẾT ĐỘNG 3 ĐIỂM KHOẢNG TRỐNG NHẬN THỨC dựa trên chính lời thừa nhận của học sinh:
-   - Điểm 1: Khoảng cách giữa danh hiệu học sinh giỏi/giao tiếp phổ thông với phương pháp sư phạm chuyên nghiệp và áp lực đứng lớp thực tế.
-   - Điểm 2: Thách thức tự động hóa dạy học và sự bị động trong việc xây dựng phương án dự phòng khi chỉ tiêu biên chế giới hạn.
-   - Điểm 3: Điểm mù dữ liệu tuyển sinh khi mới chỉ nghe truyền miệng, chưa trực tiếp tra cứu Đề án tuyển sinh và cam kết bồi hoàn Nghị định 116 tại ${uni}.
+        return `${SOCRATIC_PERSONA}
+BỐI CẢNH VÒNG 4 (ĐÚC KẾT ĐỘNG & ĐÓNG PHIÊN):
+Học sinh vừa trả lời câu hỏi dữ liệu tuyển sinh: "${userText}".
+NHIỆM VỤ BẮT BUỘC:
+1. Ghi nhận trung thực câu trả lời (dù nói 'dạ rồi', 'chưa', hay 'em nghe bạn nói'): Nhấn mạnh mọi thông tin phải kiểm chứng qua văn bản pháp lý chính thống.
+2. ĐÚC KẾT ĐÚNG 3 KHOẢNG TRỐNG NHẬN THỨC đã bộc lộ trong phiên:
+   - Điểm 1: Khoảng cách giữa năng lực ban đầu với đòi hỏi chuyên môn thực tế của ${career}.
+   - Điểm 2: Sự sẵn sàng của Bộ kỹ năng chuyển đổi và phương án thích ứng trước nguy cơ công nghệ/bão hòa việc làm.
+   - Điểm 3: Sự cần thiết phải xác thực điểm chuẩn, học phí và đề án tuyển sinh tại ${uni}.
 3. LỜI KẾT BẮT BUỘC (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
-   "Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để hoàn thiện cơ sở vững chắc cho quyết định của mình!"
-Quy chuẩn: Dưới 135 từ.`;
+   "Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để xây dựng cơ sở vững chắc cho quyết định của mình!"
+Độ dài: Dưới 135 từ.`;
 
       default:
         return "";
@@ -105,33 +118,33 @@ Quy chuẩn: Dưới 135 từ.`;
 
   // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN CBAS (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
   const generateHeuristicFallback = (round, profile, userText = '') => {
-    const career = profile?.target_career || "Sư phạm";
-    const uni = profile?.target_university || "Đại học Quy Nhơn";
+    const career = profile?.target_career || "Công nghệ thông tin";
+    const uni = profile?.target_university || "Đại học Bách Khoa";
     const score = profile?.confidence_score || "8";
 
     switch (round) {
       case 1:
         return `Thầy ghi nhận căn cứ năng lực mà em vừa nêu: "${userText}".\n\n` +
           `Tuy nhiên, điểm số môn học phổ thông hay trải nghiệm cá nhân ban đầu chỉ là nền tảng sơ khởi. Khi bước vào giảng đường và môi trường nghề nghiệp thực tế của ngành **${career}**, em sẽ đối mặt với độ khó học thuật chuyên sâu, tính chuẩn mực pháp lý nghiêm ngặt và áp lực chuyên môn rất khắt khe.\n\n` +
-          `Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn các tác vụ xử lý kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc kỹ năng đặc thù mà em tin công nghệ không thể làm thay ở bản thân em?`;
+          `Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn tác vụ kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc kỹ năng đặc thù mà em tin công nghệ không thể thay thế ở bản thân em?`;
 
       case 2:
-        return `Thầy ghi nhận chia sẻ của em về giá trị nhân văn và cảm xúc con người: "${userText}".\n\n` +
-          `Tuy nhiên, công nghệ AI hiện nay đang hỗ trợ giáo án cá nhân hóa rất hấp dẫn. Để đứng vững và vượt qua áp lực đào thải cũng như tỷ lệ cạnh tranh viên chức gay gắt, người dạy học hiện đại cần cả năng lực thiết kế dạy học số và phương pháp chuyên sâu, không thể chỉ dựa vào cảm tính.\n\n` +
-          `Nếu sau khi tốt nghiệp ngành ${career}, chưa đỗ viên chức hoặc chỉ tiêu công lập bị thu hẹp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, biên tập nội dung) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?`;
+        return `Thầy ghi nhận chia sẻ của em về vũ khí cạnh tranh với AI: "${userText}".\n\n` +
+          `Tuy nhiên, thị trường lao động 4.0 vận hành theo quy luật khốc liệt về chi phí và năng suất. Sự chăm chỉ cảm tính hay đam mê chung chung không thể thay thế năng lực chuyên môn thực chiến và khả năng thích ứng linh hoạt trong ngành **${career}**.\n\n` +
+          `Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?`;
 
       case 3:
         return `Kế hoạch thích ứng dự phòng em nêu thể hiện bước đầu ý thức sinh tồn, nhưng tính khả thi vẫn còn nhiều khoảng trống phỏng đoán.\n\n` +
-          `Mức tự tin ${score}/10 cần dựa trên những con số pháp lý cụ thể. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, nắm rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?`;
+          `Mức tự tin ${score}/10 cần điểm tựa số liệu pháp lý. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, biết rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?`;
 
       case 4:
       default: {
-        return `Thầy ghi nhận phản hồi trung thực của em về việc mới chỉ nghe qua bạn bè hoặc chưa từng trực tiếp kiểm chứng số liệu.\n\n` +
+        return `Thầy ghi nhận trung thực câu trả lời của em về việc mới chỉ nghe qua bạn bè hoặc chưa từng trực tiếp kiểm chứng số liệu pháp lý.\n\n` +
           `Qua 4 vòng đối thoại, em đã dũng cảm đối diện với 3 khoảng trống nhận thức cốt lõi:\n` +
-          `1. Khoảng cách giữa danh hiệu học sinh giỏi/giao tiếp phổ thông với phương pháp sư phạm chuyên nghiệp và áp lực đứng lớp thực tế.\n` +
-          `2. Thách thức tự động hóa dạy học và sự bị động trong việc xây dựng phương án dự phòng khi chỉ tiêu biên chế giới hạn.\n` +
-          `3. Điểm mù dữ liệu tuyển sinh khi mới chỉ nghe truyền miệng, chưa trực tiếp tra cứu Đề án tuyển sinh và cam kết bồi hoàn Nghị định 116 tại ${uni}.\n\n` +
-          `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để hoàn thiện cơ sở vững chắc cho quyết định của mình!`;
+          `1. Khoảng cách giữa năng lực ban đầu với đòi hỏi chuyên môn thực tế của ngành ${career}.\n` +
+          `2. Sự sẵn sàng của Bộ kỹ năng chuyển đổi và phương án thích ứng trước nguy cơ công nghệ/bão hòa việc làm.\n` +
+          `3. Sự cần thiết phải xác thực điểm chuẩn, học phí và đề án tuyển sinh tại ${uni}.\n\n` +
+          `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để xây dựng cơ sở vững chắc cho quyết định của mình!`;
       }
     }
   };
