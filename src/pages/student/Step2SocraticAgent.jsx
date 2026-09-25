@@ -69,12 +69,11 @@ Quy chuẩn: Dưới 110 từ. Giữ thái độ phản biện nghiêm cẩn.`;
 BỐI CẢNH: Ngành ${career}, mã RIASEC của học sinh là ${holland}.
 HỌC SINH PHẢN HỒI VỀ NĂNG LỰC CẠNH TRANH VỚI AI: "${userText}".
 NHIỆM VỤ VÒNG 2:
-1. Nhận diện xung đột nhận thức:
-   - Nếu học sinh nêu các yếu tố như "trực giác, EQ, lãnh đạo, truyền cảm hứng" trong khi ngành lại đòi hỏi tính chính xác, tuân thủ kỷ luật (như Kế toán, Kỹ thuật): Hãy bóc tách sự nhầm lẫn giữa chuyên môn cốt lõi của ngành ${career} với vai trò Quản trị/Kinh doanh.
-   - Nếu học sinh nói "cố gắng sẽ vượt qua" hoặc "AI không thay thế được con người/cảm xúc": Hãy chỉ rõ sự cạnh tranh gay gắt về năng suất và chi phí của thị trường lao động.
-   - Tuyệt đối KHÔNG nói câu văn mẫu: "Sự băn khoăn là phản ứng tự nhiên..." nếu học sinh đang thể hiện sự tự tin.
-2. CUỐI PHẢN HỒI, ĐẶT DUY NHẤT 1 CÂU HỎI DẪN SANG VÒNG 3: "Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?"
-Quy chuẩn: Dưới 110 từ. Không lặp lại câu hỏi trước.`;
+1. Phản biện sắc bén: 
+   - Nếu học sinh nêu "truyền cảm hứng, thấu cảm, cảm xúc": Công nhận đó là giá trị nhân văn của con người, nhưng chỉ ra rằng công nghệ AI đang hỗ trợ giáo án cá nhân hóa rất hấp dẫn. Để đứng vững, giáo viên hiện đại cần cả năng lực thiết kế dạy học số và phương pháp chuyên sâu, không thể chỉ dựa vào cảm tính.
+   - Nếu học sinh nói "cố gắng sẽ vượt qua": Chỉ rõ áp lực đào thải và tỷ lệ cạnh tranh viên chức gay gắt.
+2. CUỐI PHẢN HỒI, ĐẶT DUY NHẤT 1 CÂU HỎI SANG VÒNG 3: "Nếu sau khi tốt nghiệp ngành ${career}, chưa đỗ viên chức hoặc chỉ tiêu công lập bị thu hẹp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, biên tập nội dung) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?"
+Quy chuẩn: Dưới 110 từ. Giữ văn phong Socrates điềm đạm, sắc sảo.`;
 
       case 3:
         return `BẠN LÀ: Chuyên gia Phản tư Hành vi Socrates (Dự án ViSEF 2026 - CBAS).
@@ -90,15 +89,14 @@ Quy chuẩn: Dưới 85 từ. Súc tích, đanh thép.`;
 BỐI CẢNH: ĐÂY LÀ VÒNG ĐÚC KẾT CUỐI CÙNG (KẾT THÚC BƯỚC 2).
 HỌC SINH VỪA TRẢ LỜI CÂU HỎI DỮ LIỆU: "${userText}".
 NHIỆM VỤ VÒNG 4:
-1. Ghi nhận trung thực phản hồi: 
-   - Dù học sinh nói "dạ rồi", "đã kiểm tra", "học phí bằng 0" hay "chưa": Nhấn mạnh rằng mọi hiểu biết cần được đối chiếu trực tiếp với văn bản pháp lý chính thống của nhà trường (Đề án tuyển sinh, Nghị định 116 nếu là Sư phạm).
-2. TỔNG KẾT ĐỘNG 3 ĐIỂM KHOẢNG TRỐNG NHẬN THỨC dựa trên chính diễn biến cuộc trò chuyện:
-   - Điểm 1: Năng lực nền tảng ban đầu so với tính kỷ luật học thuật và bản chất nghề nghiệp thực tế của ${career}.
-   - Điểm 2: Thách thức tự động hóa công nghệ và mức độ sẵn sàng của Bộ kỹ năng thích ứng dự phòng.
-   - Điểm 3: Sự cần thiết phải kiểm chứng chính xác các số liệu tuyển sinh, học phí thực tế tại ${uni}.
-3. LỜI KẾT BẮT BUỘC (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI, KHÔNG YÊU CẦU DẪN CHỨNG):
+1. Ghi nhận trung thực phản hồi: Nhắc lại việc học sinh thừa nhận chưa biết tìm hiểu hoặc nghe bạn bè nói.
+2. TỔNG KẾT ĐỘNG 3 ĐIỂM KHOẢNG TRỐNG NHẬN THỨC dựa trên chính lời thừa nhận của học sinh:
+   - Điểm 1: Khoảng cách giữa danh hiệu học sinh giỏi/giao tiếp phổ thông với phương pháp sư phạm chuyên nghiệp và áp lực đứng lớp thực tế.
+   - Điểm 2: Thách thức tự động hóa dạy học và sự bị động trong việc xây dựng phương án dự phòng khi chỉ tiêu biên chế giới hạn.
+   - Điểm 3: Điểm mù dữ liệu tuyển sinh khi mới chỉ nghe truyền miệng, chưa trực tiếp tra cứu Đề án tuyển sinh và cam kết bồi hoàn Nghị định 116 tại ${uni}.
+3. LỜI KẾT BẮT BUỘC (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
    "Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để hoàn thiện cơ sở vững chắc cho quyết định của mình!"
-Quy chuẩn: Dưới 130 từ.`;
+Quy chuẩn: Dưới 135 từ.`;
 
       default:
         return "";
@@ -107,10 +105,9 @@ Quy chuẩn: Dưới 130 từ.`;
 
   // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN CBAS (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
   const generateHeuristicFallback = (round, profile, userText = '') => {
-    const career = profile?.target_career || "Công nghệ thông tin";
-    const uni = profile?.target_university || "Đại học Bách Khoa";
+    const career = profile?.target_career || "Sư phạm";
+    const uni = profile?.target_university || "Đại học Quy Nhơn";
     const score = profile?.confidence_score || "8";
-    const cleanLower = userText.toLowerCase();
 
     switch (round) {
       case 1:
@@ -119,9 +116,9 @@ Quy chuẩn: Dưới 130 từ.`;
           `Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn các tác vụ xử lý kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc kỹ năng đặc thù mà em tin công nghệ không thể làm thay ở bản thân em?`;
 
       case 2:
-        return `Thầy ghi nhận chia sẻ của em về năng lực cạnh tranh: "${userText}".\n\n` +
-          `Thực tế thị trường lao động cho thấy áp lực cạnh tranh về năng suất và chi phí ngày càng gay gắt. Các kỹ năng chung chung hay sự cố gắng cảm tính khó có thể thay thế chuyên môn kỹ thuật cốt lõi và năng lực số chuyên sâu của ngành **${career}**.\n\n` +
-          `Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?`;
+        return `Thầy ghi nhận chia sẻ của em về giá trị nhân văn và cảm xúc con người: "${userText}".\n\n` +
+          `Tuy nhiên, công nghệ AI hiện nay đang hỗ trợ giáo án cá nhân hóa rất hấp dẫn. Để đứng vững và vượt qua áp lực đào thải cũng như tỷ lệ cạnh tranh viên chức gay gắt, người dạy học hiện đại cần cả năng lực thiết kế dạy học số và phương pháp chuyên sâu, không thể chỉ dựa vào cảm tính.\n\n` +
+          `Nếu sau khi tốt nghiệp ngành ${career}, chưa đỗ viên chức hoặc chỉ tiêu công lập bị thu hẹp, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, biên tập nội dung) và phương án việc làm thích ứng nào để tự nuôi sống bản thân?`;
 
       case 3:
         return `Kế hoạch thích ứng dự phòng em nêu thể hiện bước đầu ý thức sinh tồn, nhưng tính khả thi vẫn còn nhiều khoảng trống phỏng đoán.\n\n` +
@@ -129,15 +126,11 @@ Quy chuẩn: Dưới 130 từ.`;
 
       case 4:
       default: {
-        const isFreeMention = cleanLower.includes('bằng 0') || cleanLower.includes('0 đồng') || cleanLower.includes('miễn phí') || cleanLower.includes('free');
-        const prefix = isFreeMention
-          ? `Lưu ý rằng chính sách hỗ trợ học phí ngành ${career} (như Nghị định 116 nếu là Sư phạm) gắn liền với cam kết phục vụ trong ngành, nếu không sẽ phải bồi hoàn toàn bộ kinh phí đào tạo.\n\n`
-          : '';
-
-        return `${prefix}Qua 4 vòng đối thoại, em đã dũng cảm đối diện với 3 khoảng trống nhận thức cốt lõi:\n` +
-          `1. Điểm số môn học phổ thông so với tính kỷ luật học thuật và bản chất nghề nghiệp thực tế của ngành ${career}.\n` +
-          `2. Thách thức tự động hóa công nghệ và mức độ sẵn sàng của Bộ kỹ năng thích ứng dự phòng khi thị trường bão hòa.\n` +
-          `3. Sự cần thiết phải kiểm chứng chính xác các số liệu tuyển sinh, điểm chuẩn 3 năm và học phí thực tế tại ${uni}.\n\n` +
+        return `Thầy ghi nhận phản hồi trung thực của em về việc mới chỉ nghe qua bạn bè hoặc chưa từng trực tiếp kiểm chứng số liệu.\n\n` +
+          `Qua 4 vòng đối thoại, em đã dũng cảm đối diện với 3 khoảng trống nhận thức cốt lõi:\n` +
+          `1. Khoảng cách giữa danh hiệu học sinh giỏi/giao tiếp phổ thông với phương pháp sư phạm chuyên nghiệp và áp lực đứng lớp thực tế.\n` +
+          `2. Thách thức tự động hóa dạy học và sự bị động trong việc xây dựng phương án dự phòng khi chỉ tiêu biên chế giới hạn.\n` +
+          `3. Điểm mù dữ liệu tuyển sinh khi mới chỉ nghe truyền miệng, chưa trực tiếp tra cứu Đề án tuyển sinh và cam kết bồi hoàn Nghị định 116 tại ${uni}.\n\n` +
           `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để hoàn thiện cơ sở vững chắc cho quyết định của mình!`;
       }
     }
