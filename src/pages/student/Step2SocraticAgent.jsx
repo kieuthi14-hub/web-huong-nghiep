@@ -1,5 +1,38 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// BỘ LỌC PHẢN XẠ TỰ NHIÊN TRƯỚC KHI CHẠY MÁY TRẠNG THÁI (NATURAL REFLEX FILTER)
+export function processStudentMessage(message, currentRound, studentProfile) {
+  const lowerMsg = (message || '').toLowerCase().trim();
+  const cleanGreeting = lowerMsg.replace(/[!.,?~]/g, '');
+
+  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || 'ngành học';
+  const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '8';
+  const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC';
+
+  // 1. Nếu học sinh chỉ chào hỏi xã giao
+  const greetings = [
+    "chào thầy", "chao thay", "chào", "chao", "hello", "hi", "xin chào", "xin chao",
+    "em chào thầy", "em chao thay", "dạ chào thầy", "da chao thay", "dạ", "da", "chào bạn"
+  ];
+  if (greetings.includes(cleanGreeting) || lowerMsg === "chào thầy" || lowerMsg === "chào" || lowerMsg === "hello") {
+    return {
+      advanceRound: false, // KHÔNG nhảy vòng
+      reply: `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Em đã chọn ngành ${targetMajor} với mức tự tin ${confidence}/10. Điều gì cụ thể đang khiến em ngập ngừng hoặc lo lắng nhất khi nghĩ về ngành học này?`
+    };
+  }
+
+  // 2. Nếu học sinh hỏi về một nỗi sợ / rào cản cụ thể (như nói trước đám đông, sợ máu, học yếu toán...)
+  if (lowerMsg.includes("tự tin") || lowerMsg.includes("đám đông") || lowerMsg.includes("sợ") || lowerMsg.includes("yếu") || lowerMsg.includes("lo lắng") || lowerMsg.includes("áp lực")) {
+    return {
+      advanceRound: true,
+      instructionForAI: `Học sinh đang bộc lộ nỗi sợ: "${message}". Hãy thấu cảm trước, giải thích rằng kỹ năng này có thể rèn luyện được, NHƯNG đối chiếu với mã Holland ${hollandCode} của học sinh để hỏi xem tính cách sâu bên trong có thực sự phù hợp với đặc thù công việc hay không.`
+    };
+  }
+
+  // 3. Nếu không thuộc các trường hợp trên, tiếp tục chạy vòng phản biện bình thường
+  return { advanceRound: true };
+}
+
 export default function Step2SocraticAgent() {
   const [currentRound, setCurrentRound] = useState(1);
   const [messages, setMessages] = useState([]);
@@ -65,15 +98,17 @@ NGUYÊN TẮC GIAO TIẾP VÀ ĐẠO ĐỨC NGHIÊN CỨU CBAS (BẮT BUỘC TU�
    - Tách biệt "con người học sinh" (luôn được tôn trọng) ra khỏi "rủi ro quyết định" (cần được xem xét cẩn trọng).
 `;
 
-  const generatePromptForRound = (round, profile, userText) => {
-    const career = profile?.target_career || "ngành đã chọn";
+  const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
+    const career = profile?.target_career || profile?.targetMajor || "ngành đã chọn";
     const uni = profile?.target_university || "trường đại học mục tiêu";
-    const score = profile?.confidence_score || "8";
-    const holland = profile?.holland_code || "RIASEC";
+    const score = profile?.confidence_score || profile?.confidence || "8";
+    const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+
+    const specialDirective = specialInstruction ? `\n\nCHỈ DẪN ĐẶC BIỆT KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}\n` : '';
 
     switch (round) {
       case 1:
-        return `${SOCRATIC_PERSONA}
+        return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 1 (XÁC THỰC CẢM XÚC & ĐỐI CHẤT NĂNG LỰC DỰA TRÊN DỮ LIỆU):
 Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, nhóm Holland là ${holland}.
 Học sinh vừa phản hồi: "${userText}".
@@ -84,7 +119,7 @@ NHIỆM VỤ THỰC HIỆN:
 Quy chuẩn: Dưới 110 từ. Giữ âm hưởng ấm áp, thấu cảm, tuyệt đối không dán nhãn tiêu cực.`;
 
       case 2:
-        return `${SOCRATIC_PERSONA}
+        return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 2 (DỰ BÁO XU HƯỚNG TƯƠNG LAI & RỦI RO CÔNG NGHỆ/THỊ TRƯỜNG):
 Ngành: ${career}, mã Holland: ${holland}.
 Học sinh vừa phản hồi về vũ khí cạnh tranh với AI: "${userText}".
@@ -95,7 +130,7 @@ NHIỆM VỤ THỰC HIỆN:
 Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
       case 3:
-        return `${SOCRATIC_PERSONA}
+        return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 3 (KỊCH BẢN THÍCH ỨNG & KẾ HOẠCH B AN TOÀN):
 Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
 Học sinh vừa phản hồi về phương án dự phòng: "${userText}".
@@ -107,7 +142,7 @@ Quy chuẩn: Dưới 85 từ. Súc tích, nâng đỡ, gợi mở.`;
 
       case 4:
       default:
-        return `${SOCRATIC_PERSONA}
+        return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 4 (TỔNG KẾT NHẬN THỨC & CHUYỂN GIAO NHIỆM VỤ THỰC CHỨNG BƯỚC 3):
 Học sinh vừa trả lời câu hỏi dữ liệu tuyển sinh: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
@@ -123,10 +158,17 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
   };
 
   // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN CBAS (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
-  const generateHeuristicFallback = (round, profile, userText = '') => {
-    const career = profile?.target_career || "Công nghệ thông tin";
+  const generateHeuristicFallback = (round, profile, userText = '', specialInstruction = null) => {
+    const career = profile?.target_career || profile?.targetMajor || "Công nghệ thông tin";
     const uni = profile?.target_university || "Đại học Bách Khoa";
-    const score = profile?.confidence_score || "8";
+    const score = profile?.confidence_score || profile?.confidence || "8";
+    const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+
+    if (specialInstruction) {
+      return `Thầy rất thấu cảm và trân trọng sự trung thực của em khi chia sẻ: "${userText}".\n\n` +
+        `Những rào cản kỹ năng như giao tiếp trước đám đông hay áp lực tính toán đều có thể rèn luyện và bồi đắp được theo thời gian. Tuy nhiên, đối chiếu với nhóm tính cách Holland của em (${holland}), điều cốt lõi là em cần lắng nghe xem bản thân có thực sự tìm thấy niềm hứng khởi khi gắn bó với đặc thù công việc của ngành **${career}** hay không?\n\n` +
+        `Nếu phải đối diện với tình huống này thường xuyên trong thực tế nghề nghiệp, em dự định sẽ chuẩn bị cho mình điểm tựa tâm lý hoặc kỹ năng gì để vượt qua?`;
+    }
 
     switch (round) {
       case 1:
@@ -156,7 +198,7 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
   };
 
   // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
-  const callGeminiSocratic = async (historyMessages, userText, round) => {
+  const callGeminiSocratic = async (historyMessages, userText, round, specialInstruction = null) => {
     // 3.1. Thử gọi Serverless Backend /api/chat nếu có
     try {
       const serverlessCtrl = new AbortController();
@@ -170,7 +212,8 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
           history: historyMessages.map(m => ({ role: m.role, text: m.text })),
           round: round,
           maxRounds: maxRounds,
-          anchor: studentProfile
+          anchor: studentProfile,
+          specialInstruction: specialInstruction
         }),
         signal: serverlessCtrl.signal
       });
@@ -195,7 +238,7 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
         || fallbackKey;
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(round, studentProfile, userText);
+      const systemPrompt = generatePromptForRound(round, studentProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -237,7 +280,7 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
     }
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    return generateHeuristicFallback(round, studentProfile, userText);
+    return generateHeuristicFallback(round, studentProfile, userText, specialInstruction);
   };
 
   // 4. TRÍCH XUẤT VĂN BẢN ĐỐI THOẠI CHUẨN MỰC CHO HỌC SINH
@@ -335,20 +378,40 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
     }
   };
 
-  // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH - CHẤP NHẬN CÂU TRẢ LỜI NGẮN Ở VÒNG CUỐI
+  // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH & ĐIỀU PHỐI VÒNG PHẢN TƯ
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const cleanText = inputValue.trim();
+    if (cleanText.length === 0) return;
 
-    // RÀNG BUỘC THÔNG MINH:
+    // 5.1. Chạy bộ lọc phản xạ tự nhiên trước khi chạy máy trạng thái
+    const reflex = processStudentMessage(cleanText, currentRound, studentProfile);
+
+    // Nếu học sinh chỉ chào hỏi xã giao: Trả lời ấm áp, KHÔNG nhảy vòng
+    if (reflex.advanceRound === false && reflex.reply) {
+      setErrorMessage('');
+      const userMsg = {
+        role: 'user',
+        text: cleanText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      const aiMsg = {
+        role: 'model',
+        text: reflex.reply,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setInputValue('');
+      return;
+    }
+
+    // RÀNG BUỘC THÔNG MINH CHO CÁC LƯỢT TIẾP THEO:
     // Vòng 1, 2 bắt buộc lập luận (tối thiểu 5 ký tự)
     // Vòng 3 trở đi chấp nhận câu trả lời ngắn ("dạ rồi", "chưa", "em đã xem")
     if (currentRound <= 2 && cleanText.length < 5) {
       setErrorMessage("⚠️ Câu trả lời của em quá ngắn. Hãy chia sẻ cụ thể trải nghiệm hoặc suy nghĩ của mình để Thầy phản biện nhé!");
       return;
     }
-
-    if (cleanText.length === 0) return;
 
     setErrorMessage('');
     const userMsg = {
@@ -363,7 +426,7 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
     setIsLoading(true);
 
     try {
-      const aiReply = await callGeminiSocratic(messages, cleanText, currentRound);
+      const aiReply = await callGeminiSocratic(messages, cleanText, currentRound, reflex.instructionForAI);
       
       const aiMsg = {
         role: 'model',
@@ -372,7 +435,9 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
       };
 
       setMessages([...nextHistory, aiMsg]);
-      setCurrentRound(prevRound => prevRound + 1);
+      if (reflex.advanceRound !== false) {
+        setCurrentRound(prevRound => prevRound + 1);
+      }
 
     } catch (err) {
       console.error(err);

@@ -313,10 +313,11 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
   }
 }
 
-function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFinal = false) {
+function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFinal = false, specialInstruction = null) {
   const targetCareer = (anchor.target_career || anchor.target_major || '').trim() || 'Công nghệ thông tin';
   const targetUniversity = (anchor.target_university || '').trim() || 'Đại học Bách Khoa';
   const confidenceScore = anchor.confidence_score || anchor.confidence_score_initial || '8';
+  const holland = anchor.holland_code || 'RIASEC';
   const isEdu = isEducation(targetCareer);
 
   // VÒNG 4 (ĐÚC KẾT & CHUYỂN GIAO - TUYỆT ĐỐI KHÔNG HỎI THÊM)
@@ -332,6 +333,13 @@ function generateSocraticHeuristicReply(round, anchor = {}, userMsg = '', isFina
       `2. **Phương án thích ứng & Bộ kỹ năng chuyển đổi:** Tầm quan trọng của Bộ kỹ năng chuyển đổi và phương án thích ứng trước nguy cơ tự động hóa công nghệ và biến động việc làm.\n` +
       `3. **Xác thực dữ liệu tuyển sinh thực tế:** Sự cần thiết phải tự tay kiểm chứng điểm chuẩn 3 năm, học phí thực tế và đề án tuyển sinh tại **${targetUniversity}**.\n\n` +
       `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để làm chủ quyết định của chính mình!`;
+  }
+
+  // Khi học sinh bộc lộ nỗi sợ / rào cản cụ thể
+  if (specialInstruction) {
+    return `Thầy rất thấu cảm và trân trọng sự trung thực của em khi chia sẻ: "${userMsg}".\n\n` +
+      `Những rào cản kỹ năng như giao tiếp trước đám đông hay áp lực tính toán đều có thể rèn luyện và bồi đắp được theo thời gian. Tuy nhiên, đối chiếu với nhóm tính cách Holland của em (${holland}), điều cốt lõi là em cần lắng nghe xem bản thân có thực sự tìm thấy niềm hứng khởi khi gắn bó với đặc thù công việc của ngành **${targetCareer}** hay không?\n\n` +
+      `Nếu phải đối diện với tình huống này thường xuyên trong thực tế nghề nghiệp, em dự định sẽ chuẩn bị cho mình điểm tựa tâm lý hoặc kỹ năng gì để vượt qua?`;
   }
 
   // 1. KHI HỌC SINH HỎI LẠI THUẬT NGỮ ("...là gì?", "chưa hiểu")
@@ -494,16 +502,7 @@ export default async function handler(req, res) {
     // QUY TẮC 1: Nếu học sinh chỉ chào hỏi (Ví dụ: "chào thầy", "hello", "dạ")
     // Tuyệt đối KHÔNG tính đây là một vòng phản tư, KHÔNG tăng biến đếm vòng.
     if (isGreetingOnly(trimmedMessage)) {
-      const greetingReply = currentRound === 1
-        ? (isOverconfident
-            ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy trả lời câu hỏi ở trên: Điểm số hay trải nghiệm thực tế cụ thể nào khiến em tự tin ${confidenceScore}/10 vào ngành **${targetCareer}**?`
-            : `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Mức tự tin của em chỉ ở mức ${confidenceScore}/10: Rào cản năng lực cụ thể nào hoặc sự thiếu hụt thông tin nào về ngành **${targetCareer}** đang khiến em do dự?`
-          )
-        : currentRound === 2
-        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về nguy cơ tự động hóa bởi AI và kỹ năng chuyên sâu đặc thù không thể thay thế của em trong ngành **${targetCareer}**.`
-        : currentRound === 3
-        ? `Chào em. Thầy trò mình hãy đi thẳng vào vấn đề nhé. Em hãy tập trung trả lời câu hỏi ở trên về Bộ kỹ năng chuyển đổi và kế hoạch việc làm linh hoạt để thích ứng nếu ngành **${targetCareer}** biến động.`
-        : `Chào em. Cuộc đối thoại đã hoàn thành. Em hãy chuyển sang Bước 3: Tra cứu dữ liệu khách quan để kiểm chứng thông tin nhé.`;
+      const greetingReply = `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Em đã chọn ngành **${targetCareer}** với mức tự tin **${confidenceScore}/10**. Điều gì cụ thể đang khiến em ngập ngừng hoặc lo lắng nhất khi nghĩ về ngành học này?`;
 
       return res.status(200).json({
         reply: greetingReply,
@@ -529,6 +528,17 @@ export default async function handler(req, res) {
       activeSystemInstruction = FINAL_CHALLENGE_PROMPT(targetCareer, targetUniversity, confidenceScore);
     } else {
       activeSystemInstruction = getSocraticDirective(currentRound, anchor, trimmedMessage);
+    }
+
+    // Kiểm tra nếu học sinh bộc lộ nỗi sợ / rào cản cụ thể hoặc có specialInstruction từ client
+    const lowerTrimmed = trimmedMessage.toLowerCase();
+    const hasFear = lowerTrimmed.includes("tự tin") || lowerTrimmed.includes("đám đông") || lowerTrimmed.includes("sợ") || lowerTrimmed.includes("yếu") || lowerTrimmed.includes("lo lắng") || lowerTrimmed.includes("áp lực");
+    const specialInstruction = body?.specialInstruction || (hasFear
+      ? `Học sinh đang bộc lộ nỗi sợ: "${trimmedMessage}". Hãy thấu cảm trước, giải thích rằng kỹ năng này có thể rèn luyện được, NHƯNG đối chiếu với mã Holland ${anchor.holland_code || 'RIASEC'} của học sinh để hỏi xem tính cách sâu bên trong có thực sự phù hợp với đặc thù công việc hay không.`
+      : null);
+
+    if (specialInstruction) {
+      activeSystemInstruction += `\n\nCHỈ DẪN ĐẶC BIỆT KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}`;
     }
 
     const targetMaxTokens = 1200; // Đặt 1200 tokens để bao gồm cả thinking tokens (~400) và câu trả lời hoàn chỉnh (~200)
@@ -649,7 +659,7 @@ export default async function handler(req, res) {
     // Nếu các model Gemini đều bận/hết quota (429/503), kích hoạt bộ phản hồi Socrates dự phòng chuẩn hóa
     if (!replyText) {
       console.warn('Tất cả model Gemini bận/hết quota. Sử dụng Socratic Heuristic Fallback để không làm gián đoạn học sinh.');
-      replyText = generateSocraticHeuristicReply(currentRound, anchor, message.trim(), isFinalRound);
+      replyText = generateSocraticHeuristicReply(currentRound, anchor, message.trim(), isFinalRound, specialInstruction);
     }
 
     return res.status(200).json({ 
