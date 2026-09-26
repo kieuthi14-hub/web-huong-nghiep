@@ -17,6 +17,7 @@ import HollandTest from './pages/student/HollandTest'
 import DebiasMatrix from './pages/student/DebiasMatrix'
 import DebiasAgent from './pages/student/DebiasAgent'
 import FactCheckHub from './pages/student/FactCheckHub'
+import Step3VocationalVerification from './pages/student/Step3VocationalVerification'
 import MajorExplorer from './pages/student/MajorExplorer'
 import UniversityExplorer from './pages/student/UniversityExplorer'
 import RoadmapBuilder from './pages/student/RoadmapBuilder'
@@ -308,6 +309,30 @@ const App = () => {
               <ProtectedRoute>
                 <MainLayout>
                   <FactCheckHub />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/vocational-verification" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="py-8 px-4 bg-slate-950 min-h-screen">
+                    <Step3VocationalVerification />
+                  </div>
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/tham-dinh-nghe" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <div className="py-8 px-4 bg-slate-950 min-h-screen">
+                    <Step3VocationalVerification />
+                  </div>
                 </MainLayout>
               </ProtectedRoute>
             } 

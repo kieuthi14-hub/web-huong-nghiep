@@ -4,12 +4,15 @@ import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import MajorExplorer from './MajorExplorer'
 import UniversityExplorer from './UniversityExplorer'
+import Step3VocationalVerification from './Step3VocationalVerification'
 import { 
   FileCheck2, 
   ExternalLink, 
   BookOpen, 
   ChevronDown, 
-  ChevronUp
+  ChevronUp,
+  GraduationCap,
+  Scissors
 } from 'lucide-react'
 
 // Danh sách Cổng dữ liệu khách quan & Link Đề án Tuyển sinh 3 Công Khai
@@ -145,6 +148,63 @@ const FactCheckHub = () => {
     !anchor.target_career.toLowerCase().includes('chưa xác định')
   )
   const targetCareerDisplay = isCareerDetermined ? anchor.target_career.trim() : ''
+
+  // Phân hệ kiểm chứng: 'academic' (Đại học/CĐ) hoặc 'vocational' (Học nghề thực chiến)
+  const [pathwayMode, setPathwayMode] = useState(() => {
+    try {
+      const storedVocational = localStorage.getItem('cbas_step3_vocational');
+      if (storedVocational) return 'vocational';
+      const text = `${anchor?.target_career || ''} ${anchor?.target_university || ''}`.toLowerCase();
+      const vocationalKeywords = ['tóc', 'cắt tóc', 'barber', 'salon', 'spa', 'nail', 'móng', 'học nghề', 'nghề', 'thợ', 'pha chế', 'barista', 'đầu bếp', 'nấu ăn', 'sửa xe', 'sửa chữa ô tô', 'trang điểm', 'makeup', 'lái xe'];
+      return vocationalKeywords.some(kw => text.includes(kw)) ? 'vocational' : 'academic';
+    } catch (e) {
+      return 'academic';
+    }
+  });
+
+  // Xử lý hoàn thành phân hệ Học nghề thực chiến
+  const handleVocationalComplete = async (vocationalResult) => {
+    localStorage.setItem("cbas_step3_vocational", JSON.stringify(vocationalResult));
+    
+    const step3Evidence = {
+      cutoff_score: 'Học nghề thực chiến (Không xét điểm chuẩn)',
+      tuition: `${vocationalResult.tuitionFee} triệu (Tổng GĐ1: ${vocationalResult.totalPhase1Cost} triệu)`,
+      employment_rate: `Thực hành khách sau ${vocationalResult.weeksUntilRealHaircut} tuần | Dự toán mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
+      vocational: vocationalResult,
+      timestamp: new Date().toLocaleString(),
+      verified_at: new Date().toISOString()
+    };
+
+    localStorage.setItem("cbas_step3_evidence", JSON.stringify(step3Evidence));
+    localStorage.setItem("career_evidence_task", JSON.stringify({
+      cutoffScores: step3Evidence.cutoff_score,
+      tuitionFees: step3Evidence.tuition,
+      admissionQuota: step3Evidence.employment_rate,
+      completedAt: step3Evidence.timestamp
+    }));
+
+    if (user?.id) {
+      try {
+        await supabase.from('metacognitive_matrix').insert([
+          {
+            student_id: user.id,
+            target_major: targetCareerDisplay || vocationalResult.academyName || 'Học nghề tư nhân',
+            evidence: `[BƯỚC 3 ĐỐI CHỨNG HỌC NGHỀ THỰC CHIẾN]\n1. Cơ sở/Salon: ${vocationalResult.academyName}\n2. Tổng chi phí GĐ1: ${vocationalResult.totalPhase1Cost} triệu (Vốn gia đình: ${vocationalResult.userSavings} triệu)\n3. Hợp đồng đào tạo văn bản: ${vocationalResult.hasWrittenContract ? 'Có' : 'Không'}\n4. Thời gian thực hành mẫu thật: ${vocationalResult.weeksUntilRealHaircut} tuần\n5. Dự toán vốn mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
+            verified_sources: 'Khảo sát cơ sở đào tạo tư nhân & Thẩm định bài toán kinh tế mở tiệm',
+            risk_analysis: 'Đã hoàn thành kiểm toán chi phí giai đoạn 1, pháp lý hợp đồng đào tạo và tính khả thi thị trường.',
+            bias_check: 'Hóa giải ảo tưởng học nghề nhanh giàu, minh bạch hóa bài toán tài chính & cạnh tranh.',
+            detected_bias: 'DEBIASED_SYSTEM_2',
+            final_decision: 'VOCATIONAL_CALIBRATED'
+          }
+        ]);
+      } catch (dbErr) {
+        console.warn('Lỗi ghi Supabase Bước 3 (Vocational):', dbErr);
+      }
+    }
+
+    alert("🎉 Hồ sơ thẩm định học nghề thực chiến đã được hiệu chỉnh thành công! Chuẩn bị chuyển sang Bước 4.");
+    navigate('/student/booking');
+  };
 
   // Mở tìm kiếm Đề án tuyển sinh kèm học phí
   const openAdmissionPDF = () => {
@@ -317,18 +377,78 @@ const FactCheckHub = () => {
             </div>
           )}
 
-          {/* ========================================================================= */}
-          {/* KHỐI TRA CỨU ĐỐI CHỨNG DỮ LIỆU BƯỚC 3                                     */}
-          {/* ========================================================================= */}
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', maxWidth: '850px', margin: '0 auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <span style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 700, padding: '4px 12px', borderRadius: '9999px', fontSize: '12px' }}>BƯỚC 3: BẮT BUỘC THỰC HIỆN</span>
-              <h2 style={{ color: '#0f172a', marginTop: '10px', fontSize: '22px' }}>Đối Chứng Dữ Liệu Khách Quan</h2>
-              <p style={{ color: '#64748b', fontSize: '14px' }}>
-                Để mở khóa buổi Tư vấn 1-1 (Bước 4), em <strong>bắt buộc phải tra cứu và điền đầy đủ</strong> các số liệu thực tế dưới đây để đối soát với mức độ tự tin ban đầu.
-              </p>
+          {/* THANH CHUYỂN PHÂN HỆ ĐÀO TẠO (ĐẠI HỌC vs HỌC NGHỀ THỰC CHIẾN) */}
+          <div style={{ maxWidth: '850px', margin: '0 auto 16px auto', display: 'flex', gap: '8px', padding: '6px', background: '#f1f5f9', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+            <button
+              type="button"
+              onClick={() => setPathwayMode('academic')}
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                border: 'none',
+                background: pathwayMode === 'academic' ? '#2563eb' : 'transparent',
+                color: pathwayMode === 'academic' ? '#ffffff' : '#475569',
+                boxShadow: pathwayMode === 'academic' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <GraduationCap style={{ width: '18px', height: '18px' }} />
+              <span>Khối Đại Học / Cao Đẳng (Đề án 3 Công khai)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPathwayMode('vocational')}
+              style={{
+                flex: 1,
+                padding: '10px 14px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                border: 'none',
+                background: pathwayMode === 'vocational' ? '#d97706' : 'transparent',
+                color: pathwayMode === 'vocational' ? '#ffffff' : '#475569',
+                boxShadow: pathwayMode === 'vocational' ? '0 2px 4px rgba(217,119,6,0.2)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Scissors style={{ width: '18px', height: '18px' }} />
+              <span>Phân Hệ Học Nghề Thực Chiến (Bài Toán Kinh Tế)</span>
+            </button>
+          </div>
+
+          {pathwayMode === 'vocational' ? (
+            <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+              <Step3VocationalVerification 
+                profile={anchor} 
+                onComplete={handleVocationalComplete} 
+              />
             </div>
+          ) : (
+            /* ========================================================================= */
+            /* KHỐI TRA CỨU ĐỐI CHỨNG DỮ LIỆU BƯỚC 3 (ĐẠI HỌC / CAO ĐẲNG)                */
+            /* ========================================================================= */
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '24px', maxWidth: '850px', margin: '0 auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <span style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 700, padding: '4px 12px', borderRadius: '9999px', fontSize: '12px' }}>BƯỚC 3: BẮT BUỘC THỰC HIỆN</span>
+                <h2 style={{ color: '#0f172a', marginTop: '10px', fontSize: '22px' }}>Đối Chứng Dữ Liệu Khách Quan</h2>
+                <p style={{ color: '#64748b', fontSize: '14px' }}>
+                  Để mở khóa buổi Tư vấn 1-1 (Bước 4), em <strong>bắt buộc phải tra cứu và điền đầy đủ</strong> các số liệu thực tế dưới đây để đối soát với mức độ tự tin ban đầu.
+                </p>
+              </div>
 
             {/* BANNER MỎ NEO XUẤT PHÁT ĐIỂM (TỰ ĐỘNG ĐỒNG BỘ TỪ BƯỚC 1) */}
             {targetCareerDisplay && (
@@ -437,6 +557,7 @@ const FactCheckHub = () => {
             </form>
 
           </div>
+          )}
         </>
       )}
     </div>
