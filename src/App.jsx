@@ -455,6 +455,7 @@ const App = () => {
           />
 
           {/* Admin Routes - BẢO VỆ NGHIÊM NGẶT BẰNG ADMIN PROTECTED ROUTE */}
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route 
             path="/admin/dashboard" 
             element={
