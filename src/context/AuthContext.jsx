@@ -4,7 +4,13 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext({})
 
 // Danh sách Whitelist Email Admin được phép truy cập tự động
-export const ADMIN_EMAILS = ['kieuthi14@gmail.com']
+export const ADMIN_EMAILS = [
+  'kieuthi14@gmail.com',
+  'minhthi.01121985@gmail.com',
+  'ttlkieu.c3tqcap@khanhhoa.edu.vn',
+  'lmthi.c3tqcap@khanhhoa.edu.vn',
+  'huukhoa2017@gmail.com'
+]
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)

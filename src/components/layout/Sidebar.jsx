@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -21,8 +21,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
   
-  // Kiểm tra quyền Admin bảo mật: Chỉ Admin hoặc Email Whitelist kieuthi14@gmail.com
-  const isAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com'
+  // Kiểm tra quyền Admin bảo mật: Admin, Email Whitelist hoặc cbas_admin_override
+  const overrideAdmin = typeof window !== 'undefined' && localStorage.getItem('cbas_admin_override') === 'true'
+  const isAdmin = overrideAdmin || userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail))
 
   const studentLinks = [
     { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },

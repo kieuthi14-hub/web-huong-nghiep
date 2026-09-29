@@ -37,9 +37,16 @@ const Navbar = ({ onToggleSidebar }) => {
         </Link>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {profile && (
           <div className="flex items-center gap-3">
+            <Link
+              to="/admin/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all border border-amber-400 cursor-pointer"
+              title="Vào Bảng Quản trị ViSEF"
+            >
+              <span>⚙️ Trang Admin</span>
+            </Link>
             <div className="hidden sm:block text-right">
               <p className="text-sm font-semibold text-slate-800 leading-tight">
                 {profile.full_name || 'Học sinh'}
