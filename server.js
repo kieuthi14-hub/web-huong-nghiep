@@ -111,11 +111,39 @@ app.post('/api/socrates-chat', async (req, res) => {
       });
     }
 
-    // 3. Tính số lượt tương tác thực sự của học sinh (LOẠI BỎ TẤT CẢ LƯỢT CHÀO HỎI & LỖI KỸ THUẬT)
+    // 3. Quản lý Tiến trình Hội thoại theo Trạng thái (FINITE STATE MACHINE - VISEF 2026)
+    // STAGE 1: Động cơ chọn ngành (Nội sinh vs Ngoại sinh)
+    // STAGE 2: Thách thức áp lực nghề & Xu hướng chuyển đổi số tương lai (và hỏi về tổ hợp môn)
+    // STAGE 3: Đối chất Tổ hợp môn & Học lực thực tế (Kỹ thuật 3 Nhịp: hỏi môn sở trường vs môn yếu)
+    // STAGE 4: Tái cấu trúc mục tiêu theo Mô hình Thích ứng Kép & Chốt lệnh chuyển Bước 3 (Hoàn thành)
+    
     const substantiveUserMsgs = validHistory.filter(m => m.role === 'user' && !isGreetingOnly(m.text) && !isTechnicalConfusion(m.text));
-    const studentTurns = req.body?.round && Number(req.body.round) > 0 
-      ? Number(req.body.round) 
-      : (substantiveUserMsgs.length + 1);
+
+    let incomingStage = 1;
+    if (req.body?.chatStage && Number(req.body.chatStage) >= 1) {
+      incomingStage = Number(req.body.chatStage);
+    } else if (req.body?.stage && Number(req.body.stage) >= 1) {
+      incomingStage = Number(req.body.stage);
+    } else if (req.body?.round && Number(req.body.round) >= 1) {
+      incomingStage = Number(req.body.round);
+    } else {
+      incomingStage = Math.min(substantiveUserMsgs.length + 1, 3);
+    }
+
+    // Xác định giai đoạn mục tiêu và kiểm soát cờ hiệu isCompleted:
+    let targetNextStage = incomingStage + 1;
+    let isCompleted = false;
+
+    if (incomingStage === 1) {
+      targetNextStage = 2;
+      isCompleted = false;
+    } else if (incomingStage === 2) {
+      targetNextStage = 3;
+      isCompleted = false; // BẮT BUỘC: Khung chat phải giữ mở để học sinh trả lời ở Stage 3!
+    } else if (incomingStage >= 3) {
+      targetNextStage = 4;
+      isCompleted = true; // CHỈ KHI tổng kết Stage 4 mới hoàn tất phiên phản tư!
+    }
 
     const targetCareer = studentProfile?.targetCareer || studentProfile?.target_career || studentProfile?.targetMajor || "Sư phạm";
     const targetSchool = studentProfile?.targetSchool || studentProfile?.target_university || "ĐH Quy Nhơn";
@@ -139,7 +167,7 @@ Bạn đang trò chuyện 1-1 với một học sinh THPT đang đứng trước
 - Trường mục tiêu: ${targetSchool}
 - Thiên hướng Holland (RIASEC): ${hollandCode}
 - Mức tự tin ban đầu (T0): ${confidenceT0}/10
-- Tiến trình hiện tại: Mục tiêu ${Math.min(studentTurns, 4)} / 4
+- Trạng thái phản tư hiện tại: GIAI ĐOẠN ${incomingStage} / 4
 
 [BẢN CHẤT CỐT LÕI - KHÔNG PHẢI BOT KỊCH BẢN CỨNG NHẮC]:
 Bạn KHÔNG PHẢI là một kịch bản bot lặp khuôn hay mẫu câu máy móc. Bạn sở hữu trí tuệ cảm xúc (EQ) cao, khả năng lắng nghe sâu, sự ấm áp của người thầy và nghệ thuật dẫn dắt Socrates giúp học sinh tự nhận thức.
@@ -162,28 +190,39 @@ Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiề
 - NẾU HỌC SINH KHẲNG ĐỊNH THỰC SỰ ĐAM MÊ / YÊU THÍCH:
   -> Ghi nhận sự hào hứng tự nhiên, nhưng bóc tách sâu vào hoạt động chuyên môn thực tế hàng ngày (đứng lớp, soạn bài giảng, kiên nhẫn đồng hành cùng học sinh hay chấm bài) xem hoạt động nào thực sự tạo năng lượng cho em.
 
-[TIẾN TRÌNH 4 MỤC TIÊU SƯ PHẠM BẤT BIẾN CHUẨN VISEF 2026]:
-- VÒNG 1 (Động cơ): Khám phá động cơ thật (nội sinh vs ngoại sinh, đam mê vs tiền bạc/dạy thêm vs áp lực gia đình/trào lưu).
-- VÒNG 2 (Xu hướng & Thách thức): Đặt người học trước bối cảnh nghề nghiệp 5-10 năm tới dưới tác động của AI, Chuyển đổi số, EdTech/Tự động hóa (chuẩn năng lực thích ứng mới, không chỉ làm tác vụ lặp lại) và kết nối với việc chuẩn bị tổ hợp môn xét tuyển để mở cánh cửa đầu tiên.
-- VÒNG 3 (Tổ hợp môn & Năng lực thực tế):
-  * Nếu học sinh nói "chưa biết/chưa tìm hiểu tổ hợp môn": BẮT BUỘC thực hiện Kỹ thuật 3 Nhịp:
-    (1) Chỉ ra nghịch lý giữa ước vọng nghề nghiệp và việc chưa chuẩn bị công cụ xét tuyển;
-    (2) Cung cấp giàn giáo phân định 2 trục năng lực (Khoa học Tự nhiên/Logic vs Khoa học Xã hội/Ngôn ngữ);
-    (3) Thăm dò đối cực trung lập về môn sở trường và môn có khoảng cách năng lực cần nỗ lực nhất.
-  * Nếu học sinh nói "học đều đều các môn" / "môn nào cũng bình thường / tàn tàn": BẮT BUỘC chỉ ra mức độ cạnh tranh điểm chuẩn đại học rất khắt khe (thường từ 24-27 điểm, tức trung bình 8-9 điểm/môn) và hỏi mở xem môn nào học sinh có khả năng bứt phá kéo điểm tổ hợp.
-  * Nếu học sinh đã giải thích lý do vì chưa định hình môn dạy: Thấu cảm trước, gợi mở 2 trục năng lực trụ cột và hỏi về môn sở trường / môn yếu.
-- VÒNG 4 (Tái cấu trúc & Lời kết dứt khoát):
-  * Phân tích chính xác cặp môn / tình trạng học sinh vừa nêu ở Vòng 3.
-  * Đưa ra giải pháp thích ứng kép: (1) Nỗ lực bứt phá môn mạnh HOẶC (2) Cân nhắc phân khúc vừa sức như hệ Cao đẳng Sư phạm / Cao đẳng Giáo dục nghề nghiệp thực hành để giảm áp lực điểm thi mà vẫn giữ trọn cơ hội làm nghề giáo dục.
-  * Ra lệnh dứt khoát: "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!"
-  * TUYỆT ĐỐI KHÔNG ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO MỚI Ở CUỐI VÒNG 4!
+[QUY TẮC ĐIỀU PHỐI THEO TRẠNG THÁI (FINITE STATE MACHINE - BẮT BUỘC)]:
+Hệ thống ĐANG Ở GIAI ĐOẠN ${incomingStage}. Bạn PHẢI tuân thủ nghiêm ngặt quy tắc chuyển trạng thái:
+
+* NẾU ĐANG Ở GIAI ĐOẠN 1 (Động cơ chọn ngành):
+  Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành.
+  - Hãy thấu cảm/ghi nhận động cơ của em (nhất là khi bố mẹ định hướng, nói về tiền/dạy thêm, hay theo trào lưu).
+  - Sau đó CHỦ ĐỘNG DẪN DẮT SANG GIAI ĐOẠN 2: Nêu xu hướng 5-10 năm tới dưới tác động của AI & chuyển đổi số (người làm nghề không chỉ làm tác vụ cơ bản mà phải thích ứng chuẩn năng lực mới) và KẾT THÚC BẰNG CÂU HỎI: "Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành ${targetCareer} tại ${targetSchool}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?"
+  - TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây!
+
+* NẾU ĐANG Ở GIAI ĐOẠN 2 (Tổ hợp môn xét tuyển):
+  Học sinh vừa phản hồi về tình hình tìm hiểu tổ hợp môn (thường nói: "chưa biết", "chưa tìm hiểu", "chưa định hình môn dạy", hoặc "học đều đều").
+  - Nhiệm vụ: BẮT BUỘC KÍCH HOẠT KỸ THUẬT 3 NHỊP:
+    (1) Thấu cảm / chỉ ra nghịch lý giữa ước mơ và việc chưa chuẩn bị công cụ xét tuyển;
+    (2) Cung cấp giàn giáo phân định 2 trục năng lực (KHTN/Logic vs KHXH/Ngôn ngữ);
+    (3) KẾT THÚC BẰNG CÂU HỎI THĂM DÒ ĐỐI CỰC TRUNG LẬP: "Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?"
+    (Nếu học sinh nói "học đều đều": Chỉ ra điểm chuẩn 24-27 điểm khắt khe và hỏi môn có thể bứt phá kéo điểm).
+  - [CẢNH BÁO TỐI CAO]: CẤM TUYỆT ĐỐI không được kết thúc hay ra lệnh chuyển Bước 3 ở Giai đoạn này! Khung chat bắt buộc phải giữ mở để học sinh trả lời về môn học ở Giai đoạn 3!
+
+* NẾU ĐANG Ở GIAI ĐOẠN 3 (Đối chất Học lực thực tế & Ra Lời kết Giai đoạn 4):
+  Học sinh vừa trả lời về môn học sở trường và môn học còn yếu (hoặc điểm số học lực).
+  - Nhiệm vụ: THỰC HIỆN TOÀN BỘ LỜI TỔNG KẾT VÒNG 4:
+    1. Phân tích chính xác cặp môn / học lực học sinh vừa nêu (Ví dụ: yếu cả Toán và Văn; giỏi Toán yếu Văn; giỏi Văn yếu Toán; học đều đều).
+    2. Đưa ra Giải pháp Thích ứng Kép: (1) Bứt phá điểm số ở môn thế mạnh HOẶC (2) Cân nhắc hệ Cao đẳng Sư phạm / Cao đẳng thực hành vừa sức hơn (2.5 - 3 năm) để sớm có tay nghề và giảm áp lực điểm thi.
+    3. RA MỆNH LỆNH CHUYỂN BƯỚC DỨT KHOÁT:
+       "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!"
+  - [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC HỎI THÊM BẤT KỲ CÂU NÀO NỮA!
 
 [RÀO CẢN CHỐNG LẶP LẠI TUYỆT ĐỐI]:
 ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất của bạn:\n${pastModelUtterances}\nBẠN TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại các cấu trúc câu, từ ngữ chào đón hoặc câu hỏi đã xuất hiện ở trên!` : ''}
 
 [ĐỊNH DẠNG ĐẦU RA BẮT BUỘC]:
 - Mỗi phản hồi chỉ từ 2 đến 4 câu ngắn gọn, súc tích, văn phong sư phạm ổn định, điềm tĩnh, ấm áp.
-- Kết thúc bằng ĐÚNG 01 câu hỏi phản tư duy nhất (ở Vòng 1, 2, 3), hoặc kết thúc bằng lời trao quyền chuyển bước dứt khoát (ở Vòng 4).
+- Kết thúc bằng ĐÚNG 01 câu hỏi phản tư duy nhất (ở Giai đoạn 1, 2), hoặc kết thúc bằng lời trao quyền chuyển bước dứt khoát (ở Giai đoạn 3/4).
 - Phải kết thúc bằng dấu chấm câu hoàn chỉnh (. ! ?), tuyệt đối không ngắt quãng lửng lơ.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề, ghi chú hay phân tích kỹ thuật.
 - TUYỆT ĐỐI KHÔNG xuất các khối ghi chú suy nghĩ trong dấu ngoặc đơn hoặc dấu sao như *(...)* hay [Suy nghĩ:...]. Bắt đầu ngay bằng lời thoại của Thầy Socrates.
@@ -252,7 +291,7 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
     // 8. Heuristic Fallback Nhận thức (Chỉ kích hoạt nếu toàn bộ API Gemini gặp sự cố hoặc trả về đứt gãy)
     if (!replyText || !isCompleteSentence(replyText)) {
       replyText = generateCognitiveFallback({
-        studentTurns,
+        incomingStage,
         targetCareer,
         targetSchool,
         trimmedMsg,
@@ -262,10 +301,12 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 
     return res.status(200).json({
       success: true,
-      round: Math.min(studentTurns, 4),
+      chatStage: targetNextStage,
+      stage: targetNextStage,
+      round: targetNextStage,
       response: replyText,
       reply: replyText,
-      isCompleted: studentTurns >= 4
+      isCompleted: isCompleted
     });
 
   } catch (error) {
@@ -281,12 +322,12 @@ app.post('/api/chat', (req, res) => {
 });
 
 // Hàm Fallback Nhận thức Linh hoạt (Dự phòng khẩn cấp chuẩn ViSEF 2026 - 100% Trọn vẹn)
-function generateCognitiveFallback({ studentTurns, targetCareer, targetSchool, trimmedMsg, lowerTrimmed }) {
+function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, trimmedMsg, lowerTrimmed }) {
   // 1. Phản xạ tâm lý bất ngờ: Thực dụng / nói về tiền / dạy thêm
   const isPragmaticMoney = [
     'nhiều tiền', 'dạy thêm', 'lương', 'thu nhập', 'kiếm tiền', 'kiếm dc nhiều', 'giàu', 'kinh tế'
   ].some(k => lowerTrimmed.includes(k));
-  if (isPragmaticMoney && studentTurns <= 2) {
+  if (isPragmaticMoney && incomingStage === 1) {
     return `Mong muốn có thu nhập tốt và cuộc sống đủ đầy là nhu cầu hoàn toàn chính đáng của mỗi người.\n\nTuy nhiên trong thực tế, để có uy tín và thu hút nhiều người theo học, người làm nghề **${targetCareer}** phải có trình độ chuyên môn vượt trội và sự rèn luyện bền bỉ ra sao? Em đã có sự chuẩn bị gì cho năng lực chuyên môn cốt lõi đó?`;
   }
 
@@ -294,7 +335,7 @@ function generateCognitiveFallback({ studentTurns, targetCareer, targetSchool, t
   const isInsecure = [
     'dốt', 'kém', 'sợ trượt', 'không biết làm được', 'không biết có làm được', 'lo lắng', 'hoang mang', 'tự ti', 'áp lực', 'sợ không đỗ'
   ].some(k => lowerTrimmed.includes(k));
-  if (isInsecure && studentTurns <= 3) {
+  if (isInsecure && incomingStage <= 2) {
     return `Sự lo lắng và cảm giác hoài nghi bản thân là trạng thái tâm lý rất thật và đáng được tôn trọng khi em đứng trước cánh cửa tương lai quan trọng.\n\nNhìn lại chính mình lúc này, điều gì đang làm em cảm thấy áp lực nhất: khối lượng kiến thức chuyên môn, điểm số thi tuyển, hay áp lực từ sự kỳ vọng của người khác?`;
   }
 
@@ -303,53 +344,43 @@ function generateCognitiveFallback({ studentTurns, targetCareer, targetSchool, t
     'mẹ định hướng', 'mẹ em định hướng', 'bố định hướng', 'bố em định hướng', 'ba định hướng', 'ba em định hướng',
     'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình muốn', 'bố mẹ chọn', 'ba mẹ chọn', 'bố mẹ bắt', 'ba mẹ bắt'
   ].some(k => lowerTrimmed.includes(k)) || /(mẹ|bố|ba|gia đình)\s+(em\s+)?(định hướng|chọn|bắt|muốn|khuyên|bảo)/i.test(lowerTrimmed);
-  if (isFamily && studentTurns <= 2) {
+  if (isFamily && incomingStage === 1) {
     return `Gia đình luôn mong muốn điều an toàn và ổn định cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\nBản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${targetCareer}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`;
   }
 
-  // 4. Theo tiến trình 4 mục tiêu sư phạm chuẩn mực:
-  if (studentTurns >= 4) {
-    const hasMath = lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan');
-    const hasLit = lowerTrimmed.includes('văn') || lowerTrimmed.includes('van');
-    const isWeakBoth = (hasMath && hasLit && (lowerTrimmed.includes('yếu') || lowerTrimmed.includes('kém') || lowerTrimmed.includes('sợ'))) ||
-      /(yếu|kém|đuối|sợ|thấp)[^,.;!?\n]*(văn\s*(và|với|\+)\s*toán|toán\s*(và|với|\+)\s*văn)/i.test(lowerTrimmed);
-
-    const isEvenGrades = ['đều đều', 'deu deu', 'học đều', 'hoc deu', 'tàn tàn', 'tan tan', 'bình thường', 'binh thuong', 'như nhau', 'ngang nhau'].some(k => lowerTrimmed.includes(k));
-
-    if (isWeakBoth || isEvenGrades) {
-      return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi đối diện với ngưỡng điểm chuẩn rất cao của ngành **${targetCareer}** tại **${targetSchool}** (thường từ 24 - 27 điểm), việc có khoảng cách năng lực mở ra giải pháp thích ứng kép: Em có thể nỗ lực bứt phá các môn sở trường còn lại để tối ưu điểm số tổ hợp, hoặc cân nhắc phân khúc vừa sức như hệ **Cao đẳng Sư phạm** / **Cao đẳng nghề thực hành** để vừa sức hơn mà vẫn giữ trọn cơ hội làm nghề giáo dục.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
-    }
-
-    if (lowerTrimmed.includes('gdqp') || lowerTrimmed.includes('ktpl') || lowerTrimmed.includes('quốc phòng') || lowerTrimmed.includes('kinh tế pháp luật')) {
-      return `Thầy đánh giá cao việc em thẳng thắn nhận diện năng lực ở môn Giáo dục Quốc phòng và Kinh tế Pháp luật. Mặc dù các môn này hiện nay ít xuất hiện trong tổ hợp truyền thống của ngành **${targetCareer}** tại **${targetSchool}**, nhưng tư duy pháp luật và tác phong kỷ luật là phẩm chất rất tốt để em rèn luyện.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và đối chứng các tổ hợp môn được chấp nhận nhé!`;
-    }
-
-    if (hasLit && (lowerTrimmed.includes('yếu toán') || lowerTrimmed.includes('kém toán') || lowerTrimmed.includes('sợ toán'))) {
-      return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Khoa học Xã hội, giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
-    }
-
-    if (hasMath && (lowerTrimmed.includes('yếu văn') || lowerTrimmed.includes('kém văn') || lowerTrimmed.includes('sợ văn'))) {
-      return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
-    }
-
-    return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\nNắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
-  }
-
-  if (studentTurns === 1) {
-    return `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${targetCareer}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó. Cụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`;
-  }
-
-  if (studentTurns === 2) {
+  // Theo Finite State Machine:
+  if (incomingStage === 1) {
     return `Trong 5-10 năm tới, AI, công nghệ giáo dục (EdTech) và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường lao động. Người làm nghề **${targetCareer}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao cho học sinh.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
   }
 
-  // studentTurns === 3:
-  const isEvenGrades = ['đều đều', 'deu deu', 'học đều', 'hoc deu', 'tàn tàn', 'tan tan', 'bình thường', 'binh thuong', 'như nhau', 'ngang nhau'].some(k => lowerTrimmed.includes(k));
-  if (isEvenGrades) {
-    return `Thầy ghi nhận sự nhìn nhận khách quan của em về học lực. Tuy nhiên, điểm chuẩn trúng tuyển vào các ngành Sư phạm tại **${targetSchool}** luôn có tính cạnh tranh rất cao, thường dao động từ 24 đến 27 điểm (tức trung bình mỗi môn trong tổ hợp phải đạt từ 8 đến 9 điểm trở lên).\n\nNếu tất cả các môn chỉ dừng ở mức đều đều, em sẽ gặp rất nhiều rủi ro. Nhìn nhận lại quá trình học tập, đâu là môn học em cảm thấy bản thân có nhiều khả năng bứt phá nhất để trở thành môn kéo điểm cho cả tổ hợp?`;
+  if (incomingStage === 2) {
+    const isEvenGrades = ['đều đều', 'deu deu', 'học đều', 'hoc deu', 'tàn tàn', 'tan tan', 'bình thường', 'binh thuong', 'như nhau', 'ngang nhau'].some(k => lowerTrimmed.includes(k));
+    if (isEvenGrades) {
+      return `Thầy ghi nhận sự nhìn nhận khách quan của em về học lực. Tuy nhiên, điểm chuẩn trúng tuyển vào các ngành Sư phạm tại **${targetSchool}** luôn có tính cạnh tranh rất cao, thường dao động từ 24 đến 27 điểm (tức trung bình mỗi môn trong tổ hợp phải đạt từ 8 đến 9 điểm trở lên).\n\nNếu tất cả các môn chỉ dừng ở mức đều đều, em sẽ gặp rất nhiều rủi ro. Nhìn nhận lại quá trình học tập, đâu là môn học em cảm thấy bản thân có nhiều khả năng bứt phá nhất để trở thành môn kéo điểm cho cả tổ hợp?`;
+    }
+
+    return `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
   }
 
-  return `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${targetCareer}** là bước khởi đầu rất đẹp, nhưng thật nghịch lý nếu muốn bước chân qua cánh cổng trường đại học mà tổ hợp môn xét tuyển - chiếc chìa khóa quyết định - lại chưa được em chuẩn bị!\n\nQuy chế tuyển sinh hiện nay phân định rõ 2 trục năng lực: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để kiểm chứng.\n\nNhìn lại kết quả học tập ở trường, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
+  // incomingStage >= 3 -> Stage 4 Tổng kết & Lệnh chuyển Bước 3:
+  const hasMath = lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan');
+  const hasLit = lowerTrimmed.includes('văn') || lowerTrimmed.includes('van');
+  const isWeakBoth = (hasMath && hasLit && (lowerTrimmed.includes('yếu') || lowerTrimmed.includes('kém') || lowerTrimmed.includes('sợ'))) ||
+    /(yếu|kém|đuối|sợ|thấp)[^,.;!?\n]*(văn\s*(và|với|\+)\s*toán|toán\s*(và|với|\+)\s*văn)/i.test(lowerTrimmed);
+
+  if (isWeakBoth) {
+    return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi đối diện với ngưỡng điểm chuẩn rất cao của ngành **${targetCareer}** tại **${targetSchool}** (thường từ 24 - 27 điểm), việc có khoảng cách ở cả Toán và Văn mở ra giải pháp thích ứng kép: Em có thể nỗ lực bứt phá các môn sở trường còn lại để tối ưu điểm số tổ hợp, hoặc cân nhắc phân khúc vừa sức như hệ **Cao đẳng Sư phạm** / **Cao đẳng nghề thực hành** (2.5 - 3 năm) để vừa sức hơn mà vẫn giữ trọn cơ hội làm nghề giáo dục.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+  }
+
+  if (hasLit && (lowerTrimmed.includes('yếu toán') || lowerTrimmed.includes('kém toán') || lowerTrimmed.includes('sợ toán') || !hasMath)) {
+    return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Khoa học Xã hội (C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\nĐể mở rộng cơ hội trúng tuyển, em có thể tập trung dồn sức bứt phá tổ hợp văn/ngoại ngữ vào đại học, hoặc cân nhắc hệ Cao đẳng Sư phạm thực hành vừa sức hơn.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+  }
+
+  if (hasMath && (lowerTrimmed.includes('yếu văn') || lowerTrimmed.includes('kém văn') || lowerTrimmed.includes('sợ văn') || !hasLit)) {
+    return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nĐể mở rộng cơ hội trúng tuyển, em có thể dồn lực bứt phá tổ hợp tự nhiên vào đại học, hoặc cân nhắc hệ Cao đẳng thực hành vừa sức hơn.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+  }
+
+  return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 giai đoạn phản tư.\n\nDù lựa chọn ngành nào, em luôn có 2 hướng thích ứng rất rõ ràng: Bứt phá điểm số ở môn có thế mạnh để cạnh tranh vào hệ Đại học chính quy, hoặc cân nhắc hệ Cao đẳng nghề/thực hành (2.5 - 3 năm) để sớm gia nhập thị trường việc làm với tay nghề vững chắc.\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
 }
 
 const PORT = process.env.PORT || 5000;

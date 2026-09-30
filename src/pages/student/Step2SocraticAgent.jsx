@@ -9,7 +9,7 @@ export function isUndecidedOrVague(career) {
 }
 
 // BỘ LỌC PHẢN XẠ TỰ NHIÊN TRƯỚC KHI CHẠY MÁY TRẠNG THÁI (NATURAL REFLEX FILTER)
-export function processStudentMessage(message, currentRound, studentProfile) {
+export function processStudentMessage(message, chatStage, studentProfile) {
   const lowerMsg = (message || '').toLowerCase().trim();
   const cleanGreeting = lowerMsg.replace(/[!.,?~]/g, '');
 
@@ -62,7 +62,8 @@ export function processStudentMessage(message, currentRound, studentProfile) {
 }
 
 export default function Step2SocraticAgent() {
-  const [currentRound, setCurrentRound] = useState(1);
+  const [chatStage, setChatStage] = useState(1);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,7 +72,7 @@ export default function Step2SocraticAgent() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [sessionTelemetry, setSessionTelemetry] = useState(null);
 
-  const maxRounds = 4;
+  const maxStages = 4;
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -79,7 +80,7 @@ export default function Step2SocraticAgent() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 80);
     return () => clearTimeout(timer);
-  }, [messages, isLoading, currentRound]);
+  }, [messages, isLoading, chatStage, isCompleted]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -95,6 +96,7 @@ export default function Step2SocraticAgent() {
     // Dọn sạch trạng thái kẹt cũ của các phiên test trước
     localStorage.removeItem("cbas_step2_messages");
     localStorage.removeItem("cbas_step2_round");
+    localStorage.removeItem("cbas_step2_completed");
 
     const isBranchB = isUndecidedOrVague(anchor.target_career);
 
@@ -115,7 +117,8 @@ export default function Step2SocraticAgent() {
     }];
     setMessages(initMsg);
     try { localStorage.setItem("cbas_step2_messages", JSON.stringify(initMsg)); } catch (e) {}
-    setCurrentRound(1);
+    setChatStage(1);
+    setIsCompleted(false);
   }, []);
 
   // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026 - MÔ HÌNH NHẬN THỨC LINH HOẠT
@@ -484,15 +487,18 @@ Quy chuẩn: Dưới 120 từ.`;
   };
 
   // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
-  const callGeminiSocratic = async (historyMessages, userText, round, specialInstruction = null) => {
+  const callGeminiSocratic = async (historyMessages, userText, stage, specialInstruction = null) => {
     // 3.1. Thử gọi Serverless Backend /api/socrates-chat hoặc /api/chat
     const endpointsToTry = ['/api/socrates-chat', '/api/chat'];
     const requestPayload = {
+      chatStage: stage,
+      stage: stage,
+      round: stage,
       studentProfile: {
         hollandCode: studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC',
-        targetCareer: studentProfile?.target_career || studentProfile?.targetMajor || 'Công nghệ thông tin',
-        targetSchool: studentProfile?.target_university || studentProfile?.targetSchool || 'Đại học Bách Khoa',
-        confidenceT0: studentProfile?.confidence_score || studentProfile?.confidence || '8',
+        targetCareer: studentProfile?.target_career || studentProfile?.targetMajor || 'Sư phạm',
+        targetSchool: studentProfile?.target_university || studentProfile?.targetSchool || 'ĐH Quy Nhơn',
+        confidenceT0: studentProfile?.confidence_score || studentProfile?.confidence || '5',
         competenceSelfEval: 'Vừa sức'
       },
       chatHistory: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
@@ -500,8 +506,6 @@ Quy chuẩn: Dưới 120 từ.`;
       // Hỗ trợ trường tương thích:
       message: userText,
       history: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
-      round: round,
-      maxRounds: maxRounds,
       anchor: studentProfile,
       specialInstruction: specialInstruction
     };
@@ -523,7 +527,11 @@ Quy chuẩn: Dưới 120 từ.`;
           const sData = await serverlessRes.json();
           const replyText = sData?.response || sData?.reply;
           if (replyText && replyText.trim().length >= 25) {
-            return replyText.trim();
+            return {
+              replyText: replyText.trim(),
+              chatStage: sData?.chatStage || sData?.stage || (stage + 1),
+              isCompleted: sData?.isCompleted === true || (sData?.chatStage >= 4)
+            };
           }
         }
       } catch (apiErr) {
@@ -540,7 +548,7 @@ Quy chuẩn: Dưới 120 từ.`;
         || fallbackKey;
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(round, studentProfile, userText, specialInstruction);
+      const systemPrompt = generatePromptForRound(stage, studentProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -562,9 +570,9 @@ Quy chuẩn: Dưới 120 từ.`;
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: formattedContents,
           generationConfig: {
-            temperature: 0.65,
-            topP: 0.9,
-            maxOutputTokens: 600
+            temperature: 0.35,
+            topP: 0.85,
+            maxOutputTokens: 1000
           }
         }),
         signal: directCtrl.signal
@@ -591,7 +599,12 @@ Quy chuẩn: Dưới 120 từ.`;
           }
         }
         if (text && text.trim().length >= 25) {
-          return text.trim();
+          const nextStage = stage + 1;
+          return {
+            replyText: text.trim(),
+            chatStage: nextStage,
+            isCompleted: stage >= 3
+          };
         }
       }
     } catch (e) {
@@ -599,7 +612,13 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    return generateHeuristicFallback(round, studentProfile, userText, specialInstruction);
+    const fallbackText = generateHeuristicFallback(stage, studentProfile, userText, specialInstruction);
+    const nextStage = stage + 1;
+    return {
+      replyText: fallbackText,
+      chatStage: nextStage,
+      isCompleted: stage >= 3
+    };
   };
 
   // 4. TRÍCH XUẤT VĂN BẢN ĐỐI THOẠI CHUẨN MỰC CHO HỌC SINH
@@ -610,10 +629,10 @@ Quy chuẩn: Dưới 120 từ.`;
       try { anchor = JSON.parse(rawAnchor); } catch (e) {}
     }
 
-    const targetCareer = anchor.target_career || studentProfile?.target_career || 'Công nghệ thông tin';
-    const targetUniv = anchor.target_university || studentProfile?.target_university || 'Đại học Bách Khoa';
-    const confidence = anchor.confidence_score || studentProfile?.confidence_score || '8';
-    const holland = anchor.holland_code || studentProfile?.holland_code || 'Nghiên cứu - Kỹ thuật';
+    const targetCareer = anchor.target_career || studentProfile?.target_career || 'Sư phạm';
+    const targetUniv = anchor.target_university || studentProfile?.target_university || 'ĐH Quy Nhơn';
+    const confidence = anchor.confidence_score || studentProfile?.confidence_score || '5';
+    const holland = anchor.holland_code || studentProfile?.holland_code || 'AEI';
     const dateStr = new Date().toLocaleString('vi-VN');
 
     let content = `=================================================================\n`;
@@ -625,7 +644,7 @@ Quy chuẩn: Dưới 120 từ.`;
     content += `🏛️ Trường đại học mục tiêu: ${targetUniv}\n`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
     content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
-    content += `🔄 Tiến trình hoàn thành: ${Math.min(currentRound, maxRounds)} / ${maxRounds} vòng phản tư${currentRound > maxRounds ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
+    content += `🔄 Tiến trình hoàn thành: ${Math.min(chatStage, maxStages)} / ${maxStages} giai đoạn phản tư${isCompleted ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
 
     if (sessionTelemetry) {
       content += `-----------------------------------------------------------------\n`;
@@ -700,23 +719,25 @@ Quy chuẩn: Dưới 120 từ.`;
 
   // 4.4. Bắt đầu lại cuộc trò chuyện từ đầu (Phục vụ thử nghiệm)
   const handleResetSession = () => {
-    if (window.confirm("Em có muốn xóa dữ liệu phiên hiện tại và bắt đầu lại cuộc trò chuyện từ Vòng 1 không?")) {
+    if (window.confirm("Em có muốn xóa dữ liệu phiên hiện tại và bắt đầu lại cuộc trò chuyện từ Giai đoạn 1 không?")) {
       localStorage.removeItem("cbas_step2_messages");
       localStorage.removeItem("cbas_step2_round");
+      localStorage.removeItem("cbas_step2_completed");
+      localStorage.removeItem("cbas_step2_telemetry");
       window.location.reload();
     }
   };
 
-  // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH & ĐIỀU PHỐI VÒNG PHẢN TƯ
+  // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH & ĐIỀU PHỐI GIAI ĐOẠN PHẢN TƯ
   const handleSendMessage = async (e) => {
     e.preventDefault();
     const cleanText = inputValue.trim();
     if (cleanText.length === 0) return;
 
     // 5.1. Chạy bộ lọc phản xạ tự nhiên trước khi chạy máy trạng thái
-    const reflex = processStudentMessage(cleanText, currentRound, studentProfile);
+    const reflex = processStudentMessage(cleanText, chatStage, studentProfile);
 
-    // Nếu học sinh chỉ chào hỏi xã giao: Trả lời ấm áp, KHÔNG nhảy vòng
+    // Nếu học sinh chỉ chào hỏi xã giao: Trả lời ấm áp, KHÔNG nhảy giai đoạn
     if (reflex.advanceRound === false && reflex.reply) {
       setErrorMessage('');
       const userMsg = {
@@ -739,9 +760,9 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     // RÀNG BUỘC THÔNG MINH CHO CÁC LƯỢT TIẾP THEO:
-    // Vòng 1, 2 bắt buộc lập luận (tối thiểu 5 ký tự)
-    // Vòng 3 trở đi chấp nhận câu trả lời ngắn ("dạ rồi", "chưa", "em đã xem")
-    if (currentRound <= 2 && cleanText.length < 5) {
+    // Giai đoạn 1, 2 bắt buộc lập luận (tối thiểu 5 ký tự)
+    // Giai đoạn 3 trở đi chấp nhận câu trả lời ngắn ("dạ rồi", "chưa", "em đã xem")
+    if (chatStage <= 2 && cleanText.length < 5) {
       setErrorMessage("⚠️ Câu trả lời của em quá ngắn. Hãy chia sẻ cụ thể trải nghiệm hoặc suy nghĩ của mình để Thầy phản biện nhé!");
       return;
     }
@@ -759,24 +780,37 @@ Quy chuẩn: Dưới 120 từ.`;
     setIsLoading(true);
 
     try {
-      let aiReply = reflex.directReply;
-      if (!aiReply) {
-        aiReply = await callGeminiSocratic(messages, cleanText, currentRound, reflex.instructionForAI);
+      let aiResult = null;
+      if (reflex.directReply) {
+        aiResult = {
+          replyText: reflex.directReply,
+          chatStage: chatStage,
+          isCompleted: false
+        };
+      } else {
+        aiResult = await callGeminiSocratic(messages, cleanText, chatStage, reflex.instructionForAI);
       }
       
+      const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
+      const nextStage = aiResult?.chatStage || (chatStage + 1);
+      const isFinished = aiResult?.isCompleted === true;
+
       const aiMsg = {
         role: 'model',
-        text: aiReply,
+        text: replyContent,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       const updatedHistory = [...nextHistory, aiMsg];
       setMessages(updatedHistory);
       try { localStorage.setItem("cbas_step2_messages", JSON.stringify(updatedHistory)); } catch (e) {}
+
       if (reflex.advanceRound !== false) {
-        const nextR = currentRound + 1;
-        setCurrentRound(nextR);
-        if (nextR > maxRounds) {
+        setChatStage(nextStage);
+        if (isFinished) {
+          setIsCompleted(true);
+          try { localStorage.setItem("cbas_step2_completed", "true"); } catch (e) {}
+
           // Tính toán Telemetry chuẩn ViSEF 2026:
           let tpDetected = false;
           let tpRound = 'Không';
@@ -793,7 +827,7 @@ Quy chuẩn: Dưới 120 từ.`;
               if (isExtrinsic || isInsecureOrWeak || isComboIssue) {
                 if (!tpDetected) {
                   tpDetected = true;
-                  tpRound = `Vòng ${Math.min(userTurnCount, 4)}`;
+                  tpRound = `Giai đoạn ${Math.min(userTurnCount, 4)}`;
                 }
               }
             }
@@ -869,10 +903,10 @@ Quy chuẩn: Dưới 120 từ.`;
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>
-            Tiến trình: <span style={{ color: '#2563eb' }}>{Math.min(currentRound, maxRounds)}</span> / {maxRounds} vòng
-            {currentRound > maxRounds && (
+            Tiến trình: <span style={{ color: '#2563eb' }}>{Math.min(chatStage, maxStages)}</span> / {maxStages} giai đoạn
+            {isCompleted && (
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
-                ✓ Đã hoàn thành
+                ✓ Đã hoàn thành 4 giai đoạn phản tư
               </span>
             )}
           </div>
@@ -1001,8 +1035,8 @@ Quy chuẩn: Dưới 120 từ.`;
           </div>
         )}
 
-        {/* THẺ CALLOUT KẾT THÚC VÒNG 4 NẰM TRONG LUỒNG CUỘN TỰ NHIÊN (KHÔNG CHE CHỮ) */}
-        {currentRound > maxRounds && (
+        {/* THẺ CALLOUT KẾT THÚC GIAI ĐOẠN 4 NẰM TRONG LUỒNG CUỘN TỰ NHIÊN (KHÔNG CHE CHỮ) */}
+        {isCompleted && (
           <div 
             className="no-print"
             style={{
@@ -1018,7 +1052,7 @@ Quy chuẩn: Dưới 120 từ.`;
               <div style={{ fontSize: '24px', lineHeight: 1 }}>🎉</div>
               <div>
                 <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
-                  ✓ Em đã hoàn thành 4 vòng phản tư nhận thức cùng Thầy Socrates. Hãy bước sang Bước 3 để tự tay đối chứng số liệu thực tế!
+                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates. Hãy bước sang Bước 3 để tự tay đối chứng số liệu thực tế!
                 </h4>
                 <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.5' }}>
                   Em có thể sao chép hoặc xuất biên bản đối thoại này để làm minh chứng cho buổi Tham vấn 1-1 ở Bước 4.
@@ -1141,8 +1175,8 @@ Quy chuẩn: Dưới 120 từ.`;
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || currentRound > maxRounds}
-            placeholder={currentRound > maxRounds ? "Phiên phản tư Bước 2 đã hoàn tất." : "Tự tay nhập câu trả lời phản biện của em..."}
+            disabled={isLoading || isCompleted}
+            placeholder={isCompleted ? "Phiên phản tư Bước 2 đã hoàn tất." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -1150,22 +1184,22 @@ Quy chuẩn: Dưới 120 từ.`;
               borderRadius: '8px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor: currentRound > maxRounds ? '#f1f5f9' : '#ffffff',
-              cursor: currentRound > maxRounds ? 'not-allowed' : 'text'
+              backgroundColor: isCompleted ? '#f1f5f9' : '#ffffff',
+              cursor: isCompleted ? 'not-allowed' : 'text'
             }}
           />
           <button
             type="submit"
-            disabled={isLoading || !inputValue.trim() || currentRound > maxRounds}
+            disabled={isLoading || !inputValue.trim() || isCompleted}
             style={{
-              background: currentRound > maxRounds ? '#94a3b8' : '#10b981',
+              background: isCompleted ? '#94a3b8' : '#10b981',
               color: '#ffffff',
               border: 'none',
               padding: '0 24px',
               borderRadius: '8px',
               fontWeight: 'bold',
-              cursor: isLoading || currentRound > maxRounds ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !inputValue.trim() || currentRound > maxRounds ? 0.6 : 1
+              cursor: isLoading || isCompleted ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !inputValue.trim() || isCompleted ? 0.6 : 1
             }}
           >
             GỬI ➔
