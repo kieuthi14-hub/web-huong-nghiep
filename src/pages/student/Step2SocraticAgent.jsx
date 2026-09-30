@@ -110,10 +110,10 @@ export default function Step2SocraticAgent() {
   useEffect(() => {
     const rawAnchor = localStorage.getItem("cbas_anchor_data");
     const anchor = rawAnchor ? JSON.parse(rawAnchor) : {
-      target_career: "Công nghệ thông tin",
-      target_university: "Đại học Bách Khoa",
-      confidence_score: "8",
-      holland_code: "Nghiên cứu - Kỹ thuật"
+      target_career: "Sư phạm",
+      target_university: "ĐH Quy Nhơn",
+      confidence_score: "5",
+      holland_code: "AEI"
     };
     setStudentProfile(anchor);
 
@@ -130,7 +130,7 @@ export default function Step2SocraticAgent() {
       initialGreeting = `Chào em. Thầy đã tiếp nhận kết quả Bước 1 của em với nhóm Holland nổi trội là **${anchor.holland_code}**, và em đang còn nhiều phân vân chưa chọn được ngành học cụ thể.\n\nThầy trò mình cùng trò chuyện cởi mở để khai mở và tìm ra điểm tựa định hướng phù hợp nhất với bản thân em nhé.\n\nSau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`;
     } else {
       // NHÁNH A: HỌC SINH ĐÃ CÓ MỤC TIÊU CỤ THỂ
-      initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm nổi trội **${anchor.holland_code}**.\n\nThầy trò mình cùng trò chuyện cởi mở để làm rõ bản chất công việc thực tế nhé.\n\nThầy thấy em chọn ngành **${anchor.target_career}** trong khi nhóm nổi trội của em là **${anchor.holland_code}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
+      initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm nổi trội **${anchor.holland_code}**.\n\nThầy trò mình cùng trò chuyện cởi mở nhé. Em chọn ngành **${anchor.target_career}** vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang 'hot' và được nhiều người khen ngợi?`;
     }
 
     const initMsg = [{
