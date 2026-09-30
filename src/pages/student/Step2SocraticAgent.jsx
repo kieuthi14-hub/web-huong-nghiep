@@ -304,34 +304,50 @@ Quy chuẩn: Dưới 120 từ.`;
 
   // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
   const callGeminiSocratic = async (historyMessages, userText, round, specialInstruction = null) => {
-    // 3.1. Thử gọi Serverless Backend /api/chat nếu có
-    try {
-      const serverlessCtrl = new AbortController();
-      const sTimeout = setTimeout(() => serverlessCtrl.abort(), 5500);
+    // 3.1. Thử gọi Serverless Backend /api/socrates-chat hoặc /api/chat
+    const endpointsToTry = ['/api/socrates-chat', '/api/chat'];
+    const requestPayload = {
+      studentProfile: {
+        hollandCode: studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC',
+        targetCareer: studentProfile?.target_career || studentProfile?.targetMajor || 'Công nghệ thông tin',
+        targetSchool: studentProfile?.target_university || studentProfile?.targetSchool || 'Đại học Bách Khoa',
+        confidenceT0: studentProfile?.confidence_score || studentProfile?.confidence || '8',
+        competenceSelfEval: 'Vừa sức'
+      },
+      chatHistory: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
+      userMessage: userText,
+      // Hỗ trợ trường tương thích:
+      message: userText,
+      history: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
+      round: round,
+      maxRounds: maxRounds,
+      anchor: studentProfile,
+      specialInstruction: specialInstruction
+    };
 
-      const serverlessRes = await fetch('/api/chat', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userText,
-          history: historyMessages.map(m => ({ role: m.role, text: m.text })),
-          round: round,
-          maxRounds: maxRounds,
-          anchor: studentProfile,
-          specialInstruction: specialInstruction
-        }),
-        signal: serverlessCtrl.signal
-      });
-      clearTimeout(sTimeout);
+    for (const ep of endpointsToTry) {
+      try {
+        const serverlessCtrl = new AbortController();
+        const sTimeout = setTimeout(() => serverlessCtrl.abort(), 6500);
 
-      if (serverlessRes.ok) {
-        const sData = await serverlessRes.json();
-        if (sData?.reply && sData.reply.trim().length >= 30) {
-          return sData.reply.trim();
+        const serverlessRes = await fetch(ep, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestPayload),
+          signal: serverlessCtrl.signal
+        });
+        clearTimeout(sTimeout);
+
+        if (serverlessRes.ok) {
+          const sData = await serverlessRes.json();
+          const replyText = sData?.response || sData?.reply;
+          if (replyText && replyText.trim().length >= 25) {
+            return replyText.trim();
+          }
         }
+      } catch (apiErr) {
+        // Thử endpoint tiếp theo
       }
-    } catch (apiErr) {
-      // Tiếp tục chuyển sang gọi trực tiếp
     }
 
     // 3.2. Gọi trực tiếp Gemini API (Hỗ trợ cả Vite import.meta và process.env an toàn)
