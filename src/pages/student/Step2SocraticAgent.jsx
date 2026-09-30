@@ -13,30 +13,30 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   const lowerMsg = (message || '').toLowerCase().trim();
   const cleanGreeting = lowerMsg.replace(/[!.,?~]/g, '');
 
-  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || 'ngành học';
-  const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '8';
-  const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC';
+  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || 'Sư phạm';
+  const targetUniv = studentProfile?.target_university || studentProfile?.targetSchool || 'ĐH Quy Nhơn';
+  const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '5';
+  const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'AEI';
   const isBranchB = isUndecidedOrVague(targetMajor);
 
   // 1.1. Nếu học sinh thắc mắc "Sao thầy hỏi lại?"
   if (lowerMsg.includes('hỏi lại') || lowerMsg.includes('sao hỏi lại') || lowerMsg.includes('hỏi gì kỳ') || lowerMsg.includes('hỏi gì kì') || lowerMsg.includes('trùng câu hỏi') || lowerMsg.includes('vừa hỏi xong')) {
     return {
       advanceRound: false,
-      reply: `Thầy hiểu cảm xúc băn khoăn của em. Thầy hỏi lại không phải để làm khó hay kiểm tra trí nhớ của em, mà muốn hai thầy trò cùng soi chiếu vấn đề từ một góc nhìn sâu sắc hơn, giúp em nhận diện rõ động lực thực sự của mình trước khi ra quyết định quan trọng.\n\nĐối với ngành **${targetMajor}**, điều gì trong công việc hàng ngày thực sự tạo cho em cảm hứng lâu dài nhất?`
+      reply: `Thầy hiểu cảm xúc băn khoăn của em. Thầy hỏi lại không phải để làm khó hay kiểm tra trí nhớ của em, mà muốn hai thầy trò cùng soi chiếu vấn đề từ một góc nhìn sâu sắc hơn, giúp em nhận diện rõ động lực thực sự của mình trước khi ra quyết định quan trọng.\n\nEm hãy chia sẻ rõ hơn suy nghĩ của mình về câu hỏi ở trên nhé!`
     };
   }
 
-  // 1.2. Nếu học sinh chỉ chào hỏi xã giao
+  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, TUYỆT ĐỐI KHÔNG lặp lại câu hỏi cũ!
   const greetings = [
     "chào thầy", "chao thay", "chào", "chao", "hello", "hi", "xin chào", "xin chao",
-    "em chào thầy", "em chao thay", "dạ chào thầy", "da chao thay", "dạ", "da", "chào bạn"
+    "em chào thầy", "em chao thay", "dạ chào thầy", "da chao thay", "dạ", "da", "chào bạn",
+    "vâng", "vang", "dạ vâng", "da vang", "thầy ơi", "thay oi", "alo", "dạ thầy", "da thay"
   ];
   if (greetings.includes(cleanGreeting) || lowerMsg === "chào thầy" || lowerMsg === "chào" || lowerMsg === "hello") {
     return {
       advanceRound: false, // KHÔNG nhảy vòng
-      reply: isBranchB 
-        ? `Chào em. Thầy trò mình cùng trò chuyện cởi mở để khai mở bản thân nhé. Sau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`
-        : `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Thầy thấy em chọn ngành **${targetMajor}** trong khi nhóm nổi trội của em là **${hollandCode}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`
+      reply: `Chào em. Thầy trò mình cùng tập trung vào nội dung định hướng nhé. Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại!`
     };
   }
 
@@ -80,17 +80,27 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 2. Nếu ở Vòng 3 của Nhánh A mà học sinh nói "chưa tìm hiểu tổ hợp môn gồm những môn gì" (hoặc từ khóa chưa biết/chưa tìm hiểu tổ hợp môn):
+  // 2. KỸ THUẬT PHẢN TƯ 3 NHỊP KHI HỌC SINH NÓI CHƯA TÌM HIỂU TỔ HỢP MÔN:
   const isAskingCombo = [
     'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
-    'chưa tìm hiểu', 'chưa biết', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
-    'chưa xem', 'em chưa biết', 'chưa tìm', 'không rõ'
+    'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
+    'chưa xem tổ hợp', 'chưa rõ môn', 'chưa tìm', 'không rõ'
   ].some(k => lowerMsg.includes(k));
 
-  if (!isBranchB && currentRound === 3 && isAskingCombo) {
+  if (!isBranchB && (currentRound === 2 || currentRound === 3) && isAskingCombo) {
     return {
       advanceRound: true,
-      directReply: `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\nQuy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\nNhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`
+      directReply: `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng và đam mê vào ngành **${targetMajor}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`
+    };
+  }
+
+  // 2b. VÒNG 4: NẾU HỌC SINH NÊU RÕ CẶP MÔN SỞ TRƯỜNG & MÔN YẾU (Ví dụ giỏi Toán, kém Văn)
+  const hasMath = lowerMsg.includes('toán') || lowerMsg.includes('toan');
+  const hasLit = lowerMsg.includes('văn') || lowerMsg.includes('van');
+  if (currentRound >= 3 && hasMath && hasLit) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy khen ngợi sự thẳng thắn và bước trưởng thành nhận thức của em khi nhìn nhận rõ năng lực học tập của mình. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
     };
   }
 
@@ -102,7 +112,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 4. Nếu không thuộc các trường hợp trên, tiếp tục chạy vòng phản biện bình thường
+  // 4. Tiếp tục chạy bình thường
   return { advanceRound: true };
 }
 
@@ -156,6 +166,7 @@ export default function Step2SocraticAgent() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }];
     setMessages(initMsg);
+    try { localStorage.setItem("cbas_step2_messages", JSON.stringify(initMsg)); } catch (e) {}
     setCurrentRound(1);
   }, []);
 
@@ -422,7 +433,7 @@ Quy chuẩn: Dưới 120 từ.`;
         || (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_GEMINI_API_KEY)
         || fallbackKey;
 
-      const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+      const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
       const systemPrompt = generatePromptForRound(round, studentProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
@@ -445,8 +456,8 @@ Quy chuẩn: Dưới 120 từ.`;
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: formattedContents,
           generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 600
+            temperature: 0.28,
+            maxOutputTokens: 1200
           }
         }),
         signal: directCtrl.signal
@@ -611,7 +622,11 @@ Quy chuẩn: Dưới 120 từ.`;
         text: reflex.reply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
-      setMessages(prev => [...prev, userMsg, aiMsg]);
+      setMessages(prev => {
+        const next = [...prev, userMsg, aiMsg];
+        try { localStorage.setItem("cbas_step2_messages", JSON.stringify(next)); } catch (e) {}
+        return next;
+      });
       setInputValue('');
       return;
     }
@@ -650,6 +665,7 @@ Quy chuẩn: Dưới 120 từ.`;
 
       const updatedHistory = [...nextHistory, aiMsg];
       setMessages(updatedHistory);
+      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(updatedHistory)); } catch (e) {}
       if (reflex.advanceRound !== false) {
         const nextR = currentRound + 1;
         setCurrentRound(nextR);

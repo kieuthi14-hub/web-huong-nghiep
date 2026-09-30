@@ -84,6 +84,24 @@ app.post('/api/socrates-chat', async (req, res) => {
           });
         }
 
+        // PHẢN XẠ NHANH VÒNG 3: Kỹ thuật Phản tư 3 Nhịp khi học sinh nói "chưa tìm hiểu tổ hợp môn"
+        const isComboReflex = [
+          'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
+          'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'chưa xem tổ hợp', 'chưa rõ môn',
+          'chưa tìm', 'không rõ'
+        ].some(k => lowerTrimmed.includes(k));
+
+        if (isComboReflex) {
+          const threeStepsReply = `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng và đam mê vào ngành **${targetCareer}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
+          return res.status(200).json({
+            success: true,
+            round: 3,
+            response: threeStepsReply,
+            reply: threeStepsReply,
+            isCompleted: false
+          });
+        }
+
         // 3. Xây dựng System Instruction tối ưu, gãy gọn, không dài dòng
         const systemPrompt = `
 Bạn là Thầy Socrates - Chuyên gia can thiệp tâm lý hướng nghiệp thuộc đề tài nghiên cứu hành vi ViSEF 2026.
@@ -121,18 +139,18 @@ TIẾN TRÌNH THEO LƯỢT CHAT (Hiện tại đang là lượt thứ ${studentT
             parts: [{ text: trimmedMsg }]
         });
 
-        // 5. Cấu hình mô hình với multi-model fallback
+        // 5. Cấu hình mô hình hoạt động ổn định nhất
         let replyText = null;
-        const candidateModelNames = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+        const candidateModelNames = ['gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
         for (const modelName of candidateModelNames) {
             try {
                 const model = genAI.getGenerativeModel({
                     model: modelName,
                     systemInstruction: systemPrompt,
                     generationConfig: {
-                        temperature: 0.25, // Hạ thấp để bám sát logic, không sáng tác lung tung
+                        temperature: 0.28,
                         topP: 0.85,
-                        maxOutputTokens: 400
+                        maxOutputTokens: 1200
                     }
                 });
 
@@ -153,10 +171,14 @@ TIẾN TRÌNH THEO LƯỢT CHAT (Hiện tại đang là lượt thứ ${studentT
 
         // Heuristic Fallback bảo hiểm nếu các model bận
         if (!replyText) {
-            if (studentTurns >= 4) {
+            if (studentTurns >= 4 || (lowerTrimmed.includes('toán') && lowerTrimmed.includes('văn'))) {
                 let subjectPairAdvice = `Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.`;
                 if ((lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan')) && (lowerTrimmed.includes('văn') || lowerTrimmed.includes('van'))) {
-                    subjectPairAdvice = `Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!`;
+                    subjectPairAdvice = `Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!`;
+                } else if (lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan')) {
+                    subjectPairAdvice = `Giỏi Toán là thế mạnh vượt trội để em tự tin chọn các tổ hợp khoa học tự nhiên (A00, A01) vào các ngành Sư phạm Toán, Sư phạm Tin học hoặc Khoa học Tự nhiên.`;
+                } else if (lowerTrimmed.includes('văn') || lowerTrimmed.includes('van')) {
+                    subjectPairAdvice = `Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ.`;
                 }
                 replyText = `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. ${subjectPairAdvice}\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
             } else if (studentTurns === 1) {
@@ -164,7 +186,7 @@ TIẾN TRÌNH THEO LƯỢT CHAT (Hiện tại đang là lượt thứ ${studentT
             } else if (studentTurns === 2) {
                 replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Thực tế nghề giáo đòi hỏi nghệ thuật truyền cảm hứng, tính kiên nhẫn khi quản lý học sinh cá biệt và kỳ thi tuyển viên chức cạnh tranh rất khắt khe.\n\nĐể thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?`;
             } else {
-                replyText = `Trong các phân ngành sư phạm (Khoa học Tự nhiên vs Khoa học Xã hội/Ngôn ngữ), đâu là môn sở trường tạo ưu thế cho em và môn nào em cảm thấy còn nhiều khoảng cách nhất?`;
+                replyText = `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng vào ngành **${targetCareer}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
             }
         }
 
