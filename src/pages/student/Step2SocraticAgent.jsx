@@ -62,6 +62,30 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
+  // 1.2c. PHẢN XẠ NHANH VÒNG 1: Động cơ ngoại sinh từ gia đình / bố mẹ (TUYỆT ĐỐI KHÔNG KHEN "YÊU THÍCH TỰ NHIÊN")
+  const familyKeywords = [
+    'mẹ định hướng', 'mẹ em định hướng', 'bố định hướng', 'bố em định hướng', 'ba định hướng', 'ba em định hướng',
+    'bố mẹ định hướng', 'ba mẹ định hướng', 'cha mẹ định hướng', 'gia đình định hướng', 'gia đình em định hướng',
+    'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình muốn', 'gia đình em muốn', 'gia đình bảo', 'gia đình em bảo',
+    'bố mẹ chọn', 'ba mẹ chọn', 'mẹ chọn', 'bố chọn', 'ba chọn', 'mẹ em chọn', 'bố em chọn', 'ba em chọn',
+    'theo ý bố', 'theo ý mẹ', 'theo ý ba', 'theo ý gia đình', 'nghe lời bố', 'nghe lời mẹ', 'nghe lời ba', 'nghe lời gia đình',
+    'bố mẹ bắt', 'ba mẹ bắt', 'mẹ bắt', 'bố bắt', 'ba bắt', 'mẹ em bắt', 'bố em bắt', 'ba em bắt', 'gia đình bắt', 'gia đình khuyên', 'bố mẹ khuyên', 'ba mẹ khuyên',
+    'bố mẹ hướng', 'mẹ hướng', 'ba hướng', 'bố hướng', 'mẹ em hướng', 'bố em hướng', 'ba em hướng',
+    'định hướng của gia đình', 'định hướng từ bố', 'định hướng từ mẹ', 'định hướng từ ba', 'định hướng từ gia đình',
+    'bố mẹ muốn', 'ba mẹ muốn', 'mẹ em muốn', 'bố em muốn', 'ba em muốn', 'nhà em muốn', 'nhà muốn',
+    'mẹ em bảo', 'bố em bảo', 'ba em bảo', 'mẹ bảo', 'bố bảo', 'ba bảo'
+  ];
+  const isFamilyExtrinsic = familyKeywords.some(k => lowerMsg.includes(k)) ||
+    /(mẹ|bố|ba|cha|gia đình|phụ huynh)\s+(em\s+)?(định hướng|chọn|bắt|muốn|khuyên|bảo|hướng|gợi ý)/i.test(lowerMsg) ||
+    /(định hướng|ý muốn|mong muốn|sự sắp đặt)\s+(của|từ)\s+(gia đình|bố mẹ|ba mẹ|bố|mẹ|ba)/i.test(lowerMsg);
+
+  if (isFamilyExtrinsic && currentRound <= 2) {
+    return {
+      advanceRound: true,
+      directReply: `Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\nBản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${targetMajor}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`
+    };
+  }
+
   // 1.3. Nếu học sinh khẳng định thực sự yêu thích / đam mê (TUYỆT ĐỐI CẤM HỎI LẠI CÂU HỎI MỞ ĐẦU)
   const isAffirmingInterest = [
     'thực sự yêu thích', 'thực sự thích', 'thật sự yêu thích', 'thật sự thích',
@@ -124,14 +148,80 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 2b. VÒNG 4: NẾU HỌC SINH NÊU RÕ CẶP MÔN SỞ TRƯỜNG & MÔN YẾU (Ví dụ giỏi Toán, kém Văn)
-  const hasMath = lowerMsg.includes('toán') || lowerMsg.includes('toan');
-  const hasLit = lowerMsg.includes('văn') || lowerMsg.includes('van');
-  if (currentRound >= 3 && hasMath && hasLit) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy khen ngợi sự thẳng thắn và bước trưởng thành nhận thức của em khi nhìn nhận rõ năng lực học tập của mình. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
-    };
+  // 2b. VÒNG 4: PHÂN TÍCH CHÍNH XÁC NGỮ NGHĨA MÔN SỞ TRƯỜNG & MÔN YẾU (BẮT BUỘC ĐỌC KỸ TỪ YẾU/KÉM ĐỂ TRÁNH NHẦM LẪN)
+  if (currentRound >= 3) {
+    const hasMath = lowerMsg.includes('toán') || lowerMsg.includes('toan');
+    const hasLit = lowerMsg.includes('văn') || lowerMsg.includes('van');
+
+    if (hasMath || hasLit) {
+      // 1. Kiểm tra trường hợp YẾU CẢ TOÁN VÀ VĂN:
+      const weakBothPatterns = [
+        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)[^,.;!?\n]*(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)/i,
+        /(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)[^,.;!?\n]*(đều|cũng|thì|là môn)?[^,.;!?\n]*(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+        /(yếu cả|kém cả|đuối cả|sợ cả)[^,.;!?\n]*(toán|văn)/i,
+        /(cả toán lẫn văn|cả văn lẫn toán|cả toán và văn|cả văn và toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i,
+        /(hai môn|2 môn|cả hai môn)\s*(toán[^,.;!?\n]*văn|văn[^,.;!?\n]*toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i
+      ];
+
+      if (weakBothPatterns.some(p => p.test(lowerMsg))) {
+        return {
+          advanceRound: true,
+          directReply: `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${targetUniv}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\nTuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
+        };
+      }
+
+      // Math strong
+      const mathStrongPatterns = [
+        /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?toán/i,
+        /toán\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
+        /(sở trường|thế mạnh)[^,.;!?\n]*toán/i
+      ];
+      // Math weak
+      const mathWeakPatterns = [
+        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?toán/i,
+        /toán\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+        /(yếu nhất|kém nhất)[^,.;!?\n]*toán/i
+      ];
+
+      // Lit strong
+      const litStrongPatterns = [
+        /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?văn/i,
+        /văn\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
+        /(sở trường|thế mạnh)[^,.;!?\n]*văn/i
+      ];
+      // Lit weak
+      const litWeakPatterns = [
+        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?văn/i,
+        /văn\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+        /(yếu nhất|kém nhất)[^,.;!?\n]*văn/i
+      ];
+
+      const mathStrong = mathStrongPatterns.some(p => p.test(lowerMsg));
+      const mathWeak = mathWeakPatterns.some(p => p.test(lowerMsg));
+      const litStrong = litStrongPatterns.some(p => p.test(lowerMsg));
+      const litWeak = litWeakPatterns.some(p => p.test(lowerMsg));
+
+      if (mathWeak && litWeak && !mathStrong && !litStrong) {
+        return {
+          advanceRound: true,
+          directReply: `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${targetUniv}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\nTuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
+        };
+      }
+
+      if (litStrong && (mathWeak || !mathStrong)) {
+        return {
+          advanceRound: true,
+          directReply: `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
+        };
+      }
+
+      if (mathStrong && (litWeak || !litStrong)) {
+        return {
+          advanceRound: true,
+          directReply: `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
+        };
+      }
+    }
   }
 
   // 3. Nếu học sinh hỏi về một nỗi sợ / rào cản cụ thể (như nói trước đám đông, sợ máu, học yếu toán...)
@@ -234,13 +324,17 @@ Bạn đang trò chuyện 1-1 với một học sinh THPT.
       switch (round) {
         case 1:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (ĐÀO SÂU HOẠT ĐỘNG CHUYÊN MÔN - TUYỆT ĐỐI CẤM HỎI LẠI CÂU MỞ ĐẦU):
+BỐI CẢNH VÒNG 1 (ĐÀO SÂU ĐỘNG CƠ CHỌN NGÀNH - TUYỆT ĐỐI CẤM HỎI LẠI CÂU MỞ ĐẦU):
 - Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành ${career}: "${userText}".
 - Nhóm Holland nổi trội của học sinh: ${holland}.
 NHIỆM VỤ THỰC HIỆN:
-1. Đúng 01 câu ghi nhận sự thẳng thắn và khẳng định của học sinh (công nhận nếu học sinh chọn vì yêu thích thực sự).
-2. Phân tích rằng sự yêu thích chỉ là điểm khởi đầu, cần gắn liền với các công việc chuyên môn thực tế hàng ngày.
-3. ĐÚNG 01 CÂU HỎI MỚI ĐÀO SÂU: "Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành ${career} (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành hỗ trợ học sinh), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?"
+* NẾU HỌC SINH NÊU ĐỘNG CƠ TỪ GIA ĐÌNH / BỐ MẸ ĐỊNH HƯỚNG HOẶC CHỌN HỘ:
+  ĐÂY LÀ ĐỘNG CƠ NGOẠI SINH. CẤM TUYỆT ĐỐI không được phản hồi: "Chọn ngành xuất phát từ sự yêu thích tự nhiên...".
+  PHẢI PHẢN HỒI ĐÚNG BẢN CHẤT: "Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em. Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc ${career} này không, hay em chỉ đang học để làm hài lòng bố mẹ?"
+* NẾU HỌC SINH KHẲNG ĐỊNH TỰ NGUYỆN YÊU THÍCH THỰC SỰ:
+  1. Ghi nhận sự khẳng định chân thành của học sinh.
+  2. Phân tích rằng sự yêu thích chỉ là điểm khởi đầu, cần gắn liền với các công việc chuyên môn thực tế hàng ngày.
+  3. ĐÚNG 01 CÂU HỎI MỚI ĐÀO SÂU: "Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành ${career} (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành hỗ trợ học sinh), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?"
 [RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI CẤM hỏi lại câu: "chọn vì thực sự yêu thích hay vì hot/khen ngợi".
 Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
 
@@ -278,11 +372,18 @@ BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯ�
 - Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. Phân tích trực tiếp dựa trên cặp môn học sinh vừa nêu (Ví dụ: Nếu học sinh nói giỏi Toán, kém Văn: BẮT BUỘC phải gọi tên môn Toán và Văn: "Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!").
-3. Gợi mở các hướng đi thích ứng (Nỗ lực bứt phá điểm số khối sở trường; hoặc phân khúc Cao đẳng Sư phạm / nghề thực hành nếu điểm lý thuyết cách xa Đại học).
-4. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+2. BẮT BUỘC PHÂN TÍCH CHÍNH XÁC NGỮ NGHĨA MÔN HỌC SINH VỪA NÊU (ĐỌC KỸ TỪ "YẾU", "KÉM", "ĐUỐI", "SỢ" ĐỂ KHÔNG NHẦM VỚI MÔN GIỎI/TỐT/SỞ TRƯỜNG):
+   * NẾU HỌC SINH YẾU CẢ TOÁN VÀ VĂN:
+     Phải nhận diện ngay đây là thử thách rất lớn vì phần lớn các ngành Sư phạm tại ${uni} đều xét tuyển có môn Toán hoặc Văn (A00, B00, C00, D01) với điểm chuẩn cao (thường từ 24 - 27 điểm).
+     Định hướng 2 hướng thích ứng:
+     (1) Tận dụng các môn còn lại học tốt (như Tiếng Anh, Sử, Địa, hoặc Hóa, Sinh) để tìm các ngành Sư phạm có tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm KHTN/Sinh học).
+     (2) Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn Sư phạm, cân nhắc phân khúc hệ Cao đẳng Sư phạm hoặc Cao đẳng Giáo dục nghề nghiệp thực hành để vừa sức.
+   * NẾU HỌC SINH GIỎI TOÁN, YẾU VĂN: Định hướng Sư phạm Toán, Tin (khối A00, A01) để tận dụng Toán và tránh Văn.
+   * NẾU HỌC SINH GIỎI VĂN, YẾU TOÁN: Định hướng Sư phạm Ngữ văn, Lịch sử, Tiểu học (khối C00, D01) để phát huy Văn và tránh Toán.
+   * NẾU HỌC SINH CÓ THẾ MẠNH MÔN KHÁC: Định hướng theo đúng môn thế mạnh đó.
+3. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
    "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh chính thức và nhập bảng đối chứng!"
-Quy chuẩn: Dưới 135 từ. Ấm áp, trao quyền tự quyết.`;
+Quy chuẩn: Dưới 140 từ. Ấm áp, trao quyền tự quyết.`;
       }
     } else {
       // ==========================================
@@ -351,10 +452,27 @@ Quy chuẩn: Dưới 120 từ.`;
 
     if (!isBranchB) {
       switch (round) {
-        case 1:
+        case 1: {
+          const lowerUser = (userText || '').toLowerCase();
+          const isFamily = [
+            'mẹ định hướng', 'me dinh huong', 'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình định hướng', 'gia đình muốn',
+            'bố mẹ chọn', 'ba mẹ chọn', 'mẹ chọn', 'bố chọn', 'mẹ em chọn', 'bố em chọn', 'ba em chọn',
+            'theo ý bố', 'theo ý mẹ', 'theo ý ba', 'nghe lời bố', 'nghe lời mẹ', 'nghe lời ba', 'nghe lời gia đình',
+            'bố mẹ bắt', 'ba mẹ bắt', 'mẹ bắt', 'bố bắt', 'gia đình bắt', 'gia đình khuyên', 'bố mẹ khuyên',
+            'bố mẹ hướng', 'mẹ hướng', 'ba hướng', 'định hướng của gia đình', 'định hướng từ bố', 'định hướng từ mẹ',
+            'bố mẹ muốn', 'ba mẹ muốn', 'mẹ em muốn', 'bố em muốn', 'nhà em muốn', 'ba mẹ định hướng',
+            'mẹ em bảo', 'bố em bảo', 'ba em bảo'
+          ].some(k => lowerUser.includes(k));
+
+          if (isFamily) {
+            return `Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\n` +
+              `Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${career}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`;
+          }
+
           return `Thầy rất ghi nhận sự khẳng định chân thành và rõ ràng của em: "${userText}".\n\n` +
             `Chọn ngành xuất phát từ sự yêu thích tự nhiên là điểm tựa rất tốt, nhưng sự yêu thích ấy cần gắn liền với các công việc chuyên môn thực tế diễn ra mỗi ngày.\n\n` +
             `Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành **${career}** (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?`;
+        }
 
         case 2:
           return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em.\n\n` +
@@ -383,18 +501,79 @@ Quy chuẩn: Dưới 120 từ.`;
         case 4:
         default: {
           const lowerUser = (userText || '').toLowerCase();
-          let subjectSpecificAdvice = `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc các hướng đi thích ứng: nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng Sư phạm / nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chọn ngành phù hợp với môn học sở trường.`;
+          const hasMath = lowerUser.includes('toán') || lowerUser.includes('toan');
+          const hasLit = lowerUser.includes('văn') || lowerUser.includes('van');
 
-          if ((lowerUser.includes('toán') || lowerUser.includes('toan')) && (lowerUser.includes('văn') || lowerUser.includes('van'))) {
-            subjectSpecificAdvice = `Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn! Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.`;
-          } else if (lowerUser.includes('toán') || lowerUser.includes('toan')) {
-            subjectSpecificAdvice = `Giỏi Toán là thế mạnh vượt trội để em tự tin chọn các tổ hợp khoa học tự nhiên (A00, A01) vào các ngành Sư phạm Toán, Sư phạm Tin học hoặc Khoa học Tự nhiên.`;
-          } else if (lowerUser.includes('văn') || lowerUser.includes('van')) {
-            subjectSpecificAdvice = `Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ.`;
+          // 1. Kiểm tra trường hợp YẾU CẢ TOÁN VÀ VĂN:
+          const weakBothPatterns = [
+            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)[^,.;!?\n]*(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)/i,
+            /(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)[^,.;!?\n]*(đều|cũng|thì|là môn)?[^,.;!?\n]*(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+            /(yếu cả|kém cả|đuối cả|sợ cả)[^,.;!?\n]*(toán|văn)/i,
+            /(cả toán lẫn văn|cả văn lẫn toán|cả toán và văn|cả văn và toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i,
+            /(hai môn|2 môn|cả hai môn)\s*(toán[^,.;!?\n]*văn|văn[^,.;!?\n]*toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i
+          ];
+
+          if (weakBothPatterns.some(p => p.test(lowerUser))) {
+            return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
+              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
+              `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
+              `1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n` +
+              `2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+          }
+
+          // Math strong
+          const mathStrongPatterns = [
+            /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?toán/i,
+            /toán\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
+            /(sở trường|thế mạnh)[^,.;!?\n]*toán/i
+          ];
+          // Math weak
+          const mathWeakPatterns = [
+            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?toán/i,
+            /toán\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+            /(yếu nhất|kém nhất)[^,.;!?\n]*toán/i
+          ];
+
+          // Lit strong
+          const litStrongPatterns = [
+            /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?văn/i,
+            /văn\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
+            /(sở trường|thế mạnh)[^,.;!?\n]*văn/i
+          ];
+          // Lit weak
+          const litWeakPatterns = [
+            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?văn/i,
+            /văn\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
+            /(yếu nhất|kém nhất)[^,.;!?\n]*văn/i
+          ];
+
+          const mathStrong = mathStrongPatterns.some(p => p.test(lowerUser));
+          const mathWeak = mathWeakPatterns.some(p => p.test(lowerUser));
+          const litStrong = litStrongPatterns.some(p => p.test(lowerUser));
+          const litWeak = litWeakPatterns.some(p => p.test(lowerUser));
+
+          if (mathWeak && litWeak && !mathStrong && !litStrong) {
+            return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
+              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
+              `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
+              `1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n` +
+              `2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+          }
+
+          if (litStrong && (mathWeak || !mathStrong)) {
+            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+          }
+
+          if (mathStrong && (litWeak || !litStrong)) {
+            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
           }
 
           return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-            `${subjectSpecificAdvice}\n\n` +
+            `Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.\n\n` +
             `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự mở tab tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
         }
       }
