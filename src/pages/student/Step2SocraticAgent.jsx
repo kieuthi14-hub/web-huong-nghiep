@@ -18,7 +18,15 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC';
   const isBranchB = isUndecidedOrVague(targetMajor);
 
-  // 1. Nếu học sinh chỉ chào hỏi xã giao
+  // 1.1. Nếu học sinh thắc mắc "Sao thầy hỏi lại?"
+  if (lowerMsg.includes('hỏi lại') || lowerMsg.includes('sao hỏi lại') || lowerMsg.includes('hỏi gì kỳ') || lowerMsg.includes('hỏi gì kì') || lowerMsg.includes('trùng câu hỏi') || lowerMsg.includes('vừa hỏi xong')) {
+    return {
+      advanceRound: false,
+      reply: `Thầy hiểu cảm xúc băn khoăn của em. Thầy hỏi lại không phải để làm khó hay kiểm tra trí nhớ của em, mà muốn hai thầy trò cùng soi chiếu vấn đề từ một góc nhìn sâu sắc hơn, giúp em nhận diện rõ động lực thực sự của mình trước khi ra quyết định quan trọng.\n\nĐối với ngành **${targetMajor}**, điều gì trong công việc hàng ngày thực sự tạo cho em cảm hứng lâu dài nhất?`
+    };
+  }
+
+  // 1.2. Nếu học sinh chỉ chào hỏi xã giao
   const greetings = [
     "chào thầy", "chao thay", "chào", "chao", "hello", "hi", "xin chào", "xin chao",
     "em chào thầy", "em chao thay", "dạ chào thầy", "da chao thay", "dạ", "da", "chào bạn"
@@ -42,7 +50,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   if (!isBranchB && currentRound === 3 && isAskingCombo) {
     return {
       advanceRound: true,
-      directReply: `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\nQuy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực trụ cột: hoặc thiên về Tư duy Logic & Dữ liệu (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Năng lực Ngôn ngữ & Xã hội (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\nNhìn lại kết quả học tập kỳ trước của em: Giữa các nhóm môn đó, đâu là môn sở trường tạo ưu thế cạnh tranh cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất (hoặc em có cảm thấy áp lực với môn học nào không)?`
+      directReply: `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\nQuy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\nNhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`
     };
   }
 
@@ -152,40 +160,42 @@ Quy chuẩn: Dưới 110 từ. Tuyệt đối không dán nhãn tiêu cực.`;
 
         case 2:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (THỬ THÁCH ÁP LỰC NGHỀ & CẢNH BÁO BÃO HÒA NHÂN LỰC):
+BỐI CẢNH VÒNG 2 (THỬ THÁCH ÁP LỰC NGHỀ & CHUẨN BỊ MỞ ĐẦU VÒNG 3 TỔ HỢP):
 - Ngành: ${career}, mã Holland: ${holland}.
 - Học sinh vừa trả lời về động cơ chọn ngành: "${userText}".
-NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
+NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu đồng cảm và ghi nhận nỗ lực định hướng của học sinh.
-2. Đúng 01 câu bóc tách thực tế thị trường: Tỷ lệ cạnh tranh cao, nguy cơ tự động hóa AI, yêu cầu sàng lọc khắt khe.
-3. ĐÚNG 01 CÂU HỎI CHỐT: "Ngành này đang có mức độ cạnh tranh đầu ra rất khốc liệt và nhiều công việc cơ bản đang dần bị công nghệ thay thế. Nếu kiên quyết theo đuổi, em dự định xây dựng năng lực nổi trội gì (ngoại ngữ chuyên sâu, kỹ năng thực hành hay dự án thực tế) để nhà tuyển dụng lựa chọn em thay vì hàng ngàn ứng viên khác?"
+2. Đúng 01 câu bóc tách thực tế thị trường: Thách thức áp lực nghề nghiệp thực tế của ngành ${career} (không dùng văn mẫu rập khuôn).
+3. ĐÚNG 01 CÂU HỎI MỞ ĐẦU VÒNG 3 TỔ HỢP MÔN: "Để thi/xét tuyển vào ngành ${career} tại ${uni}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?"
 Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT ĐIỂM GÃY TP):
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT QUY TRÌNH 3 NHỊP NẾU CHƯA BIẾT):
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
-- Học sinh vừa trả lời về năng lực nổi trội / kế hoạch cạnh tranh: "${userText}".
-NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
-1. Đúng 01 câu ghi nhận kế hoạch rèn luyện của học sinh.
-2. Đúng 01 câu bóc tách sự chênh lệch giữa điểm số thực tế với điểm chuẩn trúng tuyển.
-3. ĐÚNG 01 CÂU HỎI CHỐT (Yêu cầu đối chiếu điểm tổng kết kỳ trước với điểm chuẩn 2 năm liền kề):
-"Nhìn lại điểm tổng kết kỳ trước của các môn trong tổ hợp đó và đối chiếu với điểm chuẩn 2 năm gần nhất, em thấy mình đang ở ngưỡng an toàn, vừa sức hay đang có khoảng cách điểm số cần phải dồn nhiều nỗ lực nhất?"
+- Học sinh vừa trả lời về tổ hợp môn: "${userText}".
+NHIỆM VỤ THỰC HIỆN:
+* NẾU HỌC SINH NÓI CHƯA TÌM HIỂU / CHƯA BIẾT: BẮT BUỘC CHẠY KỸ THUẬT 3 NHỊP:
+  + Nhịp 1: Nêu nghịch lý (kỳ vọng cao nhưng chưa nắm công cụ xét tuyển).
+  + Nhịp 2: Gợi ý nhóm năng lực đặc thù (Khoa học Tự nhiên vs Khoa học Xã hội/Ngôn ngữ), nhắc học sinh sẽ tự kiểm chứng ở Bước 3.
+  + Nhịp 3: Hỏi trung lập: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
+* NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN:
+  Hỏi đối chiếu điểm học lực thực tế: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
 Quy chuẩn: Dưới 120 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
 
         case 4:
         default:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU THEO MÔ HÌNH THÍCH ỨNG KÉP & CHUYỂN GIAO NHIỆM VỤ - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
+BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯỚC 3 - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
 - Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. Dựa trên phản hồi ở Vòng 3 để định hướng giải pháp thích ứng kép:
-   * Nếu còn thời gian (lớp 10/11) có đam mê: Lập kế hoạch bù đắp điểm số các môn trong tổ hợp.
-   * Nếu điểm lý thuyết cách xa Đại học: Định hướng sang hệ Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc).
-   * Nếu khoảng cách quá lớn hoặc lệch pha: Chuyển sang ngành phù hợp với môn học sở trường.
-3. LỆNH KẾT THÚC PHIÊN CHAT BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Bây giờ, em hãy dừng suy đoán và bước sang Bước 3: Môi trường đối chứng dữ liệu thực tế. Nhiệm vụ của em là tự mở tab tra cứu Đề án tuyển sinh chính thức của trường mục tiêu, ghi nhận mã tổ hợp môn và điểm chuẩn 2 năm gần nhất để nhập vào bảng đối chứng!"
+2. Phân tích xong 3 hướng đi thích ứng:
+   * Nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11.
+   * Hệ Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học.
+   * Chọn ngành phù hợp với môn học sở trường.
+3. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh chính thức và nhập bảng đối chứng!"
 Quy chuẩn: Dưới 135 từ. Ấm áp, trao quyền tự quyết.`;
       }
     } else {
@@ -233,7 +243,7 @@ NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu xác nhận lựa chọn sơ bộ của học sinh, khích lệ tính tự chủ.
 2. Đúng 01 câu khẳng định việc có mục tiêu ban đầu là bước ngoặt quan trọng để thoát khỏi sự mơ hồ.
 3. LỆNH KẾT THÚC PHIÊN CHAT BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân. Bây giờ, em hãy chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh xem ngành này ở các trường đại học hoặc cao đẳng gần địa phương yêu cầu điều kiện gì nhé!"
+   "Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân. Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh xem ngành này ở các trường đại học hoặc cao đẳng gần địa phương yêu cầu điều kiện gì nhé!"
 Quy chuẩn: Dưới 120 từ.`;
       }
     }
@@ -262,19 +272,19 @@ Quy chuẩn: Dưới 120 từ.`;
 
         case 2:
           return `Thầy rất ủng hộ tinh thần tích cực và khát vọng hòa nhập xu thế của em.\n\n` +
-            `Dưới góc nhìn khách quan của thị trường 4.0, sự cạnh tranh về năng suất và tối ưu chi phí đang diễn ra rất mạnh mẽ khi công nghệ và AI dần thay thế các tác vụ cơ bản.\n\n` +
-            `Ngành này đang có mức độ cạnh tranh đầu ra rất khốc liệt và nhiều công việc cơ bản đang dần bị công nghệ thay thế. Nếu kiên quyết theo đuổi, em dự định xây dựng năng lực nổi trội gì (ngoại ngữ chuyên sâu, kỹ năng thực hành hay dự án thực tế) để nhà tuyển dụng lựa chọn em thay vì hàng ngàn ứng viên khác?`;
+            `Dưới góc nhìn khách quan của thị trường nghề nghiệp thực tế, áp lực rèn luyện chuyên môn và yêu cầu đào tạo của ngành **${career}** khắt khe hơn rất nhiều so với hình dung ban đầu.\n\n` +
+            `Để thi/xét tuyển vào ngành **${career}** tại **${uni}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?`;
 
         case 3:
-          return `Thầy đánh giá rất cao sự chủ động tư duy về năng lực cạnh tranh thực tế của em.\n\n` +
-            `Tuy nhiên, để cánh cửa tuyển sinh thực sự mở ra, mức tự tin ${score}/10 cần được đo lường bằng tương quan điểm số học thuật thực tế so với điểm chuẩn thực tế.\n\n` +
-            `Nhìn lại điểm tổng kết kỳ trước của các môn trong tổ hợp đó và đối chiếu với điểm chuẩn 2 năm gần nhất, em thấy mình đang ở ngưỡng an toàn, vừa sức hay đang có khoảng cách điểm số cần phải dồn nhiều nỗ lực nhất?`;
+          return `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\n` +
+            `Quy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\n` +
+            `Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`;
 
         case 4:
         default:
           return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-            `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc 3 hướng đi thích ứng: lập kế hoạch dồn lực cải thiện điểm số nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chuyển sang ngành phù hợp với môn học sở trường.\n\n` +
-            `Bây giờ, em hãy dừng suy đoán và bước sang **Bước 3: Môi trường đối chứng dữ liệu thực tế**. Nhiệm vụ của em là tự mở tab tra cứu Đề án tuyển sinh chính thức của trường mục tiêu, ghi nhận mã tổ hợp môn và điểm chuẩn 2 năm gần nhất để nhập vào bảng đối chứng!`;
+            `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc 3 hướng đi thích ứng: nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chọn ngành phù hợp với môn học sở trường.\n\n` +
+            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự mở tab tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
       }
     } else {
       switch (round) {
