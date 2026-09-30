@@ -16,14 +16,29 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 function isGreetingOnly(text) {
   if (!text || typeof text !== 'string') return false;
-  const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
-  const greetings = [
-    'chào thầy', 'chao thay', 'chào bạn', 'chao ban', 'xin chào', 'xin chao',
-    'chào ai', 'hello', 'hi', 'alo', 'chào', 'chao', 'em chào thầy', 'em chao thay',
-    'dạ chào thầy', 'da chao thay', 'dạ', 'da', 'dạ thầy', 'da thay', 'vâng', 'vang',
-    'dạ em chào thầy', 'thầy ơi', 'thay oi', 'dạ vâng', 'da vang', 'vâng ạ', 'vang a'
+  const clean = text.toLowerCase().trim()
+    .replace(/[!.,?~^_\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (clean.length === 0 || clean.length > 40) return false;
+
+  const careerKeywords = [
+    'thích', 'thich', 'mẹ', 'me', 'bố', 'ba', 'chọn', 'chon', 'vì', 'vi', 'do',
+    'đam mê', 'dam me', 'toán', 'toan', 'văn', 'van', 'sư phạm', 'su pham',
+    'nghề', 'nghe', 'ngành', 'nganh', 'học', 'hoc', 'truyền đạt', 'đứng lớp', 'bắt chước',
+    'định hình', 'tổ hợp', 'môn'
   ];
-  return greetings.includes(clean);
+  if (careerKeywords.some(w => clean.includes(w))) return false;
+
+  const greetingPatterns = [
+    /^(chào|chao|xin chào|xin chao|hello|hi|alo)(\s+(thầy|thay|cô|co|bạn|ban|ai|bot))?(\s+ạ|\s+a)?$/i,
+    /^(em|dạ|da|con)\s+(chào|chao|xin chào|xin chao)(\s+(thầy|thay|cô|co))?(\s+ạ|\s+a)?$/i,
+    /^(dạ|da|vâng|vang|dạ vâng|da vang)(\s+thầy|\s+thay|\s+cô|\s+co)?(\s+ạ|\s+a)?$/i,
+    /^(thầy ơi|thay oi|cô ơi|co oi|thầy à|thay a)(\s+ạ|\s+a)?$/i,
+    /^(chào|chao|hello|hi|alo)$/i
+  ];
+  return greetingPatterns.some(p => p.test(clean));
 }
 
 export default async function handler(req, res) {
@@ -54,10 +69,11 @@ export default async function handler(req, res) {
     // 1. Kiểm tra an toàn: Lịch sử trò chuyện phải là một mảng
     const validHistory = Array.isArray(chatHistory) ? chatHistory : (Array.isArray(body?.history) ? body.history : []);
 
-    // 2. Tính số lượt tương tác thực sự của học sinh
-    const studentTurns = body?.round 
+    // 2. Tính số lượt tương tác thực sự của học sinh (LOẠI BỎ TẤT CẢ LƯỢT CHÀO HỎI ĐƠN THUẦN)
+    const substantiveUserMsgs = validHistory.filter(m => m.role === 'user' && !isGreetingOnly(m.text));
+    const studentTurns = body?.round && Number(body.round) > 0 
       ? Number(body.round) 
-      : (validHistory.filter(m => m.role === 'user').length + 1);
+      : (substantiveUserMsgs.length + 1);
 
     const trimmedMsg = userMessage.trim();
     const lowerTrimmed = trimmedMsg.toLowerCase();
@@ -126,15 +142,34 @@ export default async function handler(req, res) {
       });
     }
 
-    // PHẢN XẠ NHANH VÒNG 3: Kỹ thuật Phản tư 3 Nhịp khi học sinh nói "chưa tìm hiểu tổ hợp môn"
+    // PHẢN XẠ NHANH VÒNG 3:
+    // 1. Phân luồng đặc biệt: Học sinh giải thích chưa tìm hiểu VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ
+    const isExplainingUndecidedSubject = [
+      'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
+      'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
+      'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
+    ].some(k => lowerTrimmed.includes(k)) || (lowerTrimmed.includes('dạy môn') && (lowerTrimmed.includes('chưa') || lowerTrimmed.includes('không')));
+
+    if (isExplainingUndecidedSubject) {
+      const explainReply = `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
+      return res.status(200).json({
+        success: true,
+        round: 3,
+        response: explainReply,
+        reply: explainReply,
+        isCompleted: false
+      });
+    }
+
+    // 2. Học sinh nói chung chung là chưa tìm hiểu tổ hợp môn (TUYỆT ĐỐI KHÔNG DÙNG TỪ "NGHỊCH LÝ")
     const isComboReflex = [
       'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
-      'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'chưa xem tổ hợp', 'chưa rõ môn',
-      'chưa tìm', 'không rõ'
+      'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
+      'chưa xem tổ hợp', 'chưa rõ môn', 'chưa tìm', 'không rõ'
     ].some(k => lowerTrimmed.includes(k));
 
     if (isComboReflex) {
-      const threeStepsReply = `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng và đam mê vào ngành **${targetCareer}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
+      const threeStepsReply = `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${targetCareer}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\nQuy chế tuyển sinh hiện nay chia ngành nghề thành các nhóm năng lực trụ cột rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
       return res.status(200).json({
         success: true,
         round: 3,
@@ -164,10 +199,13 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
      * Xu hướng nghề nghiệp tương lai: Tác động của AI, Chuyển đổi số, Tự động hóa hoặc tái cơ cấu thị trường việc làm trong 5-10 năm tới (ví dụ: với Sư phạm, AI và công nghệ giáo dục EdTech đang thay đổi cách dạy học; giáo viên tương lai không chỉ truyền thụ kiến thức cơ học mà phải tích hợp công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh).
      * Thử thách học sinh về Năng lực thích ứng mới của ngành nghề (không chỉ làm các tác vụ cơ bản lặp đi lặp lại).
      * Đặt câu hỏi kết nối: Làm sao để thích ứng với tiêu chuẩn mới đó, và để thi/xét tuyển vào ngành ${targetCareer} tại ${targetSchool}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?
-   - Lượt 3: Nếu học sinh nói "chưa tìm hiểu tổ hợp môn" (hoặc chưa biết môn gì): BẮT BUỘC thực hiện Kỹ thuật Phản tư 3 Nhịp:
-     * Nhịp 1: Nêu nghịch lý giữa ước mơ và việc chưa chuẩn bị công cụ xét tuyển.
-     * Nhịp 2: Gợi mở nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ), nhắc Bước 3 sẽ tự tra cứu đề án.
-     * Nhịp 3: Đặt câu hỏi mở trung lập: "Nhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?"
+   - Lượt 3: Khi học sinh phản hồi về tổ hợp môn xét tuyển:
+     * NẾU HỌC SINH GIẢI THÍCH CHƯA TÌM HIỂU VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ:
+       BẮT BUỘC phải thấu cảm và khẳng định lý do của học sinh là hoàn toàn tự nhiên và hợp lý (chưa định hình môn dạy thì chưa thể biết tổ hợp môn). TUYỆT ĐỐI CẤM dùng từ "nghịch lý" hay phán xét! Sau đó gợi mở rằng môn dạy sẽ xuất phát từ nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ).
+     * NẾU HỌC SINH NÓI CHUNG CHUNG CHƯA TÌM HIỂU:
+       Đánh giá cao sự trung thực, nhắc nhở tích cực rằng để hiện thực hóa ước mơ thì tổ hợp môn là công cụ thiết yếu. TUYỆT ĐỐI KHÔNG dùng từ "nghịch lý".
+     * Gợi mở nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ), nhắc Bước 3 sẽ tự tra cứu đề án.
+     * Đặt câu hỏi mở trung lập: "Nhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?"
    - Lượt 4: BẮT BUỘC đọc dữ liệu môn sở trường và môn yếu học sinh vừa nêu (ví dụ: giỏi Toán, kém Văn) để gọi đích danh hai môn này ra định hướng cụ thể (hướng đến Sư phạm Toán/Tin, khối A00/A01 để tận dụng lợi thế và tránh rào cản môn Văn).
      Ra lệnh dứt khoát yêu cầu học sinh bấm chuyển sang Bước 3 để tra cứu Đề án tuyển sinh. TUYỆT ĐỐI KHÔNG HỎI THÊM CÂU NÀO NỮA.
 3. ĐỊNH DẠNG ĐẦU RA BẮT BUỘC:
@@ -240,7 +278,17 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
       } else if (studentTurns === 2) {
         replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Tuy nhiên trong 5-10 năm tới, AI, công nghệ giáo dục và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Giáo viên tương lai của ngành **${targetCareer}** sẽ không chỉ làm nhiệm vụ truyền thụ kiến thức cơ học mà bắt buộc phải làm chủ công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh và đối diện với chuẩn nghề nghiệp mới rất khắt khe.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
       } else {
-        replyText = `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng vào ngành **${targetCareer}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
+        const isExplainingUndecided = [
+          'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
+          'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
+          'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
+        ].some(k => lowerTrimmed.includes(k)) || (lowerTrimmed.includes('dạy môn') && (lowerTrimmed.includes('chưa') || lowerTrimmed.includes('không')));
+
+        if (isExplainingUndecided) {
+          replyText = `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
+        } else {
+          replyText = `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${targetCareer}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\nQuy chế tuyển sinh hiện nay chia ngành nghề thành các nhóm năng lực trụ cột rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
+        }
       }
     }
 

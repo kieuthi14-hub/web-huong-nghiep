@@ -27,13 +27,23 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, TUYỆT ĐỐI KHÔNG lặp lại câu hỏi cũ!
-  const greetings = [
-    "chào thầy", "chao thay", "chào", "chao", "hello", "hi", "xin chào", "xin chao",
-    "em chào thầy", "em chao thay", "dạ chào thầy", "da chao thay", "dạ", "da", "chào bạn",
-    "vâng", "vang", "dạ vâng", "da vang", "thầy ơi", "thay oi", "alo", "dạ thầy", "da thay"
-  ];
-  if (greetings.includes(cleanGreeting) || lowerMsg === "chào thầy" || lowerMsg === "chào" || lowerMsg === "hello") {
+  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, TUYỆT ĐỐI KHÔNG lặp lại câu hỏi cũ, KHÔNG tăng vòng!
+  const isPureGreeting = (() => {
+    const gPatterns = [
+      /^(chào|xin chào|chao|hello|hi|alo|hé lô)\b/i,
+      /^(dạ\s+|da\s+)?(em\s+)?(chào|xin chào|chao|kính chào)\b/i,
+      /^(dạ|da|vâng|dạ vâng|thưa thầy|thầy ơi|thay oi)$/i
+    ];
+    if (gPatterns.some(p => p.test(lowerMsg)) && lowerMsg.split(/\s+/).length <= 6) {
+      const substantiveWords = ['thích', 'vì', 'sư phạm', 'ngành', 'môn', 'tổ hợp', 'trường', 'đam mê', 'học', 'điểm', 'thi', 'xét', 'nghề', 'lương', 'việc'];
+      if (!substantiveWords.some(w => lowerMsg.includes(w))) {
+        return true;
+      }
+    }
+    return false;
+  })();
+
+  if (isPureGreeting) {
     return {
       advanceRound: false, // KHÔNG nhảy vòng
       reply: `Chào em. Thầy trò mình cùng tập trung vào nội dung định hướng nhé. Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại!`
@@ -86,7 +96,21 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 2. KỸ THUẬT PHẢN TƯ 3 NHỊP KHI HỌC SINH NÓI CHƯA TÌM HIỂU TỔ HỢP MÔN:
+  // 1.5. Phân luồng đặc biệt: Học sinh giải thích chưa tìm hiểu VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ
+  const isExplainingUndecidedSubject = [
+    'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
+    'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
+    'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
+  ].some(k => lowerMsg.includes(k)) || (lowerMsg.includes('dạy môn') && (lowerMsg.includes('chưa') || lowerMsg.includes('không')));
+
+  if (isExplainingUndecidedSubject) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`
+    };
+  }
+
+  // 2. KỸ THUẬT PHẢN TƯ KHI HỌC SINH NÓI CHUNG CHUNG CHƯA TÌM HIỂU TỔ HỢP MÔN (TUYỆT ĐỐI KHÔNG DÙNG TỪ "NGHỊCH LÝ"):
   const isAskingCombo = [
     'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
     'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
@@ -96,7 +120,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   if (!isBranchB && (currentRound === 2 || currentRound === 3) && isAskingCombo) {
     return {
       advanceRound: true,
-      directReply: `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng và đam mê vào ngành **${targetMajor}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`
+      directReply: `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${targetMajor}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\nQuy chế tuyển sinh hiện nay chia ngành nghề thành các nhóm năng lực trụ cột rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`
     };
   }
 
@@ -233,14 +257,16 @@ Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng, k
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT QUY TRÌNH 3 NHỊP NẾU CHƯA BIẾT):
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT QUY TRÌNH PHẢN TƯ THÍCH ỨNG):
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
 - Học sinh vừa trả lời về tổ hợp môn: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
-* NẾU HỌC SINH NÓI CHƯA TÌM HIỂU / CHƯA BIẾT: BẮT BUỘC CHẠY KỸ THUẬT 3 NHỊP:
-  + Nhịp 1: Nêu nghịch lý (kỳ vọng cao nhưng chưa nắm công cụ xét tuyển).
-  + Nhịp 2: Gợi ý nhóm năng lực đặc thù (Khoa học Tự nhiên vs Khoa học Xã hội/Ngôn ngữ), nhắc học sinh sẽ tự kiểm chứng ở Bước 3.
-  + Nhịp 3: Hỏi trung lập: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
+* NẾU HỌC SINH GIẢI THÍCH CHƯA TÌM HIỂU VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ:
+  BẮT BUỘC phải thấu cảm và khẳng định lý do của học sinh là hoàn toàn tự nhiên và hợp lý (chưa định hình môn dạy thì chưa thể biết tổ hợp môn). TUYỆT ĐỐI CẤM dùng từ "nghịch lý" hay phán xét! Gợi mở môn dạy sẽ xuất phát từ nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ).
+* NẾU HỌC SINH NÓI CHUNG CHUNG CHƯA TÌM HIỂU:
+  Đánh giá cao sự trung thực, nhắc nhở tích cực rằng để hiện thực hóa ước mơ thì tổ hợp môn là công cụ thiết yếu. TUYỆT ĐỐI KHÔNG dùng từ "nghịch lý".
+* Gợi mở nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ), nhắc Bước 3 sẽ tự tra cứu đề án.
+* Đặt câu hỏi mở trung lập: "Nhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?"
 * NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN:
   Hỏi đối chiếu điểm học lực thực tế: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
 Quy chuẩn: Dưới 120 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
@@ -335,10 +361,24 @@ Quy chuẩn: Dưới 120 từ.`;
             `Tuy nhiên trong 5-10 năm tới, AI, công nghệ và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Người làm nghề **${career}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao.\n\n` +
             `Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${career}** tại **${uni}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
 
-        case 3:
-          return `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\n` +
+        case 3: {
+          const lowerUser = (userText || '').toLowerCase();
+          const isExplainingUndecided = [
+            'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
+            'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
+            'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
+          ].some(k => lowerUser.includes(k)) || (lowerUser.includes('dạy môn') && (lowerUser.includes('chưa') || lowerUser.includes('không')));
+
+          if (isExplainingUndecided) {
+            return `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\n` +
+              `Thực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\n` +
+              `Để giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
+          }
+
+          return `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${career}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\n` +
             `Quy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\n` +
             `Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`;
+        }
 
         case 4:
         default: {
