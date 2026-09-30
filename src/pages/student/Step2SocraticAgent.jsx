@@ -50,189 +50,8 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 1.2b. PHẢN XẠ NHANH: Nếu học sinh cảm thấy bị hỏi lặp lại ("Dạ em đã nói là thích rồi mà")
-  const isAnnoyedRepeat = [
-    'đã nói', 'nói rồi', 'hỏi lại', 'đã bảo', 'thầy lại hỏi', 'đã trả lời', 'sao hỏi lại', 'đã nói là'
-  ].some(k => lowerMsg.includes(k));
-
-  if (isAnnoyedRepeat) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy ghi nhận sự kiên định và khẳng định dứt khoát của em đối với ngành **${targetMajor}**! Thầy trò mình cùng đi thẳng vào thực tế nhé:\n\nTrong 5-10 năm tới, AI, EdTech và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường lao động. Người làm nghề **${targetMajor}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao cho học sinh.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetMajor}** tại trường mục tiêu, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`
-    };
-  }
-
-  // 1.2c. PHẢN XẠ NHANH VÒNG 1: Động cơ ngoại sinh từ gia đình / bố mẹ (TUYỆT ĐỐI KHÔNG KHEN "YÊU THÍCH TỰ NHIÊN")
-  const familyKeywords = [
-    'mẹ định hướng', 'mẹ em định hướng', 'bố định hướng', 'bố em định hướng', 'ba định hướng', 'ba em định hướng',
-    'bố mẹ định hướng', 'ba mẹ định hướng', 'cha mẹ định hướng', 'gia đình định hướng', 'gia đình em định hướng',
-    'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình muốn', 'gia đình em muốn', 'gia đình bảo', 'gia đình em bảo',
-    'bố mẹ chọn', 'ba mẹ chọn', 'mẹ chọn', 'bố chọn', 'ba chọn', 'mẹ em chọn', 'bố em chọn', 'ba em chọn',
-    'theo ý bố', 'theo ý mẹ', 'theo ý ba', 'theo ý gia đình', 'nghe lời bố', 'nghe lời mẹ', 'nghe lời ba', 'nghe lời gia đình',
-    'bố mẹ bắt', 'ba mẹ bắt', 'mẹ bắt', 'bố bắt', 'ba bắt', 'mẹ em bắt', 'bố em bắt', 'ba em bắt', 'gia đình bắt', 'gia đình khuyên', 'bố mẹ khuyên', 'ba mẹ khuyên',
-    'bố mẹ hướng', 'mẹ hướng', 'ba hướng', 'bố hướng', 'mẹ em hướng', 'bố em hướng', 'ba em hướng',
-    'định hướng của gia đình', 'định hướng từ bố', 'định hướng từ mẹ', 'định hướng từ ba', 'định hướng từ gia đình',
-    'bố mẹ muốn', 'ba mẹ muốn', 'mẹ em muốn', 'bố em muốn', 'ba em muốn', 'nhà em muốn', 'nhà muốn',
-    'mẹ em bảo', 'bố em bảo', 'ba em bảo', 'mẹ bảo', 'bố bảo', 'ba bảo'
-  ];
-  const isFamilyExtrinsic = familyKeywords.some(k => lowerMsg.includes(k)) ||
-    /(mẹ|bố|ba|cha|gia đình|phụ huynh)\s+(em\s+)?(định hướng|chọn|bắt|muốn|khuyên|bảo|hướng|gợi ý)/i.test(lowerMsg) ||
-    /(định hướng|ý muốn|mong muốn|sự sắp đặt)\s+(của|từ)\s+(gia đình|bố mẹ|ba mẹ|bố|mẹ|ba)/i.test(lowerMsg);
-
-  if (isFamilyExtrinsic && currentRound <= 2) {
-    return {
-      advanceRound: true,
-      directReply: `Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\nBản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${targetMajor}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`
-    };
-  }
-
-  // 1.3. Nếu học sinh khẳng định thực sự yêu thích / đam mê (TUYỆT ĐỐI CẤM HỎI LẠI CÂU HỎI MỞ ĐẦU)
-  const isAffirmingInterest = [
-    'thực sự yêu thích', 'thực sự thích', 'thật sự yêu thích', 'thật sự thích',
-    'yêu thích', 'vì em thích', 'em thích', 'thích thôi', 'do em thích',
-    'rất thích', 'thích ngành', 'thích nghề', 'đam mê', 'vì đam mê', 'do đam mê',
-    'thích chứ', 'không phải điều gì khác', 'không phải vì hot', 'không phải phong trào'
-  ].some(k => lowerMsg.includes(k));
-
-  if (isAffirmingInterest && currentRound <= 2) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${targetMajor}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`
-    };
-  }
-
-  // 1.3c. Nếu học sinh nói "chưa biết sư phạm môn gì" / "chưa biết môn gì"
-  if (lowerMsg.includes('chưa biết') && (lowerMsg.includes('môn gì') || lowerMsg.includes('sư phạm gì') || lowerMsg.includes('ngành gì'))) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy khen ngợi sự thành thật của em. Trong thực tế, Sư phạm chia thành 2 nhóm lớn: nhóm Khoa học Tự nhiên (Toán, Lý, Hóa, Sinh, Tin) và nhóm Khoa học Xã hội / Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ, Giáo dục Tiểu học).\n\nTrong các môn học ở trường, đâu là môn sở trường của em và môn nào em còn nhiều khoảng cách nhất?`
-    };
-  }
-
-  // 1.4. Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó"
-  const isDependsOnSubject = (lowerMsg.includes('tùy') || lowerMsg.includes('tuy')) && 
-    (lowerMsg.includes('sư phạm') || lowerMsg.includes('su pham') || lowerMsg.includes('môn') || lowerMsg.includes('ngành'));
-
-  if (isDependsOnSubject) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy khen em nắm vấn đề rất nhanh và chính xác: Mỗi phân ngành sư phạm sẽ xét tuyển theo các tổ hợp môn rất khác nhau!\n\nĐể xác định đúng vũ khí học thuật cần chuẩn bị, điều cốt lõi là phải biết rõ môn học cụ thể mà em muốn gắn bó.\n\nVậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Ngữ văn, Tiếng Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?`
-    };
-  }
-
-  // 1.5. Phân luồng đặc biệt: Học sinh giải thích chưa tìm hiểu VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ
-  const isExplainingUndecidedSubject = [
-    'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
-    'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
-    'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
-  ].some(k => lowerMsg.includes(k)) || (lowerMsg.includes('dạy môn') && (lowerMsg.includes('chưa') || lowerMsg.includes('không')));
-
-  if (isExplainingUndecidedSubject) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`
-    };
-  }
-
-  // 2. KỸ THUẬT PHẢN TƯ KHI HỌC SINH NÓI CHUNG CHUNG CHƯA TÌM HIỂU TỔ HỢP MÔN (TUYỆT ĐỐI KHÔNG DÙNG TỪ "NGHỊCH LÝ"):
-  const isAskingCombo = [
-    'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
-    'chưa tìm hiểu', 'chưa biết môn', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
-    'chưa xem tổ hợp', 'chưa rõ môn', 'chưa tìm', 'không rõ'
-  ].some(k => lowerMsg.includes(k));
-
-  if (!isBranchB && (currentRound === 2 || currentRound === 3) && isAskingCombo) {
-    return {
-      advanceRound: true,
-      directReply: `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${targetMajor}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\nQuy chế tuyển sinh hiện nay chia ngành nghề thành các nhóm năng lực trụ cột rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`
-    };
-  }
-
-  // 2b. VÒNG 4: PHÂN TÍCH CHÍNH XÁC NGỮ NGHĨA MÔN SỞ TRƯỜNG & MÔN YẾU (BẮT BUỘC ĐỌC KỸ TỪ YẾU/KÉM ĐỂ TRÁNH NHẦM LẪN)
-  if (currentRound >= 3) {
-    const hasMath = lowerMsg.includes('toán') || lowerMsg.includes('toan');
-    const hasLit = lowerMsg.includes('văn') || lowerMsg.includes('van');
-
-    if (hasMath || hasLit) {
-      // 1. Kiểm tra trường hợp YẾU CẢ TOÁN VÀ VĂN:
-      const weakBothPatterns = [
-        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)[^,.;!?\n]*(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)/i,
-        /(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)[^,.;!?\n]*(đều|cũng|thì|là môn)?[^,.;!?\n]*(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-        /(yếu cả|kém cả|đuối cả|sợ cả)[^,.;!?\n]*(toán|văn)/i,
-        /(cả toán lẫn văn|cả văn lẫn toán|cả toán và văn|cả văn và toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i,
-        /(hai môn|2 môn|cả hai môn)\s*(toán[^,.;!?\n]*văn|văn[^,.;!?\n]*toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i
-      ];
-
-      if (weakBothPatterns.some(p => p.test(lowerMsg))) {
-        return {
-          advanceRound: true,
-          directReply: `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${targetUniv}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\nTuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
-        };
-      }
-
-      // Math strong
-      const mathStrongPatterns = [
-        /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?toán/i,
-        /toán\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
-        /(sở trường|thế mạnh)[^,.;!?\n]*toán/i
-      ];
-      // Math weak
-      const mathWeakPatterns = [
-        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?toán/i,
-        /toán\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-        /(yếu nhất|kém nhất)[^,.;!?\n]*toán/i
-      ];
-
-      // Lit strong
-      const litStrongPatterns = [
-        /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?văn/i,
-        /văn\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
-        /(sở trường|thế mạnh)[^,.;!?\n]*văn/i
-      ];
-      // Lit weak
-      const litWeakPatterns = [
-        /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?văn/i,
-        /văn\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-        /(yếu nhất|kém nhất)[^,.;!?\n]*văn/i
-      ];
-
-      const mathStrong = mathStrongPatterns.some(p => p.test(lowerMsg));
-      const mathWeak = mathWeakPatterns.some(p => p.test(lowerMsg));
-      const litStrong = litStrongPatterns.some(p => p.test(lowerMsg));
-      const litWeak = litWeakPatterns.some(p => p.test(lowerMsg));
-
-      if (mathWeak && litWeak && !mathStrong && !litStrong) {
-        return {
-          advanceRound: true,
-          directReply: `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\nKhi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${targetUniv}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\nTuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
-        };
-      }
-
-      if (litStrong && (mathWeak || !mathStrong)) {
-        return {
-          advanceRound: true,
-          directReply: `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
-        };
-      }
-
-      if (mathStrong && (litWeak || !litStrong)) {
-        return {
-          advanceRound: true,
-          directReply: `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`
-        };
-      }
-    }
-  }
-
-  // 3. Nếu học sinh hỏi về một nỗi sợ / rào cản cụ thể (như nói trước đám đông, sợ máu, học yếu toán...)
-  if (lowerMsg.includes("tự tin") || lowerMsg.includes("đám đông") || lowerMsg.includes("sợ") || lowerMsg.includes("yếu") || lowerMsg.includes("lo lắng") || lowerMsg.includes("áp lực")) {
-    return {
-      advanceRound: true,
-      instructionForAI: `Học sinh đang bộc lộ nỗi sợ: "${message}". Hãy thấu cảm trước trong 1 câu ngắn, giải thích rằng kỹ năng này có thể rèn luyện được, NHƯNG đối chiếu với mã Holland ${hollandCode} của học sinh để hỏi xem tính cách sâu bên trong có thực sự phù hợp với đặc thù công việc hay không.`
-    };
-  }
-
-  // 4. Tiếp tục chạy bình thường
+  // 1.3. Tiếp tục đối thoại với AI Cognitive Agent - KHÔNG can thiệp bằng câu trả lời mẫu cứng nhắc (directReply)
+  // để mô hình nhận thức linh hoạt tự do lắng nghe, đồng cảm và phản hồi tự nhiên theo thời gian thực!
   return { advanceRound: true };
 }
 
@@ -290,22 +109,36 @@ export default function Step2SocraticAgent() {
     setCurrentRound(1);
   }, []);
 
-  // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026
+  // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026 - MÔ HÌNH NHẬN THỨC LINH HOẠT
   const SOCRATIC_PERSONA = `
-BẠN LÀ THẦY SOCRATES - CHUYÊN GIA CAN THIỆP TÂM LÝ VÀ PHẢN TƯ NHẬN THỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI VISEF 2026.
-Bạn đang trò chuyện 1-1 với một học sinh THPT.
+BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
+Bạn đang trò chuyện 1-1 với một học sinh THPT đang đứng trước ngưỡng cửa chọn ngành nghề tương lai.
 
-[RÀO CẢN TUYỆT ĐỐI - VI PHẠM SẼ BỊ HỦY KẾT QUẢ NGHIÊN CỨU]:
-1. TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI CÂU HỎI: Đọc kỹ tin nhắn gần nhất của bạn. Nếu bạn vừa hỏi câu gì ở lượt trước, CẤM TUYỆT ĐỐI không được hỏi lại câu đó dưới bất kỳ hình thức nào!
-2. PHẢN HỒI THỰC SỰ THEO Ý HỌC SINH:
-   - Nếu học sinh nói "Vì em thích": Hãy hỏi sâu vào việc em thích cụ thể điều gì trong hoạt động chuyên môn (đứng lớp, truyền đạt, chấm bài...), đừng hỏi lại câu hỏi cũ.
-   - Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó": Hãy khen học sinh nắm vấn đề rất nhanh, và hỏi ngay: "Vậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Văn, Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?"
-3. KHÔNG TỰ BỊA MÃ TỔ HỢP CỐ ĐỊNH: Không cam kết mã tổ hợp trường nào để tránh ảo giác AI.
+[BẢN CHẤT CỐT LÕI - KHÔNG PHẢI BOT KỊCH BẢN CỨNG NHẮC]:
+Bạn KHÔNG PHẢI là một kịch bản bot lặp khuôn hay mẫu câu máy móc. Bạn sở hữu trí tuệ cảm xúc (EQ) cao, khả năng lắng nghe sâu, sự ấm áp của người thầy và nghệ thuật dẫn dắt Socrates giúp học sinh tự nhận thức.
 
-[CẤU TRÚC PHẢN HỒI MỖI LẦN]:
-- 01 câu thấu cảm / ghi nhận trực tiếp ý học sinh vừa nói.
-- 01 câu gợi mở / phản biện nhận thức.
-- Kết thúc bằng ĐÚNG 01 CÂU HỎI MỚI (Không trùng lặp với bất kỳ câu hỏi nào phía trên).
+[CƠ CHẾ SUY NGHĨ NỘI TÂM TRƯỚC KHI TRẢ LỜI - BẮT BUỘC]:
+Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiềm thức:
+1. "Học sinh này đang bộc lộ trạng thái tâm lý gì?" (Ví dụ: Thực dụng vì tiền/thu nhập; Tự ti, hoang mang về học lực; Bị phụ huynh áp đặt/ngoại sinh; Bốc đồng theo trào lưu; hay Tự tin có căn cứ?).
+2. "Làm sao để công nhận cảm xúc của em ấy một cách chân thành nhất mà không phán xét?"
+3. "Làm sao để dùng chính câu nói bất ngờ đó làm bàn đạp dẫn dắt em ấy về hiện thực nghề nghiệp?"
+
+[HƯỚNG DẪN XỬ LÝ CÁC TÌNH HUỐNG TÂM LÝ BẤT NGỜ]:
+- NẾU HỌC SINH THỰC DỤNG / NÓI VỀ TIỀN (Ví dụ: "Thầy em dạy thêm nhiều tiền", "Ngành này kiếm nhiều tiền", "Em muốn giàu"):
+  -> TUYỆT ĐỐI ĐỪNG chê trách hay biến thành đam mê giả tạo. Hãy thừa nhận: "Mong muốn có thu nhập tốt là nhu cầu hoàn toàn chính đáng của cuộc sống." Sau đó đối chất sư phạm: "Nhưng để dạy thêm có nhiều người học và có thu nhập cao, người thầy đó phải có chuyên môn vượt trội và uy tín thế nào? Em đã chuẩn bị gì cho năng lực chuyên môn đó?"
+- NẾU HỌC SINH TỰ TI / HOANG MANG (Ví dụ: "Em thấy mình dốt", "Em không biết có làm được không", "Em sợ thi trượt"):
+  -> ĐỪNG tuôn lý thuyết vĩ mô. Hãy nâng đỡ cảm xúc: "Sự lo lắng này là rất thật và đáng được tôn trọng khi em đứng trước cánh cửa tương lai." Sau đó bóc tách: "Điều gì đang làm em sợ nhất: khối lượng kiến thức, điểm số thi tuyển, hay sợ sự kỳ vọng của người khác?"
+- NẾU HỌC SINH NÊU MÔN HỌC BẤT KỲ (Kể cả môn lạ như GDQP, KTPL, Hoạt động trải nghiệm, hoặc môn phụ):
+  -> Hãy đón nhận tự nhiên, đối chiếu xem môn đó có nằm trong các tổ hợp xét tuyển truyền thống của ngành hay không, chỉ ra mức độ cạnh tranh và gợi mở hướng đi thích hợp.
+- NẾU HỌC SINH BỊ PHỤ HUYNH ÁP ĐẶT / NGOẠI SINH (Ví dụ: "Mẹ em định hướng", "Bố mẹ chọn", "Ba mẹ bắt thi"):
+  -> Thấu cảm: "Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em." Sau đó đối chất: "Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc này không, hay em chỉ đang học để làm hài lòng bố mẹ?"
+- NẾU HỌC SINH KHẲNG ĐỊNH THỰC SỰ ĐAM MÊ / YÊU THÍCH:
+  -> Ghi nhận sự hào hứng tự nhiên, nhưng bóc tách sâu vào hoạt động chuyên môn thực tế hàng ngày (đứng lớp, soạn bài giảng, kiên nhẫn đồng hành cùng học sinh hay chấm bài) xem hoạt động nào thực sự tạo năng lượng cho em.
+
+[ĐỊNH DẠNG ĐẦU RA BẮT BUỘC]:
+- Mỗi phản hồi chỉ từ 2 đến 4 câu ngắn gọn, súc tích, văn phong sư phạm ấm áp, thấu hiểu.
+- Kết thúc bằng ĐÚNG 01 câu hỏi phản tư duy nhất (ở Lượt 1, 2, 3), hoặc kết thúc bằng lời trao quyền chuyển bước dứt khoát (ở Lượt 4).
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề, ghi chú hay phân tích kỹ thuật.
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
@@ -451,9 +284,26 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     if (!isBranchB) {
+      const lowerUser = (userText || '').toLowerCase();
+
+      // 1. Phản xạ tâm lý bất ngờ: Thực dụng / nói về tiền / dạy thêm
+      const isPragmaticMoney = [
+        'nhiều tiền', 'dạy thêm', 'lương', 'thu nhập', 'kiếm tiền', 'kiếm dc nhiều', 'giàu', 'kinh tế'
+      ].some(k => lowerUser.includes(k));
+      if (isPragmaticMoney && round <= 2) {
+        return `Mong muốn có thu nhập tốt và cuộc sống đủ đầy là nhu cầu hoàn toàn chính đáng của mỗi người.\n\nTuy nhiên trong thực tế, để có uy tín và thu hút nhiều người theo học, người làm nghề **${career}** phải có trình độ chuyên môn vượt trội và sự rèn luyện bền bỉ ra sao? Em đã có sự chuẩn bị gì cho năng lực chuyên môn cốt lõi đó?`;
+      }
+
+      // 2. Phản xạ tâm lý bất ngờ: Tự ti / hoang mang
+      const isInsecure = [
+        'dốt', 'kém', 'sợ trượt', 'không biết làm được', 'không biết có làm được', 'lo lắng', 'hoang mang', 'tự ti', 'áp lực', 'sợ không đỗ'
+      ].some(k => lowerUser.includes(k));
+      if (isInsecure && round <= 3) {
+        return `Sự lo lắng và cảm giác hoài nghi bản thân là trạng thái tâm lý rất thật và đáng được tôn trọng khi em đứng trước cánh cửa tương lai quan trọng.\n\nNhìn lại chính mình lúc này, điều gì đang làm em cảm thấy áp lực nhất: khối lượng kiến thức chuyên môn, điểm số thi tuyển, hay áp lực từ sự kỳ vọng của người khác?`;
+      }
+
       switch (round) {
         case 1: {
-          const lowerUser = (userText || '').toLowerCase();
           const isFamily = [
             'mẹ định hướng', 'me dinh huong', 'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình định hướng', 'gia đình muốn',
             'bố mẹ chọn', 'ba mẹ chọn', 'mẹ chọn', 'bố chọn', 'mẹ em chọn', 'bố em chọn', 'ba em chọn',
@@ -469,9 +319,9 @@ Quy chuẩn: Dưới 120 từ.`;
               `Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${career}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`;
           }
 
-          return `Thầy rất ghi nhận sự khẳng định chân thành và rõ ràng của em: "${userText}".\n\n` +
-            `Chọn ngành xuất phát từ sự yêu thích tự nhiên là điểm tựa rất tốt, nhưng sự yêu thích ấy cần gắn liền với các công việc chuyên môn thực tế diễn ra mỗi ngày.\n\n` +
-            `Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành **${career}** (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?`;
+          return `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${career}**.\n\n` +
+            `Tuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\n` +
+            `Cụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`;
         }
 
         case 2:
@@ -682,8 +532,9 @@ Quy chuẩn: Dưới 120 từ.`;
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: formattedContents,
           generationConfig: {
-            temperature: 0.28,
-            maxOutputTokens: 1200
+            temperature: 0.65,
+            topP: 0.9,
+            maxOutputTokens: 600
           }
         }),
         signal: directCtrl.signal
