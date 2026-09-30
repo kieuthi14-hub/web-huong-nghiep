@@ -215,14 +215,14 @@ Quy chuẩn: Dưới 110 từ. Tuyệt đối không dán nhãn tiêu cực.`;
 
         case 2:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (THỬ THÁCH ÁP LỰC NGHỀ & CHUẨN BỊ MỞ ĐẦU VÒNG 3 TỔ HỢP):
+BỐI CẢNH VÒNG 2 (ÁP LỰC NGHỀ, XU HƯỚNG TƯƠNG LAI & CHUẨN BỊ TỔ HỢP):
 - Ngành: ${career}, mã Holland: ${holland}.
 - Học sinh vừa trả lời về động cơ chọn ngành: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-1. Đúng 01 câu đồng cảm và ghi nhận nỗ lực định hướng của học sinh.
-2. Đúng 01 câu bóc tách thực tế thị trường: Thách thức áp lực nghề nghiệp thực tế của ngành ${career} (không dùng văn mẫu rập khuôn).
-3. ĐÚNG 01 CÂU HỎI MỞ ĐẦU VÒNG 3 TỔ HỢP MÔN: "Để thi/xét tuyển vào ngành ${career} tại ${uni}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?"
-Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
+NHIỆM VỤ THỰC HIỆN (BẮT BUỘC LỒNG GHÉP 2 YẾU TỐ):
+1. Đúng 01 câu ghi nhận và đồng cảm với mong muốn của học sinh.
+2. Phân tích thực tế thị trường lao động 5-10 năm tới dưới tác động của AI, Chuyển đổi số, Tự động hóa: Người làm nghề ${career} tương lai không chỉ làm các tác vụ cơ bản lặp đi lặp lại mà phải thích ứng với chuẩn năng lực mới (ví dụ với giáo viên là tích hợp công nghệ EdTech, rèn luyện tư duy cho học sinh).
+3. ĐÚNG 01 CÂU HỎI KẾT NỐI VÒNG 3: "Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành ${career} tại ${uni}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?"
+Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng, không dùng văn mẫu rập khuôn.`;
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
@@ -324,9 +324,9 @@ Quy chuẩn: Dưới 120 từ.`;
             `Thầy thấy em chọn ngành **${career}** trong khi nhóm nổi trội của em là **${holland}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
 
         case 2:
-          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng hòa nhập xu thế của em.\n\n` +
-            `Dưới góc nhìn khách quan của thị trường nghề nghiệp thực tế, áp lực rèn luyện chuyên môn và yêu cầu đào tạo của ngành **${career}** khắt khe hơn rất nhiều so với hình dung ban đầu.\n\n` +
-            `Để thi/xét tuyển vào ngành **${career}** tại **${uni}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?`;
+          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em.\n\n` +
+            `Tuy nhiên trong 5-10 năm tới, AI, công nghệ và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Người làm nghề **${career}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao.\n\n` +
+            `Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${career}** tại **${uni}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
 
         case 3:
           return `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\n` +

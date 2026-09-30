@@ -135,7 +135,10 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
 2. ĐỐI THOẠI THỰC CHẤT VÀ TÔN TRỌNG NGỮ CẢNH:
    - Nếu học sinh chỉ chào hỏi: Chỉ chào lại ngắn gọn trong 1 câu và nhắc nhở học sinh trả lời câu hỏi trước.
    - Lượt 1: Bóc tách động cơ thật sự (đam mê hay phong trào). Nếu học sinh nói "vì đam mê": hỏi đam mê ở khía cạnh nào (truyền đạt kiến thức, nghiên cứu bài giảng, hay tương tác học sinh).
-   - Lượt 2: Thử thách áp lực nghề giáo thực tế (học sinh cá biệt, thi biên chế) và chất vấn xem học sinh đã tìm hiểu tổ hợp môn xét tuyển chưa.
+   - Lượt 2: BẮT BUỘC lồng ghép 2 yếu tố cốt lõi:
+     * Xu hướng nghề nghiệp tương lai: Tác động của AI, Chuyển đổi số, Tự động hóa hoặc tái cơ cấu thị trường việc làm trong 5-10 năm tới (ví dụ: với Sư phạm, AI và công nghệ giáo dục EdTech đang thay đổi cách dạy học; giáo viên tương lai không chỉ truyền thụ kiến thức cơ học mà phải tích hợp công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh).
+     * Thử thách học sinh về Năng lực thích ứng mới của ngành nghề (không chỉ làm các tác vụ cơ bản lặp đi lặp lại).
+     * Đặt câu hỏi kết nối: Làm sao để thích ứng với tiêu chuẩn mới đó, và để thi/xét tuyển vào ngành ${targetCareer} tại ${targetSchool}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?
    - Lượt 3: Nếu học sinh nói "chưa tìm hiểu tổ hợp môn" (hoặc chưa biết môn gì): BẮT BUỘC thực hiện Kỹ thuật Phản tư 3 Nhịp:
      * Nhịp 1: Nêu nghịch lý giữa ước mơ và việc chưa chuẩn bị công cụ xét tuyển.
      * Nhịp 2: Gợi mở nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ), nhắc Bước 3 sẽ tự tra cứu đề án.
@@ -210,7 +213,7 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
       } else if (studentTurns === 1) {
         replyText = `Thầy rất ghi nhận chia sẻ của em. Tuy nhiên, việc thích một ngành vì danh tiếng khác với việc sẵn sàng đối diện với áp lực công việc hàng ngày của ngành **${targetCareer}**.\n\nEm chọn ngành này xuất phát từ đam mê công việc thực tế, hay vì thấy đây là ngành được nhiều người xung quanh khen ngợi?`;
       } else if (studentTurns === 2) {
-        replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Thực tế nghề giáo đòi hỏi nghệ thuật truyền cảm hứng, tính kiên nhẫn khi quản lý học sinh cá biệt và kỳ thi tuyển viên chức cạnh tranh rất khắt khe.\n\nĐể thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?`;
+        replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Tuy nhiên trong 5-10 năm tới, AI, công nghệ giáo dục và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Giáo viên tương lai của ngành **${targetCareer}** sẽ không chỉ làm nhiệm vụ truyền thụ kiến thức cơ học mà bắt buộc phải làm chủ công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh và đối diện với chuẩn nghề nghiệp mới rất khắt khe.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
       } else {
         replyText = `Đó là một nghịch lý đáng suy ngẫm: Em đang đặt nhiều kỳ vọng vào ngành **${targetCareer}**, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước chân qua cánh cửa trường đại học!\n\nThực tế, Sư phạm chia thành các nhóm trụ cột năng lực rất rõ rệt: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh chính thức để làm rõ điều này.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
       }
