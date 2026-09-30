@@ -45,25 +45,15 @@ const Navbar = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-3">
         {profile && (
           <div className="flex items-center gap-3">
-            {/* Nút chuyển đổi giao diện linh hoạt CHỈ DÀNH CHO THẦY CÔ / ADMIN */}
-            {isTeacherAdmin && (
-              isInAdminView ? (
-                <Link
-                  to="/student/dashboard"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm transition-all border border-sky-400 cursor-pointer"
-                  title="Chuyển sang xem giao diện học sinh"
-                >
-                  <span>🎓 Sang Giao Diện Học Sinh</span>
-                </Link>
-              ) : (
-                <Link
-                  to="/admin/dashboard"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all border border-amber-400 cursor-pointer"
-                  title="Vào Bảng Quản trị ViSEF"
-                >
-                  <span>⚙️ Trang Quản Trị Admin</span>
-                </Link>
-              )
+            {/* Nút chuyển đổi giao diện linh hoạt: CHỈ HIỂN THỊ KHI ĐANG Ở BẢNG ADMIN */}
+            {isTeacherAdmin && isInAdminView && (
+              <Link
+                to="/student/dashboard"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm transition-all border border-sky-400 cursor-pointer"
+                title="Chuyển sang xem giao diện học sinh"
+              >
+                <span>🎓 Xem Cổng Học Sinh</span>
+              </Link>
             )}
             <div className="hidden sm:block text-right">
               <p className="text-sm font-semibold text-slate-800 leading-tight">

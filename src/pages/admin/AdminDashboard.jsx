@@ -641,7 +641,11 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
       }
     })
 
-    const rawCombined = combinedCounseling.length === 0 ? VISEF_SEED_COUNSELING : combinedCounseling
+    // Luôn ưu tiên hiển thị các suất hẹn thật của học sinh lên đầu, kết hợp cùng các mẫu nghiên cứu ViSEF
+    const rawCombined = [
+      ...combinedCounseling,
+      ...VISEF_SEED_COUNSELING.filter(seed => !combinedCounseling.some(c => c.id === seed.id || c.scheduled_at === seed.scheduled_at))
+    ]
     realCounseling = rawCombined.map(s => {
       const displayMentor = getDisplayMentorName(s)
       return {
@@ -693,17 +697,35 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
           .eq('id', sessionId)
       }
 
-      if (user?.id) {
-        try {
-          const raw = localStorage.getItem(`counseling_sessions_local_${user.id}`)
+      // Đồng bộ toàn bộ cache local storage (hỗ trợ tức thì trên cùng thiết bị/trình duyệt)
+      try {
+        const localKeys = ['counseling_sessions_local', 'counseling_sessions']
+        if (user?.id) localKeys.push(`counseling_sessions_local_${user.id}`)
+
+        localKeys.forEach(k => {
+          const raw = localStorage.getItem(k)
           if (raw) {
             const list = JSON.parse(raw)
-            const updated = list.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
-            localStorage.setItem(`counseling_sessions_local_${user.id}`, JSON.stringify(updated))
+            if (Array.isArray(list)) {
+              const updated = list.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
+              localStorage.setItem(k, JSON.stringify(updated))
+            }
           }
-        } catch (e) {
-          console.error('Lỗi lưu local storage:', e)
+        })
+
+        const s4Raw = localStorage.getItem('cbas_step4_booking')
+        if (s4Raw) {
+          const parsed = JSON.parse(s4Raw)
+          if (parsed.id === sessionId || !parsed.id) {
+            const meetingInfo = parseMeetingInfo(counselorNotes || '')
+            parsed.status = newStatus
+            if (meetingInfo.meetingUrl) parsed.meet_url = meetingInfo.meetingUrl
+            if (meetingInfo.locationText) parsed.location = meetingInfo.locationText
+            localStorage.setItem('cbas_step4_booking', JSON.stringify(parsed))
+          }
         }
+      } catch (e) {
+        console.error('Lỗi lưu local storage:', e)
       }
 
       const msg = (newStatus === 'confirmed' || newStatus === 'approved')

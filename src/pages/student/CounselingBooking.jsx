@@ -333,8 +333,10 @@ const saveLocalSession = (userId, session) => {
   if (!userId) return
   try {
     const list = getLocalSessions(userId)
-    const updated = [session, ...list]
+    const updated = [session, ...list.filter(s => s.id !== session.id && s.scheduled_at !== session.scheduled_at)]
     localStorage.setItem(LOCAL_STORAGE_KEY_PREFIX + userId, JSON.stringify(updated))
+    localStorage.setItem('counseling_sessions_local', JSON.stringify(updated))
+    localStorage.setItem('counseling_sessions', JSON.stringify(updated))
   } catch (e) {
     console.error('Lỗi lưu local session:', e)
   }
@@ -345,7 +347,7 @@ const saveLocalSession = (userId, session) => {
 // =========================================================================
 const CounselingBooking = () => {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
 
   // Form states matching standard Step 4
   const [selectedMentor, setSelectedMentor] = useState('')
@@ -393,18 +395,35 @@ const CounselingBooking = () => {
 
   // Tải danh sách lịch hẹn từ Supabase / Local
   const fetchMySessions = async () => {
-    if (!user) return
+    const studentId = user?.id || profile?.id || '738d7200-cf50-444d-94e3-6afb1352e0f0'
     setIsLoading(true)
-    const localItems = getLocalSessions(user.id)
+    const localItems = getLocalSessions(studentId)
     try {
       const { data, error } = await supabase
         .from('counseling_sessions')
         .select('*')
-        .eq('student_id', user.id)
-        .order('scheduled_at', { ascending: true })
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false })
 
-      if (!error && data) {
+      if (!error && Array.isArray(data) && data.length > 0) {
         setMySessions(data)
+        const latest = data[0]
+        const meetInfo = parseMeetingInfo(latest.counselor_notes)
+        const mentorName = latest.student_notes?.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)?.[1] || mentorMap[latest.counselor_id] || 'Cố vấn Hướng nghiệp'
+        const meetTypeVal = latest.student_notes?.match(/\[Hình thức:\s*([^\]]+)\]/)?.[1] || 'Google Meet'
+
+        setBooking({
+          id: latest.id,
+          mentor_id: latest.counselor_id,
+          mentor_name: mentorName,
+          meeting_time: latest.scheduled_at,
+          meeting_type: meetTypeVal,
+          status: latest.status || 'pending',
+          meet_url: meetInfo.meetingUrl,
+          location: meetInfo.locationText,
+          counselor_notes: latest.counselor_notes
+        })
+        setNextStepVisible(true)
       } else if (localItems.length > 0) {
         setMySessions(localItems)
       }
@@ -430,35 +449,83 @@ const CounselingBooking = () => {
       return
     }
 
+    const counselorFullName = mentorMap[mentor] || mentor
+    const studentId = user?.id || profile?.id || '738d7200-cf50-444d-94e3-6afb1352e0f0'
+
+    let scheduledTimestamp = time
+    try {
+      const d = new Date(time)
+      if (!isNaN(d.getTime())) {
+        scheduledTimestamp = d.toISOString()
+      }
+    } catch (e) {}
+
+    // Payload chuẩn CSDL Supabase (Loại bỏ cột counselor_name không tồn tại trong schema)
+    const syncPayload = {
+      student_id: studentId,
+      counselor_id: '11111111-1111-1111-1111-111111111111',
+      scheduled_at: scheduledTimestamp,
+      status: 'pending', // Chờ Cố vấn / Admin phê duyệt và cấp link phòng họp
+      student_notes: `[Chuyên gia/Mentor: ${counselorFullName}]\n[Hình thức: ${currentMeetType}]\n${questions}`
+    }
+
+    let createdSession = null
+    try {
+      const { data: inserted, error: insertError } = await supabase
+        .from('counseling_sessions')
+        .insert(syncPayload)
+        .select()
+
+      if (insertError) {
+        console.error("Lỗi Supabase khi đặt lịch:", insertError)
+      } else if (inserted && inserted.length > 0) {
+        createdSession = inserted[0]
+        console.log("Đã đồng bộ lên CSDL Supabase thành công:", createdSession)
+      }
+    } catch (err) {
+      console.warn("Lỗi lưu Supabase:", err)
+    }
+
+    if (!createdSession) {
+      createdSession = {
+        id: `local-${Date.now()}`,
+        ...syncPayload,
+        created_at: new Date().toISOString()
+      }
+    }
+
+    // Lưu local backup cho cả học sinh và admin
+    saveLocalSession(studentId, createdSession)
+
     const bookingData = {
+      id: createdSession.id,
       mentor_id: mentor,
+      mentor_name: counselorFullName,
       meeting_time: time,
       meeting_type: currentMeetType,
       questions: questions,
-      status: "Đã xác nhận",
-      meet_url: "https://meet.google.com/xyz-visef-2026"
+      status: "pending",
+      meet_url: null
     }
 
-    // 1. Lưu vào localStorage để khắc phục lỗi Supabase rỗng
     localStorage.setItem("cbas_step4_booking", JSON.stringify(bookingData))
     setBooking(bookingData)
     setNextStepVisible(true)
 
-    // 2. Cập nhật DOM trực tiếp để hỗ trợ hoàn toàn script gốc
+    // Cập nhật DOM trực tiếp để hỗ trợ hoàn toàn script gốc
     const statusBox = document.getElementById("bookingStatusBox")
     if (statusBox) {
-      statusBox.style.border = "1px solid #86efac"
-      statusBox.style.background = "#f0fdf4"
-      statusBox.style.color = "#166534"
+      statusBox.style.border = "1px solid #fde68a"
+      statusBox.style.background = "#fefce8"
+      statusBox.style.color = "#854d0e"
       statusBox.style.textAlign = "left"
-      const mentorDisplay = mentorMap[mentor] || mentor
       statusBox.innerHTML = `
-        <strong>🎉 ĐÃ ĐẶT LỊCH THÀNH CÔNG!</strong><br><br>
-        • <strong>Cố vấn:</strong> ${mentorDisplay}<br>
-        • <strong>Thời gian:</strong> ${time}<br>
+        <strong style="color: #b45309; font-size: 14px;">⏳ ĐÃ GỬI YÊU CẦU THAM VẤN 1-1 THÀNH CÔNG!</strong><br><br>
+        • <strong>Cố vấn tiếp nhận:</strong> ${counselorFullName}<br>
+        • <strong>Thời gian đăng ký:</strong> ${time}<br>
         • <strong>Hình thức:</strong> ${currentMeetType}<br>
-        • <strong>Link phòng họp:</strong> <a href="${bookingData.meet_url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; text-decoration: underline;">Bấm vào đây để vào Google Meet</a><br><br>
-        <small style="color: #64748b;">*Em hãy chuẩn bị sẵn 2 câu hỏi đã điền để đối chất cùng Mentor trong buổi gặp.</small>
+        • <strong>Trạng thái:</strong> <span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: bold;">⏳ Đang chờ Cố vấn / Admin phê duyệt</span><br><br>
+        <small style="color: #64748b;">*Hệ thống đã chuyển lịch hẹn sang Bảng Quản trị Admin. Khi được duyệt, link phòng họp Google Meet / địa chỉ sẽ tự động hiển thị tại đây.</small>
       `
     }
 
@@ -467,34 +534,8 @@ const CounselingBooking = () => {
       nextBox.style.display = "block"
     }
 
-    // 3. Tự động đồng bộ Supabase an toàn nếu đã đăng nhập
-    if (user) {
-      try {
-        const counselorFullName = mentorMap[mentor] || mentor
-        const syncPayload = {
-          student_id: user.id,
-          counselor_id: '11111111-1111-1111-1111-111111111111',
-          counselor_name: counselorFullName,
-          scheduled_at: time,
-          status: 'confirmed',
-          student_notes: `[Chuyên gia/Mentor: ${counselorFullName}]\n[Hình thức: ${currentMeetType}]\n[Link Meet: ${bookingData.meet_url}]\n${questions}`
-        }
-        await supabase.from('counseling_sessions').insert(syncPayload)
-        
-        // Lưu local backup
-        saveLocalSession(user.id, {
-          id: `local-${Date.now()}`,
-          ...syncPayload,
-          created_at: new Date().toISOString(),
-          is_local: true
-        })
-        fetchMySessions()
-      } catch (err) {
-        console.warn("Lỗi lưu Supabase (Đã an toàn lưu vào local):", err)
-      }
-    }
-
-    setToast({ type: 'success', message: '🎉 Đã đặt lịch hẹn tham vấn 1-1 thành công!' })
+    fetchMySessions()
+    setToast({ type: 'success', message: '🎉 Đã gửi lịch hẹn sang Cố vấn/Admin thành công!' })
   }
 
   // Điều hướng sang Bước 5
@@ -515,6 +556,7 @@ const CounselingBooking = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'confirmed':
+      case 'approved':
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-sm">
             <CheckCircle2 className="w-3 h-3" /> Đã xác nhận
@@ -523,13 +565,14 @@ const CounselingBooking = () => {
       case 'rejected':
         return (
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 rounded-sm">
-            <XCircle className="w-3 h-3" /> Từ chối
+            <XCircle className="w-3 h-3" /> Từ chối / Đổi lịch
           </span>
         )
+      case 'pending':
       default:
         return (
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-sm">
-            <CheckCircle2 className="w-3 h-3" /> Đã xác nhận
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-sm">
+            <Clock className="w-3 h-3" /> Chờ phê duyệt
           </span>
         )
     }
@@ -671,34 +714,121 @@ const CounselingBooking = () => {
 
           <div 
             id="bookingStatusBox" 
-            style={booking ? {
-              background: '#f0fdf4',
-              border: '1px solid #86efac',
-              borderRadius: '8px',
-              padding: '16px',
-              textAlign: 'left',
-              color: '#166534',
-              fontSize: '13px'
-            } : {
-              background: '#ffffff',
-              border: '1px dashed #cbd5e1',
-              borderRadius: '8px',
-              padding: '16px',
-              textAlign: 'center',
-              color: '#64748b',
-              fontSize: '13px'
-            }}
+            style={(() => {
+              if (!booking) {
+                return {
+                  background: '#ffffff',
+                  border: '1px dashed #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  color: '#64748b',
+                  fontSize: '13px'
+                }
+              }
+              const st = (booking.status || 'pending').toLowerCase()
+              if (st === 'confirmed' || st === 'approved') {
+                return {
+                  background: '#f0fdf4',
+                  border: '1px solid #86efac',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'left',
+                  color: '#166534',
+                  fontSize: '13px'
+                }
+              }
+              if (st === 'rejected') {
+                return {
+                  background: '#fff1f2',
+                  border: '1px solid #fecdd3',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  textAlign: 'left',
+                  color: '#9f1239',
+                  fontSize: '13px'
+                }
+              }
+              // pending
+              return {
+                background: '#fefce8',
+                border: '1px solid #fde68a',
+                borderRadius: '8px',
+                padding: '16px',
+                textAlign: 'left',
+                color: '#854d0e',
+                fontSize: '13px'
+              }
+            })()}
           >
-            {booking ? (
-              <div>
-                <strong style={{ fontSize: '14px', color: '#15803d' }}>🎉 ĐÃ ĐẶT LỊCH THÀNH CÔNG!</strong><br /><br />
-                • <strong>Cố vấn:</strong> {mentorMap[booking.mentor_id] || booking.mentor_id}<br />
-                • <strong>Thời gian:</strong> {booking.meeting_time}<br />
-                • <strong>Hình thức:</strong> {booking.meeting_type}<br />
-                • <strong>Link phòng họp:</strong> <a href={booking.meet_url} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 600 }}>Bấm vào đây để vào Google Meet</a><br /><br />
-                <small style={{ color: '#64748b' }}>*Em hãy chuẩn bị sẵn 2 câu hỏi đã điền để đối chất cùng Mentor trong buổi gặp.</small>
-              </div>
-            ) : (
+            {booking ? (() => {
+              const st = (booking.status || 'pending').toLowerCase()
+              const mentorDisplayName = booking.mentor_name || mentorMap[booking.mentor_id] || booking.mentor_id || 'Cố vấn Hướng nghiệp'
+
+              if (st === 'confirmed' || st === 'approved') {
+                return (
+                  <div>
+                    <strong style={{ fontSize: '14px', color: '#15803d', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🎉 LỊCH HẸN ĐÃ ĐƯỢC PHÊ DUYỆT!</span>
+                    </strong>
+                    <div style={{ marginTop: '10px', lineHeight: '1.8' }}>
+                      • <strong>Cố vấn:</strong> {mentorDisplayName}<br />
+                      • <strong>Thời gian:</strong> {booking.meeting_time}<br />
+                      • <strong>Hình thức:</strong> {booking.meeting_type}<br />
+                      {booking.meet_url ? (
+                        <>
+                          • <strong>Link phòng họp:</strong>{' '}
+                          <a 
+                            href={booking.meet_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 700 }}
+                          >
+                            🌐 Bấm vào đây để vào Google Meet
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          • <strong>Địa điểm:</strong> {booking.location || 'Phòng Tham vấn Hướng nghiệp (P.102)'}
+                        </>
+                      )}
+                    </div>
+                    {booking.counselor_notes && (
+                      <div style={{ marginTop: '10px', padding: '8px 12px', background: '#ecfdf5', borderRadius: '6px', border: '1px solid #a7f3d0', fontSize: '12px' }}>
+                        <strong>Ghi chú từ Cố vấn:</strong> {booking.counselor_notes}
+                      </div>
+                    )}
+                    <small style={{ color: '#64748b', display: 'block', marginTop: '10px' }}>
+                      *Em hãy chuẩn bị sẵn 2 câu hỏi đã điền để đối chất cùng Mentor trong buổi gặp.
+                    </small>
+                  </div>
+                )
+              }
+
+              if (st === 'rejected') {
+                return (
+                  <div>
+                    <strong style={{ fontSize: '14px', color: '#b91c1c' }}>❌ LỊCH HẸN CẦN CHỌN LẠI KHUNG GIỜ</strong><br /><br />
+                    • <strong>Cố vấn:</strong> {mentorDisplayName}<br />
+                    • <strong>Thời gian đăng ký:</strong> {booking.meeting_time}<br />
+                    • <strong>Lý do:</strong> Cố vấn bận hoặc khung giờ này đã kín lịch.<br /><br />
+                    <small style={{ color: '#64748b' }}>*Vui lòng chọn một khung thời gian khác ở form bên cạnh và bấm gửi lại yêu cầu.</small>
+                  </div>
+                )
+              }
+
+              // Pending
+              return (
+                <div>
+                  <strong style={{ fontSize: '14px', color: '#b45309' }}>⏳ ĐÃ GỬI YÊU CẦU THAM VẤN 1-1 THÀNH CÔNG!</strong><br /><br />
+                  • <strong>Cố vấn tiếp nhận:</strong> {mentorDisplayName}<br />
+                  • <strong>Thời gian đăng ký:</strong> {booking.meeting_time}<br />
+                  • <strong>Hình thức:</strong> {booking.meeting_type}<br />
+                  • <strong>Trạng thái:</strong> <span style={{ background: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontWeight: 'bold' }}>⏳ Đang chờ Cố vấn / Admin duyệt</span><br /><br />
+                  <small style={{ color: '#64748b' }}>*Hệ thống đã gửi lịch hẹn đến Bảng Quản trị Admin. Khi được duyệt, link phòng họp Google Meet / địa chỉ sẽ tự động hiển thị tại đây.</small>
+                </div>
+              )
+            })() : (
               <span>
                 Chưa có lịch hẹn nào được ghi nhận.<br />
                 Vui lòng điền thông tin và câu hỏi ở form bên cạnh để gửi yêu cầu.

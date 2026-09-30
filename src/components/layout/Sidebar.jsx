@@ -1,5 +1,5 @@
 import React from 'react'
-import { NavLink, Link } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
@@ -23,6 +23,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   
   // Quyền Admin: Kiểm tra whitelist email giáo viên hoặc role admin trong DB
   const isTeacherAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail))
+  const isInAdminView = location.pathname.startsWith('/admin')
 
   const studentLinks = [
     { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
@@ -39,20 +40,18 @@ const Sidebar = ({ isOpen, onClose }) => {
   ]
 
   const adminLinks = [
-    { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị Admin', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+    { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị ViSEF', icon: <Settings className="w-4 h-4 text-amber-400" /> },
     { to: '/admin/counseling', label: '📅 Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
   ]
 
   const getLinksByRole = () => {
-    // Nếu là Giáo viên / Admin: Hiển thị mục Quản trị và các tính năng Học sinh để Thầy Cô kiểm thử
-    if (isTeacherAdmin) {
-      return [
-        ...adminLinks,
-        ...studentLinks
-      ]
+    // 1. Khi đang ở Cổng Quản trị Admin: CHỈ hiển thị danh mục của Admin
+    if (isInAdminView) {
+      return adminLinks
     }
+    // 2. Khi là Chuyên viên tư vấn:
     if (userRole === 'counselor' || userRole === 'teacher') return counselorLinks
-    // Mặc định cho học sinh: chỉ hiển thị các bước học sinh
+    // 3. Mặc định ở Cổng Học sinh: CHỈ hiển thị đúng 7 bước học sinh (Tuyệt đối không lẫn mục Admin!)
     return studentLinks
   }
 
@@ -102,9 +101,20 @@ const Sidebar = ({ isOpen, onClose }) => {
               <p className="text-sm font-semibold text-white leading-none mb-1">
                 {profile?.full_name || 'Học sinh'}
               </p>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {isTeacherAdmin ? 'ADMIN' : userRole.toUpperCase()}
-              </span>
+              {isTeacherAdmin ? (
+                <Link
+                  to="/admin/dashboard"
+                  onClick={onClose}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 uppercase hover:bg-amber-900 transition-colors cursor-pointer"
+                  title="Tài khoản Quản trị viên (Bấm để vào Bảng Admin)"
+                >
+                  ADMIN ⚙️
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
+                  {userRole.toUpperCase()}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -124,16 +134,16 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ CHO GIÁO VIÊN / ADMIN */}
-        {isTeacherAdmin && (
+        {/* Nút chuyển đổi giao diện dành cho Thầy Cô - CHỈ HIỂN THỊ KHI ĐANG Ở GIAO DIỆN ADMIN */}
+        {isTeacherAdmin && isInAdminView && (
           <div className="p-3 border-t border-slate-800 bg-slate-950/60">
             <Link
-              to="/admin/dashboard"
+              to="/student/dashboard"
               onClick={onClose}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-amber-500 hover:bg-amber-600 text-slate-950 border border-amber-400 text-left group"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-sky-600 hover:bg-sky-500 text-white border border-sky-400 text-left group"
             >
-              <Settings className="w-4 h-4 text-slate-950 flex-shrink-0 group-hover:rotate-90 transition-transform" />
-              <span className="truncate">⚙️ Quản Lý & Báo Cáo Admin</span>
+              <GraduationCap className="w-4 h-4 text-white flex-shrink-0" />
+              <span className="truncate">🎓 Xem Cổng Học Sinh</span>
             </Link>
           </div>
         )}
