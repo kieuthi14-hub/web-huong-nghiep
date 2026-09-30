@@ -19,15 +19,21 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'AEI';
   const isBranchB = isUndecidedOrVague(targetMajor);
 
-  // 1.1. Nếu học sinh thắc mắc "Sao thầy hỏi lại?"
-  if (lowerMsg.includes('hỏi lại') || lowerMsg.includes('sao hỏi lại') || lowerMsg.includes('hỏi gì kỳ') || lowerMsg.includes('hỏi gì kì') || lowerMsg.includes('trùng câu hỏi') || lowerMsg.includes('vừa hỏi xong')) {
+  // 1.1. Nếu học sinh thắc mắc kỹ thuật / câu hỏi lặp lại / không hiểu câu hỏi
+  const isConfusion = [
+    'là sao', 'sao vậy', 'sao thế', 'sao the', 'ý thầy là sao', 'y thay la sao',
+    'em chưa hiểu', 'chưa hiểu', 'không hiểu', 'thầy nói gì', 'thầy nói thế là sao',
+    'hỏi lại', 'sao hỏi lại', 'hỏi gì kỳ', 'hỏi gì kì', 'trùng câu hỏi', 'vừa hỏi xong'
+  ].some(k => lowerMsg.includes(k));
+
+  if (isConfusion && lowerMsg.split(/\s+/).length <= 10) {
     return {
       advanceRound: false,
-      reply: `Thầy hiểu cảm xúc băn khoăn của em. Thầy hỏi lại không phải để làm khó hay kiểm tra trí nhớ của em, mà muốn hai thầy trò cùng soi chiếu vấn đề từ một góc nhìn sâu sắc hơn, giúp em nhận diện rõ động lực thực sự của mình trước khi ra quyết định quan trọng.\n\nEm hãy chia sẻ rõ hơn suy nghĩ của mình về câu hỏi ở trên nhé!`
+      reply: `Thầy hỏi để giúp em tự soi chiếu động lực và năng lực thực tế của mình trước khi ra quyết định quan trọng. Em hãy chia sẻ rõ hơn suy nghĩ của mình về câu hỏi của thầy ở trên nhé!`
     };
   }
 
-  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, TUYỆT ĐỐI KHÔNG lặp lại câu hỏi cũ, KHÔNG tăng vòng!
+  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, KHÔNG tăng vòng!
   const isPureGreeting = (() => {
     const gPatterns = [
       /^(chào|xin chào|chao|hello|hi|alo|hé lô)\b/i,
@@ -35,7 +41,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
       /^(dạ|da|vâng|dạ vâng|thưa thầy|thầy ơi|thay oi)$/i
     ];
     if (gPatterns.some(p => p.test(lowerMsg)) && lowerMsg.split(/\s+/).length <= 6) {
-      const substantiveWords = ['thích', 'vì', 'sư phạm', 'ngành', 'môn', 'tổ hợp', 'trường', 'đam mê', 'học', 'điểm', 'thi', 'xét', 'nghề', 'lương', 'việc'];
+      const substantiveWords = ['thích', 'vì', 'sư phạm', 'ngành', 'môn', 'tổ hợp', 'trường', 'đam mê', 'học', 'điểm', 'thi', 'xét', 'nghề', 'lương', 'việc', 'tiền', 'dạy thêm', 'sợ', 'dốt', 'kém', 'đều'];
       if (!substantiveWords.some(w => lowerMsg.includes(w))) {
         return true;
       }
@@ -46,7 +52,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   if (isPureGreeting) {
     return {
       advanceRound: false, // KHÔNG nhảy vòng
-      reply: `Chào em. Thầy trò mình cùng tập trung vào nội dung định hướng nhé. Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại!`
+      reply: `Chào em, thầy trò mình cùng bắt đầu nhé! Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại.`
     };
   }
 
@@ -69,8 +75,11 @@ export default function Step2SocraticAgent() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    const timer = setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [messages, isLoading, currentRound]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -188,15 +197,16 @@ BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ -
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
 - Học sinh vừa trả lời về tổ hợp môn: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
-* NẾU HỌC SINH GIẢI THÍCH CHƯA TÌM HIỂU VÌ CHƯA ĐỊNH HÌNH MÔN DẠY / CHƯA BIẾT DẠY MÔN GÌ:
-  BẮT BUỘC phải thấu cảm và khẳng định lý do của học sinh là hoàn toàn tự nhiên và hợp lý (chưa định hình môn dạy thì chưa thể biết tổ hợp môn). TUYỆT ĐỐI CẤM dùng từ "nghịch lý" hay phán xét! Gợi mở môn dạy sẽ xuất phát từ nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ).
-* NẾU HỌC SINH NÓI CHUNG CHUNG CHƯA TÌM HIỂU:
-  Đánh giá cao sự trung thực, nhắc nhở tích cực rằng để hiện thực hóa ước mơ thì tổ hợp môn là công cụ thiết yếu. TUYỆT ĐỐI KHÔNG dùng từ "nghịch lý".
-* Gợi mở nhóm năng lực trụ cột (Tự nhiên/Logic vs Xã hội/Ngôn ngữ), nhắc Bước 3 sẽ tự tra cứu đề án.
-* Đặt câu hỏi mở trung lập: "Nhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?"
-* NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN:
+* NẾU HỌC SINH NÓI CHƯA BIẾT / CHƯA TÌM HIỂU TỔ HỢP MÔN:
+  BẮT BUỘC thực hiện Kỹ thuật 3 Nhịp:
+  (1) Chỉ ra nghịch lý giữa ước vọng nghề nghiệp và việc chưa chuẩn bị công cụ xét tuyển;
+  (2) Cung cấp giàn giáo phân định 2 trục năng lực (Khoa học Tự nhiên/Logic vs Khoa học Xã hội/Ngôn ngữ);
+  (3) Thăm dò đối cực trung lập về môn sở trường và môn có khoảng cách năng lực cần nỗ lực nhất.
+* NẾU HỌC SINH NÓI "HỌC ĐỀU ĐỀU CÁC MÔN" / "BÌNH THƯỜNG / TÀN TÀN":
+  BẮT BUỘC chỉ ra mức độ cạnh tranh điểm chuẩn rất khắt khe (thường từ 24-27 điểm, tức 8-9 điểm/môn) và hỏi mở xem môn nào học sinh có khả năng bứt phá kéo điểm tổ hợp.
+* NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN CỤ THỂ:
   Hỏi đối chiếu điểm học lực thực tế: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
-Quy chuẩn: Dưới 120 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
+Quy chuẩn: Dưới 130 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
 
         case 4:
         default:
@@ -205,18 +215,18 @@ BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯ�
 - Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. BẮT BUỘC PHÂN TÍCH CHÍNH XÁC NGỮ NGHĨA MÔN HỌC SINH VỪA NÊU (ĐỌC KỸ TỪ "YẾU", "KÉM", "ĐUỐI", "SỢ" ĐỂ KHÔNG NHẦM VỚI MÔN GIỎI/TỐT/SỞ TRƯỜNG):
-   * NẾU HỌC SINH YẾU CẢ TOÁN VÀ VĂN:
-     Phải nhận diện ngay đây là thử thách rất lớn vì phần lớn các ngành Sư phạm tại ${uni} đều xét tuyển có môn Toán hoặc Văn (A00, B00, C00, D01) với điểm chuẩn cao (thường từ 24 - 27 điểm).
-     Định hướng 2 hướng thích ứng:
-     (1) Tận dụng các môn còn lại học tốt (như Tiếng Anh, Sử, Địa, hoặc Hóa, Sinh) để tìm các ngành Sư phạm có tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm KHTN/Sinh học).
-     (2) Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn Sư phạm, cân nhắc phân khúc hệ Cao đẳng Sư phạm hoặc Cao đẳng Giáo dục nghề nghiệp thực hành để vừa sức.
+2. BẮT BUỘC PHÂN TÍCH CHÍNH XÁC CẶP MÔN / TÌNH TRẠNG HỌC SINH VỪA NÊU Ở VÒNG 3:
+   * NẾU HỌC SINH YẾU CẢ TOÁN VÀ VĂN (HOẶC HỌC LỰC ĐỀU ĐỀU THẤP):
+     Phải nhận diện ngay đây là thử thách rất lớn vì phần lớn các ngành Sư phạm tại ${uni} đều xét tuyển có môn Toán hoặc Văn với điểm chuẩn cao (thường từ 24 - 27 điểm).
+     Đưa ra giải pháp thích ứng kép:
+     (1) Nỗ lực bứt phá các môn sở trường còn lại (Ngoại ngữ, KHTN, Sử, Địa) để kéo điểm tổ hợp;
+     (2) Cân nhắc phân khúc vừa sức như hệ Cao đẳng Sư phạm hoặc Cao đẳng Giáo dục nghề nghiệp thực hành để giảm áp lực điểm thi mà vẫn giữ trọn cơ hội làm nghề giáo dục.
    * NẾU HỌC SINH GIỎI TOÁN, YẾU VĂN: Định hướng Sư phạm Toán, Tin (khối A00, A01) để tận dụng Toán và tránh Văn.
    * NẾU HỌC SINH GIỎI VĂN, YẾU TOÁN: Định hướng Sư phạm Ngữ văn, Lịch sử, Tiểu học (khối C00, D01) để phát huy Văn và tránh Toán.
-   * NẾU HỌC SINH CÓ THẾ MẠNH MÔN KHÁC: Định hướng theo đúng môn thế mạnh đó.
+   * NẾU HỌC SINH CÓ THẾ MẠNH MÔN KHÁC (GDQP, KTPL): Định hướng theo đúng môn thế mạnh đó.
 3. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh chính thức và nhập bảng đối chứng!"
-Quy chuẩn: Dưới 140 từ. Ấm áp, trao quyền tự quyết.`;
+   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!"
+Quy chuẩn: Dưới 140 từ. Dứt khoát, trao quyền tự quyết.`;
       }
     } else {
       // ==========================================
@@ -343,6 +353,18 @@ Quy chuẩn: Dưới 120 từ.`;
               `Để giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
           }
 
+          const isEvenGrades = [
+            'đều đều', 'deu deu', 'học đều', 'hoc deu', 'các môn như nhau',
+            'ngang nhau', 'bình thường', 'trung bình', 'không có môn nào nổi',
+            'môn nào cũng vậy', 'như nhau'
+          ].some(k => lowerUser.includes(k));
+
+          if (isEvenGrades) {
+            return `Thầy ghi nhận sự thẳng thắn của em. Tuy nhiên, việc "học đều đều các môn" thường mang lại cảm giác an toàn ảo. Thực tế xét tuyển đại học vào các ngành hot của **${uni}** đòi hỏi điểm chuẩn rất cao (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm mỗi môn trong tổ hợp).\n\n` +
+              `Nếu em học đều nhưng không có môn nào bứt phá đạt ngưỡng 8.5 - 9.0 điểm, em sẽ rất khó cạnh tranh với các bạn có môn sở trường vượt trội.\n\n` +
+              `Trong các môn hiện tại, môn nào em cảm thấy có tiềm năng bứt phá điểm số cao nhất nếu được đầu tư ôn luyện nghiêm túc từ bây giờ?`;
+          }
+
           return `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${career}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\n` +
             `Quy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\n` +
             `Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`;
@@ -414,17 +436,25 @@ Quy chuẩn: Dưới 120 từ.`;
 
           if (litStrong && (mathWeak || !mathStrong)) {
             return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\n` +
+              `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
+              `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Văn và các môn xã hội/ngoại ngữ đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
+              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng Sư phạm thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề đứng lớp.\n\n` +
               `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
           }
 
           if (mathStrong && (litWeak || !litStrong)) {
             return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\n` +
+              `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
+              `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Toán và các môn tự nhiên đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
+              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề.\n\n` +
               `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
           }
 
           return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-            `Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.\n\n` +
-            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự mở tab tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+            `Dù theo đuổi ngành nào, em luôn có 2 hướng thích ứng rất rõ ràng:\n` +
+            `1. **Bứt phá điểm số**: Tập trung cao độ vào tổ hợp môn có thế mạnh để cạnh tranh vào hệ Đại học chính quy.\n` +
+            `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng nghề/thực hành (2.5 - 3 năm) để sớm gia nhập thị trường việc làm với tay nghề vững chắc.\n\n` +
+            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
         }
       }
     } else {
@@ -750,13 +780,20 @@ Quy chuẩn: Dưới 120 từ.`;
           // Tính toán Telemetry chuẩn ViSEF 2026:
           let tpDetected = false;
           let tpRound = 'Không';
-          updatedHistory.forEach((m, idx) => {
+          let userTurnCount = 0;
+
+          updatedHistory.forEach((m) => {
             if (m.role === 'user') {
+              userTurnCount++;
               const lower = m.text.toLowerCase();
-              if (lower.includes('chưa') || lower.includes('lo') || lower.includes('sợ') || lower.includes('áp lực') || lower.includes('không biết') || lower.includes('khó')) {
+              const isExtrinsic = ['bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình', 'tiền', 'thu nhập', 'dạy thêm', 'kiếm tiền', 'trào lưu', 'hot', 'ổn định', 'bắt ép'].some(k => lower.includes(k));
+              const isInsecureOrWeak = ['chưa', 'lo', 'sợ', 'áp lực', 'không biết', 'khó', 'đuối', 'kém', 'yếu', 'dốt', 'thấp', 'mất gốc', 'tệ', 'không giỏi', 'không chắc'].some(k => lower.includes(k));
+              const isComboIssue = ['chưa tìm hiểu', 'chưa biết tổ hợp', 'chưa định hình', 'đều đều', 'deu deu', 'trung bình', 'ngang nhau', 'bằng nhau', 'không có môn nổi trội'].some(k => lower.includes(k));
+
+              if (isExtrinsic || isInsecureOrWeak || isComboIssue) {
                 if (!tpDetected) {
                   tpDetected = true;
-                  tpRound = idx <= 3 ? 'Vòng 2' : 'Vòng 3';
+                  tpRound = `Vòng ${Math.min(userTurnCount, 4)}`;
                 }
               }
             }
@@ -768,13 +805,14 @@ Quy chuẩn: Dưới 120 từ.`;
             outcome = 'Segment_Shift';
           } else if (lastUserMsg.includes('chuyển') || lastUserMsg.includes('đổi ngành') || lastUserMsg.includes('ngành khác') || lastUserMsg.includes('phù hợp hơn')) {
             outcome = 'Field_Shift';
-          } else if (lastUserMsg.includes('mặc kệ') || lastUserMsg.includes('thích thì') || lastUserMsg.includes('kệ')) {
+          } else if (lastUserMsg.includes('mặc kệ') || lastUserMsg.includes('thích thì') || lastUserMsg.includes('kệ') || lastUserMsg.includes('bất chấp')) {
             outcome = 'Resistance';
           } else {
             outcome = 'Persistent_Calibrated';
           }
 
-          const triage = (outcome === 'Segment_Shift' || outcome === 'Field_Shift' || tpDetected) ? 'In-depth (20 phút)' : 'Fast-track (5 phút)';
+          // Bắt buộc phân luồng In-depth (20 phút) nếu có Turning Point, dịch chuyển phân khúc, hoặc bất kỳ khoảng cách năng lực nào
+          const triage = (tpDetected || outcome === 'Segment_Shift' || outcome === 'Field_Shift') ? 'In-depth (20 phút)' : 'Fast-track (5 phút)';
 
           const telemetryData = {
             turning_point_detected: tpDetected ? `True (${tpRound})` : 'False',
@@ -963,125 +1001,138 @@ Quy chuẩn: Dưới 120 từ.`;
           </div>
         )}
 
+        {/* THẺ CALLOUT KẾT THÚC VÒNG 4 NẰM TRONG LUỒNG CUỘN TỰ NHIÊN (KHÔNG CHE CHỮ) */}
+        {currentRound > maxRounds && (
+          <div 
+            className="no-print"
+            style={{
+              background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '22px 20px',
+              marginTop: '10px',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.12)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ fontSize: '24px', lineHeight: 1 }}>🎉</div>
+              <div>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
+                  ✓ Em đã hoàn thành 4 vòng phản tư nhận thức cùng Thầy Socrates. Hãy bước sang Bước 3 để tự tay đối chứng số liệu thực tế!
+                </h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.5' }}>
+                  Em có thể sao chép hoặc xuất biên bản đối thoại này để làm minh chứng cho buổi Tham vấn 1-1 ở Bước 4.
+                </p>
+              </div>
+            </div>
+
+            {sessionTelemetry && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', background: '#ffffff', padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1fae5' }}>
+                <span style={{ fontSize: '12px', background: '#dbeafe', color: '#1e40af', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  📌 Bước ngoặt (TP): {sessionTelemetry.turning_point_detected}
+                </span>
+                <span style={{ fontSize: '12px', background: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  🏷️ Kết quả: {sessionTelemetry.outcome_category}
+                </span>
+                <span style={{ fontSize: '12px', background: '#f3e8ff', color: '#6b21a8', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button 
+                type="button"
+                onClick={() => window.location.href = '/student/evidence-check'}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '13px 20px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
+                  textAlign: 'center'
+                }}
+              >
+                TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN ➔
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  style={{
+                    background: copySuccess ? '#059669' : '#ffffff',
+                    color: copySuccess ? '#ffffff' : '#065f46',
+                    border: '1px solid #a7f3d0',
+                    padding: '7px 13px',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {copySuccess ? '✅ Đã sao chép!' : '📋 Sao chép biên bản'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadTxt}
+                  style={{
+                    background: '#ffffff',
+                    color: '#065f46',
+                    border: '1px solid #a7f3d0',
+                    padding: '7px 13px',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📥 Tải file .TXT
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  style={{
+                    background: '#ffffff',
+                    color: '#065f46',
+                    border: '1px solid #a7f3d0',
+                    padding: '7px 13px',
+                    borderRadius: '6px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🖨️ Lưu file PDF
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleResetSession}
+                  style={{
+                    background: '#ffffff',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    padding: '7px 13px',
+                    borderRadius: '6px',
+                    fontWeight: '600',
+                    fontSize: '12.5px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔄 Bắt đầu lại
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
-
-      {/* KHỐI HOÀN THÀNH - CHUYỂN SANG BƯỚC 3 & CÁC NÚT XUẤT NỔI BẬT */}
-      {currentRound > maxRounds && (
-        <div style={{ padding: '16px 20px', background: '#ecfdf5', borderTop: '1px solid #a7f3d0' }} className="no-print">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-            <div>
-              <p style={{ margin: '0 0 4px 0', fontSize: '14.5px', color: '#065f46', fontWeight: 'bold' }}>
-                🎯 Em đã hoàn thành đủ 4 vòng phản tư nhận thức Socrates!
-              </p>
-              <p style={{ margin: 0, fontSize: '12.5px', color: '#047857' }}>
-                Em có thể sao chép hoặc xuất biên bản đối thoại này để làm minh chứng cho buổi Tham vấn 1-1 ở Bước 4.
-              </p>
-              {sessionTelemetry && (
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    📌 TP: {sessionTelemetry.turning_point_detected}
-                  </span>
-                  <span style={{ fontSize: '11px', background: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    🏷️ Kết quả: {sessionTelemetry.outcome_category}
-                  </span>
-                  <span style={{ fontSize: '11px', background: '#f3e8ff', color: '#6b21a8', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                    ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* CỤM NÚT XUẤT CUỐI VÒNG 4 */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={handleCopyText}
-                style={{
-                  background: copySuccess ? '#059669' : '#ffffff',
-                  color: copySuccess ? '#ffffff' : '#065f46',
-                  border: '1px solid #a7f3d0',
-                  padding: '7px 14px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                {copySuccess ? '✅ Đã sao chép!' : '📋 Sao chép biên bản'}
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadTxt}
-                style={{
-                  background: '#ffffff',
-                  color: '#065f46',
-                  border: '1px solid #a7f3d0',
-                  padding: '7px 14px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                📥 Tải file .TXT
-              </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                style={{
-                  background: '#ffffff',
-                  color: '#065f46',
-                  border: '1px solid #a7f3d0',
-                  padding: '7px 14px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
-              >
-                🖨️ Lưu file PDF
-              </button>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-            <button 
-              type="button"
-              onClick={handleResetSession}
-              style={{
-                background: '#ffffff',
-                color: '#1e293b',
-                border: '1px solid #cbd5e1',
-                padding: '10px 18px',
-                borderRadius: '6px',
-                fontWeight: 'bold',
-                fontSize: '13.5px',
-                cursor: 'pointer'
-              }}
-            >
-              🔄 Bắt đầu lại từ đầu
-            </button>
-            <button 
-              type="button"
-              onClick={() => window.location.href = '/student/evidence-check'}
-              style={{
-                background: '#059669',
-                color: '#fff',
-                border: 'none',
-                padding: '10px 24px',
-                borderRadius: '6px',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(5,150,105,0.2)'
-              }}
-            >
-              Chuyển Sang Bước 3: Đối Chứng Dữ Liệu Tuyển Sinh Thực Tế ➜
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Ô NHẬP LIỆU DUY NHẤT */}
       <div style={{ padding: '16px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0' }} className="no-print">
@@ -1091,21 +1142,23 @@ Quy chuẩn: Dưới 120 từ.`;
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             disabled={isLoading || currentRound > maxRounds}
-            placeholder={currentRound > maxRounds ? "Phiên phản tư đã kết thúc. Mời em sao chép/xuất biên bản hoặc chuyển sang Bước 3." : "Tự tay nhập câu trả lời phản biện của em..."}
+            placeholder={currentRound > maxRounds ? "Phiên phản tư Bước 2 đã hoàn tất." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
               border: '1.5px solid #cbd5e1',
               borderRadius: '8px',
               fontSize: '14px',
-              outline: 'none'
+              outline: 'none',
+              backgroundColor: currentRound > maxRounds ? '#f1f5f9' : '#ffffff',
+              cursor: currentRound > maxRounds ? 'not-allowed' : 'text'
             }}
           />
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim() || currentRound > maxRounds}
             style={{
-              background: '#10b981',
+              background: currentRound > maxRounds ? '#94a3b8' : '#10b981',
               color: '#ffffff',
               border: 'none',
               padding: '0 24px',
