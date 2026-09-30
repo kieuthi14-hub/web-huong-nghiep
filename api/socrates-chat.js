@@ -197,6 +197,7 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 - Kết thúc bằng ĐÚNG 01 câu hỏi phản tư duy nhất (ở Vòng 1, 2, 3), hoặc kết thúc bằng lời trao quyền chuyển bước dứt khoát (ở Vòng 4).
 - Phải kết thúc bằng dấu chấm câu hoàn chỉnh (. ! ?), tuyệt đối không ngắt quãng lửng lơ.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề, ghi chú hay phân tích kỹ thuật.
+- TUYỆT ĐỐI KHÔNG xuất các khối ghi chú suy nghĩ trong dấu ngoặc đơn hoặc dấu sao như *(...)* hay [Suy nghĩ:...]. Bắt đầu ngay bằng lời thoại của Thầy Socrates.
 `;
 
     // 6. Chuẩn bị nội dung gửi lên Gemini API
@@ -240,14 +241,13 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
         if (resText) {
           let cleaned = resText.trim()
             .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
-            .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ|BỐI CẢNH|NHIỆM VỤ).*?\]\s*/gi, '')
-            .replace(/^#+.*?\n/gi, '');
-          
-          const speakStart = cleaned.search(/(?:Chào em|Thầy|Mong muốn|Sự lo lắng|Gia đình|Nuôi dưỡng|Việc|Trong|Khi|Để|Nhìn)/i);
-          if (speakStart > 0 && speakStart < 150) {
-            cleaned = cleaned.slice(speakStart);
-          }
-          cleaned = cleaned.trim();
+            .replace(/^<thought>[\s\S]*?<\/thought>\s*/gi, '')
+            .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ|BỐI CẢNH|NHIỆM VỤ|SUY NGHĨ|THOUGHT).*?\]\s*/gi, '')
+            .replace(/^\*\(?[\s\S]*?\)?\*\s*/g, '')
+            .replace(/^\[[\s\S]*?\]\s*/g, '')
+            .replace(/^\([\s\S]*?\)\s*/g, '')
+            .replace(/^#+.*?\n/gi, '')
+            .trim();
 
           // Kiểm tra xem phản hồi có hoàn chỉnh và kết thúc bằng dấu chấm câu không
           if (isCompleteSentence(cleaned)) {
