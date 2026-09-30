@@ -21,9 +21,8 @@ const Sidebar = ({ isOpen, onClose }) => {
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
   
-  // Kiểm tra quyền Admin bảo mật: Admin, Email Whitelist hoặc cbas_admin_override
-  const overrideAdmin = typeof window !== 'undefined' && localStorage.getItem('cbas_admin_override') === 'true'
-  const isAdmin = overrideAdmin || userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail))
+  // Quyền Admin: Kiểm tra whitelist email giáo viên hoặc role admin trong DB
+  const isTeacherAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail))
 
   const studentLinks = [
     { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
@@ -40,13 +39,20 @@ const Sidebar = ({ isOpen, onClose }) => {
   ]
 
   const adminLinks = [
-    { to: '/admin/dashboard', label: 'Bảng Quản trị Admin', icon: <Settings className="w-4 h-4" /> },
-    { to: '/admin/counseling', label: 'Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4" /> },
+    { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị Admin', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+    { to: '/admin/counseling', label: '📅 Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
   ]
 
   const getLinksByRole = () => {
-    if (isAdmin) return adminLinks
+    // Nếu là Giáo viên / Admin: Hiển thị mục Quản trị và các tính năng Học sinh để Thầy Cô kiểm thử
+    if (isTeacherAdmin) {
+      return [
+        ...adminLinks,
+        ...studentLinks
+      ]
+    }
     if (userRole === 'counselor' || userRole === 'teacher') return counselorLinks
+    // Mặc định cho học sinh: chỉ hiển thị các bước học sinh
     return studentLinks
   }
 
@@ -97,7 +103,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {profile?.full_name || 'Học sinh'}
               </p>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                {isAdmin ? 'ADMIN' : userRole.toUpperCase()}
+                {isTeacherAdmin ? 'ADMIN' : userRole.toUpperCase()}
               </span>
             </div>
           </div>
@@ -118,8 +124,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ KHI VÀ CHỈ KHI LÀ ADMIN KHÔNG HARDCODE */}
-        {isAdmin && (
+        {/* Nút bấm Admin cố định nổi bật - CHỈ HIỂN THỊ CHO GIÁO VIÊN / ADMIN */}
+        {isTeacherAdmin && (
           <div className="p-3 border-t border-slate-800 bg-slate-950/60">
             <Link
               to="/admin/dashboard"

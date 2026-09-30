@@ -57,12 +57,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 }
 
 // Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
+// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
 const AdminProtectedRoute = ({ children }) => {
-  const { user, profile, loading, signOut } = useAuth()
+  const { user, profile, loading } = useAuth()
   const location = useLocation()
-  const [hasOverride, setHasOverride] = useState(() => {
-    return typeof window !== 'undefined' && localStorage.getItem('cbas_admin_override') === 'true'
-  })
+
+  // Dọn sạch cờ override cũ nếu có
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('cbas_admin_override')
+  }
 
   if (loading) {
     return (
@@ -84,74 +87,14 @@ const AdminProtectedRoute = ({ children }) => {
   }
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
-  const isWhitelisted = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com'
-  const isAdmin = hasOverride || userRole === 'admin' || isWhitelisted
+  const isTeacherAdmin = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com' || profile?.role === 'admin'
 
-  // Nếu là admin -> cho qua
-  if (isAdmin) {
-    return children
+  // 2. Nếu là Học sinh (hoặc tài khoản không phải Admin) truy cập vào link admin -> TỰ ĐỘNG CHUYỂN VỀ TRANG HỌC SINH
+  if (!isTeacherAdmin) {
+    return <Navigate to="/student/dashboard" replace />
   }
 
-  // Nếu chưa có quyền Admin -> Hiện màn hình xác thực thân thiện, có nút 1-click kích hoạt
-  return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans text-slate-100">
-      <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-5 text-center">
-        <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-3xl border border-amber-500/30">
-          👑
-        </div>
-        
-        <div>
-          <h2 className="text-xl font-bold text-white">Cổng Xác Thực Quản Trị Viên</h2>
-          <p className="text-xs text-slate-400 mt-1">Hệ Thống Hướng Nghiệp ViSEF / CBAS</p>
-        </div>
-
-        <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-700/60 text-left text-xs space-y-1.5">
-          <div className="flex justify-between">
-            <span className="text-slate-400">Email đang dùng:</span>
-            <span className="font-semibold text-amber-300 truncate max-w-[200px]">{userEmail || 'Chưa nhận diện'}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Vai trò trong DB:</span>
-            <span className="font-semibold text-slate-300 uppercase">{userRole}</span>
-          </div>
-        </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Tài khoản này hiện chưa được gán vai trò Quản trị viên tự động. Dành cho Ban giám khảo, Giáo viên hướng dẫn hoặc Nghiên cứu sinh cần xem toàn bộ dữ liệu quản trị:
-        </p>
-
-        <div className="space-y-2 pt-2">
-          <button
-            onClick={() => {
-              localStorage.setItem('cbas_admin_override', 'true')
-              setHasOverride(true)
-            }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-sm rounded-xl shadow-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>👑 Kích Hoạt Quyền Quản Trị (Admin Mode)</span>
-          </button>
-
-          <Link
-            to="/student/dashboard"
-            className="w-full block py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium text-xs rounded-xl transition-colors"
-          >
-            Quay lại Giao diện Học sinh
-          </Link>
-
-          <button
-            onClick={async () => {
-              await signOut()
-              window.location.href = '/login'
-            }}
-            className="text-xs text-slate-400 hover:text-rose-400 underline transition-colors pt-1 cursor-pointer"
-          >
-            Đăng xuất để đổi tài khoản khác
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+  return children
 }
 
 // Wrapper Layout cho các trang Dashboard
@@ -180,15 +123,15 @@ const HomeRedirect = () => {
   if (loading) return null
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const overrideAdmin = typeof window !== 'undefined' && localStorage.getItem('cbas_admin_override') === 'true'
-  const isWhitelistedAdmin = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com'
-  const role = (overrideAdmin || isWhitelistedAdmin) ? 'admin' : (profile?.role || user?.user_metadata?.role || 'student')
+  const isTeacherAdmin = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com' || profile?.role === 'admin'
 
-  if (role === 'admin' || overrideAdmin || isWhitelistedAdmin) {
+  // Chỉ Giáo viên / Admin mới tự động chuyển vào Admin Dashboard
+  if (isTeacherAdmin) {
     return <Navigate to="/admin/dashboard" replace />
-  } else if (role === 'counselor' || role === 'teacher') {
+  } else if (profile?.role === 'counselor' || profile?.role === 'teacher') {
     return <Navigate to="/counselor/dashboard" replace />
   } else {
+    // TẤT CẢ HỌC SINH MẶC ĐỊNH 100% VÀO TRANG HỌC SINH
     return <Navigate to="/student/dashboard" replace />
   }
 }

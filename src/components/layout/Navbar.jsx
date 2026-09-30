@@ -1,11 +1,12 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
 import { LogOut, User, Menu } from 'lucide-react'
 
 const Navbar = ({ onToggleSidebar }) => {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = async () => {
     const { error } = await signOut()
@@ -19,6 +20,10 @@ const Navbar = ({ onToggleSidebar }) => {
     counselor: 'Chuyên viên tư vấn',
     student: 'Học sinh'
   }
+
+  const userEmail = (profile?.email || '').toLowerCase().trim()
+  const isTeacherAdmin = profile?.role === 'admin' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail)) || userEmail === 'kieuthi14@gmail.com'
+  const isInAdminView = location.pathname.startsWith('/admin')
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6">
@@ -40,13 +45,26 @@ const Navbar = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-3">
         {profile && (
           <div className="flex items-center gap-3">
-            <Link
-              to="/admin/dashboard"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all border border-amber-400 cursor-pointer"
-              title="Vào Bảng Quản trị ViSEF"
-            >
-              <span>⚙️ Trang Admin</span>
-            </Link>
+            {/* Nút chuyển đổi giao diện linh hoạt CHỈ DÀNH CHO THẦY CÔ / ADMIN */}
+            {isTeacherAdmin && (
+              isInAdminView ? (
+                <Link
+                  to="/student/dashboard"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm transition-all border border-sky-400 cursor-pointer"
+                  title="Chuyển sang xem giao diện học sinh"
+                >
+                  <span>🎓 Sang Giao Diện Học Sinh</span>
+                </Link>
+              ) : (
+                <Link
+                  to="/admin/dashboard"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm transition-all border border-amber-400 cursor-pointer"
+                  title="Vào Bảng Quản trị ViSEF"
+                >
+                  <span>⚙️ Trang Quản Trị Admin</span>
+                </Link>
+              )
+            )}
             <div className="hidden sm:block text-right">
               <p className="text-sm font-semibold text-slate-800 leading-tight">
                 {profile.full_name || 'Học sinh'}
