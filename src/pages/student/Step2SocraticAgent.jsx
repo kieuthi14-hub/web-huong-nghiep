@@ -61,6 +61,71 @@ export function processStudentMessage(message, chatStage, studentProfile) {
   return { advanceRound: true };
 }
 
+export function isCounterArguing(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+  const counterPatterns = [
+    /(đâu|không|chẳng|chưa|làm gì)\s+(có\s+)?nghịch\s*(lý|lí)/i,
+    /nghịch\s*(lý|lí)\s+(gì|ở đâu|chỗ nào|đâu)/i,
+    /sao\s+(lại\s+)?(bảo|nói|cho là|bảo là)\s+(là\s+)?nghịch\s*(lý|lí)/i,
+    /(đâu có|làm gì có|không hề|đâu phải)\s+(nghịch|mâu thuẫn)/i,
+    /thầy\s+(nói|bảo|phán)\s+(thế|vậy|vậy là)\s+(không đúng|sai|chưa đúng|kỳ|lạ)/i,
+    /(em|mình)\s+đã\s+(nói|bảo|giải thích)\s+(rồi|là)/i,
+    /chưa\s+(chọn|biết|định hình)\s+(được\s+)?(môn|sẽ dạy)/i
+  ];
+  return counterPatterns.some(p => p.test(clean)) || 
+    (clean.includes('nghịch') && (clean.includes('đâu') || clean.includes('không') || clean.includes('gì') || clean.includes('sao') || clean.includes('chưa')));
+}
+
+export function hasDeclaredSubjectsOrGrades(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+
+  // 1. Toán
+  if (/(môn\s+)?toán/i.test(clean)) return true;
+
+  // 2. Văn / Ngữ văn
+  const cleanWithoutPhanVan = clean.replace(/phân vân|phan van|băn khoăn|ban khoan/g, ' ');
+  if (/(ngữ\s*văn|ngu\s*van|môn\s*văn|mon\s*van|học\s*văn|hoc\s*van|văn\s*(và|với|\+|lẫn)|yếu\s*văn|kém\s*văn|giỏi\s*văn|sợ\s*văn)/i.test(cleanWithoutPhanVan)) return true;
+  if (/\bvăn\b/i.test(cleanWithoutPhanVan) && (cleanWithoutPhanVan.includes('toán') || cleanWithoutPhanVan.includes('anh') || cleanWithoutPhanVan.includes('điểm') || cleanWithoutPhanVan.includes('môn') || cleanWithoutPhanVan.includes('học'))) return true;
+
+  // 3. Tiếng Anh / Ngoại ngữ
+  if (/(tiếng\s*anh|tieng\s*anh|ngoại\s*ngữ|ngoai\s*ngu|anh\s*văn|anh\s*van|\bmôn\s*anh\b|\bhọc\s*anh\b)/i.test(clean)) return true;
+
+  // 4. Vật lý / Lý
+  const cleanWithoutLyDo = clean.replace(/lý do|ly do|vô lý|vo ly|nghịch lý|nghich ly|nghịch lí|nghich li|hợp lý|hop ly|quản lý|quan ly|tâm lý|tam ly|xử lý|xu ly/g, ' ');
+  if (/(vật\s*lý|vat\s*ly|vật\s*lí|vat\s*li|môn\s*lý|môn\s*lí|\blý\b|\blí\b)/i.test(cleanWithoutLyDo)) return true;
+
+  // 5. Hóa học / Hóa
+  const cleanWithoutHoaRa = clean.replace(/hóa ra|hoa ra|chuyển hóa|chuyen hoa|thoái hóa|thoai hoa/g, ' ');
+  if (/(hóa\s*học|hoa\s*hoc|môn\s*hóa|mon\s*hoa)/i.test(cleanWithoutHoaRa)) return true;
+  if (/\bhóa\b/i.test(cleanWithoutHoaRa) && (cleanWithoutHoaRa.includes('toán') || cleanWithoutHoaRa.includes('lý') || cleanWithoutHoaRa.includes('sinh') || cleanWithoutHoaRa.includes('điểm') || cleanWithoutHoaRa.includes('môn') || cleanWithoutHoaRa.includes('học'))) return true;
+
+  // 6. Sinh học / Sinh
+  const cleanWithoutHocSinh = clean.replace(/học sinh|hoc sinh|sinh viên|sinh vien|phát sinh|phat sinh|nảy sinh|nay sinh|hy sinh|hi sinh/g, ' ');
+  if (/(sinh\s*học|sinh\s*hoc|môn\s*sinh|mon\s*sinh)/i.test(cleanWithoutHocSinh)) return true;
+
+  // 7. Lịch sử / Sử
+  const cleanWithoutSuDung = clean.replace(/sử dụng|su dung|đối xử|doi xu|xử sự|xu su/g, ' ');
+  if (/(lịch\s*sử|lich\s*su|môn\s*sử|mon\s*su|\bsử\b|\bsu\b)/i.test(cleanWithoutSuDung)) return true;
+
+  // 8. Địa lý / Địa
+  const cleanWithoutDiaDiem = clean.replace(/địa điểm|dia diem|địa phương|dia phuong|địa bàn|dia ban|địa chỉ|dia chi/g, ' ');
+  if (/(địa\s*lý|dia\s*ly|địa\s*lí|dia\s*li|môn\s*địa|mon\s*dia|\bđịa\b|\bdia\b)/i.test(cleanWithoutDiaDiem)) return true;
+
+  // 9. Tin học / GDCD / GDQP / KTPL / Công nghệ / KHTN / KHXH
+  if (/(tin\s*học|tin\s*hoc|gdcd|gdqp|ktpl|quốc\s*phòng|kinh\s*tế\s*pháp\s*luật|công\s*nghệ|khtn|khxh)/i.test(clean)) return true;
+
+  // 10. Tuyên bố học lực rõ ràng
+  const hasExplicitGradeDeclaration = [
+    'học đều', 'hoc deu', 'đều đều', 'deu deu', 'học tàn tàn', 'tàn tàn', 'tan tan',
+    'các môn như nhau', 'môn nào cũng như nhau', 'môn nào cũng vậy', 'môn nào cũng thế',
+    'mất gốc', 'mat goc', 'đuối tất cả', 'kém tất cả', 'yếu tất cả'
+  ].some(k => clean.includes(k));
+
+  return hasExplicitGradeDeclaration;
+}
+
 export default function Step2SocraticAgent() {
   const [chatStage, setChatStage] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -196,20 +261,26 @@ Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng, k
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT QUY TRÌNH PHẢN TƯ THÍCH ỨNG):
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
-- Học sinh vừa trả lời về tổ hợp môn: "${userText}".
+- Học sinh vừa phản hồi: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
+* NẾU HỌC SINH PHẢN BIỆN LẠI THẦY (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc giải thích lý do vì chưa định hình môn dạy):
+  - [CẤM TUYỆT ĐỐI]: AI TUYỆT ĐỐI KHÔNG ĐƯỢC tự ý phán đoán học sinh "học lực đều đều", KHÔNG ĐƯỢC khuyên học Cao đẳng, và TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc phiên chat tại đây!
+  - [NHIỆM VỤ 3 BƯỚC BẮT BUỘC]:
+    (1) Bước a: Công nhận tư duy thực tế và tinh thần phản biện thẳng thắn của học sinh (việc chưa chọn môn dạy thì chưa thể vội tra cứu tổ hợp là hoàn toàn tự nhiên).
+    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${uni} (24 - 27 điểm).
+    (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
 * NẾU HỌC SINH NÓI CHƯA BIẾT / CHƯA TÌM HIỂU TỔ HỢP MÔN:
   BẮT BUỘC thực hiện Kỹ thuật 3 Nhịp:
-  (1) Chỉ ra nghịch lý giữa ước vọng nghề nghiệp và việc chưa chuẩn bị công cụ xét tuyển;
-  (2) Cung cấp giàn giáo phân định 2 trục năng lực (Khoa học Tự nhiên/Logic vs Khoa học Xã hội/Ngôn ngữ);
-  (3) Thăm dò đối cực trung lập về môn sở trường và môn có khoảng cách năng lực cần nỗ lực nhất.
+  (1) Thấu cảm / gợi mở 2 trục năng lực (KHTN/Logic vs KHXH/Ngôn ngữ);
+  (2) Chỉ ra mức độ cạnh tranh điểm chuẩn 24-27 điểm khắt khe;
+  (3) KẾT THÚC BẰNG CÂU HỎI THĂM DÒ ĐỐI CỰC TRUNG LẬP: "Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?"
 * NẾU HỌC SINH NÓI "HỌC ĐỀU ĐỀU CÁC MÔN" / "BÌNH THƯỜNG / TÀN TÀN":
   BẮT BUỘC chỉ ra mức độ cạnh tranh điểm chuẩn rất khắt khe (thường từ 24-27 điểm, tức 8-9 điểm/môn) và hỏi mở xem môn nào học sinh có khả năng bứt phá kéo điểm tổ hợp.
 * NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN CỤ THỂ:
   Hỏi đối chiếu điểm học lực thực tế: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
-Quy chuẩn: Dưới 130 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
+Quy chuẩn: Dưới 130 từ. CẤM kết thúc chat khi học sinh chưa nêu rõ môn học!`;
 
         case 4:
         default:
@@ -344,6 +415,13 @@ Quy chuẩn: Dưới 120 từ.`;
 
         case 3: {
           const lowerUser = (userText || '').toLowerCase();
+
+          if (isCounterArguing(userText)) {
+            return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và tư duy thực tế của em. Đúng là khi chưa chọn được môn dạy cụ thể thì việc chưa thể tra cứu ngay tổ hợp xét tuyển là hoàn toàn tự nhiên.\n\n` +
+              `Tuy nhiên, mọi dự định về môn dạy hay nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đầu vào tại **${uni}** (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm/môn).\n\n` +
+              `Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+          }
+
           const isExplainingUndecided = [
             'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
             'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
@@ -376,6 +454,15 @@ Quy chuẩn: Dưới 120 từ.`;
         case 4:
         default: {
           const lowerUser = (userText || '').toLowerCase();
+
+          // Nếu học sinh phản biện hoặc CHƯA khai báo môn học cụ thể:
+          // TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc, không được tự ý phán đoán "đều đều" hay khuyên Cao đẳng!
+          if (!hasDeclaredSubjectsOrGrades(userText) || isCounterArguing(userText)) {
+            return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và góc nhìn thực tế của em. Đúng là khi chưa xác định cụ thể thì không nên vội vã đưa ra kết luận cảm tính.\n\n` +
+              `Tuy nhiên, mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại **${uni}** (thường từ 24 đến 27 điểm).\n\n` +
+              `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+          }
+
           const hasMath = lowerUser.includes('toán') || lowerUser.includes('toan');
           const hasLit = lowerUser.includes('văn') || lowerUser.includes('van');
 
@@ -510,6 +597,28 @@ Quy chuẩn: Dưới 120 từ.`;
       specialInstruction: specialInstruction
     };
 
+    const studentHasDeclaredSubjects = hasDeclaredSubjectsOrGrades(userText);
+    let targetNextStage = stage + 1;
+    let targetIsCompleted = false;
+
+    if (stage === 1) {
+      targetNextStage = 2;
+      targetIsCompleted = false;
+    } else if (stage === 2) {
+      targetNextStage = 3;
+      targetIsCompleted = false; // BẮT BUỘC: Khung chat phải giữ mở để học sinh trả lời ở Stage 3!
+    } else if (stage >= 3) {
+      if (!studentHasDeclaredSubjects) {
+        // Học sinh phản biện lại hoặc chưa nêu môn cụ thể: GIỮ NGUYÊN GIAI ĐOẠN 3, CHƯA ĐƯỢC KẾT THÚC!
+        targetNextStage = 3;
+        targetIsCompleted = false;
+      } else {
+        // Học sinh ĐÃ nêu rõ môn học: CHÍNH THỨC SANG GIAI ĐOẠN 4 VÀ HOÀN TẤT!
+        targetNextStage = 4;
+        targetIsCompleted = true;
+      }
+    }
+
     for (const ep of endpointsToTry) {
       try {
         const serverlessCtrl = new AbortController();
@@ -529,8 +638,8 @@ Quy chuẩn: Dưới 120 từ.`;
           if (replyText && replyText.trim().length >= 25) {
             return {
               replyText: replyText.trim(),
-              chatStage: sData?.chatStage || sData?.stage || (stage + 1),
-              isCompleted: sData?.isCompleted === true || (sData?.chatStage >= 4)
+              chatStage: sData?.chatStage || sData?.stage || targetNextStage,
+              isCompleted: sData?.isCompleted === true
             };
           }
         }
@@ -599,11 +708,10 @@ Quy chuẩn: Dưới 120 từ.`;
           }
         }
         if (text && text.trim().length >= 25) {
-          const nextStage = stage + 1;
           return {
             replyText: text.trim(),
-            chatStage: nextStage,
-            isCompleted: stage >= 3
+            chatStage: targetNextStage,
+            isCompleted: targetIsCompleted
           };
         }
       }
@@ -613,11 +721,10 @@ Quy chuẩn: Dưới 120 từ.`;
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
     const fallbackText = generateHeuristicFallback(stage, studentProfile, userText, specialInstruction);
-    const nextStage = stage + 1;
     return {
       replyText: fallbackText,
-      chatStage: nextStage,
-      isCompleted: stage >= 3
+      chatStage: targetNextStage,
+      isCompleted: targetIsCompleted
     };
   };
 

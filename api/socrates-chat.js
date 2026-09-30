@@ -67,6 +67,71 @@ function isCompleteSentence(text) {
   return terminalPunctuation.test(trimmed);
 }
 
+function isCounterArguing(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+  const counterPatterns = [
+    /(đâu|không|chẳng|chưa|làm gì)\s+(có\s+)?nghịch\s*(lý|lí)/i,
+    /nghịch\s*(lý|lí)\s+(gì|ở đâu|chỗ nào|đâu)/i,
+    /sao\s+(lại\s+)?(bảo|nói|cho là|bảo là)\s+(là\s+)?nghịch\s*(lý|lí)/i,
+    /(đâu có|làm gì có|không hề|đâu phải)\s+(nghịch|mâu thuẫn)/i,
+    /thầy\s+(nói|bảo|phán)\s+(thế|vậy|vậy là)\s+(không đúng|sai|chưa đúng|kỳ|lạ)/i,
+    /(em|mình)\s+đã\s+(nói|bảo|giải thích)\s+(rồi|là)/i,
+    /chưa\s+(chọn|biết|định hình)\s+(được\s+)?(môn|sẽ dạy)/i
+  ];
+  return counterPatterns.some(p => p.test(clean)) || 
+    (clean.includes('nghịch') && (clean.includes('đâu') || clean.includes('không') || clean.includes('gì') || clean.includes('sao') || clean.includes('chưa')));
+}
+
+function hasDeclaredSubjectsOrGrades(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+
+  // 1. Toán
+  if (/(môn\s+)?toán/i.test(clean)) return true;
+
+  // 2. Văn / Ngữ văn
+  const cleanWithoutPhanVan = clean.replace(/phân vân|phan van|băn khoăn|ban khoan/g, ' ');
+  if (/(ngữ\s*văn|ngu\s*van|môn\s*văn|mon\s*van|học\s*văn|hoc\s*van|văn\s*(và|với|\+|lẫn)|yếu\s*văn|kém\s*văn|giỏi\s*văn|sợ\s*văn)/i.test(cleanWithoutPhanVan)) return true;
+  if (/\bvăn\b/i.test(cleanWithoutPhanVan) && (cleanWithoutPhanVan.includes('toán') || cleanWithoutPhanVan.includes('anh') || cleanWithoutPhanVan.includes('điểm') || cleanWithoutPhanVan.includes('môn') || cleanWithoutPhanVan.includes('học'))) return true;
+
+  // 3. Tiếng Anh / Ngoại ngữ
+  if (/(tiếng\s*anh|tieng\s*anh|ngoại\s*ngữ|ngoai\s*ngu|anh\s*văn|anh\s*van|\bmôn\s*anh\b|\bhọc\s*anh\b)/i.test(clean)) return true;
+
+  // 4. Vật lý / Lý
+  const cleanWithoutLyDo = clean.replace(/lý do|ly do|vô lý|vo ly|nghịch lý|nghich ly|nghịch lí|nghich li|hợp lý|hop ly|quản lý|quan ly|tâm lý|tam ly|xử lý|xu ly/g, ' ');
+  if (/(vật\s*lý|vat\s*ly|vật\s*lí|vat\s*li|môn\s*lý|môn\s*lí|\blý\b|\blí\b)/i.test(cleanWithoutLyDo)) return true;
+
+  // 5. Hóa học / Hóa
+  const cleanWithoutHoaRa = clean.replace(/hóa ra|hoa ra|chuyển hóa|chuyen hoa|thoái hóa|thoai hoa/g, ' ');
+  if (/(hóa\s*học|hoa\s*hoc|môn\s*hóa|mon\s*hoa)/i.test(cleanWithoutHoaRa)) return true;
+  if (/\bhóa\b/i.test(cleanWithoutHoaRa) && (cleanWithoutHoaRa.includes('toán') || cleanWithoutHoaRa.includes('lý') || cleanWithoutHoaRa.includes('sinh') || cleanWithoutHoaRa.includes('điểm') || cleanWithoutHoaRa.includes('môn') || cleanWithoutHoaRa.includes('học'))) return true;
+
+  // 6. Sinh học / Sinh
+  const cleanWithoutHocSinh = clean.replace(/học sinh|hoc sinh|sinh viên|sinh vien|phát sinh|phat sinh|nảy sinh|nay sinh|hy sinh|hi sinh/g, ' ');
+  if (/(sinh\s*học|sinh\s*hoc|môn\s*sinh|mon\s*sinh)/i.test(cleanWithoutHocSinh)) return true;
+
+  // 7. Lịch sử / Sử
+  const cleanWithoutSuDung = clean.replace(/sử dụng|su dung|đối xử|doi xu|xử sự|xu su/g, ' ');
+  if (/(lịch\s*sử|lich\s*su|môn\s*sử|mon\s*su|\bsử\b|\bsu\b)/i.test(cleanWithoutSuDung)) return true;
+
+  // 8. Địa lý / Địa
+  const cleanWithoutDiaDiem = clean.replace(/địa điểm|dia diem|địa phương|dia phuong|địa bàn|dia ban|địa chỉ|dia chi/g, ' ');
+  if (/(địa\s*lý|dia\s*ly|địa\s*lí|dia\s*li|môn\s*địa|mon\s*dia|\bđịa\b|\bdia\b)/i.test(cleanWithoutDiaDiem)) return true;
+
+  // 9. Tin học / GDCD / GDQP / KTPL / Công nghệ / KHTN / KHXH
+  if (/(tin\s*học|tin\s*hoc|gdcd|gdqp|ktpl|quốc\s*phòng|kinh\s*tế\s*pháp\s*luật|công\s*nghệ|khtn|khxh)/i.test(clean)) return true;
+
+  // 10. Tuyên bố học lực rõ ràng
+  const hasExplicitGradeDeclaration = [
+    'học đều', 'hoc deu', 'đều đều', 'deu deu', 'học tàn tàn', 'tàn tàn', 'tan tan',
+    'các môn như nhau', 'môn nào cũng như nhau', 'môn nào cũng vậy', 'môn nào cũng thế',
+    'mất gốc', 'mat goc', 'đuối tất cả', 'kém tất cả', 'yếu tất cả'
+  ].some(k => clean.includes(k));
+
+  return hasExplicitGradeDeclaration;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -141,6 +206,10 @@ export default async function handler(req, res) {
       incomingStage = Math.min(substantiveUserMsgs.length + 1, 3);
     }
 
+    // Kiểm tra xem học sinh đã khai báo môn học hoặc học lực cụ thể chưa:
+    const studentHasDeclaredSubjects = hasDeclaredSubjectsOrGrades(trimmedMsg);
+    const studentIsCounterArguing = isCounterArguing(trimmedMsg);
+
     // Xác định giai đoạn mục tiêu và kiểm soát cờ hiệu isCompleted:
     let targetNextStage = incomingStage + 1;
     let isCompleted = false;
@@ -152,8 +221,15 @@ export default async function handler(req, res) {
       targetNextStage = 3;
       isCompleted = false; // BẮT BUỘC: Khung chat phải giữ mở để học sinh trả lời ở Stage 3!
     } else if (incomingStage >= 3) {
-      targetNextStage = 4;
-      isCompleted = true; // CHỈ KHI tổng kết Stage 4 mới hoàn tất phiên phản tư!
+      if (!studentHasDeclaredSubjects) {
+        // Học sinh phản biện lại hoặc chưa nêu môn cụ thể: GIỮ NGUYÊN GIAI ĐOẠN 3, CHƯA ĐƯỢC KẾT THÚC!
+        targetNextStage = 3;
+        isCompleted = false;
+      } else {
+        // Học sinh ĐÃ nêu rõ môn học: CHÍNH THỨC SANG GIAI ĐOẠN 4 VÀ HOÀN TẤT!
+        targetNextStage = 4;
+        isCompleted = true;
+      }
     }
 
     const targetCareer = studentProfile?.targetCareer || studentProfile?.target_career || studentProfile?.targetMajor || "Sư phạm";
@@ -211,22 +287,35 @@ Hệ thống ĐANG Ở GIAI ĐOẠN ${incomingStage}. Bạn PHẢI tuân thủ n
   - TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây!
 
 * NẾU ĐANG Ở GIAI ĐOẠN 2 (Tổ hợp môn xét tuyển):
-  Học sinh vừa phản hồi về tình hình tìm hiểu tổ hợp môn (thường nói: "chưa biết", "chưa tìm hiểu", "chưa định hình môn dạy", hoặc "học đều đều").
-  - Nhiệm vụ: BẮT BUỘC KÍCH HOẠT KỸ THUẬT 3 NHỊP:
-    (1) Thấu cảm / chỉ ra nghịch lý giữa ước mơ và việc chưa chuẩn bị công cụ xét tuyển;
-    (2) Cung cấp giàn giáo phân định 2 trục năng lực (KHTN/Logic vs KHXH/Ngôn ngữ);
+  Học sinh vừa phản hồi về tình hình tìm hiểu tổ hợp môn.
+  - NẾU HỌC SINH PHẢN BIỆN LẠI THẦY (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc giải thích lý do vì chưa định hình môn dạy):
+    (1) Bước a: Công nhận tư duy phản biện thẳng thắn và góc nhìn thực tế của học sinh (việc chưa chọn môn dạy thì chưa thể vội tra cứu tổ hợp là hoàn toàn tự nhiên).
+    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được điểm chuẩn đại học tại ${targetSchool} (thường từ 24 đến 27 điểm).
+    (3) Bước c: BẮT BUỘC hỏi dứt khoát: "Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
+  - NẾU HỌC SINH TRẢ LỜI BÌNH THƯỜNG (thường nói: "chưa biết", "chưa tìm hiểu", "chưa định hình môn dạy", hoặc "học đều đều"):
+    BẮT BUỘC KÍCH HOẠT KỸ THUẬT 3 NHỊP:
+    (1) Thấu cảm / gợi mở 2 trục năng lực (KHTN/Logic vs KHXH/Ngôn ngữ);
+    (2) Chỉ ra mức độ cạnh tranh điểm chuẩn 24-27 điểm khắt khe;
     (3) KẾT THÚC BẰNG CÂU HỎI THĂM DÒ ĐỐI CỰC TRUNG LẬP: "Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?"
-    (Nếu học sinh nói "học đều đều": Chỉ ra điểm chuẩn 24-27 điểm khắt khe và hỏi môn có thể bứt phá kéo điểm).
   - [CẢNH BÁO TỐI CAO]: CẤM TUYỆT ĐỐI không được kết thúc hay ra lệnh chuyển Bước 3 ở Giai đoạn này! Khung chat bắt buộc phải giữ mở để học sinh trả lời về môn học ở Giai đoạn 3!
 
-* NẾU ĐANG Ở GIAI ĐOẠN 3 (Đối chất Học lực thực tế & Ra Lời kết Giai đoạn 4):
-  Học sinh vừa trả lời về môn học sở trường và môn học còn yếu (hoặc điểm số học lực).
+* NẾU ĐANG Ở GIAI ĐOẠN 3 (Đối chất Học lực thực tế):
+${!studentHasDeclaredSubjects ? `
+  [TÌNH HUỐNG HIỆN TẠI]: Học sinh CHƯA NÊU RÕ MÔN HỌC THẾ MẠNH / MÔN YẾU, hoặc đang phản biện lại Thầy (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc giải thích lại):
+  - [CẤM TUYỆT ĐỐI]: AI TUYỆT ĐỐI KHÔNG ĐƯỢC tự ý phán đoán học sinh "học lực đều đều", KHÔNG ĐƯỢC khuyên học Cao đẳng, và TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc phiên chat tại đây!
+  - [NHIỆM VỤ 3 BƯỚC BẮT BUỘC]:
+    (1) Bước a: Công nhận tư duy thực tế và tinh thần phản biện thẳng thắn của học sinh.
+    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${targetSchool} (24 - 27 điểm).
+    (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
+` : `
+  [TÌNH HUỐNG HIỆN TẠI]: Học sinh ĐÃ NÊU RÕ CÁC MÔN HỌC THẾ MẠNH / MÔN YẾU (hoặc xác nhận học lực thực tế): "${trimmedMsg}".
   - Nhiệm vụ: THỰC HIỆN TOÀN BỘ LỜI TỔNG KẾT VÒNG 4:
     1. Phân tích chính xác cặp môn / học lực học sinh vừa nêu (Ví dụ: yếu cả Toán và Văn; giỏi Toán yếu Văn; giỏi Văn yếu Toán; học đều đều).
     2. Đưa ra Giải pháp Thích ứng Kép: (1) Bứt phá điểm số ở môn thế mạnh HOẶC (2) Cân nhắc hệ Cao đẳng Sư phạm / Cao đẳng thực hành vừa sức hơn (2.5 - 3 năm) để sớm có tay nghề và giảm áp lực điểm thi.
     3. RA MỆNH LỆNH CHUYỂN BƯỚC DỨT KHOÁT:
        "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!"
   - [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC HỎI THÊM BẤT KỲ CÂU NÀO NỮA!
+`}
 
 [RÀO CẢN CHỐNG LẶP LẠI TUYỆT ĐỐI]:
 ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất của bạn:\n${pastModelUtterances}\nBẠN TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại các cấu trúc câu, từ ngữ chào đón hoặc câu hỏi đã xuất hiện ở trên!` : ''}
@@ -239,13 +328,17 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 - TUYỆT ĐỐI KHÔNG xuất các khối ghi chú suy nghĩ trong dấu ngoặc đơn hoặc dấu sao như *(...)* hay [Suy nghĩ:...]. Bắt đầu ngay bằng lời thoại của Thầy Socrates.
 `;
 
-    // 6. Chuẩn bị nội dung gửi lên Gemini API
-    const contents = validHistory
+    // 6. Chuẩn bị nội dung gửi lên Gemini API (đảm bảo tin nhắn đầu tiên phải có role là 'user')
+    let contents = validHistory
       .filter(msg => msg && msg.text && typeof msg.text === 'string')
       .map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }]
       }));
+
+    while (contents.length > 0 && contents[0].role === 'model') {
+      contents.shift();
+    }
     
     contents.push({
       role: 'user',
@@ -256,11 +349,11 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 
     // 7. Cấu hình mô hình hoạt động ổn định với Token và Tham số chuẩn ViSEF 2026
     const candidateModelNames = [
-      'gemini-3.5-flash',
-      'gemini-3.8-flash',
       'gemini-3.5-flash-lite',
-      'gemini-flash-latest',
-      'gemini-2.5-flash-lite'
+      'gemini-flash-lite-latest',
+      'gemini-3.5-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-flash-latest'
     ];
 
     for (const modelName of candidateModelNames) {
@@ -275,7 +368,16 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
           }
         });
 
-        const result = await model.generateContent({ contents });
+        // Bảo hiểm timeout 6 giây mỗi model để không bao giờ bị nghẽn
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Model generation timeout')), 6000)
+        );
+
+        const result = await Promise.race([
+          model.generateContent({ contents }),
+          timeoutPromise
+        ]);
+
         let resText = result?.response?.text();
         if (resText) {
           let cleaned = resText.trim()
@@ -306,7 +408,9 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
         targetCareer,
         targetSchool,
         trimmedMsg,
-        lowerTrimmed
+        lowerTrimmed,
+        studentHasDeclaredSubjects,
+        studentIsCounterArguing
       });
     }
 
@@ -327,7 +431,7 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 }
 
 // Hàm Fallback Nhận thức Linh hoạt (Dự phòng khẩn cấp chuẩn ViSEF 2026 - 100% Trọn vẹn)
-function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, trimmedMsg, lowerTrimmed }) {
+function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, trimmedMsg, lowerTrimmed, studentHasDeclaredSubjects, studentIsCounterArguing }) {
   // 1. Phản xạ tâm lý bất ngờ: Thực dụng / nói về tiền / dạy thêm
   const isPragmaticMoney = [
     'nhiều tiền', 'dạy thêm', 'lương', 'thu nhập', 'kiếm tiền', 'kiếm dc nhiều', 'giàu', 'kinh tế'
@@ -358,7 +462,14 @@ function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, 
     return `Trong 5-10 năm tới, AI, công nghệ giáo dục (EdTech) và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường lao động. Người làm nghề **${targetCareer}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao cho học sinh.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
   }
 
+  const isCounter = studentIsCounterArguing || isCounterArguing(trimmedMsg);
+  const hasDeclared = studentHasDeclaredSubjects !== undefined ? studentHasDeclaredSubjects : hasDeclaredSubjectsOrGrades(trimmedMsg);
+
   if (incomingStage === 2) {
+    if (isCounter) {
+      return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và tư duy thực tế của em. Đúng là khi chưa chọn được môn dạy cụ thể thì việc chưa thể tra cứu ngay tổ hợp xét tuyển là hoàn toàn tự nhiên.\n\nTuy nhiên, mọi dự định về môn dạy hay nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đầu vào tại **${targetSchool}** (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm/môn).\n\nĐâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+    }
+
     const isEvenGrades = ['đều đều', 'deu deu', 'học đều', 'hoc deu', 'tàn tàn', 'tan tan', 'bình thường', 'binh thuong', 'như nhau', 'ngang nhau'].some(k => lowerTrimmed.includes(k));
     if (isEvenGrades) {
       return `Thầy ghi nhận sự nhìn nhận khách quan của em về học lực. Tuy nhiên, điểm chuẩn trúng tuyển vào các ngành Sư phạm tại **${targetSchool}** luôn có tính cạnh tranh rất cao, thường dao động từ 24 đến 27 điểm (tức trung bình mỗi môn trong tổ hợp phải đạt từ 8 đến 9 điểm trở lên).\n\nNếu tất cả các môn chỉ dừng ở mức đều đều, em sẽ gặp rất nhiều rủi ro. Nhìn nhận lại quá trình học tập, đâu là môn học em cảm thấy bản thân có nhiều khả năng bứt phá nhất để trở thành môn kéo điểm cho cả tổ hợp?`;
@@ -367,7 +478,14 @@ function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, 
     return `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\nThực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\nĐể giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
   }
 
-  // incomingStage >= 3 -> Stage 4 Tổng kết & Lệnh chuyển Bước 3:
+  // incomingStage >= 3:
+  // Nếu học sinh phản biện hoặc CHƯA khai báo môn học cụ thể:
+  // TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc, không được tự ý phán đoán "đều đều" hay khuyên Cao đẳng!
+  if (!hasDeclared || isCounter) {
+    return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và góc nhìn thực tế của em. Đúng là khi chưa xác định cụ thể thì không nên vội vã đưa ra kết luận cảm tính.\n\nTuy nhiên, mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại **${targetSchool}** (thường từ 24 đến 27 điểm).\n\nĐể giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+  }
+
+  // CHỈ KHI học sinh ĐÃ nêu rõ môn học: AI mới đưa ra giải pháp thích ứng ở Giai đoạn 4 và ra lệnh chuyển sang Bước 3!
   const hasMath = lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan');
   const hasLit = lowerTrimmed.includes('văn') || lowerTrimmed.includes('van');
   const isWeakBoth = (hasMath && hasLit && (lowerTrimmed.includes('yếu') || lowerTrimmed.includes('kém') || lowerTrimmed.includes('sợ'))) ||
