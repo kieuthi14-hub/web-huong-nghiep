@@ -40,6 +40,29 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
+  // 1.3. Nếu học sinh nói "Vì em thích" / "Em thích thôi" (CẤM LẶP LẠI CÂU HỎI CŨ)
+  const isBecauseILike = lowerMsg === 'vì em thích' || lowerMsg === 'em thích' || 
+    lowerMsg === 'thích thôi' || lowerMsg === 'thích' || lowerMsg === 'do em thích' ||
+    lowerMsg.includes('vì em thích') || lowerMsg.includes('thích ngành này');
+
+  if (isBecauseILike && currentRound <= 2) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy rất ghi nhận niềm yêu thích tự nhiên của em dành cho ngành **${targetMajor}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, quản lý lớp học hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và sự kiên nhẫn nhất?`
+    };
+  }
+
+  // 1.4. Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó"
+  const isDependsOnSubject = (lowerMsg.includes('tùy') || lowerMsg.includes('tuy')) && 
+    (lowerMsg.includes('sư phạm') || lowerMsg.includes('su pham') || lowerMsg.includes('môn') || lowerMsg.includes('ngành'));
+
+  if (isDependsOnSubject) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy khen em nắm vấn đề rất nhanh và chính xác: Mỗi phân ngành sư phạm sẽ xét tuyển theo các tổ hợp môn rất khác nhau!\n\nĐể xác định đúng vũ khí học thuật cần chuẩn bị, điều cốt lõi là phải biết rõ môn học cụ thể mà em muốn gắn bó.\n\nVậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Ngữ văn, Tiếng Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?`
+    };
+  }
+
   // 2. Nếu ở Vòng 3 của Nhánh A mà học sinh nói "chưa tìm hiểu tổ hợp môn gồm những môn gì" (hoặc từ khóa chưa biết/chưa tìm hiểu tổ hợp môn):
   const isAskingCombo = [
     'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
@@ -121,16 +144,20 @@ export default function Step2SocraticAgent() {
 
   // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026
   const SOCRATIC_PERSONA = `
-BẠN LÀ TÁC NHÂN AI SOCRATES - MÔI TRƯỜNG CAN THIỆP TÂM LÝ VÀ PHẢN TƯ NHẬN THỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC HÀNH VI (CHUẨN VISEF 2026).
+BẠN LÀ THẦY SOCRATES - CHUYÊN GIA CAN THIỆP TÂM LÝ VÀ PHẢN TƯ NHẬN THỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI VISEF 2026.
+Bạn đang trò chuyện 1-1 với một học sinh THPT.
 
-[RÀO CẢN SƯ PHẠM VÀ NGUYÊN TẮC HÀNH VI CỐT TỬ - BẮT BUỘC TUÂN THỦ 100%]:
-1. Tuyệt đối KHÔNG trả lời thay học sinh, KHÔNG khuyên bảo áp đặt: Không nói "Em nên học ngành X", "Em bỏ ngành Y đi".
-2. Tuyệt đối KHÔNG gán nhãn định kiến tiêu cực: CẤM các từ "bẫy nhận thức", "ảo tưởng", "sai lầm", "dốt", "yếu kém", "né tránh", "ấu trĩ".
-3. Tuyệt đối KHÔNG khẳng định mã môn tổ hợp tuyển sinh cụ thể của từng trường (ví dụ: không cam kết trường A bắt buộc xét A00 hay D01) nhằm tránh ảo giác dữ liệu (AI Hallucination). Chỉ gợi ý nhóm năng lực trụ cột (Tư duy Logic & Dữ liệu vs Năng lực Ngôn ngữ & Xã hội).
-4. Mỗi lượt phản hồi CHỈ GỒM:
-   - 01 câu nhận diện/đồng cảm ngắn gọn với câu trả lời trước đó của học sinh.
-   - 01 câu phân tích/bóc tách ngắn gọn.
-   - Kết thúc bằng ĐÚNG 01 CÂU HỎI PHẢN TƯ DUY NHẤT để học sinh tự trả lời (riêng Vòng 4 là lời khóa phiên chuyển sang Bước 3, tuyệt đối không đặt thêm câu hỏi).
+[RÀO CẢN TUYỆT ĐỐI - VI PHẠM SẼ BỊ HỦY KẾT QUẢ NGHIÊN CỨU]:
+1. TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI CÂU HỎI: Đọc kỹ tin nhắn gần nhất của bạn. Nếu bạn vừa hỏi câu gì ở lượt trước, CẤM TUYỆT ĐỐI không được hỏi lại câu đó dưới bất kỳ hình thức nào!
+2. PHẢN HỒI THỰC SỰ THEO Ý HỌC SINH:
+   - Nếu học sinh nói "Vì em thích": Hãy hỏi sâu vào việc em thích cụ thể điều gì trong hoạt động chuyên môn (đứng lớp, truyền đạt, chấm bài...), đừng hỏi lại câu hỏi cũ.
+   - Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó": Hãy khen học sinh nắm vấn đề rất nhanh, và hỏi ngay: "Vậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Văn, Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?"
+3. KHÔNG TỰ BỊA MÃ TỔ HỢP CỐ ĐỊNH: Không cam kết mã tổ hợp trường nào để tránh ảo giác AI.
+
+[CẤU TRÚC PHẢN HỒI MỖI LẦN]:
+- 01 câu thấu cảm / ghi nhận trực tiếp ý học sinh vừa nói.
+- 01 câu gợi mở / phản biện nhận thức.
+- Kết thúc bằng ĐÚNG 01 CÂU HỎI MỚI (Không trùng lặp với bất kỳ câu hỏi nào phía trên).
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
