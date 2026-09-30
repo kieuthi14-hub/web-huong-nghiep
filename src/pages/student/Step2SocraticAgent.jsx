@@ -1014,13 +1014,15 @@ Quy chuẩn: Dưới 120 từ.`;
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569' }}>
-            Tiến trình: <span style={{ color: '#2563eb' }}>{Math.min(chatStage, maxStages)}</span> / {maxStages} giai đoạn
-            {isCompleted && (
+          <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+            <span>Tiến trình:</span>
+            <span style={{ color: '#2563eb' }}>{Math.min(chatStage, maxStages)}</span>
+            <span>/ {maxStages} giai đoạn</span>
+            {isCompleted ? (
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
                 ✓ Đã hoàn thành 4 giai đoạn phản tư
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* CỤM NÚT SAO CHÉP, XUẤT FILE & BẮT ĐẦU LẠI */}
@@ -1118,7 +1120,7 @@ Quy chuẩn: Dưới 120 từ.`;
           const isLastAi = m.role === 'model' && !messages.slice(i + 1).some(msg => msg.role === 'model');
           return (
             <div 
-              key={i} 
+              key={`msg-${i}`} 
               ref={isLastAi ? lastAiMsgRef : null}
               style={{ 
                 display: 'flex', 
@@ -1137,29 +1139,29 @@ Quy chuẩn: Dưới 120 từ.`;
                 lineHeight: '1.6',
                 whiteSpace: 'pre-wrap'
               }}>
-                {m.text}
+                <div>{m.text}</div>
                 <div style={{ fontSize: '11px', marginTop: '6px', textAlign: 'right', opacity: 0.7 }}>{m.time}</div>
               </div>
             </div>
           );
         })}
 
-        {isLoading && (
+        {isLoading ? (
           <div style={{ display: 'flex', justifyContent: 'flex-start' }} className="no-print">
             <div style={{ background: '#fff', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#64748b' }}>
               🤖 Thầy Socrates đang phản biện luận điểm của em...
             </div>
           </div>
-        )}
+        ) : null}
 
-        {errorMessage && (
+        {errorMessage ? (
           <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }} className="no-print">
             {errorMessage}
           </div>
-        )}
+        ) : null}
 
         {/* THÔNG BÁO HOÀN THÀNH GIAI ĐOẠN 4 GỌN GÀNG (KHÔNG LẤN CHIẾM NỘI DUNG AI) */}
-        {isCompleted && (
+        {isCompleted ? (
           <div 
             className="no-print"
             style={{
@@ -1183,7 +1185,7 @@ Quy chuẩn: Dưới 120 từ.`;
               </div>
             </div>
 
-            {sessionTelemetry && (
+            {sessionTelemetry ? (
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #a7f3d0' }}>
                 <span style={{ fontSize: '11.5px', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
                   📌 Bước ngoặt (TP): {sessionTelemetry.turning_point_detected}
@@ -1195,95 +1197,98 @@ Quy chuẩn: Dưới 120 từ.`;
                   ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
         <div ref={messagesEndRef} />
       </div>
 
       {/* THANH ĐIỀU HƯỚNG BƯỚC TIẾP THEO HOẶC KHUNG NHẬP LIỆU */}
       <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0', boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }} className="no-print">
-        {isCompleted ? (
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button 
-              type="button"
-              onClick={() => window.location.href = '/student/evidence-check'}
-              style={{
-                flex: 1,
-                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                color: '#ffffff',
-                border: 'none',
-                padding: '13px 20px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                fontSize: '14.5px',
-                cursor: 'pointer',
-                boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px'
-              }}
-            >
-              <span>TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-              <span style={{ fontSize: '16px' }}>➔</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyText}
-              title="Sao chép toàn bộ biên bản đối thoại"
-              style={{
-                background: copySuccess ? '#059669' : '#f8fafc',
-                color: copySuccess ? '#ffffff' : '#065f46',
-                border: '1.5px solid #a7f3d0',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {copySuccess ? '✅ Đã chép' : '📋 Chép biên bản'}
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '10px' }}>
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              disabled={isLoading}
-              placeholder="Tự tay nhập câu trả lời phản biện của em..."
-              style={{
-                flex: 1,
-                padding: '12px 16px',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '14px',
-                outline: 'none',
-                backgroundColor: '#ffffff'
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !inputValue.trim()}
-              style={{
-                background: '#10b981',
-                color: '#ffffff',
-                border: 'none',
-                padding: '0 24px',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                cursor: isLoading || !inputValue.trim() ? 'not-allowed' : 'pointer',
-                opacity: isLoading || !inputValue.trim() ? 0.6 : 1
-              }}
-            >
-              GỬI ➔
-            </button>
-          </form>
-        )}
+        {/* Nút hành động khi đã hoàn tất (dùng display để không hủy DOM node) */}
+        <div style={{ display: isCompleted ? 'flex' : 'none', gap: '10px', alignItems: 'center' }}>
+          <button 
+            type="button"
+            onClick={() => window.location.href = '/student/evidence-check'}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              color: '#ffffff',
+              border: 'none',
+              padding: '13px 20px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              fontSize: '14.5px',
+              cursor: 'pointer',
+              boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px'
+            }}
+          >
+            <span>TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
+            <span style={{ fontSize: '16px' }}>➔</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyText}
+            title="Sao chép toàn bộ biên bản đối thoại"
+            style={{
+              background: copySuccess ? '#059669' : '#f8fafc',
+              color: copySuccess ? '#ffffff' : '#065f46',
+              border: '1.5px solid #a7f3d0',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {copySuccess ? '✅ Đã chép' : '📋 Chép biên bản'}
+          </button>
+        </div>
+
+        {/* Ô nhập liệu duy trì trong DOM (chỉ ẩn khi hoàn tất) */}
+        <form 
+          onSubmit={handleSendMessage} 
+          style={{ display: isCompleted ? 'none' : 'flex', gap: '10px' }}
+        >
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            disabled={isLoading || isCompleted}
+            placeholder="Tự tay nhập câu trả lời phản biện của em..."
+            style={{
+              flex: 1,
+              padding: '12px 16px',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              backgroundColor: '#ffffff'
+            }}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !inputValue.trim() || isCompleted}
+            style={{
+              background: '#10b981',
+              color: '#ffffff',
+              border: 'none',
+              padding: '0 24px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: isLoading || !inputValue.trim() || isCompleted ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !inputValue.trim() || isCompleted ? 0.6 : 1
+            }}
+          >
+            GỬI ➔
+          </button>
+        </form>
       </div>
 
     </div>
