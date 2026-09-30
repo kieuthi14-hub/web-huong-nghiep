@@ -52,6 +52,23 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
+  // 1.3b. Nếu học sinh nói "vì đam mê" / "đam mê"
+  const isPassion = lowerMsg === 'vì đam mê' || lowerMsg === 'đam mê' || lowerMsg.includes('vì đam mê') || lowerMsg.includes('do đam mê');
+  if (isPassion && currentRound <= 2) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy rất ghi nhận niềm đam mê của em đối với nghề giáo.\n\nĐam mê cụ thể ở khía cạnh nào: thích truyền đạt kiến thức, thích nghiên cứu bài giảng, hay thích tương tác với học sinh?`
+    };
+  }
+
+  // 1.3c. Nếu học sinh nói "chưa biết sư phạm môn gì" / "chưa biết môn gì"
+  if (lowerMsg.includes('chưa biết') && (lowerMsg.includes('môn gì') || lowerMsg.includes('sư phạm gì') || lowerMsg.includes('ngành gì'))) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy khen ngợi sự thành thật của em. Trong thực tế, Sư phạm chia thành 2 nhóm lớn: nhóm Khoa học Tự nhiên (Toán, Lý, Hóa, Sinh, Tin) và nhóm Khoa học Xã hội / Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ, Giáo dục Tiểu học).\n\nTrong các môn học ở trường, đâu là môn sở trường của em và môn nào em còn nhiều khoảng cách nhất?`
+    };
+  }
+
   // 1.4. Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó"
   const isDependsOnSubject = (lowerMsg.includes('tùy') || lowerMsg.includes('tuy')) && 
     (lowerMsg.includes('sư phạm') || lowerMsg.includes('su pham') || lowerMsg.includes('môn') || lowerMsg.includes('ngành'));
@@ -217,11 +234,9 @@ BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯ�
 - Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. Phân tích xong 3 hướng đi thích ứng:
-   * Nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11.
-   * Hệ Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học.
-   * Chọn ngành phù hợp với môn học sở trường.
-3. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+2. Phân tích trực tiếp dựa trên cặp môn học sinh vừa nêu (Ví dụ: Nếu học sinh nói giỏi Toán, kém Văn: BẮT BUỘC phải gọi tên môn Toán và Văn: "Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!").
+3. Gợi mở các hướng đi thích ứng (Nỗ lực bứt phá điểm số khối sở trường; hoặc phân khúc Cao đẳng Sư phạm / nghề thực hành nếu điểm lý thuyết cách xa Đại học).
+4. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
    "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh chính thức và nhập bảng đối chứng!"
 Quy chuẩn: Dưới 135 từ. Ấm áp, trao quyền tự quyết.`;
       }
@@ -308,10 +323,22 @@ Quy chuẩn: Dưới 120 từ.`;
             `Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`;
 
         case 4:
-        default:
+        default: {
+          const lowerUser = (userText || '').toLowerCase();
+          let subjectSpecificAdvice = `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc các hướng đi thích ứng: nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng Sư phạm / nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chọn ngành phù hợp với môn học sở trường.`;
+
+          if ((lowerUser.includes('toán') || lowerUser.includes('toan')) && (lowerUser.includes('văn') || lowerUser.includes('van'))) {
+            subjectSpecificAdvice = `Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn! Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.`;
+          } else if (lowerUser.includes('toán') || lowerUser.includes('toan')) {
+            subjectSpecificAdvice = `Giỏi Toán là thế mạnh vượt trội để em tự tin chọn các tổ hợp khoa học tự nhiên (A00, A01) vào các ngành Sư phạm Toán, Sư phạm Tin học hoặc Khoa học Tự nhiên.`;
+          } else if (lowerUser.includes('văn') || lowerUser.includes('van')) {
+            subjectSpecificAdvice = `Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ.`;
+          }
+
           return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-            `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc 3 hướng đi thích ứng: nỗ lực bứt phá điểm số các môn trong tổ hợp nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chọn ngành phù hợp với môn học sở trường.\n\n` +
+            `${subjectSpecificAdvice}\n\n` +
             `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự mở tab tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+        }
       }
     } else {
       switch (round) {

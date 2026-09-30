@@ -1,6 +1,6 @@
 // ==============================================================================
-// ĐỀ TÀI VISEF 2026 - LĨNH VỰC KHOA HỌC XÃ HỘI VÀ HÀNH VI (CBAS)
-// TÁC NHÂN SOCRATES PHẢN TƯ THÍCH ỨNG CHỐNG LẶP & ĐIỀU PHỐI 4 VÒNG TỰ NHIÊN
+// BACKEND CAN THIỆP AI SOCRATES - VISEF 2026 (CBAS)
+// TỰ ĐỘNG CHỐNG LẶP & CÁ NHÂN HÓA 100% THEO MÔN HỌC
 // File: server.cjs (CommonJS require version - Chạy lệnh: node server.cjs)
 // ==============================================================================
 
@@ -19,36 +19,6 @@ const fallbackKey = typeof Buffer !== 'undefined'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || fallbackKey);
 
-// 1. SYSTEM PROMPT BẤT BIẾN (KHÓA CHẶT RÀO CẢN SƯ PHẠM VÀ THUẬT TOÁN)
-const SYSTEM_INSTRUCTION = `
-BẠN LÀ THẦY SOCRATES - CHUYÊN GIA CAN THIỆP TÂM LÝ VÀ PHẢN TƯ NHẬN THỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI VISEF 2026.
-Bạn đang trò chuyện 1-1 với một học sinh THPT.
-
-[RÀO CẢN TUYỆT ĐỐI - VI PHẠM SẼ BỊ HỦY KẾT QUẢ NGHIÊN CỨU]:
-1. TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI CÂU HỎI: Đọc kỹ tin nhắn gần nhất của bạn. Nếu bạn vừa hỏi câu gì ở lượt trước, CẤM TUYỆT ĐỐI không được hỏi lại câu đó dưới bất kỳ hình thức nào!
-2. PHẢN HỒI THỰC SỰ THEO Ý HỌC SINH:
-   - Nếu học sinh nói "Vì em thích": Hãy hỏi sâu vào việc em thích cụ thể điều gì trong hoạt động chuyên môn (đứng lớp, truyền đạt, chấm bài...), đừng hỏi lại câu hỏi cũ.
-   - Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó": Hãy khen học sinh nắm vấn đề rất nhanh, và hỏi ngay: "Vậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Văn, Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?"
-3. KHÔNG TỰ BỊA MÃ TỔ HỢP CỐ ĐỊNH: Không cam kết mã tổ hợp trường nào để tránh ảo giác AI.
-
-[TIẾN TRÌNH 4 VÒNG - BẮT BUỘC TIẾN TRIỂN THEO TỪNG LƯỢT]:
-- VÒNG 1 (Động cơ): Làm rõ động cơ nội sinh (thực sự hiểu nghề) vs ngoại sinh (theo trào lưu, gia đình).
-- VÒNG 2 (Áp lực & Thách thức nghề): Đưa ra áp lực thực tế đặc thù của nghề (với Sư phạm là: áp lực quản lý học sinh cá biệt, đổi mới phương pháp, thi tuyển viên chức cạnh tranh). Hỏi học sinh chuẩn bị năng lực gì để vượt qua.
-- VÒNG 3 (Tổ hợp môn & Năng lực thực tế - ĐIỂM GÃY NHẬN THỨC):
-  * Nếu học sinh chưa rõ tổ hợp hoặc chưa chọn môn cụ thể -> BẮT BUỘC DÙNG KỸ THUẬT 3 NHỊP:
-    + Nhịp 1: Nêu nghịch lý giữa ước mơ và việc chưa chuẩn bị công cụ xét tuyển.
-    + Nhịp 2: Nêu rõ ngành này gắn với nhóm năng lực Tư duy Tự nhiên hay Ngôn ngữ/Xã hội (nhắc Bước 3 sẽ tự tra cứu đề án chính thức).
-    + Nhịp 3: Đặt câu hỏi trung lập: "Nhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?"
-- VÒNG 4 (Tái cấu trúc mục tiêu & Điều hướng sang Bước 3):
-  * Đưa ra giải pháp thích ứng kép (bứt phá điểm số HOẶC chọn ngành theo sở trường).
-  * RA LỆNH DỨT KHOÁT: Yêu cầu học sinh bấm chuyển sang Bước 3 để tự tay tra cứu Đề án tuyển sinh và nhập bảng đối chứng!
-
-[CẤU TRÚC PHẢN HỒI MỖI LẦN]:
-- 01 câu thấu cảm / ghi nhận trực tiếp ý học sinh vừa nói.
-- 01 câu gợi mở / phản biện nhận thức.
-- Kết thúc bằng ĐÚNG 01 CÂU HỎI MỚI (Không trùng lặp với bất kỳ câu hỏi nào phía trên).
-`;
-
 function isGreetingOnly(text) {
   if (!text || typeof text !== 'string') return false;
   const clean = text.toLowerCase().trim().replace(/[!.,?~]/g, '');
@@ -61,160 +31,154 @@ function isGreetingOnly(text) {
   return greetings.includes(clean);
 }
 
-function isAskingWhyRepeat(text) {
-  if (!text || typeof text !== 'string') return false;
-  const lower = text.toLowerCase();
-  return lower.includes('hỏi lại') || lower.includes('hoi lai') || 
-         lower.includes('hỏi gì kì') || lower.includes('hỏi gì kỳ') ||
-         lower.includes('trùng câu hỏi') || lower.includes('vừa hỏi xong') ||
-         lower.includes('sao hỏi lại');
-}
-
-// 2. API ENDPOINT TIẾP NHẬN PHIÊN CHAT
 app.post('/api/socrates-chat', async (req, res) => {
     try {
-        const { 
-            studentProfile = {}, 
-            chatHistory = [], 
-            userMessage = '' 
-        } = req.body;
+        const { studentProfile, chatHistory, userMessage } = req.body;
+
+        // 1. Kiểm tra an toàn: Lịch sử trò chuyện phải là một mảng
+        const validHistory = Array.isArray(chatHistory) ? chatHistory : [];
+        
+        // 2. Tính số lượt tương tác thực sự của học sinh
+        const studentTurns = validHistory.filter(m => m.role === 'user').length + 1;
 
         const trimmedMsg = (userMessage || '').trim();
         const lowerTrimmed = trimmedMsg.toLowerCase();
 
-        // Đếm chính xác số lượt học sinh đã trả lời để xác định Vòng
-        const userTurns = req.body.round 
-          ? Number(req.body.round) 
-          : (chatHistory.filter(m => m.role === 'user').length + 1);
+        const targetCareer = studentProfile?.targetCareer || "Sư phạm";
+        const targetSchool = studentProfile?.targetSchool || "ĐH Quy Nhơn";
+        const hollandCode = studentProfile?.hollandCode || "AEI";
+        const confidenceT0 = studentProfile?.confidenceT0 || 5;
 
-        const hollandCode = studentProfile.hollandCode || studentProfile.holland_code || 'AEI';
-        const targetCareer = studentProfile.targetCareer || studentProfile.target_career || studentProfile.targetMajor || 'Sư phạm';
-        const targetSchool = studentProfile.targetSchool || studentProfile.target_university || 'ĐH Quy Nhơn';
-        const confidenceT0 = studentProfile.confidenceT0 || studentProfile.confidence_score || studentProfile.confidence || 5;
-
-        // PHẢN XẠ 1: Nếu học sinh thắc mắc "Sao thầy hỏi lại?"
-        if (isAskingWhyRepeat(trimmedMsg)) {
-            const explainReply = `Thầy hiểu cảm xúc băn khoăn của em. Thầy hỏi lại không phải để lặp lại vô nghĩa, mà muốn hai thầy trò cùng bóc tách sâu hơn vào cảm nhận thực sự của em thay vì câu trả lời thoáng qua.\n\nĐối với ngành **${targetCareer}**, điều gì trong hoạt động chuyên môn hàng ngày khiến em cảm thấy thực sự hứng khởi nhất?`;
-            return res.status(200).json({
-                success: true,
-                round: Math.min(userTurns, 4),
-                response: explainReply,
-                reply: explainReply,
-                isCompleted: false
-            });
-        }
-
-        // PHẢN XẠ 2: Nếu học sinh nói "Vì em thích" / "Em thích thôi"
-        const isBecauseILike = lowerTrimmed === 'vì em thích' || lowerTrimmed === 'em thích' || 
-          lowerTrimmed === 'thích thôi' || lowerTrimmed === 'thích' || lowerTrimmed === 'do em thích' ||
-          lowerTrimmed.includes('vì em thích') || lowerTrimmed.includes('thích ngành này');
-
-        if (isBecauseILike && userTurns <= 2) {
-          const deepLikeReply = `Thầy rất ghi nhận niềm yêu thích tự nhiên của em dành cho ngành **${targetCareer}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, quản lý lớp học hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và sự kiên nhẫn nhất?`;
-          return res.status(200).json({
-            success: true,
-            round: Math.min(userTurns, 4),
-            response: deepLikeReply,
-            reply: deepLikeReply,
-            isCompleted: false
-          });
-        }
-
-        // PHẢN XẠ 3: Nếu học sinh nói "Tùy sư phạm gì thì có tổ hợp đó"
-        const isDependsOnSubject = (lowerTrimmed.includes('tùy') || lowerTrimmed.includes('tuy')) && 
-          (lowerTrimmed.includes('sư phạm') || lowerTrimmed.includes('su pham') || lowerTrimmed.includes('môn') || lowerTrimmed.includes('ngành'));
-
-        if (isDependsOnSubject) {
-          const subjectClarifyReply = `Thầy khen em nắm vấn đề rất nhanh và chính xác: Mỗi phân ngành sư phạm sẽ xét tuyển theo các tổ hợp môn rất khác nhau!\n\nĐể xác định đúng vũ khí học thuật cần chuẩn bị, điều cốt lõi là phải biết rõ môn học cụ thể mà em muốn gắn bó.\n\nVậy cụ thể em đang hướng tới Sư phạm môn gì (Toán, Ngữ văn, Tiếng Anh, Tiểu học...) để xác định nhóm năng lực cần thiết?`;
-          return res.status(200).json({
-            success: true,
-            round: Math.min(userTurns, 4),
-            response: subjectClarifyReply,
-            reply: subjectClarifyReply,
-            isCompleted: false
-          });
-        }
-
-        // PHẢN XẠ 4: Nếu học sinh chỉ chào hỏi xã giao
+        // Phản xạ nhanh chào hỏi
         if (isGreetingOnly(trimmedMsg)) {
-            const greetingReply = `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Thầy thấy em chọn ngành **${targetCareer}** trong khi nhóm nổi trội của em là **${hollandCode}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
-            return res.status(200).json({
-                success: true,
-                round: Math.min(userTurns, 4),
-                response: greetingReply,
-                reply: greetingReply,
-                isCompleted: false
-            });
-        }
-
-        // PHẢN XẠ 5: Kỹ thuật 3 nhịp ở Vòng 3 nếu học sinh chưa tìm hiểu tổ hợp môn
-        const isAskingCombo = [
-          'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
-          'chưa tìm hiểu', 'chưa biết', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
-          'chưa xem', 'em chưa biết', 'chưa tìm', 'không rõ'
-        ].some(k => lowerTrimmed.includes(k));
-
-        if (userTurns === 3 && isAskingCombo) {
-          const directReply = `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\nQuy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực Tư duy Tự nhiên hay Ngôn ngữ/Xã hội. Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\nNhìn lại kết quả học tập kỳ trước, đâu là môn sở trường tạo lợi thế cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất?`;
           return res.status(200).json({
             success: true,
-            round: 3,
-            response: directReply,
-            reply: directReply,
+            round: Math.min(studentTurns, 4),
+            response: `Chào em. Thầy trò mình cùng tập trung vào nội dung định hướng nhé. Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại!`,
+            reply: `Chào em. Thầy trò mình cùng tập trung vào nội dung định hướng nhé. Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại!`,
             isCompleted: false
           });
         }
 
-        const currentContext = `
-[THÔNG TIN HỌC SINH]:
-- Ngành: ${targetCareer} | Trường: ${targetSchool}
-- Nhóm Holland: ${hollandCode} | Tự tin ban đầu: ${confidenceT0}/10
+        // Phản xạ nhanh đam mê
+        if (lowerTrimmed === 'vì đam mê' || lowerTrimmed === 'đam mê' || lowerTrimmed.includes('vì đam mê') || lowerTrimmed.includes('do đam mê')) {
+          const passionReply = `Thầy rất ghi nhận niềm đam mê của em đối với nghề giáo.\n\nĐam mê cụ thể ở khía cạnh nào: thích truyền đạt kiến thức, thích nghiên cứu bài giảng, hay thích tương tác với học sinh?`;
+          return res.status(200).json({
+            success: true,
+            round: Math.min(studentTurns, 4),
+            response: passionReply,
+            reply: passionReply,
+            isCompleted: false
+          });
+        }
 
-[MỤC TIÊU LƯỢT CHAT HIỆN TẠI]:
-Bạn đang ở LƯỢT THỨ ${userTurns} của học sinh.
-- Nếu lượt 1 hoặc 2: Tập trung giải quyết dứt điểm VÒNG 1 (Động cơ) và VÒNG 2 (Áp lực nghề nghiệp đặc thù: quản lý lớp học, thi viên chức, tự động hóa...). 
-- Nếu lượt 3: BẮT BUỘC thực hiện VÒNG 3 (Tổ hợp môn & Năng lực thực tế - Kích hoạt 3 Nhịp).
-- Nếu lượt 4 trở đi: BẮT BUỘC chốt VÒNG 4 (3 hướng thích ứng) và ra lệnh chuyển sang Bước 3!
+        // Phản xạ nhanh chưa biết môn gì
+        if (lowerTrimmed.includes('chưa biết') && (lowerTrimmed.includes('môn gì') || lowerTrimmed.includes('sư phạm gì') || lowerTrimmed.includes('ngành gì'))) {
+          const subjectGroupReply = `Thầy khen ngợi sự thành thật của em. Trong thực tế, Sư phạm chia thành 2 nhóm lớn: nhóm Khoa học Tự nhiên (Toán, Lý, Hóa, Sinh, Tin) và nhóm Khoa học Xã hội / Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ, Giáo dục Tiểu học).\n\nTrong các môn học ở trường, đâu là môn sở trường của em và môn nào em còn nhiều khoảng cách nhất?`;
+          return res.status(200).json({
+            success: true,
+            round: Math.min(studentTurns, 4),
+            response: subjectGroupReply,
+            reply: subjectGroupReply,
+            isCompleted: false
+          });
+        }
 
-CẢNH BÁO: Đọc kỹ lịch sử trò chuyện. TUYỆT ĐỐI KHÔNG lặp lại câu hỏi đã hỏi!
+        // 3. Xây dựng System Instruction tối ưu, gãy gọn, không dài dòng
+        const systemPrompt = `
+Bạn là Thầy Socrates - Chuyên gia can thiệp tâm lý hướng nghiệp thuộc đề tài nghiên cứu hành vi ViSEF 2026.
+Bạn đang đối thoại 1-1 với một học sinh THPT có thông tin:
+- Ngành mong muốn: ${targetCareer}
+- Trường mục tiêu: ${targetSchool}
+- Nhóm Holland: ${hollandCode}
+- Mức tự tin T0: ${confidenceT0}/10
+
+QUY TẮC BẮT BUỘC:
+1. ĐỌC KỸ LỊCH SỬ CHAT: Tuyệt đối KHÔNG BAO GIỜ lặp lại câu hỏi bạn đã hỏi ở các lượt trước.
+2. PHẢN HỒI THỰC SỰ: Phải dựa vào chính xác từ ngữ học sinh vừa nói để đối thoại tiếp.
+   - Nếu học sinh chào: Chào lại ngắn gọn trong 1 câu và nhắc trả lời câu hỏi trước.
+   - Nếu học sinh nói "vì đam mê": Hỏi sâu: "Đam mê cụ thể ở khía cạnh nào: thích truyền đạt kiến thức, thích nghiên cứu bài giảng, hay thích tương tác với học sinh?"
+   - Nếu học sinh nói "chưa biết sư phạm môn gì": Khen ngợi sự thành thật, giải thích ngắn gọn rằng Sư phạm chia thành 2 nhóm lớn (Tự nhiên vs Xã hội/Ngôn ngữ), rồi hỏi: "Trong các môn học ở trường, đâu là môn sở trường của em và môn nào em còn nhiều khoảng cách nhất?"
+   - Nếu học sinh nói rõ môn (ví dụ: "giỏi Toán, kém Văn"): BẮT BUỘC phải gọi tên môn Toán và Văn ra để định hướng:
+     "Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!"
+
+TIẾN TRÌNH THEO LƯỢT CHAT (Hiện tại đang là lượt thứ ${studentTurns} của học sinh):
+- Lượt 1: Bóc tách động cơ thật sự (đam mê hay phong trào).
+- Lượt 2: Thử thách áp lực nghề giáo thực tế (quản lý học sinh, thi biên chế).
+- Lượt 3: Chất vấn tổ hợp môn & bóc tách môn sở trường vs môn yếu.
+- Lượt 4: Phân tích trực tiếp dựa trên cặp môn học sinh vừa nêu, chốt định hướng và ra lệnh chuyển sang Bước 3 để tra cứu Đề án tuyển sinh.
 `;
 
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-pro",
-            systemInstruction: SYSTEM_INSTRUCTION + "\n" + currentContext,
-            generationConfig: {
-                temperature: 0.35,
-                topP: 0.85,
-                maxOutputTokens: 350
-            }
-        });
-
-        const contents = chatHistory
-          .filter(msg => msg && msg.text && typeof msg.text === 'string')
-          .map(msg => ({
+        // 4. Chuẩn bị nội dung gửi lên Gemini API
+        const contents = validHistory.map(msg => ({
             role: msg.role === 'user' ? 'user' : 'model',
             parts: [{ text: msg.text }]
-          }));
-
+        }));
+        
+        // Đẩy tin nhắn mới nhất vào
         contents.push({
             role: 'user',
             parts: [{ text: trimmedMsg }]
         });
 
-        const result = await model.generateContent({ contents });
-        const aiResponseText = result.response.text();
+        // 5. Cấu hình mô hình với multi-model fallback
+        let replyText = null;
+        const candidateModelNames = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+        for (const modelName of candidateModelNames) {
+            try {
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    systemInstruction: systemPrompt,
+                    generationConfig: {
+                        temperature: 0.25, // Hạ thấp để bám sát logic, không sáng tác lung tung
+                        topP: 0.85,
+                        maxOutputTokens: 400
+                    }
+                });
+
+                const result = await model.generateContent({ contents });
+                const resText = result?.response?.text();
+                if (resText && resText.trim().length >= 25) {
+                    replyText = resText.trim()
+                        .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
+                        .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ).*?\]\s*/i, '')
+                        .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
+                        .trim();
+                    break;
+                }
+            } catch (err) {
+                // Thử model tiếp theo
+            }
+        }
+
+        // Heuristic Fallback bảo hiểm nếu các model bận
+        if (!replyText) {
+            if (studentTurns >= 4) {
+                let subjectPairAdvice = `Nắm chắc môn thế mạnh sẽ giúp em chọn đúng tổ hợp xét tuyển tối ưu và mở rộng cơ hội trúng tuyển.`;
+                if ((lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan')) && (lowerTrimmed.includes('văn') || lowerTrimmed.includes('van'))) {
+                    subjectPairAdvice = `Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00, A01), hoàn toàn tránh được rào cản môn Ngữ văn!`;
+                }
+                replyText = `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. ${subjectPairAdvice}\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+            } else if (studentTurns === 1) {
+                replyText = `Thầy rất ghi nhận chia sẻ của em. Tuy nhiên, việc thích một ngành vì danh tiếng khác với việc sẵn sàng đối diện với áp lực công việc hàng ngày của ngành **${targetCareer}**.\n\nEm chọn ngành này xuất phát từ đam mê công việc thực tế, hay vì thấy đây là ngành được nhiều người xung quanh khen ngợi?`;
+            } else if (studentTurns === 2) {
+                replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Thực tế nghề giáo đòi hỏi nghệ thuật truyền cảm hứng, tính kiên nhẫn khi quản lý học sinh cá biệt và kỳ thi tuyển viên chức cạnh tranh rất khắt khe.\n\nĐể thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào chưa?`;
+            } else {
+                replyText = `Trong các phân ngành sư phạm (Khoa học Tự nhiên vs Khoa học Xã hội/Ngôn ngữ), đâu là môn sở trường tạo ưu thế cho em và môn nào em cảm thấy còn nhiều khoảng cách nhất?`;
+            }
+        }
 
         return res.status(200).json({
             success: true,
-            round: Math.min(userTurns, 4),
-            response: aiResponseText,
-            reply: aiResponseText,
-            isCompleted: userTurns >= 4
+            round: Math.min(studentTurns, 4),
+            response: replyText,
+            reply: replyText,
+            isCompleted: studentTurns >= 4
         });
 
     } catch (error) {
-        console.error("Lỗi:", error);
-        return res.status(500).json({ success: false, message: "Lỗi kết nối AI Socrates!" });
+        console.error("Lỗi Socrates Chat Backend:", error);
+        return res.status(500).json({ success: false, message: "Lỗi xử lý máy chủ!" });
     }
 });
 
