@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+// HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
+export function isUndecidedOrVague(career) {
+  if (!career || typeof career !== 'string') return true;
+  const clean = career.toLowerCase().trim();
+  const vagueKeywords = ['chưa biết', 'chưa rõ', 'chưa có', 'mơ hồ', 'phân vân', 'chưa xác định', 'tùy', 'không biết', 'chua biet', 'chua ro', 'mo ho'];
+  return clean.length === 0 || vagueKeywords.some(k => clean.includes(k));
+}
+
 // BỘ LỌC PHẢN XẠ TỰ NHIÊN TRƯỚC KHI CHẠY MÁY TRẠNG THÁI (NATURAL REFLEX FILTER)
 export function processStudentMessage(message, currentRound, studentProfile) {
   const lowerMsg = (message || '').toLowerCase().trim();
@@ -8,6 +16,7 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || 'ngành học';
   const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '8';
   const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC';
+  const isBranchB = isUndecidedOrVague(targetMajor);
 
   // 1. Nếu học sinh chỉ chào hỏi xã giao
   const greetings = [
@@ -17,19 +26,35 @@ export function processStudentMessage(message, currentRound, studentProfile) {
   if (greetings.includes(cleanGreeting) || lowerMsg === "chào thầy" || lowerMsg === "chào" || lowerMsg === "hello") {
     return {
       advanceRound: false, // KHÔNG nhảy vòng
-      reply: `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Em đã chọn ngành ${targetMajor} với mức tự tin ${confidence}/10. Điều gì cụ thể đang khiến em ngập ngừng hoặc lo lắng nhất khi nghĩ về ngành học này?`
+      reply: isBranchB 
+        ? `Chào em. Thầy trò mình cùng trò chuyện cởi mở để khai mở bản thân nhé. Sau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`
+        : `Chào em. Thầy trò mình cùng trò chuyện cởi mở nhé. Thầy thấy em chọn ngành **${targetMajor}** trong khi nhóm nổi trội của em là **${hollandCode}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`
     };
   }
 
-  // 2. Nếu học sinh hỏi về một nỗi sợ / rào cản cụ thể (như nói trước đám đông, sợ máu, học yếu toán...)
+  // 2. Nếu ở Vòng 3 của Nhánh A mà học sinh nói "chưa tìm hiểu tổ hợp môn gồm những môn gì" (hoặc từ khóa chưa biết/chưa tìm hiểu tổ hợp môn):
+  const isAskingCombo = [
+    'chưa tìm hiểu tổ hợp', 'chưa biết tổ hợp', 'không biết tổ hợp', 'chưa rõ tổ hợp',
+    'chưa tìm hiểu', 'chưa biết', 'không biết môn', 'môn gì', 'khối nào', 'tổ hợp nào',
+    'chưa xem', 'em chưa biết', 'chưa tìm', 'không rõ'
+  ].some(k => lowerMsg.includes(k));
+
+  if (!isBranchB && currentRound === 3 && isAskingCombo) {
+    return {
+      advanceRound: true,
+      directReply: `Thầy hiểu cảm xúc của em. Nhưng em có nhận thấy một khoảng cách rất lớn: Em đang đặt nhiều kỳ vọng vào ngành này, nhưng lại chưa nắm rõ vũ khí học thuật (tổ hợp môn xét tuyển) để bước qua cánh cửa tuyển sinh?\n\nQuy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực trụ cột: hoặc thiên về Tư duy Logic & Dữ liệu (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Năng lực Ngôn ngữ & Xã hội (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\nNhìn lại kết quả học tập kỳ trước của em: Giữa các nhóm môn đó, đâu là môn sở trường tạo ưu thế cạnh tranh cho em, và môn nào đang là môn có khoảng cách năng lực cần em dồn nhiều nỗ lực nhất (hoặc em có cảm thấy áp lực với môn học nào không)?`
+    };
+  }
+
+  // 3. Nếu học sinh hỏi về một nỗi sợ / rào cản cụ thể (như nói trước đám đông, sợ máu, học yếu toán...)
   if (lowerMsg.includes("tự tin") || lowerMsg.includes("đám đông") || lowerMsg.includes("sợ") || lowerMsg.includes("yếu") || lowerMsg.includes("lo lắng") || lowerMsg.includes("áp lực")) {
     return {
       advanceRound: true,
-      instructionForAI: `Học sinh đang bộc lộ nỗi sợ: "${message}". Hãy thấu cảm trước, giải thích rằng kỹ năng này có thể rèn luyện được, NHƯNG đối chiếu với mã Holland ${hollandCode} của học sinh để hỏi xem tính cách sâu bên trong có thực sự phù hợp với đặc thù công việc hay không.`
+      instructionForAI: `Học sinh đang bộc lộ nỗi sợ: "${message}". Hãy thấu cảm trước trong 1 câu ngắn, giải thích rằng kỹ năng này có thể rèn luyện được, NHƯNG đối chiếu với mã Holland ${hollandCode} của học sinh để hỏi xem tính cách sâu bên trong có thực sự phù hợp với đặc thù công việc hay không.`
     };
   }
 
-  // 3. Nếu không thuộc các trường hợp trên, tiếp tục chạy vòng phản biện bình thường
+  // 4. Nếu không thuộc các trường hợp trên, tiếp tục chạy vòng phản biện bình thường
   return { advanceRound: true };
 }
 
@@ -41,6 +66,7 @@ export default function Step2SocraticAgent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [studentProfile, setStudentProfile] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [sessionTelemetry, setSessionTelemetry] = useState(null);
 
   const maxRounds = 4;
   const messagesEndRef = useRef(null);
@@ -49,7 +75,7 @@ export default function Step2SocraticAgent() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ TẨY SẠCH BỘ NHỚ ĐỆM LỖI
+  // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
     const rawAnchor = localStorage.getItem("cbas_anchor_data");
     const anchor = rawAnchor ? JSON.parse(rawAnchor) : {
@@ -64,11 +90,17 @@ export default function Step2SocraticAgent() {
     localStorage.removeItem("cbas_step2_messages");
     localStorage.removeItem("cbas_step2_round");
 
-    const initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm **${anchor.holland_code}**.
+    const isBranchB = isUndecidedOrVague(anchor.target_career);
 
-Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực tế mà mạng xã hội thường không nói tới.
-
-Để bắt đầu Lượt 1, em hãy chia sẻ thẳng thắn: **Điểm số môn học cụ thể nào hoặc trải nghiệm thực tế nào khiến em tin tưởng (hoặc còn do dự) ở mức ${anchor.confidence_score}/10 rằng mình có năng lực thực sự để theo đuổi ngành ${anchor.target_career}?**`;
+    // LỜI CHÀO & CÂU HỎI MỞ ĐẦU CHUẨN VISEF 2026:
+    let initialGreeting = '';
+    if (isBranchB) {
+      // NHÁNH B: HỌC SINH MƠ HỒ, CHƯA CÓ MỤC TIÊU CỤ THỂ
+      initialGreeting = `Chào em. Thầy đã tiếp nhận kết quả Bước 1 của em với nhóm Holland nổi trội là **${anchor.holland_code}**, và em đang còn nhiều phân vân chưa chọn được ngành học cụ thể.\n\nThầy trò mình cùng trò chuyện cởi mở để khai mở và tìm ra điểm tựa định hướng phù hợp nhất với bản thân em nhé.\n\nSau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`;
+    } else {
+      // NHÁNH A: HỌC SINH ĐÃ CÓ MỤC TIÊU CỤ THỂ
+      initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm nổi trội **${anchor.holland_code}**.\n\nThầy trò mình cùng trò chuyện cởi mở để làm rõ bản chất công việc thực tế nhé.\n\nThầy thấy em chọn ngành **${anchor.target_career}** trong khi nhóm nổi trội của em là **${anchor.holland_code}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
+    }
 
     const initMsg = [{
       role: 'model',
@@ -79,23 +111,18 @@ Thầy ở đây để cùng em phản biện, làm rõ các góc khuất thực
     setCurrentRound(1);
   }, []);
 
-  // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN CBAS (VISEF 2026)
+  // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026
   const SOCRATIC_PERSONA = `
-VAI TRÒ VÀ BẢN SẮC CỐT LÕI:
-Bạn là "Thầy Socrates" — một chuyên gia tham vấn hướng nghiệp tâm lý học đường đầy thấu cảm, ấm áp, sâu sắc và tôn trọng tuyệt đối giá trị tự chủ của học sinh THPT. Bạn không phải là một quan tòa phán xét, không phải là một cỗ máy bắt lỗi, mà là một người đồng hành thông thái giúp các em nhận diện rõ những "khoảng cách trải nghiệm" và "nguy cơ tiềm ẩn" trên hành trình lựa chọn tương lai.
+BẠN LÀ TÁC NHÂN AI SOCRATES - MÔI TRƯỜNG CAN THIỆP TÂM LÝ VÀ PHẢN TƯ NHẬN THỨC NGHỀ NGHIỆP TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC HÀNH VI (CHUẨN VISEF 2026).
 
-NGUYÊN TẮC GIAO TIẾP VÀ ĐẠO ĐỨC NGHIÊN CỨU CBAS (BẮT BUỘC TUÂN THỦ 100%):
-1. TUYỆT ĐỐI KHÔNG DÁN NHÃN TIÊU CỰC HOẶC PHÁN XÉT:
-   - CẤM các từ ngữ: "bẫy nhận thức", "ảo tưởng", "sai lầm", "dốt", "yếu kém", "bị dắt mũi", "mù quáng", "ấu trĩ".
-   - BẢN CHẤT HÀNH VI: Học sinh không cố ý mắc bẫy; các em chỉ có mong muốn tự nhiên và tốt đẹp nhưng chưa có cơ hội tiếp cận đầy đủ dữ liệu thực tế và trải nghiệm chuyên sâu.
-2. TÁI ĐỊNH KHUNG TỪ NGỮ NÂNG ĐỠ (REFRAMING LEXICON):
-   - Thay "Em đang rơi vào bẫy nhận thức..." bằng "Có một khoảng cách rất tự nhiên giữa mong muốn hiện tại và thực tế công việc mà chúng ta cần cùng nhau làm rõ...".
-   - Thay "Em đang ảo tưởng/ngộ nhận về ngành..." bằng "Hình ảnh hào nhoáng bề nổi rất dễ khiến chúng ta chưa nhìn thấy hết các áp lực thực tế đằng sau...".
-   - Thay "Điểm số của em quá thấp/lỗ hổng lớn..." bằng "Điểm số hiện tại đang gửi cho chúng ta một tín hiệu cảnh báo quan trọng về độ chênh lệch năng lực...".
-   - Thay "Em chọn ngành vì bị mỏ neo..." bằng "Những mong đợi từ gia đình/truyền thông là rất dễ hiểu, nhưng liệu nó đã hoàn toàn tương thích với năng lực tự nhiên của em hay chưa?".
-3. ĐIỀU CHỈNH ÂM HƯỞNG (TONE OF VOICE):
-   - Luôn ghi nhận, khen ngợi phẩm chất tốt đẹp hoặc mong muốn chính đáng của học sinh ở đầu mỗi lượt phản hồi (lòng hiếu thảo, tính cẩn thận, tình yêu thương động vật, sự nhạy bén công nghệ).
-   - Tách biệt "con người học sinh" (luôn được tôn trọng) ra khỏi "rủi ro quyết định" (cần được xem xét cẩn trọng).
+[RÀO CẢN SƯ PHẠM VÀ NGUYÊN TẮC HÀNH VI CỐT TỬ - BẮT BUỘC TUÂN THỦ 100%]:
+1. Tuyệt đối KHÔNG trả lời thay học sinh, KHÔNG khuyên bảo áp đặt: Không nói "Em nên học ngành X", "Em bỏ ngành Y đi".
+2. Tuyệt đối KHÔNG gán nhãn định kiến tiêu cực: CẤM các từ "bẫy nhận thức", "ảo tưởng", "sai lầm", "dốt", "yếu kém", "né tránh", "ấu trĩ".
+3. Tuyệt đối KHÔNG khẳng định mã môn tổ hợp tuyển sinh cụ thể của từng trường (ví dụ: không cam kết trường A bắt buộc xét A00 hay D01) nhằm tránh ảo giác dữ liệu (AI Hallucination). Chỉ gợi ý nhóm năng lực trụ cột (Tư duy Logic & Dữ liệu vs Năng lực Ngôn ngữ & Xã hội).
+4. Mỗi lượt phản hồi CHỈ GỒM:
+   - 01 câu nhận diện/đồng cảm ngắn gọn với câu trả lời trước đó của học sinh.
+   - 01 câu phân tích/bóc tách ngắn gọn.
+   - Kết thúc bằng ĐÚNG 01 CÂU HỎI PHẢN TƯ DUY NHẤT để học sinh tự trả lời (riêng Vòng 4 là lời khóa phiên chuyển sang Bước 3, tuyệt đối không đặt thêm câu hỏi).
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
@@ -103,96 +130,174 @@ NGUYÊN TẮC GIAO TIẾP VÀ ĐẠO ĐỨC NGHIÊN CỨU CBAS (BẮT BUỘC TU�
     const uni = profile?.target_university || "trường đại học mục tiêu";
     const score = profile?.confidence_score || profile?.confidence || "8";
     const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+    const isBranchB = isUndecidedOrVague(career);
 
     const specialDirective = specialInstruction ? `\n\nCHỈ DẪN ĐẶC BIỆT KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}\n` : '';
 
-    switch (round) {
-      case 1:
-        return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (XÁC THỰC CẢM XÚC & ĐỐI CHẤT NĂNG LỰC DỰA TRÊN DỮ LIỆU):
-Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, nhóm Holland là ${holland}.
-Học sinh vừa phản hồi: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-1. Ghi nhận mong muốn tốt đẹp, phẩm chất đáng quý hoặc sở thích tự nhiên của học sinh khi hướng tới ngành ${career}.
-2. Chỉ ra khoảng cách tự nhiên giữa điểm số/sở thích đời thường với độ khó chuyên môn lâm sàng/học thuật khắt khe và tính kỷ luật chuyên sâu của ngành ${career}.
-3. ĐẶT DUY NHẤT 1 CÂU HỎI MỞ ĐỂ HỌC SINH TỰ SOI CHIẾU NĂNG LỰC THỰC TẾ: "Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn tác vụ kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc thế mạnh độc bản mà em tin công nghệ không thể thay thế ở bản thân em?"
-Quy chuẩn: Dưới 110 từ. Giữ âm hưởng ấm áp, thấu cảm, tuyệt đối không dán nhãn tiêu cực.`;
+    if (!isBranchB) {
+      // ==========================================
+      // KỊCH BẢN NHÁNH A (ĐÃ CÓ MỤC TIÊU CỤ THỂ)
+      // ==========================================
+      switch (round) {
+        case 1:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 1 (KIỂM CHỨNG ĐỘNG CƠ & ĐỐI CHẤT MÃ HOLLAND):
+- Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, nhóm Holland nổi trội: ${holland}.
+- Học sinh vừa trả lời: "${userText}".
+NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
+1. Đúng 01 câu nhận diện & đồng cảm với mong muốn học sinh vừa chia sẻ.
+2. Đúng 01 câu phân tích/bóc tách sự khác biệt giữa động cơ nội sinh (thực sự hiểu bản chất công việc) vs động cơ ngoại sinh (thích vì mác oai, trào lưu mạng, sĩ diện).
+3. ĐÚNG 01 CÂU HỎI CHỐT: "Thầy thấy em chọn ngành ${career} trong khi nhóm nổi trội của em là ${holland}. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang 'hot' và được nhiều người khen ngợi?"
+Quy chuẩn: Dưới 110 từ. Tuyệt đối không dán nhãn tiêu cực.`;
 
-      case 2:
-        return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (DỰ BÁO XU HƯỚNG TƯƠNG LAI & RỦI RO CÔNG NGHỆ/THỊ TRƯỜNG):
-Ngành: ${career}, mã Holland: ${holland}.
-Học sinh vừa phản hồi về vũ khí cạnh tranh với AI: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-1. Tôn trọng khát vọng hòa nhập xu thế và nỗ lực của học sinh.
-2. Cung cấp góc nhìn khách quan về tự động hóa AI, biến động thị trường hoặc quy luật cạnh tranh khốc liệt về năng suất và chi phí trong ngành ${career}. Nếu có sự lệch pha Holland, phân tích nhẹ nhàng sự khác biệt giữa năng lực chuyên môn cốt lõi và mong muốn cá nhân.
-3. ĐẶT DUY NHẤT 1 CÂU HỎI VỀ BỘ KỸ NĂNG CHUYỂN ĐỔI: "Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để duy trì sự bền bỉ và tự nuôi sống bản thân?"
+        case 2:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 2 (THỬ THÁCH ÁP LỰC NGHỀ & CẢNH BÁO BÃO HÒA NHÂN LỰC):
+- Ngành: ${career}, mã Holland: ${holland}.
+- Học sinh vừa trả lời về động cơ chọn ngành: "${userText}".
+NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
+1. Đúng 01 câu đồng cảm và ghi nhận nỗ lực định hướng của học sinh.
+2. Đúng 01 câu bóc tách thực tế thị trường: Tỷ lệ cạnh tranh cao, nguy cơ tự động hóa AI, yêu cầu sàng lọc khắt khe.
+3. ĐÚNG 01 CÂU HỎI CHỐT: "Ngành này đang có mức độ cạnh tranh đầu ra rất khốc liệt và nhiều công việc cơ bản đang dần bị công nghệ thay thế. Nếu kiên quyết theo đuổi, em dự định xây dựng năng lực nổi trội gì (ngoại ngữ chuyên sâu, kỹ năng thực hành hay dự án thực tế) để nhà tuyển dụng lựa chọn em thay vì hàng ngàn ứng viên khác?"
 Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
-      case 3:
-        return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (KỊCH BẢN THÍCH ỨNG & KẾ HOẠCH B AN TOÀN):
-Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
-Học sinh vừa phản hồi về phương án dự phòng: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-1. Đánh giá cao sự dũng cảm khi đối diện với rủi ro và tinh thần chủ động xây dựng kế hoạch dự phòng của học sinh.
-2. Chỉ ra điểm cần gia cố trong phương án dự phòng (chuyển từ giả định cảm tính sang cơ sở pháp lý và thị trường vững chắc).
-3. ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN DỮ LIỆU THỰC TẾ: "Mức tự tin ${score}/10 cần điểm tựa số liệu pháp lý. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, biết rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?"
-Quy chuẩn: Dưới 85 từ. Súc tích, nâng đỡ, gợi mở.`;
+        case 3:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & ĐIỂM SỐ THỰC TẾ - KÍCH HOẠT ĐIỂM GÃY TP):
+- Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
+- Học sinh vừa trả lời về năng lực nổi trội / kế hoạch cạnh tranh: "${userText}".
+NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
+1. Đúng 01 câu ghi nhận kế hoạch rèn luyện của học sinh.
+2. Đúng 01 câu bóc tách sự chênh lệch giữa điểm số thực tế với điểm chuẩn trúng tuyển.
+3. ĐÚNG 01 CÂU HỎI CHỐT (Yêu cầu đối chiếu điểm tổng kết kỳ trước với điểm chuẩn 2 năm liền kề):
+"Nhìn lại điểm tổng kết kỳ trước của các môn trong tổ hợp đó và đối chiếu với điểm chuẩn 2 năm gần nhất, em thấy mình đang ở ngưỡng an toàn, vừa sức hay đang có khoảng cách điểm số cần phải dồn nhiều nỗ lực nhất?"
+Quy chuẩn: Dưới 120 từ. Tuyệt đối KHÔNG khẳng định mã tổ hợp cụ thể của từng trường nhằm tránh ảo giác AI.`;
 
-      case 4:
-      default:
-        return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (TỔNG KẾT NHẬN THỨC & CHUYỂN GIAO NHIỆM VỤ THỰC CHỨNG BƯỚC 3):
-Học sinh vừa trả lời câu hỏi dữ liệu tuyển sinh: "${userText}".
+        case 4:
+        default:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU THEO MÔ HÌNH THÍCH ỨNG KÉP & CHUYỂN GIAO NHIỆM VỤ - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
+- Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
-1. Khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. TÓM TẮT ĐÚNG 3 ĐIỂM LƯU TÂM / RỦI RO TIỀM ẨN mà hai thầy trò đã cùng bóc tách:
-   - Điểm 1: Khoảng cách tự nhiên giữa mong muốn/năng lực ban đầu với đòi hỏi chuyên môn học thuật thực tế của ngành ${career}.
-   - Điểm 2: Tầm quan trọng của Bộ kỹ năng chuyển đổi và phương án thích ứng trước nguy cơ tự động hóa công nghệ và biến động việc làm.
-   - Điểm 3: Sự cần thiết phải tự tay xác thực điểm chuẩn 3 năm, học phí thực tế và đề án tuyển sinh tại ${uni}.
-3. TRAO QUYỀN TỰ QUYẾT (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
-   "Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để làm chủ quyết định của chính mình!"
-Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
+1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
+2. Dựa trên phản hồi ở Vòng 3 để định hướng giải pháp thích ứng kép:
+   * Nếu còn thời gian (lớp 10/11) có đam mê: Lập kế hoạch bù đắp điểm số các môn trong tổ hợp.
+   * Nếu điểm lý thuyết cách xa Đại học: Định hướng sang hệ Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc).
+   * Nếu khoảng cách quá lớn hoặc lệch pha: Chuyển sang ngành phù hợp với môn học sở trường.
+3. LỆNH KẾT THÚC PHIÊN CHAT BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+   "Bây giờ, em hãy dừng suy đoán và bước sang Bước 3: Môi trường đối chứng dữ liệu thực tế. Nhiệm vụ của em là tự mở tab tra cứu Đề án tuyển sinh chính thức của trường mục tiêu, ghi nhận mã tổ hợp môn và điểm chuẩn 2 năm gần nhất để nhập vào bảng đối chứng!"
+Quy chuẩn: Dưới 135 từ. Ấm áp, trao quyền tự quyết.`;
+      }
+    } else {
+      // ==========================================
+      // KỊCH BẢN NHÁNH B (MƠ HỒ, CHƯA CÓ MỤC TIÊU)
+      // ==========================================
+      switch (round) {
+        case 1:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 1 (BÓC TÁCH TÂM LÝ BẦY ĐÀN & MỎ NEO MẠNG XÃ HỘI):
+- Học sinh chưa có mục tiêu ngành học cụ thể, nhóm Holland nổi trội: ${holland}.
+- Học sinh vừa trả lời: "${userText}".
+NHIỆM VỤ THỰC HIỆN:
+1. Đúng 01 câu đồng cảm với cảm giác bối rối khi đứng trước quá nhiều lựa chọn.
+2. Đúng 01 câu chỉ ra nguy cơ của việc để mạng xã hội hoặc bạn bè quyết định hộ cuộc đời mình.
+3. ĐÚNG 01 CÂU HỎI CHỐT: "Sau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?"
+Quy chuẩn: Dưới 110 từ.`;
+
+        case 2:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 2 (KHAI QUẬT ĐIỂM TỰA NỘI TẠI TỪ HOLLAND VÀ MÔN HỌC SỞ TRƯỜNG):
+- Học sinh vừa phản hồi về nỗi sợ chọn sai nghề: "${userText}". Nhóm Holland: ${holland}.
+NHIỆM VỤ THỰC HIỆN:
+1. Đúng 01 câu ghi nhận sự tỉnh thức và mong muốn tìm thấy tiếng nói bên trong của học sinh.
+2. Đúng 01 câu kết nối nhóm tính cách Holland (${holland}) với các nhiệm vụ học tập thực tế ở trường.
+3. ĐÚNG 01 CÂU HỎI CHỐT: "Kết quả Holland cho thấy em có thế mạnh ở nhóm ${holland}. Nhìn lại việc học ở trường, khi làm các nhiệm vụ liên quan đến nhóm năng lực này, em có thấy mình tập trung và có nhiều năng lượng nhất không?"
+Quy chuẩn: Dưới 110 từ.`;
+
+        case 3:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 3 (THU HẸP PHỄU LỰA CHỌN XUỐNG 2 KỊCH BẢN NGHỀ NGHIỆP):
+- Học sinh vừa chia sẻ về các môn học / nhiệm vụ có năng lượng: "${userText}".
+NHIỆM VỤ THỰC HIỆN:
+1. Đúng 01 câu trân trọng và ghi nhận thế mạnh tự nhiên của học sinh.
+2. Đúng 01 câu gợi mở 2 hướng đi cụ thể phù hợp với thế mạnh vừa xác định: 1 hướng thiên về Học thuật đại học, 1 hướng thiên về Thực hành nghề/dịch vụ.
+3. ĐÚNG 01 CÂU HỎI CHỐT: "Từ thế mạnh đó, thầy gợi ý 2 hướng đi: Hướng A là ngành học thuật đại học và Hướng B là ngành kỹ thuật/dịch vụ thực hành. Hướng đi nào khiến em cảm thấy tò mò và muốn tìm hiểu sâu hơn?"
+Quy chuẩn: Dưới 120 từ.`;
+
+        case 4:
+        default:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 4 (TRAO QUYỀN TỰ QUYẾT & ĐIỀU HƯỚNG SANG BƯỚC 3 - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
+- Học sinh vừa chọn hướng nghề nghiệp tò mò muốn tìm hiểu: "${userText}".
+NHIỆM VỤ THỰC HIỆN:
+1. Đúng 01 câu xác nhận lựa chọn sơ bộ của học sinh, khích lệ tính tự chủ.
+2. Đúng 01 câu khẳng định việc có mục tiêu ban đầu là bước ngoặt quan trọng để thoát khỏi sự mơ hồ.
+3. LỆNH KẾT THÚC PHIÊN CHAT BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+   "Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân. Bây giờ, em hãy chuyển sang Bước 3 để tự tra cứu Đề án tuyển sinh xem ngành này ở các trường đại học hoặc cao đẳng gần địa phương yêu cầu điều kiện gì nhé!"
+Quy chuẩn: Dưới 120 từ.`;
+      }
     }
   };
 
-  // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN CBAS (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
+  // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN VISEF 2026 (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
   const generateHeuristicFallback = (round, profile, userText = '', specialInstruction = null) => {
     const career = profile?.target_career || profile?.targetMajor || "Công nghệ thông tin";
     const uni = profile?.target_university || "Đại học Bách Khoa";
     const score = profile?.confidence_score || profile?.confidence || "8";
     const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+    const isBranchB = isUndecidedOrVague(career);
 
     if (specialInstruction) {
       return `Thầy rất thấu cảm và trân trọng sự trung thực của em khi chia sẻ: "${userText}".\n\n` +
-        `Những rào cản kỹ năng như giao tiếp trước đám đông hay áp lực tính toán đều có thể rèn luyện và bồi đắp được theo thời gian. Tuy nhiên, đối chiếu với nhóm tính cách Holland của em (${holland}), điều cốt lõi là em cần lắng nghe xem bản thân có thực sự tìm thấy niềm hứng khởi khi gắn bó với đặc thù công việc của ngành **${career}** hay không?\n\n` +
+        `Những rào cản kỹ năng như giao tiếp trước đám đông hay áp lực tính toán đều có thể rèn luyện và bồi đắp được theo thời gian. Tuy nhiên, đối chiếu với nhóm tính cách Holland của em (${holland}), điều cốt lõi là em cần lắng nghe xem bản thân có thực sự tìm thấy niềm hứng khởi khi gắn bó với đặc thù công việc hay không?\n\n` +
         `Nếu phải đối diện với tình huống này thường xuyên trong thực tế nghề nghiệp, em dự định sẽ chuẩn bị cho mình điểm tựa tâm lý hoặc kỹ năng gì để vượt qua?`;
     }
 
-    switch (round) {
-      case 1:
-        return `Thầy rất trân trọng mong muốn tốt đẹp và năng lực mà em vừa chia sẻ: "${userText}".\n\n` +
-          `Tuy nhiên, có một khoảng cách rất tự nhiên giữa điểm số môn học phổ thông hay sở thích đời thường với độ khó chuyên môn học thuật khắt khe khi bước vào giảng đường đại học ngành **${career}**.\n\n` +
-          `Trong 4-5 năm tới, các phần mềm tự động hóa và AI sẽ thay thế phần lớn tác vụ kỹ thuật cơ bản của ngành ${career}. Đâu là năng lực tư duy chuyên sâu hoặc thế mạnh độc bản mà em tin công nghệ không thể thay thế ở bản thân em?`;
+    if (!isBranchB) {
+      switch (round) {
+        case 1:
+          return `Thầy rất trân trọng mong muốn tốt đẹp và những suy nghĩ thẳng thắn mà em vừa chia sẻ: "${userText}".\n\n` +
+            `Tuy nhiên, giữa việc thích một ngành vì thấy nó hấp dẫn trên truyền thông và việc thực sự yêu thích các hoạt động công việc chuyên môn hàng ngày của ngành **${career}** là một khoảng cách rất lớn.\n\n` +
+            `Thầy thấy em chọn ngành **${career}** trong khi nhóm nổi trội của em là **${holland}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
 
-      case 2:
-        return `Thầy rất ủng hộ tinh thần tích cực và khát vọng hòa nhập xu thế của em: "${userText}".\n\n` +
-          `Dưới góc nhìn khách quan của thị trường 4.0, sự cạnh tranh về năng suất và tối ưu chi phí đang diễn ra rất mạnh mẽ. Để duy trì sự bền bỉ lâu dài, người làm nghề **${career}** cần xây dựng năng lực chuyên môn thực chiến cùng khả năng linh hoạt thích ứng.\n\n` +
-          `Nếu sau khi tốt nghiệp ngành ${career}, thị trường bão hòa hoặc có khoảng trũng việc làm, em đã chuẩn bị Bộ kỹ năng chuyển đổi (ngoại ngữ, năng lực số, giao tiếp) và phương án việc làm thích ứng nào để duy trì sự bền bỉ và tự nuôi sống bản thân?`;
+        case 2:
+          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng hòa nhập xu thế của em.\n\n` +
+            `Dưới góc nhìn khách quan của thị trường 4.0, sự cạnh tranh về năng suất và tối ưu chi phí đang diễn ra rất mạnh mẽ khi công nghệ và AI dần thay thế các tác vụ cơ bản.\n\n` +
+            `Ngành này đang có mức độ cạnh tranh đầu ra rất khốc liệt và nhiều công việc cơ bản đang dần bị công nghệ thay thế. Nếu kiên quyết theo đuổi, em dự định xây dựng năng lực nổi trội gì (ngoại ngữ chuyên sâu, kỹ năng thực hành hay dự án thực tế) để nhà tuyển dụng lựa chọn em thay vì hàng ngàn ứng viên khác?`;
 
-      case 3:
-        return `Thầy đánh giá rất cao sự dũng cảm đối diện với rủi ro và ý thức xây dựng phương án dự phòng của em.\n\n` +
-          `Để Kế hoạch B thực sự an toàn và vững chắc, mức tự tin ${score}/10 cần điểm tựa số liệu pháp lý cụ thể. Em đã từng tự tay đọc Đề án tuyển sinh chính thức của ${uni}, biết rõ điểm chuẩn 3 năm gần nhất, mức học phí tự chủ từng năm và chỉ tiêu thực tế của ngành ${career} chưa?`;
+        case 3:
+          return `Thầy đánh giá rất cao sự chủ động tư duy về năng lực cạnh tranh thực tế của em.\n\n` +
+            `Tuy nhiên, để cánh cửa tuyển sinh thực sự mở ra, mức tự tin ${score}/10 cần được đo lường bằng tương quan điểm số học thuật thực tế so với điểm chuẩn thực tế.\n\n` +
+            `Nhìn lại điểm tổng kết kỳ trước của các môn trong tổ hợp đó và đối chiếu với điểm chuẩn 2 năm gần nhất, em thấy mình đang ở ngưỡng an toàn, vừa sức hay đang có khoảng cách điểm số cần phải dồn nhiều nỗ lực nhất?`;
 
-      case 4:
-      default: {
-        return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-          `Chúng ta đã cùng nhau nhận diện 3 điểm lưu tâm quan trọng:\n` +
-          `1. Khoảng cách tự nhiên giữa mong muốn/năng lực ban đầu với đòi hỏi chuyên môn học thuật thực tế của ngành ${career}.\n` +
-          `2. Tầm quan trọng của Bộ kỹ năng chuyển đổi và phương án thích ứng trước nguy cơ tự động hóa công nghệ và biến động việc làm.\n` +
-          `3. Sự cần thiết phải tự tay xác thực điểm chuẩn 3 năm, học phí thực tế và đề án tuyển sinh tại ${uni}.\n\n` +
-          `Phiên phản tư nhận thức kết thúc tại đây. Giờ là lúc em rời màn hình đối thoại để bước sang **Bước 3: Đối chứng Dữ liệu Khách quan**, tự tay tra cứu Đề án tuyển sinh để làm chủ quyết định của chính mình!`;
+        case 4:
+        default:
+          return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
+            `Dựa trên tương quan năng lực hiện tại, em hãy cân nhắc 3 hướng đi thích ứng: lập kế hoạch dồn lực cải thiện điểm số nếu còn thời gian lớp 10/11; định hướng phân khúc Cao đẳng nghề thực hành (đào tạo 2.5 - 3 năm, chú trọng tay nghề, chi phí thấp, dễ có việc) nếu điểm lý thuyết cách xa Đại học; hoặc chuyển sang ngành phù hợp với môn học sở trường.\n\n` +
+            `Bây giờ, em hãy dừng suy đoán và bước sang **Bước 3: Môi trường đối chứng dữ liệu thực tế**. Nhiệm vụ của em là tự mở tab tra cứu Đề án tuyển sinh chính thức của trường mục tiêu, ghi nhận mã tổ hợp môn và điểm chuẩn 2 năm gần nhất để nhập vào bảng đối chứng!`;
+      }
+    } else {
+      switch (round) {
+        case 1:
+          return `Thầy rất thấu cảm với cảm giác ngập ngừng khi đứng trước quá nhiều thông tin trên mạng xã hội.\n\n` +
+            `Việc chưa xác định được ngành là điều tự nhiên, nhưng để người khác quyết định hộ cuộc đời mình là một rủi ro rất lớn.\n\n` +
+            `Sau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`;
+
+        case 2:
+          return `Thầy ghi nhận sự tỉnh thức và tinh thần trách nhiệm với tương lai của chính bản thân em.\n\n` +
+            `Điểm tựa bền vững nhất để chọn nghề không nằm ở lời khen bên ngoài mà xuất phát từ chính thế mạnh tự nhiên và sự hứng khởi bên trong.\n\n` +
+            `Kết quả Holland cho thấy em có thế mạnh ở nhóm **${holland}**. Nhìn lại việc học ở trường, khi làm các nhiệm vụ liên quan đến nhóm năng lực này, em có thấy mình tập trung và có nhiều năng lượng nhất không?`;
+
+        case 3:
+          return `Thầy đánh giá cao việc em đã tìm thấy những tín hiệu tích cực từ các môn học sở trường của mình.\n\n` +
+            `Từ nhóm thế mạnh **${holland}**, thị trường nghề nghiệp thường mở ra 2 ngã rẽ: một hướng thiên về Học thuật đại học và một hướng thiên về Kỹ năng thực hành dịch vụ chuyên sâu.\n\n` +
+            `Từ thế mạnh đó, thầy gợi ý 2 hướng đi: Hướng A là ngành nghiên cứu/quản lý học thuật và Hướng B là ngành kỹ thuật/dịch vụ thực hành. Hướng đi nào khiến em cảm thấy tò mò và muốn tìm hiểu sâu hơn?`;
+
+        case 4:
+        default:
+          return `Thầy chúc mừng em vì đã dũng cảm vượt qua sự mơ hồ ban đầu để tự tay định hình mục tiêu đầu tiên cho bản thân.\n\n` +
+            `Sự tự chủ này là chiếc chìa khóa quan trọng nhất giúp em làm chủ hành trình nghề nghiệp tương lai mà không bị cuốn theo đám đông.\n\n` +
+            `Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân. Bây giờ, em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tra cứu Đề án tuyển sinh xem ngành này ở các trường đại học hoặc cao đẳng gần địa phương yêu cầu điều kiện gì nhé!`;
       }
     }
   };
@@ -260,8 +365,8 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: formattedContents,
           generationConfig: {
-            temperature: 0.15,
-            maxOutputTokens: 250
+            temperature: 0.2,
+            maxOutputTokens: 600
           }
         }),
         signal: directCtrl.signal
@@ -270,8 +375,24 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
 
       if (response.ok) {
         const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text && text.trim().length >= 20) {
+        const parts = data.candidates?.[0]?.content?.parts;
+        let text = null;
+        if (Array.isArray(parts) && parts.length > 0) {
+          const cleanParts = parts.filter(p => !p.thought && p.text);
+          if (cleanParts.length > 0) {
+            text = cleanParts.map(p => p.text).join('\n\n').trim();
+          } else {
+            text = parts[0]?.text?.trim();
+          }
+          if (text) {
+            text = text
+              .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates)[:\s-]*/i, '')
+              .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ).*?\]\s*/i, '')
+              .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
+              .trim();
+          }
+        }
+        if (text && text.trim().length >= 25) {
           return text.trim();
         }
       }
@@ -307,6 +428,16 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
     content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
     content += `🔄 Tiến trình hoàn thành: ${Math.min(currentRound, maxRounds)} / ${maxRounds} vòng phản tư${currentRound > maxRounds ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
+
+    if (sessionTelemetry) {
+      content += `-----------------------------------------------------------------\n`;
+      content += `KẾT QUẢ ĐO LƯỜNG VÀ GẮN NHÃN HÀNH VI (CHUẨN VISEF 2026):\n`;
+      content += `-----------------------------------------------------------------\n`;
+      content += `- Bước ngoặt nhận thức (Turning_Point_Detected): ${sessionTelemetry.turning_point_detected}\n`;
+      content += `- Phân loại kết quả (Outcome_Category): ${sessionTelemetry.outcome_category}\n`;
+      content += `- Phân luồng buổi tư vấn Bước 4 (Triage_Step4): ${sessionTelemetry.triage_step4}\n\n`;
+    }
+
     content += `-----------------------------------------------------------------\n`;
     content += `CHI TIẾT NỘI DUNG ĐỐI THOẠI PHẢN BIỆN SOCRATES:\n`;
     content += `-----------------------------------------------------------------\n\n`;
@@ -426,7 +557,10 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
     setIsLoading(true);
 
     try {
-      const aiReply = await callGeminiSocratic(messages, cleanText, currentRound, reflex.instructionForAI);
+      let aiReply = reflex.directReply;
+      if (!aiReply) {
+        aiReply = await callGeminiSocratic(messages, cleanText, currentRound, reflex.instructionForAI);
+      }
       
       const aiMsg = {
         role: 'model',
@@ -434,9 +568,50 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
-      setMessages([...nextHistory, aiMsg]);
+      const updatedHistory = [...nextHistory, aiMsg];
+      setMessages(updatedHistory);
       if (reflex.advanceRound !== false) {
-        setCurrentRound(prevRound => prevRound + 1);
+        const nextR = currentRound + 1;
+        setCurrentRound(nextR);
+        if (nextR > maxRounds) {
+          // Tính toán Telemetry chuẩn ViSEF 2026:
+          let tpDetected = false;
+          let tpRound = 'Không';
+          updatedHistory.forEach((m, idx) => {
+            if (m.role === 'user') {
+              const lower = m.text.toLowerCase();
+              if (lower.includes('chưa') || lower.includes('lo') || lower.includes('sợ') || lower.includes('áp lực') || lower.includes('không biết') || lower.includes('khó')) {
+                if (!tpDetected) {
+                  tpDetected = true;
+                  tpRound = idx <= 3 ? 'Vòng 2' : 'Vòng 3';
+                }
+              }
+            }
+          });
+
+          const lastUserMsg = cleanText.toLowerCase();
+          let outcome = 'Persistent_Calibrated';
+          if (lastUserMsg.includes('cao đẳng') || lastUserMsg.includes('học nghề') || lastUserMsg.includes('thực hành') || lastUserMsg.includes('nghề')) {
+            outcome = 'Segment_Shift';
+          } else if (lastUserMsg.includes('chuyển') || lastUserMsg.includes('đổi ngành') || lastUserMsg.includes('ngành khác') || lastUserMsg.includes('phù hợp hơn')) {
+            outcome = 'Field_Shift';
+          } else if (lastUserMsg.includes('mặc kệ') || lastUserMsg.includes('thích thì') || lastUserMsg.includes('kệ')) {
+            outcome = 'Resistance';
+          } else {
+            outcome = 'Persistent_Calibrated';
+          }
+
+          const triage = (outcome === 'Segment_Shift' || outcome === 'Field_Shift' || tpDetected) ? 'In-depth (20 phút)' : 'Fast-track (5 phút)';
+
+          const telemetryData = {
+            turning_point_detected: tpDetected ? `True (${tpRound})` : 'False',
+            outcome_category: outcome,
+            triage_step4: triage,
+            timestamp: new Date().toISOString()
+          };
+          setSessionTelemetry(telemetryData);
+          localStorage.setItem('cbas_step2_telemetry', JSON.stringify(telemetryData));
+        }
       }
 
     } catch (err) {
@@ -629,6 +804,19 @@ Quy chuẩn: Dưới 135 từ. Ấm áp, truyền cảm hứng tự chủ.`;
               <p style={{ margin: 0, fontSize: '12.5px', color: '#047857' }}>
                 Em có thể sao chép hoặc xuất biên bản đối thoại này để làm minh chứng cho buổi Tham vấn 1-1 ở Bước 4.
               </p>
+              {sessionTelemetry && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    📌 TP: {sessionTelemetry.turning_point_detected}
+                  </span>
+                  <span style={{ fontSize: '11px', background: '#dcfce7', color: '#166534', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    🏷️ Kết quả: {sessionTelemetry.outcome_category}
+                  </span>
+                  <span style={{ fontSize: '11px', background: '#f3e8ff', color: '#6b21a8', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
+                    ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* CỤM NÚT XUẤT CUỐI VÒNG 4 */}
