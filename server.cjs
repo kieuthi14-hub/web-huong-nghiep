@@ -60,14 +60,37 @@ app.post('/api/socrates-chat', async (req, res) => {
           });
         }
 
-        // Phản xạ nhanh đam mê
-        if (lowerTrimmed === 'vì đam mê' || lowerTrimmed === 'đam mê' || lowerTrimmed.includes('vì đam mê') || lowerTrimmed.includes('do đam mê')) {
-          const passionReply = `Thầy rất ghi nhận niềm đam mê của em đối với nghề giáo.\n\nĐam mê cụ thể ở khía cạnh nào: thích truyền đạt kiến thức, thích nghiên cứu bài giảng, hay thích tương tác với học sinh?`;
+        // PHẢN XẠ NHANH: Nếu học sinh cảm thấy bị hỏi lặp lại ("Dạ em đã nói là thích rồi mà")
+        const isAnnoyedRepeat = [
+          'đã nói', 'nói rồi', 'hỏi lại', 'đã bảo', 'thầy lại hỏi', 'đã trả lời', 'sao hỏi lại', 'đã nói là'
+        ].some(k => lowerTrimmed.includes(k));
+
+        if (isAnnoyedRepeat) {
+          const calmReply = `Thầy ghi nhận sự kiên định và khẳng định dứt khoát của em đối với ngành **${targetCareer}**! Thầy trò mình cùng đi thẳng vào thực tế nhé:\n\nTrong 5-10 năm tới, AI, công nghệ giáo dục (EdTech) và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường lao động. Người làm nghề **${targetCareer}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao cho học sinh.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
           return res.status(200).json({
             success: true,
-            round: Math.min(studentTurns, 4),
-            response: passionReply,
-            reply: passionReply,
+            round: 2,
+            response: calmReply,
+            reply: calmReply,
+            isCompleted: false
+          });
+        }
+
+        // PHẢN XẠ NHANH: Nếu học sinh khẳng định thực sự yêu thích / đam mê (TUYỆT ĐỐI KHÔNG HỎI LẠI CÂU MỞ ĐẦU)
+        const isAffirmingInterest = [
+          'thực sự yêu thích', 'thực sự thích', 'thật sự yêu thích', 'thật sự thích',
+          'yêu thích', 'vì em thích', 'em thích', 'thích thôi', 'do em thích',
+          'rất thích', 'thích ngành', 'thích nghề', 'đam mê', 'vì đam mê', 'do đam mê',
+          'thích chứ', 'không phải điều gì khác', 'không phải vì hot', 'không phải phong trào'
+        ].some(k => lowerTrimmed.includes(k));
+
+        if (isAffirmingInterest && studentTurns <= 2) {
+          const interestReply = `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${targetCareer}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`;
+          return res.status(200).json({
+            success: true,
+            round: 1,
+            response: interestReply,
+            reply: interestReply,
             isCompleted: false
           });
         }
@@ -115,7 +138,9 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
 1. CẤM LẶP LẠI CÂU HỎI: Đọc kỹ lịch sử chat, tuyệt đối không lặp lại câu hỏi bạn đã hỏi ở các lượt trước.
 2. ĐỐI THOẠI THỰC CHẤT VÀ TÔN TRỌNG NGỮ CẢNH:
    - Nếu học sinh chỉ chào hỏi: Chỉ chào lại ngắn gọn trong 1 câu và nhắc nhở học sinh trả lời câu hỏi trước.
-   - Lượt 1: Bóc tách động cơ thật sự (đam mê hay phong trào). Nếu học sinh nói "vì đam mê": hỏi đam mê ở khía cạnh nào (truyền đạt kiến thức, nghiên cứu bài giảng, hay tương tác học sinh).
+   - Lượt 1: Học sinh vừa phản hồi câu hỏi mở đầu về động cơ chọn ngành (do yêu thích thực sự hay do trào lưu). TUYỆT ĐỐI CẤM HỎI LẠI câu hỏi mở đầu đó!
+     * Hãy ghi nhận sự khẳng định của học sinh (công nhận nếu học sinh chọn vì yêu thích thực sự).
+     * Bóc tách sâu vào hoạt động chuyên môn thực tế: Hỏi cụ thể học sinh hào hứng với hoạt động chuyên môn hàng ngày nào (như đứng lớp truyền đạt kiến thức, kiên nhẫn tương tác hỗ trợ học sinh, hay nghiên cứu sâu bài giảng).
    - Lượt 2: BẮT BUỘC lồng ghép 2 yếu tố cốt lõi:
      * Xu hướng nghề nghiệp tương lai: Tác động của AI, Chuyển đổi số, Tự động hóa hoặc tái cơ cấu thị trường việc làm trong 5-10 năm tới (ví dụ: với Sư phạm, AI và công nghệ giáo dục EdTech đang thay đổi cách dạy học; giáo viên tương lai không chỉ truyền thụ kiến thức cơ học mà phải tích hợp công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh).
      * Thử thách học sinh về Năng lực thích ứng mới của ngành nghề (không chỉ làm các tác vụ cơ bản lặp đi lặp lại).
@@ -183,7 +208,7 @@ QUY TẮC CỐT TỬ (BẮT BUỘC TUÂN THỦ):
                 }
                 replyText = `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. ${subjectPairAdvice}\n\nBây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
             } else if (studentTurns === 1) {
-                replyText = `Thầy rất ghi nhận chia sẻ của em. Tuy nhiên, việc thích một ngành vì danh tiếng khác với việc sẵn sàng đối diện với áp lực công việc hàng ngày của ngành **${targetCareer}**.\n\nEm chọn ngành này xuất phát từ đam mê công việc thực tế, hay vì thấy đây là ngành được nhiều người xung quanh khen ngợi?`;
+                replyText = `Thầy rất ghi nhận sự thẳng thắn và khẳng định rõ ràng của em. Chọn ngành từ sự yêu thích tự nhiên là điểm tựa rất tốt, nhưng sự yêu thích ấy cần gắn liền với các công việc chuyên môn thực tế mỗi ngày.\n\nCụ thể trong các hoạt động chuyên môn của ngành **${targetCareer}** (như đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay nghiên cứu bài giảng), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?`;
             } else if (studentTurns === 2) {
                 replyText = `Thầy rất ủng hộ tinh thần trách nhiệm của em. Tuy nhiên trong 5-10 năm tới, AI, công nghệ giáo dục và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Giáo viên tương lai của ngành **${targetCareer}** sẽ không chỉ làm nhiệm vụ truyền thụ kiến thức cơ học mà bắt buộc phải làm chủ công nghệ, rèn luyện kỹ năng tư duy bậc cao cho học sinh và đối diện với chuẩn nghề nghiệp mới rất khắt khe.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
             } else {

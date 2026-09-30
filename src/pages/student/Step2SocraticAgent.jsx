@@ -40,24 +40,30 @@ export function processStudentMessage(message, currentRound, studentProfile) {
     };
   }
 
-  // 1.3. Nếu học sinh nói "Vì em thích" / "Em thích thôi" (CẤM LẶP LẠI CÂU HỎI CŨ)
-  const isBecauseILike = lowerMsg === 'vì em thích' || lowerMsg === 'em thích' || 
-    lowerMsg === 'thích thôi' || lowerMsg === 'thích' || lowerMsg === 'do em thích' ||
-    lowerMsg.includes('vì em thích') || lowerMsg.includes('thích ngành này');
+  // 1.2b. PHẢN XẠ NHANH: Nếu học sinh cảm thấy bị hỏi lặp lại ("Dạ em đã nói là thích rồi mà")
+  const isAnnoyedRepeat = [
+    'đã nói', 'nói rồi', 'hỏi lại', 'đã bảo', 'thầy lại hỏi', 'đã trả lời', 'sao hỏi lại', 'đã nói là'
+  ].some(k => lowerMsg.includes(k));
 
-  if (isBecauseILike && currentRound <= 2) {
+  if (isAnnoyedRepeat) {
     return {
       advanceRound: true,
-      directReply: `Thầy rất ghi nhận niềm yêu thích tự nhiên của em dành cho ngành **${targetMajor}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, quản lý lớp học hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và sự kiên nhẫn nhất?`
+      directReply: `Thầy ghi nhận sự kiên định và khẳng định dứt khoát của em đối với ngành **${targetMajor}**! Thầy trò mình cùng đi thẳng vào thực tế nhé:\n\nTrong 5-10 năm tới, AI, EdTech và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường lao động. Người làm nghề **${targetMajor}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao cho học sinh.\n\nĐể thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${targetMajor}** tại trường mục tiêu, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`
     };
   }
 
-  // 1.3b. Nếu học sinh nói "vì đam mê" / "đam mê"
-  const isPassion = lowerMsg === 'vì đam mê' || lowerMsg === 'đam mê' || lowerMsg.includes('vì đam mê') || lowerMsg.includes('do đam mê');
-  if (isPassion && currentRound <= 2) {
+  // 1.3. Nếu học sinh khẳng định thực sự yêu thích / đam mê (TUYỆT ĐỐI CẤM HỎI LẠI CÂU HỎI MỞ ĐẦU)
+  const isAffirmingInterest = [
+    'thực sự yêu thích', 'thực sự thích', 'thật sự yêu thích', 'thật sự thích',
+    'yêu thích', 'vì em thích', 'em thích', 'thích thôi', 'do em thích',
+    'rất thích', 'thích ngành', 'thích nghề', 'đam mê', 'vì đam mê', 'do đam mê',
+    'thích chứ', 'không phải điều gì khác', 'không phải vì hot', 'không phải phong trào'
+  ].some(k => lowerMsg.includes(k));
+
+  if (isAffirmingInterest && currentRound <= 2) {
     return {
       advanceRound: true,
-      directReply: `Thầy rất ghi nhận niềm đam mê của em đối với nghề giáo.\n\nĐam mê cụ thể ở khía cạnh nào: thích truyền đạt kiến thức, thích nghiên cứu bài giảng, hay thích tương tác với học sinh?`
+      directReply: `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${targetMajor}**.\n\nTuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\nCụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`
     };
   }
 
@@ -204,14 +210,15 @@ Bạn đang trò chuyện 1-1 với một học sinh THPT.
       switch (round) {
         case 1:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (KIỂM CHỨNG ĐỘNG CƠ & ĐỐI CHẤT MÃ HOLLAND):
-- Học sinh chọn ngành ${career} tại ${uni}, điểm tự tin ${score}/10, nhóm Holland nổi trội: ${holland}.
-- Học sinh vừa trả lời: "${userText}".
-NHIỆM VỤ THỰC HIỆN (Theo đúng cấu trúc 3 phần):
-1. Đúng 01 câu nhận diện & đồng cảm với mong muốn học sinh vừa chia sẻ.
-2. Đúng 01 câu phân tích/bóc tách sự khác biệt giữa động cơ nội sinh (thực sự hiểu bản chất công việc) vs động cơ ngoại sinh (thích vì mác oai, trào lưu mạng, sĩ diện).
-3. ĐÚNG 01 CÂU HỎI CHỐT: "Thầy thấy em chọn ngành ${career} trong khi nhóm nổi trội của em là ${holland}. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang 'hot' và được nhiều người khen ngợi?"
-Quy chuẩn: Dưới 110 từ. Tuyệt đối không dán nhãn tiêu cực.`;
+BỐI CẢNH VÒNG 1 (ĐÀO SÂU HOẠT ĐỘNG CHUYÊN MÔN - TUYỆT ĐỐI CẤM HỎI LẠI CÂU MỞ ĐẦU):
+- Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành ${career}: "${userText}".
+- Nhóm Holland nổi trội của học sinh: ${holland}.
+NHIỆM VỤ THỰC HIỆN:
+1. Đúng 01 câu ghi nhận sự thẳng thắn và khẳng định của học sinh (công nhận nếu học sinh chọn vì yêu thích thực sự).
+2. Phân tích rằng sự yêu thích chỉ là điểm khởi đầu, cần gắn liền với các công việc chuyên môn thực tế hàng ngày.
+3. ĐÚNG 01 CÂU HỎI MỚI ĐÀO SÂU: "Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành ${career} (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành hỗ trợ học sinh), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?"
+[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI CẤM hỏi lại câu: "chọn vì thực sự yêu thích hay vì hot/khen ngợi".
+Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
 
         case 2:
           return `${SOCRATIC_PERSONA}${specialDirective}
@@ -319,9 +326,9 @@ Quy chuẩn: Dưới 120 từ.`;
     if (!isBranchB) {
       switch (round) {
         case 1:
-          return `Thầy rất trân trọng mong muốn tốt đẹp và những suy nghĩ thẳng thắn mà em vừa chia sẻ: "${userText}".\n\n` +
-            `Tuy nhiên, giữa việc thích một ngành vì thấy nó hấp dẫn trên truyền thông và việc thực sự yêu thích các hoạt động công việc chuyên môn hàng ngày của ngành **${career}** là một khoảng cách rất lớn.\n\n` +
-            `Thầy thấy em chọn ngành **${career}** trong khi nhóm nổi trội của em là **${holland}**. Em chọn ngành này vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang "hot" và được nhiều người khen ngợi?`;
+          return `Thầy rất ghi nhận sự khẳng định chân thành và rõ ràng của em: "${userText}".\n\n` +
+            `Chọn ngành xuất phát từ sự yêu thích tự nhiên là điểm tựa rất tốt, nhưng sự yêu thích ấy cần gắn liền với các công việc chuyên môn thực tế diễn ra mỗi ngày.\n\n` +
+            `Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành **${career}** (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?`;
 
         case 2:
           return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em.\n\n` +
@@ -403,7 +410,7 @@ Quy chuẩn: Dưới 120 từ.`;
     for (const ep of endpointsToTry) {
       try {
         const serverlessCtrl = new AbortController();
-        const sTimeout = setTimeout(() => serverlessCtrl.abort(), 6500);
+        const sTimeout = setTimeout(() => serverlessCtrl.abort(), 12000);
 
         const serverlessRes = await fetch(ep, {
           method: "POST",
@@ -447,7 +454,7 @@ Quy chuẩn: Dưới 120 từ.`;
       });
 
       const directCtrl = new AbortController();
-      const directTimeout = setTimeout(() => directCtrl.abort(), 6000);
+      const directTimeout = setTimeout(() => directCtrl.abort(), 12000);
 
       const response = await fetch(ENDPOINT, {
         method: "POST",
