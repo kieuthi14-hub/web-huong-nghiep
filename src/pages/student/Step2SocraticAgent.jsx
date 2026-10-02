@@ -143,41 +143,63 @@ export default function Step2SocraticAgent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isCompleted && lastAiMsgRef.current) {
-        lastAiMsgRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
     return () => clearTimeout(timer);
   }, [messages, isLoading, chatStage, isCompleted]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
-    const rawAnchor = localStorage.getItem("cbas_anchor_data");
-    const anchor = rawAnchor ? JSON.parse(rawAnchor) : {
-      target_career: "Sư phạm",
-      target_university: "ĐH Quy Nhơn",
-      confidence_score: "5",
-      holland_code: "AEI"
+    let userProfile = null;
+    try {
+      const rawProf = localStorage.getItem("cbas_user_profile");
+      if (rawProf) userProfile = JSON.parse(rawProf);
+    } catch (e) {}
+
+    let anchor = null;
+    try {
+      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
+      if (rawAnchor) anchor = JSON.parse(rawAnchor);
+    } catch (e) {}
+
+    const hollandCode = userProfile?.hollandCode || anchor?.holland_code || anchor?.hollandCode || "AEI";
+    const targetMajor = userProfile?.targetMajor || anchor?.target_career || anchor?.targetMajor || "Sư phạm";
+    const targetSchool = userProfile?.targetSchool || anchor?.target_university || anchor?.targetSchool || "ĐH Quy Nhơn";
+    const reason = userProfile?.reason || anchor?.source_of_influence || anchor?.reason || "Em thích từ nhỏ";
+    const initialConfidence = userProfile?.initialConfidence ?? (anchor?.confidence_score ? Number(anchor.confidence_score) : 5);
+    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || "10 - 15 triệu/tháng";
+
+    const resolvedProfile = {
+      hollandCode,
+      targetMajor,
+      targetSchool,
+      reason,
+      initialConfidence,
+      expectedIncome,
+      // Tương thích ngược:
+      target_career: targetMajor,
+      target_university: targetSchool,
+      confidence_score: String(initialConfidence),
+      holland_code: hollandCode,
+      expected_income: expectedIncome
     };
-    setStudentProfile(anchor);
+    setStudentProfile(resolvedProfile);
 
     // Dọn sạch trạng thái kẹt cũ của các phiên test trước
     localStorage.removeItem("cbas_step2_messages");
     localStorage.removeItem("cbas_step2_round");
     localStorage.removeItem("cbas_step2_completed");
 
-    const isBranchB = isUndecidedOrVague(anchor.target_career);
+    const isBranchB = isUndecidedOrVague(targetMajor);
 
     // LỜI CHÀO & CÂU HỎI MỞ ĐẦU CHUẨN VISEF 2026:
     let initialGreeting = '';
     if (isBranchB) {
       // NHÁNH B: HỌC SINH MƠ HỒ, CHƯA CÓ MỤC TIÊU CỤ THỂ
-      initialGreeting = `Chào em. Thầy đã tiếp nhận kết quả Bước 1 của em với nhóm Holland nổi trội là **${anchor.holland_code}**, và em đang còn nhiều phân vân chưa chọn được ngành học cụ thể.\n\nThầy trò mình cùng trò chuyện cởi mở để khai mở và tìm ra điểm tựa định hướng phù hợp nhất với bản thân em nhé.\n\nSau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`;
+      initialGreeting = `Chào em. Thầy ghi nhận em có thiên hướng Holland **${hollandCode}**, và em đang còn nhiều phân vân chưa chọn được ngành học cụ thể với mức tự tin **${initialConfidence}/10**.\n\nThầy trò mình cùng trò chuyện cởi mở để khai mở và tìm ra điểm tựa định hướng phù hợp nhất với bản thân em nhé.\n\nSau này người trực tiếp đi học và chịu trách nhiệm với công việc là chính em. Nếu cứ chọn theo trào lưu mà không biết mình muốn gì, em có sợ một ngày thức dậy nhận ra mình đang làm một công việc bản thân không hề yêu thích?`;
     } else {
-      // NHÁNH A: HỌC SINH ĐÃ CÓ MỤC TIÊU CỤ THỂ
-      initialGreeting = `Chào em. Thầy đã tiếp nhận dữ liệu từ Bước 1: Em chọn ngành **${anchor.target_career}** tại **${anchor.target_university}** với mức tự tin **${anchor.confidence_score}/10**. Kết quả Holland của em là nhóm nổi trội **${anchor.holland_code}**.\n\nThầy trò mình cùng trò chuyện cởi mở nhé. Em chọn ngành **${anchor.target_career}** vì thực sự yêu thích các hoạt động công việc hàng ngày của nó, hay vì thấy ngành này đang 'hot' và được nhiều người khen ngợi?`;
+      // NHÁNH A: HỌC SINH ĐÃ CÓ MỤC TIÊU CỤ THỂ (THEO ĐÚNG TIÊU CHUẨN VISEF 2026)
+      initialGreeting = `Chào em. Thầy ghi nhận em có thiên hướng Holland **${hollandCode}**, dự định chọn **${targetMajor}** tại **${targetSchool}** với mức tự tin **${initialConfidence}/10** và lý do: '${reason}'.\n\nEm thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
     }
 
     const initMsg = [{
@@ -224,10 +246,12 @@ Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiề
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
-    const career = profile?.target_career || profile?.targetMajor || "ngành đã chọn";
-    const uni = profile?.target_university || "trường đại học mục tiêu";
-    const score = profile?.confidence_score || profile?.confidence || "8";
-    const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+    const career = profile?.targetMajor || profile?.target_career || "ngành đã chọn";
+    const uni = profile?.targetSchool || profile?.target_university || "trường đại học mục tiêu";
+    const score = profile?.initialConfidence ?? profile?.confidence_score ?? "5";
+    const holland = profile?.hollandCode || profile?.holland_code || "RIASEC";
+    const reason = profile?.reason || profile?.source_of_influence || "Em thích từ nhỏ";
+    const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
     const isBranchB = isUndecidedOrVague(career);
 
     const specialDirective = specialInstruction ? `\n\nCHỈ DẪN ĐẶC BIỆT KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}\n` : '';
@@ -239,72 +263,62 @@ Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiề
       switch (round) {
         case 1:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (ĐÀO SÂU ĐỘNG CƠ CHỌN NGÀNH - TUYỆT ĐỐI CẤM HỎI LẠI CÂU MỞ ĐẦU):
-- Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành ${career}: "${userText}".
-- Nhóm Holland nổi trội của học sinh: ${holland}.
+BỐI CẢNH VÒNG 1 (ĐÀO SÂU ĐỘNG CƠ CHỌN NGÀNH & BẺ GÃY KỲ VỌNG THU NHẬP):
+- Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành ${career} và lý do "${reason}": "${userText}".
+- Nhóm Holland nổi trội của học sinh: ${holland}. Mức tự tin ban đầu: ${score}/10.
+- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}".
 NHIỆM VỤ THỰC HIỆN:
-* NẾU HỌC SINH NÊU ĐỘNG CƠ TỪ GIA ĐÌNH / BỐ MẸ ĐỊNH HƯỚNG HOẶC CHỌN HỘ:
-  ĐÂY LÀ ĐỘNG CƠ NGOẠI SINH. CẤM TUYỆT ĐỐI không được phản hồi: "Chọn ngành xuất phát từ sự yêu thích tự nhiên...".
-  PHẢI PHẢN HỒI ĐÚNG BẢN CHẤT: "Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em. Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc ${career} này không, hay em chỉ đang học để làm hài lòng bố mẹ?"
-* NẾU HỌC SINH KHẲNG ĐỊNH TỰ NGUYỆN YÊU THÍCH THỰC SỰ:
-  1. Ghi nhận sự khẳng định chân thành của học sinh.
-  2. Phân tích rằng sự yêu thích chỉ là điểm khởi đầu, cần gắn liền với các công việc chuyên môn thực tế hàng ngày.
-  3. ĐÚNG 01 CÂU HỎI MỚI ĐÀO SÂU: "Cụ thể trong các hoạt động chuyên môn hàng ngày của ngành ${career} (như soạn bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành hỗ trợ học sinh), hoạt động nào khiến em cảm thấy bản thân hào hứng và có nhiều năng lượng nhất?"
-[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI CẤM hỏi lại câu: "chọn vì thực sự yêu thích hay vì hot/khen ngợi".
-Quy chuẩn: Dưới 110 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
+1. Thấu cảm / ghi nhận động cơ của học sinh (nếu do gia đình áp đặt thì nhắc nhở người trực tiếp học và làm nghề là em; nếu khẳng định đam mê thật sự thì ghi nhận tinh thần tích cực).
+2. Sau đó CHỦ ĐỘNG DẪN DẮT SANG GIAI ĐOẠN 2: Đối chất trực tiếp với con số kỳ vọng thu nhập [${expectedIncome}] trong bối cảnh AI và tự động hóa 5-10 năm tới.
+3. KẾT THÚC BẰNG ĐÚNG CÂU HỎI PHẢN TƯ GIAI ĐOẠN 2:
+   "Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
+[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI CẤM hỏi lại câu: "chọn vì thực sự yêu thích hay vì hot/khen ngợi". Không kết thúc phiên chat tại đây!
+Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
 
         case 2:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (ÁP LỰC NGHỀ, XU HƯỚNG TƯƠNG LAI & CHUẨN BỊ TỔ HỢP):
-- Ngành: ${career}, mã Holland: ${holland}.
-- Học sinh vừa trả lời về động cơ chọn ngành: "${userText}".
+BỐI CẢNH VÒNG 2 (ÁP LỰC NGHỀ, XU HƯỚNG AI & NGHỊCH LÝ TUYỂN SINH):
+- Ngành: ${career}, trường: ${uni}, mã Holland: ${holland}.
+- Học sinh vừa trả lời về áp lực nghề, xu hướng AI và năng lực cạnh tranh cho mức thu nhập ${expectedIncome}: "${userText}".
 NHIỆM VỤ THỰC HIỆN (BẮT BUỘC LỒNG GHÉP 2 YẾU TỐ):
-1. Đúng 01 câu ghi nhận và đồng cảm với mong muốn của học sinh.
-2. Phân tích thực tế thị trường lao động 5-10 năm tới dưới tác động của AI, Chuyển đổi số, Tự động hóa: Người làm nghề ${career} tương lai không chỉ làm các tác vụ cơ bản lặp đi lặp lại mà phải thích ứng với chuẩn năng lực mới (ví dụ với giáo viên là tích hợp công nghệ EdTech, rèn luyện tư duy cho học sinh).
-3. ĐÚNG 01 CÂU HỎI KẾT NỐI VÒNG 3: "Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành ${career} tại ${uni}, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?"
-Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng, không dùng văn mẫu rập khuôn.`;
+1. Đúng 01 câu ghi nhận và đồng cảm với góc nhìn của học sinh về cạnh tranh và thị trường.
+2. Dẫn dắt sang Giai đoạn 3: Nghịch lý tuyển sinh - dù kỳ vọng thế nào thì chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh vào ${career} tại ${uni}.
+3. ĐÚNG 01 CÂU HỎI KẾT NỐI VÒNG 3:
+   "Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${career} tại ${uni}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
+[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây! Khung chat bắt buộc phải giữ mở để học sinh trả lời ở Giai đoạn 3!
+Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ - BƯỚC NGOẶT T1):
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
 - Học sinh vừa phản hồi: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
-* NẾU HỌC SINH PHẢN BIỆN LẠI THẦY (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc giải thích lý do vì chưa định hình môn dạy):
+* NẾU HỌC SINH CHƯA NÊU RÕ CẶP MÔN HOẶC PHẢN BIỆN LẠI THẦY (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc chưa định hình môn dạy):
   - [CẤM TUYỆT ĐỐI]: AI TUYỆT ĐỐI KHÔNG ĐƯỢC tự ý phán đoán học sinh "học lực đều đều", KHÔNG ĐƯỢC khuyên học Cao đẳng, và TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc phiên chat tại đây!
   - [NHIỆM VỤ 3 BƯỚC BẮT BUỘC]:
-    (1) Bước a: Công nhận tư duy thực tế và tinh thần phản biện thẳng thắn của học sinh (việc chưa chọn môn dạy thì chưa thể vội tra cứu tổ hợp là hoàn toàn tự nhiên).
-    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${uni} (24 - 27 điểm).
+    (1) Bước a: Công nhận tư duy thực tế và tinh thần phản biện thẳng thắn của học sinh.
+    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${uni} (thường từ 24 - 27 điểm).
     (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
-* NẾU HỌC SINH NÓI CHƯA BIẾT / CHƯA TÌM HIỂU TỔ HỢP MÔN:
-  BẮT BUỘC thực hiện Kỹ thuật 3 Nhịp:
-  (1) Thấu cảm / gợi mở 2 trục năng lực (KHTN/Logic vs KHXH/Ngôn ngữ);
-  (2) Chỉ ra mức độ cạnh tranh điểm chuẩn 24-27 điểm khắt khe;
-  (3) KẾT THÚC BẰNG CÂU HỎI THĂM DÒ ĐỐI CỰC TRUNG LẬP: "Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?"
-* NẾU HỌC SINH NÓI "HỌC ĐỀU ĐỀU CÁC MÔN" / "BÌNH THƯỜNG / TÀN TÀN":
-  BẮT BUỘC chỉ ra mức độ cạnh tranh điểm chuẩn rất khắt khe (thường từ 24-27 điểm, tức 8-9 điểm/môn) và hỏi mở xem môn nào học sinh có khả năng bứt phá kéo điểm tổ hợp.
-* NẾU HỌC SINH ĐÃ NÊU TỔ HỢP/MÔN CỤ THỂ:
-  Hỏi đối chiếu điểm học lực thực tế: "Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?"
-Quy chuẩn: Dưới 130 từ. CẤM kết thúc chat khi học sinh chưa nêu rõ môn học!`;
+* NẾU HỌC SINH ĐÃ NÊU RÕ MÔN HỌC THẾ MẠNH / MÔN YẾU (HOẶC HỌC LỰC RÕ RÀNG):
+  Thực hiện phân tích cặp môn theo Mô hình Thích ứng Kép và ra lệnh chuyển Bước 3:
+  1. Ghi nhận sự trung thực của học sinh khi đối diện với năng lực học tập.
+  2. Đưa ra 2 giải pháp thích ứng: (1) Bứt phá điểm số ở môn thế mạnh HOẶC (2) Cân nhắc hệ Cao đẳng thực hành vừa sức hơn (2.5 - 3 năm) để sớm có tay nghề vững chắc và giảm áp lực điểm thi.
+  3. MỆNH LỆNH CHUYỂN BƯỚC DỨT KHOÁT:
+     "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!"
+  [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC HỎI THÊM BẤT KỲ CÂU NÀO NỮA!
+Quy chuẩn: Dưới 140 từ. Dứt khoát, trao quyền tự quyết.`;
 
         case 4:
         default:
           return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯỚC 3 - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
-- Học sinh vừa trả lời về tương quan điểm số / môn sở trường: "${userText}".
+- Học sinh vừa trả lời: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
 1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. BẮT BUỘC PHÂN TÍCH CHÍNH XÁC CẶP MÔN / TÌNH TRẠNG HỌC SINH VỪA NÊU Ở VÒNG 3:
-   * NẾU HỌC SINH YẾU CẢ TOÁN VÀ VĂN (HOẶC HỌC LỰC ĐỀU ĐỀU THẤP):
-     Phải nhận diện ngay đây là thử thách rất lớn vì phần lớn các ngành Sư phạm tại ${uni} đều xét tuyển có môn Toán hoặc Văn với điểm chuẩn cao (thường từ 24 - 27 điểm).
-     Đưa ra giải pháp thích ứng kép:
-     (1) Nỗ lực bứt phá các môn sở trường còn lại (Ngoại ngữ, KHTN, Sử, Địa) để kéo điểm tổ hợp;
-     (2) Cân nhắc phân khúc vừa sức như hệ Cao đẳng Sư phạm hoặc Cao đẳng Giáo dục nghề nghiệp thực hành để giảm áp lực điểm thi mà vẫn giữ trọn cơ hội làm nghề giáo dục.
-   * NẾU HỌC SINH GIỎI TOÁN, YẾU VĂN: Định hướng Sư phạm Toán, Tin (khối A00, A01) để tận dụng Toán và tránh Văn.
-   * NẾU HỌC SINH GIỎI VĂN, YẾU TOÁN: Định hướng Sư phạm Ngữ văn, Lịch sử, Tiểu học (khối C00, D01) để phát huy Văn và tránh Toán.
-   * NẾU HỌC SINH CÓ THẾ MẠNH MÔN KHÁC (GDQP, KTPL): Định hướng theo đúng môn thế mạnh đó.
-3. PHẢI RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!"
+2. Phân tích thích ứng kép (bứt phá điểm số môn thế mạnh hoặc lựa chọn hệ Cao đẳng thực hành 2.5 - 3 năm vừa sức).
+3. RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!"
 Quy chuẩn: Dưới 140 từ. Dứt khoát, trao quyền tự quyết.`;
       }
     } else {
@@ -360,10 +374,12 @@ Quy chuẩn: Dưới 120 từ.`;
 
   // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN VISEF 2026 (BẢO HIỂM 100% KHÔNG BAO GIỜ TREO MÁY NẾU MẤT MẠNG HOẶC HẾT QUOTA)
   const generateHeuristicFallback = (round, profile, userText = '', specialInstruction = null) => {
-    const career = profile?.target_career || profile?.targetMajor || "Công nghệ thông tin";
-    const uni = profile?.target_university || "Đại học Bách Khoa";
-    const score = profile?.confidence_score || profile?.confidence || "8";
-    const holland = profile?.holland_code || profile?.hollandCode || "RIASEC";
+    const career = profile?.targetMajor || profile?.target_career || "Sư phạm";
+    const uni = profile?.targetSchool || profile?.target_university || "ĐH Quy Nhơn";
+    const score = profile?.initialConfidence ?? profile?.confidence_score ?? "5";
+    const holland = profile?.hollandCode || profile?.holland_code || "AEI";
+    const reason = profile?.reason || profile?.source_of_influence || "Em thích từ nhỏ";
+    const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
     const isBranchB = isUndecidedOrVague(career);
 
     if (specialInstruction) {
@@ -380,7 +396,8 @@ Quy chuẩn: Dưới 120 từ.`;
         'nhiều tiền', 'dạy thêm', 'lương', 'thu nhập', 'kiếm tiền', 'kiếm dc nhiều', 'giàu', 'kinh tế'
       ].some(k => lowerUser.includes(k));
       if (isPragmaticMoney && round <= 2) {
-        return `Mong muốn có thu nhập tốt và cuộc sống đủ đầy là nhu cầu hoàn toàn chính đáng của mỗi người.\n\nTuy nhiên trong thực tế, để có uy tín và thu hút nhiều người theo học, người làm nghề **${career}** phải có trình độ chuyên môn vượt trội và sự rèn luyện bền bỉ ra sao? Em đã có sự chuẩn bị gì cho năng lực chuyên môn cốt lõi đó?`;
+        return `Mong muốn có thu nhập tốt và cuộc sống đủ đầy là nhu cầu hoàn toàn chính đáng của mỗi người.\n\n` +
+          `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
       }
 
       // 2. Phản xạ tâm lý bất ngờ: Tự ti / hoang mang
@@ -405,18 +422,16 @@ Quy chuẩn: Dưới 120 từ.`;
 
           if (isFamily) {
             return `Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\n` +
-              `Bản thân em có thực sự tìm thấy sự hứng thú nào với công việc **${career}** này không, hay em chỉ đang học để làm hài lòng bố mẹ?`;
+              `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
           }
 
           return `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${career}**.\n\n` +
-            `Tuy nhiên, sự yêu thích chỉ trở thành điểm tựa vững chắc khi em hiểu rõ các công việc chuyên môn thực tế hàng ngày đằng sau nó.\n\n` +
-            `Cụ thể trong các hoạt động chuyên môn của nghề (như chuẩn bị bài giảng, đứng lớp truyền đạt kiến thức, kiên nhẫn đồng hành cùng học sinh hay chấm bài), hoạt động nào khiến em cảm thấy bản thân có nhiều năng lượng và hứng thú nhất?`;
+            `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
         }
 
         case 2:
-          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em.\n\n` +
-            `Tuy nhiên trong 5-10 năm tới, AI, công nghệ và chuyển đổi số sẽ tái cơ cấu mạnh mẽ thị trường việc làm. Người làm nghề **${career}** tương lai không chỉ thực hiện các tác vụ cơ bản lặp đi lặp lại mà bắt buộc phải thích ứng với chuẩn năng lực mới, làm chủ công nghệ và rèn luyện kỹ năng tư duy bậc cao.\n\n` +
-            `Để thích ứng với những tiêu chuẩn mới đó, em dự định trang bị năng lực gì và để thi/xét tuyển vào ngành **${career}** tại **${uni}**, em đã tìm hiểu ngành này thường xét tuyển những tổ hợp môn nào để mở cánh cửa đầu tiên chưa?`;
+          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em khi nhìn nhận về sự cạnh tranh trong kỷ nguyên số.\n\n` +
+            `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${career}** tại **${uni}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
 
         case 3: {
           const lowerUser = (userText || '').toLowerCase();
@@ -424,7 +439,7 @@ Quy chuẩn: Dưới 120 từ.`;
           if (isCounterArguing(userText)) {
             return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và tư duy thực tế của em. Đúng là khi chưa chọn được môn dạy cụ thể thì việc chưa thể tra cứu ngay tổ hợp xét tuyển là hoàn toàn tự nhiên.\n\n` +
               `Tuy nhiên, mọi dự định về môn dạy hay nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đầu vào tại **${uni}** (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm/môn).\n\n` +
-              `Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+              `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
           }
 
           const isExplainingUndecided = [
@@ -435,8 +450,8 @@ Quy chuẩn: Dưới 120 từ.`;
 
           if (isExplainingUndecided) {
             return `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\n` +
-              `Thực tế trong ngành Sư phạm, môn dạy sau này gắn chặt với nhóm năng lực trụ cột của em: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Lý, Hóa, Sinh, Tin), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Văn, Sử, Địa, Ngoại ngữ). Lát nữa ở Bước 3, em sẽ tự tay tra cứu Đề án tuyển sinh của trường để kiểm chứng chi tiết.\n\n` +
-              `Để giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Nhìn lại kết quả học tập ở trường, đâu là môn học sở trường tạo lợi thế lớn nhất cho em, và môn nào đang là môn em còn nhiều khoảng cách nhất?`;
+              `Tuy nhiên, mọi tính toán về nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại **${uni}** (thường từ 24 - 27 điểm).\n\n` +
+              `Để giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
           }
 
           const isEvenGrades = [
@@ -448,12 +463,12 @@ Quy chuẩn: Dưới 120 từ.`;
           if (isEvenGrades) {
             return `Thầy ghi nhận sự thẳng thắn của em. Tuy nhiên, việc "học đều đều các môn" thường mang lại cảm giác an toàn ảo. Thực tế xét tuyển đại học vào các ngành hot của **${uni}** đòi hỏi điểm chuẩn rất cao (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm mỗi môn trong tổ hợp).\n\n` +
               `Nếu em học đều nhưng không có môn nào bứt phá đạt ngưỡng 8.5 - 9.0 điểm, em sẽ rất khó cạnh tranh với các bạn có môn sở trường vượt trội.\n\n` +
-              `Trong các môn hiện tại, môn nào em cảm thấy có tiềm năng bứt phá điểm số cao nhất nếu được đầu tư ôn luyện nghiêm túc từ bây giờ?`;
+              `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
           }
 
           return `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${career}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\n` +
-            `Quy chế tuyển sinh hiện nay gắn ngành này với các nhóm năng lực đặc thù: hoặc thiên về Khoa học Tự nhiên & Tư duy Logic (Toán, Tin học/Khoa học Tự nhiên), hoặc thiên về Khoa học Xã hội & Ngôn ngữ (Ngoại ngữ, Ngữ văn). Lát nữa ở Bước 3, em sẽ tự tay kiểm chứng đề án chính thức của trường mình chọn.\n\n` +
-            `Nhìn lại việc học, đâu là môn sở trường của em và môn nào em cảm thấy còn khoảng cách năng lực cần nhiều nỗ lực nhất?`;
+            `Điểm chuẩn đại học tại **${uni}** thường rất cao (thường từ 24 đến 27 điểm, tức 8 đến 9 điểm mỗi môn).\n\n` +
+            `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
         }
 
         case 4:
@@ -482,11 +497,11 @@ Quy chuẩn: Dưới 120 từ.`;
 
           if (weakBothPatterns.some(p => p.test(lowerUser))) {
             return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
+              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành **${career}** tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
               `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
-              `1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n` +
-              `2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+              `1. **Tận dụng các môn còn lại học tốt**: Nỗ lực bứt phá các môn sở trường còn lại (Ngoại ngữ, Lịch sử, Địa lý, KHTN) để kéo điểm tổ hợp xét tuyển đại học.\n` +
+              `2. **Cân nhắc phân khúc vừa sức**: Cân nhắc hệ **Cao đẳng thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề).\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
           }
 
           // Math strong
@@ -522,34 +537,34 @@ Quy chuẩn: Dưới 120 từ.`;
 
           if (mathWeak && litWeak && !mathStrong && !litStrong) {
             return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành Sư phạm tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
+              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành **${career}** tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống đều có điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
               `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
-              `1. **Tận dụng các môn còn lại học tốt**: Nếu em học tốt Tiếng Anh, Lịch sử, Địa lý hay Khoa học Tự nhiên (Hóa, Sinh), em hoàn toàn có thể tìm kiếm các tổ hợp tương ứng (ví dụ: Sư phạm Lịch sử - Địa lý, Sư phạm Tiếng Anh nếu khá ngoại ngữ, hoặc Sư phạm Khoa học Tự nhiên/Sinh học).\n` +
-              `2. **Cân nhắc phân khúc vừa sức**: Nếu điểm 2 môn cốt lõi Toán - Văn quá thấp so với điểm chuẩn đại học, em hãy cân nhắc phân khúc hệ **Cao đẳng Sư phạm** hoặc **Cao đẳng Giáo dục nghề nghiệp thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề giáo dục).\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+              `1. **Tận dụng các môn sở trường còn lại**: Tập trung bứt phá điểm số các môn thế mạnh để kéo điểm tổ hợp xét tuyển đại học.\n` +
+              `2. **Cân nhắc phân khúc vừa sức**: Cân nhắc hệ **Cao đẳng thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề).\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
           }
 
           if (litStrong && (mathWeak || !mathStrong)) {
-            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các ngành Sư phạm Ngữ văn, Giáo dục Tiểu học hoặc Sư phạm Khoa học Xã hội (khối C00, D01), giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\n` +
+            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các tổ hợp khối C00, D01, giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\n` +
               `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
               `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Văn và các môn xã hội/ngoại ngữ đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
-              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng Sư phạm thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề đứng lớp.\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề vững vàng.\n\n` +
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
           }
 
           if (mathStrong && (litWeak || !litStrong)) {
-            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng thẳng tới ngành Sư phạm Toán học hoặc Sư phạm Tin học (xét khối A00: Toán-Lý-Hóa hoặc A01: Toán-Lý-Anh), hoàn toàn tránh được rào cản môn Ngữ văn!\n\n` +
+            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng tới các khối xét tuyển A00, A01, hoàn toàn tránh được rào cản môn Ngữ văn!\n\n` +
               `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
               `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Toán và các môn tự nhiên đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
               `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề.\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
           }
 
           return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
             `Dù theo đuổi ngành nào, em luôn có 2 hướng thích ứng rất rõ ràng:\n` +
-            `1. **Bứt phá điểm số**: Tập trung cao độ vào tổ hợp môn có thế mạnh để cạnh tranh vào hệ Đại học chính quy.\n` +
+            `1. **Bứt phá điểm số**: Tập trung cao độ vào tổ hợp môn có thế mạnh để cạnh tranh vào hệ Đại học chính quy (24 - 27 điểm).\n` +
             `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng nghề/thực hành (2.5 - 3 năm) để sớm gia nhập thị trường việc làm với tay nghề vững chắc.\n\n` +
-            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang **Bước 3: Môi trường đối chứng dữ liệu thực tế** để tự tay tra cứu Đề án tuyển sinh chính thức và nhập vào bảng đối chứng!`;
+            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
         }
       }
     } else {
@@ -587,11 +602,24 @@ Quy chuẩn: Dưới 120 từ.`;
       stage: stage,
       round: stage,
       studentProfile: {
-        hollandCode: studentProfile?.holland_code || studentProfile?.hollandCode || 'RIASEC',
-        targetCareer: studentProfile?.target_career || studentProfile?.targetMajor || 'Sư phạm',
-        targetSchool: studentProfile?.target_university || studentProfile?.targetSchool || 'ĐH Quy Nhơn',
-        confidenceT0: studentProfile?.confidence_score || studentProfile?.confidence || '5',
+        hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
+        targetMajor: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || 'ĐH Quy Nhơn',
+        reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
+        initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
+        expectedIncome: studentProfile?.expectedIncome || studentProfile?.expected_income || '10 - 15 triệu/tháng',
+        // Tương thích ngược:
+        targetCareer: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        confidenceT0: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
         competenceSelfEval: 'Vừa sức'
+      },
+      userProfile: {
+        hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
+        targetMajor: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || 'ĐH Quy Nhơn',
+        reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
+        initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
+        expectedIncome: studentProfile?.expectedIncome || studentProfile?.expected_income || '10 - 15 triệu/tháng'
       },
       chatHistory: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
       userMessage: userText,
@@ -735,16 +763,24 @@ Quy chuẩn: Dưới 120 từ.`;
 
   // 4. TRÍCH XUẤT VĂN BẢN ĐỐI THOẠI CHUẨN MỰC CHO HỌC SINH
   const generateExportText = () => {
-    const rawAnchor = localStorage.getItem("cbas_anchor_data");
-    let anchor = {};
-    if (rawAnchor) {
-      try { anchor = JSON.parse(rawAnchor); } catch (e) {}
-    }
+    let userProfile = null;
+    try {
+      const rawProf = localStorage.getItem("cbas_user_profile");
+      if (rawProf) userProfile = JSON.parse(rawProf);
+    } catch (e) {}
 
-    const targetCareer = anchor.target_career || studentProfile?.target_career || 'Sư phạm';
-    const targetUniv = anchor.target_university || studentProfile?.target_university || 'ĐH Quy Nhơn';
-    const confidence = anchor.confidence_score || studentProfile?.confidence_score || '5';
-    const holland = anchor.holland_code || studentProfile?.holland_code || 'AEI';
+    let anchor = null;
+    try {
+      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
+      if (rawAnchor) anchor = JSON.parse(rawAnchor);
+    } catch (e) {}
+
+    const targetCareer = userProfile?.targetMajor || anchor?.target_career || studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm';
+    const targetUniv = userProfile?.targetSchool || anchor?.target_university || studentProfile?.targetSchool || studentProfile?.target_university || 'ĐH Quy Nhơn';
+    const confidence = userProfile?.initialConfidence ?? anchor?.confidence_score ?? studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? '5';
+    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || studentProfile?.expectedIncome || '10 - 15 triệu/tháng';
+    const reason = userProfile?.reason || anchor?.source_of_influence || studentProfile?.reason || 'Em thích từ nhỏ';
+    const holland = userProfile?.hollandCode || anchor?.holland_code || studentProfile?.hollandCode || studentProfile?.holland_code || 'AEI';
     const dateStr = new Date().toLocaleString('vi-VN');
 
     let content = `=================================================================\n`;
@@ -755,6 +791,8 @@ Quy chuẩn: Dưới 120 từ.`;
     content += `🎯 Ngành mục tiêu: ${targetCareer}\n`;
     content += `🏛️ Trường đại học mục tiêu: ${targetUniv}\n`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
+    content += `💵 Kỳ vọng thu nhập (Bước 1): ${expectedIncome}\n`;
+    content += `📝 Lý do chọn ban đầu: ${reason}\n`;
     content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
     content += `🔄 Tiến trình hoàn thành: ${Math.min(chatStage, maxStages)} / ${maxStages} giai đoạn phản tư${isCompleted ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
 
@@ -762,9 +800,9 @@ Quy chuẩn: Dưới 120 từ.`;
       content += `-----------------------------------------------------------------\n`;
       content += `KẾT QUẢ ĐO LƯỜNG VÀ GẮN NHÃN HÀNH VI (CHUẨN VISEF 2026):\n`;
       content += `-----------------------------------------------------------------\n`;
-      content += `- Bước ngoặt nhận thức (Turning_Point_Detected): ${sessionTelemetry.turning_point_detected}\n`;
-      content += `- Phân loại kết quả (Outcome_Category): ${sessionTelemetry.outcome_category}\n`;
-      content += `- Phân luồng buổi tư vấn Bước 4 (Triage_Step4): ${sessionTelemetry.triage_step4}\n\n`;
+      content += `- Turning_Point_Detected: ${sessionTelemetry.turning_point_detected}\n`;
+      content += `- Outcome_Category: ${sessionTelemetry.outcome_category}\n`;
+      content += `- Triage_Step4: ${sessionTelemetry.triage_step4}\n\n`;
     }
 
     content += `-----------------------------------------------------------------\n`;
@@ -947,18 +985,23 @@ Quy chuẩn: Dưới 120 từ.`;
 
           const lastUserMsg = cleanText.toLowerCase();
           let outcome = 'Persistent_Calibrated';
-          if (lastUserMsg.includes('cao đẳng') || lastUserMsg.includes('học nghề') || lastUserMsg.includes('thực hành') || lastUserMsg.includes('nghề')) {
-            outcome = 'Segment_Shift';
-          } else if (lastUserMsg.includes('chuyển') || lastUserMsg.includes('đổi ngành') || lastUserMsg.includes('ngành khác') || lastUserMsg.includes('phù hợp hơn')) {
-            outcome = 'Field_Shift';
-          } else if (lastUserMsg.includes('mặc kệ') || lastUserMsg.includes('thích thì') || lastUserMsg.includes('kệ') || lastUserMsg.includes('bất chấp')) {
-            outcome = 'Resistance';
+          if (
+            lastUserMsg.includes('cao đẳng') ||
+            lastUserMsg.includes('học nghề') ||
+            lastUserMsg.includes('thực hành') ||
+            lastUserMsg.includes('nghề') ||
+            lastUserMsg.includes('chuyển') ||
+            lastUserMsg.includes('đổi ngành') ||
+            lastUserMsg.includes('ngành khác') ||
+            lastUserMsg.includes('phù hợp hơn')
+          ) {
+            outcome = 'Adaptive_Shift';
           } else {
             outcome = 'Persistent_Calibrated';
           }
 
-          // Bắt buộc phân luồng In-depth (20 phút) nếu có Turning Point, dịch chuyển phân khúc, hoặc bất kỳ khoảng cách năng lực nào
-          const triage = (tpDetected || outcome === 'Segment_Shift' || outcome === 'Field_Shift') ? 'In-depth (20 phút)' : 'Fast-track (5 phút)';
+          // Bắt buộc phân luồng In-depth (20 phút) nếu có Turning Point, dịch chuyển thích ứng, hoặc bất kỳ khoảng cách năng lực nào
+          const triage = (tpDetected || outcome === 'Adaptive_Shift') ? 'In-depth (20 phút)' : 'Fast-track (5 phút)';
 
           const telemetryData = {
             turning_point_detected: tpDetected ? `True (${tpRound})` : 'False',
@@ -1160,108 +1203,127 @@ Quy chuẩn: Dưới 120 từ.`;
           </div>
         ) : null}
 
-        {/* THÔNG BÁO HOÀN THÀNH GIAI ĐOẠN 4 GỌN GÀNG (KHÔNG LẤN CHIẾM NỘI DUNG AI) */}
+        {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI */}
         {isCompleted ? (
           <div 
             className="no-print"
             style={{
-              background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)',
+              background: '#f0fdf4',
               border: '1.5px solid #10b981',
               borderRadius: '12px',
-              padding: '14px 18px',
-              marginTop: '6px',
-              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+              padding: '16px 20px',
+              marginTop: '10px',
+              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.08)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ fontSize: '22px', lineHeight: 1 }}>🎉</div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '24px', lineHeight: 1 }}>🎯</div>
               <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 3px 0', fontSize: '14.5px', color: '#065f46', fontWeight: 'bold' }}>
-                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates!
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#065f46', fontWeight: 'bold' }}>
+                  Phiên phản tư nhận thức Socrates đã hoàn tất thành công!
                 </h4>
-                <p style={{ margin: 0, fontSize: '12.5px', color: '#047857', lineHeight: '1.4' }}>
-                  Em hãy đọc kỹ lời đúc kết của Thầy ở trên, sau đó bấm <strong>[TIẾP TỤC SANG BƯỚC 3]</strong> bên dưới để tự tay đối chứng số liệu thực tế.
+                <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
+                  Em hãy đọc kỹ lời phân tích và định hướng thích ứng của Thầy ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
                 </p>
               </div>
             </div>
 
             {sessionTelemetry ? (
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #a7f3d0' }}>
-                <span style={{ fontSize: '11.5px', background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                  📌 Bước ngoặt (TP): {sessionTelemetry.turning_point_detected}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px', paddingTop: '10px', borderTop: '1px dashed #a7f3d0' }}>
+                <span style={{ fontSize: '12px', background: '#dbeafe', color: '#1e40af', padding: '3px 10px', borderRadius: '6px', fontWeight: '600' }}>
+                  📌 Turning_Point_Detected: {sessionTelemetry.turning_point_detected}
                 </span>
-                <span style={{ fontSize: '11.5px', background: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                  🏷️ Kết quả: {sessionTelemetry.outcome_category}
+                <span style={{ fontSize: '12px', background: '#dcfce7', color: '#166534', padding: '3px 10px', borderRadius: '6px', fontWeight: '600' }}>
+                  🏷️ Outcome_Category: {sessionTelemetry.outcome_category}
                 </span>
-                <span style={{ fontSize: '11.5px', background: '#f3e8ff', color: '#6b21a8', padding: '2px 8px', borderRadius: '4px', fontWeight: '600' }}>
-                  ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
+                <span style={{ fontSize: '12px', background: '#f3e8ff', color: '#6b21a8', padding: '3px 10px', borderRadius: '6px', fontWeight: '600' }}>
+                  ⏱️ Triage_Step4: {sessionTelemetry.triage_step4}
                 </span>
               </div>
             ) : null}
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button 
+                type="button"
+                onClick={() => window.location.href = '/student/fact-check'}
+                style={{
+                  flex: 1,
+                  minWidth: '280px',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '13px 22px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '14.5px',
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>TIẾP TỤC BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
+                <span style={{ fontSize: '16px' }}>➔</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyText}
+                title="Sao chép toàn bộ biên bản đối thoại"
+                style={{
+                  background: copySuccess ? '#059669' : '#ffffff',
+                  color: copySuccess ? '#ffffff' : '#065f46',
+                  border: '1.5px solid #a7f3d0',
+                  padding: '12px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadTxt}
+                title="Tải biên bản đối thoại (.txt)"
+                style={{
+                  background: '#ffffff',
+                  color: '#334155',
+                  border: '1.5px solid #cbd5e1',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                📥 Tải .TXT
+              </button>
+            </div>
           </div>
         ) : null}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* THANH ĐIỀU HƯỚNG BƯỚC TIẾP THEO HOẶC KHUNG NHẬP LIỆU */}
+      {/* THANH NHẬP LIỆU PHẢN BIỆN (KHÓA KHI ĐÃ HOÀN TẤT) */}
       <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0', boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }} className="no-print">
-        {/* Nút hành động khi đã hoàn tất (dùng display để không hủy DOM node) */}
-        <div style={{ display: isCompleted ? 'flex' : 'none', gap: '10px', alignItems: 'center' }}>
-          <button 
-            type="button"
-            onClick={() => window.location.href = '/student/evidence-check'}
-            style={{
-              flex: 1,
-              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-              color: '#ffffff',
-              border: 'none',
-              padding: '13px 20px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              fontSize: '14.5px',
-              cursor: 'pointer',
-              boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px'
-            }}
-          >
-            <span>TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-            <span style={{ fontSize: '16px' }}>➔</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleCopyText}
-            title="Sao chép toàn bộ biên bản đối thoại"
-            style={{
-              background: copySuccess ? '#059669' : '#f8fafc',
-              color: copySuccess ? '#ffffff' : '#065f46',
-              border: '1.5px solid #a7f3d0',
-              padding: '12px 16px',
-              borderRadius: '8px',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {copySuccess ? '✅ Đã chép' : '📋 Chép biên bản'}
-          </button>
-        </div>
-
-        {/* Ô nhập liệu duy trì trong DOM (chỉ ẩn khi hoàn tất) */}
         <form 
           onSubmit={handleSendMessage} 
-          style={{ display: isCompleted ? 'none' : 'flex', gap: '10px' }}
+          style={{ display: 'flex', gap: '10px' }}
         >
           <input
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             disabled={isLoading || isCompleted}
-            placeholder="Tự tay nhập câu trả lời phản biện của em..."
+            placeholder={isCompleted ? "Phiên phản tư Bước 2 đã hoàn tất." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -1269,14 +1331,16 @@ Quy chuẩn: Dưới 120 từ.`;
               borderRadius: '8px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor: '#ffffff'
+              backgroundColor: isCompleted ? '#f1f5f9' : '#ffffff',
+              color: isCompleted ? '#64748b' : '#0f172a',
+              cursor: isCompleted ? 'not-allowed' : 'text'
             }}
           />
           <button
             type="submit"
             disabled={isLoading || !inputValue.trim() || isCompleted}
             style={{
-              background: '#10b981',
+              background: isCompleted ? '#94a3b8' : '#10b981',
               color: '#ffffff',
               border: 'none',
               padding: '0 24px',

@@ -195,13 +195,16 @@ const HollandTest = () => {
   const [currentPage, setCurrentPage] = useState(0) // 0 to 5 for questions, 6 for Anchor form
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
-  
-  // Trạng thái Form Mỏ Neo Nhận thức (Initial Anchor)
-  const [targetMajor, setTargetMajor] = useState('')
-  const [targetUniversity, setTargetUniversity] = useState('')
-  const [choiceSource, setChoiceSource] = useState('TikTok')
+  // Trạng thái Form Mỏ Neo Nhận thức (Initial Anchor - Chuẩn ViSEF 2026: 4 trường bắt buộc)
+  const [targetMajor, setTargetMajor] = useState('Sư phạm')
+  const [targetSchool, setTargetSchool] = useState('ĐH Quy Nhơn')
+  const [targetUniversity, setTargetUniversity] = useState('ĐH Quy Nhơn')
+  const [reason, setReason] = useState('Em thích từ nhỏ')
+  const [choiceSource, setChoiceSource] = useState('Đam mê từ nhỏ')
   const [customChoiceSource, setCustomChoiceSource] = useState('')
   const [confidenceScore, setConfidenceScore] = useState(8) // 1-10
+  const [expectedIncome, setExpectedIncome] = useState('15 - 20 triệu/tháng')
+  const [calculatedRiasecCode, setCalculatedRiasecCode] = useState('')
   
   // Trạng thái kết quả sau khi nộp
   const [result, setResult] = useState(null)
@@ -236,17 +239,50 @@ const HollandTest = () => {
       qList.forEach(q => { initialAnswers[q.id] = null })
       setAnswers(initialAnswers)
 
-      // 2. Tải mỏ neo đã lưu từ trước (nếu có)
-      const cachedAnchor = localStorage.getItem('career_initial_anchor')
-      if (cachedAnchor) {
+      // 2. Tải mỏ neo đã lưu từ trước (ưu tiên cbas_user_profile)
+      const cachedProfile = localStorage.getItem('cbas_user_profile')
+      if (cachedProfile) {
         try {
-          const parsed = JSON.parse(cachedAnchor)
-          if (parsed.target_major) setTargetMajor(parsed.target_major)
-          if (parsed.target_university) setTargetUniversity(parsed.target_university)
-          if (parsed.choice_source) setChoiceSource(parsed.choice_source)
-          if (parsed.confidence_score_initial) setConfidenceScore(Number(parsed.confidence_score_initial))
+          const p = JSON.parse(cachedProfile)
+          if (p.targetMajor) setTargetMajor(p.targetMajor)
+          if (p.targetSchool) {
+            setTargetSchool(p.targetSchool)
+            setTargetUniversity(p.targetSchool)
+          }
+          if (p.reason) setReason(p.reason)
+          if (p.initialConfidence) setConfidenceScore(Number(p.initialConfidence))
+          if (p.expectedIncome) setExpectedIncome(p.expectedIncome)
+          if (p.hollandCode) setCalculatedRiasecCode(p.hollandCode)
         } catch (e) {
-          console.warn('Lỗi đọc mỏ neo từ localStorage:', e)
+          console.warn('Lỗi đọc cbas_user_profile:', e)
+        }
+      } else {
+        const cachedAnchor = localStorage.getItem('career_initial_anchor') || localStorage.getItem('cbas_anchor_data')
+        if (cachedAnchor) {
+          try {
+            const parsed = JSON.parse(cachedAnchor)
+            if (parsed.target_major || parsed.target_career) {
+              setTargetMajor(parsed.target_major || parsed.target_career)
+            }
+            if (parsed.target_university) {
+              setTargetSchool(parsed.target_university)
+              setTargetUniversity(parsed.target_university)
+            }
+            if (parsed.choice_source || parsed.source_of_influence) {
+              setReason(parsed.choice_source || parsed.source_of_influence)
+            }
+            if (parsed.confidence_score_initial || parsed.confidence_score) {
+              setConfidenceScore(Number(parsed.confidence_score_initial || parsed.confidence_score))
+            }
+            if (parsed.expected_income || parsed.expectedIncome) {
+              setExpectedIncome(parsed.expected_income || parsed.expectedIncome)
+            }
+            if (parsed.holland_code || parsed.primary_code) {
+              setCalculatedRiasecCode(parsed.holland_code || parsed.primary_code)
+            }
+          } catch (e) {
+            console.warn('Lỗi đọc mỏ neo từ localStorage:', e)
+          }
         }
       }
     } catch (err) {
@@ -271,6 +307,24 @@ const HollandTest = () => {
     (currentPage + 1) * questionsPerPage
   )
 
+  // Hàm tính toán điểm RIASEC và mã nổi trội 3 chữ cái
+  const calculateRiasecCode = () => {
+    const scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
+    questions.forEach(q => {
+      const val = answers[q.id]
+      if (val === 4) scores[q.category] = (scores[q.category] || 0) + 3
+      else if (val === 3) scores[q.category] = (scores[q.category] || 0) + 2
+      else if (val === 2) scores[q.category] = (scores[q.category] || 0) + 1
+    })
+
+    const sortedCategories = Object.keys(scores)
+      .map(key => ({ category: key, score: scores[key] }))
+      .sort((a, b) => b.score - a.score || a.category.localeCompare(b.category))
+
+    const primaryCode = sortedCategories.slice(0, 3).map(item => item.category).join('')
+    return { scores, primaryCode }
+  }
+
   const handleNext = () => {
     if (!isAnchorPage) {
       const unanswered = pageQuestions.some(q => answers[q.id] === null)
@@ -278,6 +332,25 @@ const HollandTest = () => {
         setToast({ type: 'warning', message: 'Vui lòng chọn câu trả lời cho cả 5 câu hỏi ở trang này nhé!' })
         return
       }
+    }
+
+    // Khi hoàn tất 30 câu hỏi (trang 5 chuyển sang trang 6)
+    if (currentPage === totalQuestionPages - 1) {
+      const { scores, primaryCode } = calculateRiasecCode()
+      setCalculatedRiasecCode(primaryCode)
+      setResult({
+        scores,
+        primaryCode,
+        anchorData: {
+          primary_code: primaryCode,
+          target_major: targetMajor,
+          target_university: targetSchool || targetUniversity,
+          scores
+        }
+      })
+      setCurrentPage(prev => prev + 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
     }
 
     if (currentPage < totalStages - 1) {
@@ -300,53 +373,67 @@ const HollandTest = () => {
     };
   }, []);
 
-  // Đặt đoạn code này vào hàm xử lý khi bấm nút "Hoàn thành Bước 1"
+  // Hàm chuyển sang Bước 2 và đóng gói Object userProfile chuẩn ViSEF 2026
   const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
-    const finalChoiceSource = choiceSource === 'Khác' && customChoiceSource.trim() 
-      ? customChoiceSource.trim() 
-      : choiceSource;
+    const { scores, primaryCode } = calculateRiasecCode()
+    const effectiveCode = primaryCode || calculatedRiasecCode || result?.primaryCode || "AEI"
+    const finalMajor = targetMajor.trim() || "Sư phạm"
+    const finalSchool = (targetSchool || targetUniversity || "ĐH Quy Nhơn").trim()
+    const finalReason = reason.trim() || "Em thích từ nhỏ"
 
-    const rawCareer = document.getElementById("targetCareerInput")?.value || targetMajor.trim() || "Truyền thông đa phương tiện";
-    const rawCodes = (result?.primaryCode || document.getElementById("hollandResultText")?.value || "AS").split('').filter(c => ['R','I','A','S','E','C'].includes(c));
-    const analysisText = analyzeHollandCompatibility(rawCareer, rawCodes);
-    const compatStatus = getCompatibilitySummary(rawCareer, rawCodes);
+    const userProfile = {
+      hollandCode: effectiveCode,
+      targetMajor: finalMajor,
+      targetSchool: finalSchool,
+      reason: finalReason,
+      initialConfidence: Number(confidenceScore),
+      expectedIncome: expectedIncome || "15 - 20 triệu/tháng"
+    }
+
+    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
+    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
 
     const userAnchorData = {
-      // Lấy giá trị từ các ô input học sinh vừa nhập:
-      target_career: rawCareer,
-      target_university: document.getElementById("targetUniversityInput")?.value || targetUniversity.trim() || "Đại học Khoa học Xã hội và Nhân văn",
-      source_of_influence: document.getElementById("influenceSourceInput")?.value || finalChoiceSource || "Mạng xã hội (TikTok, YouTube)",
-      confidence_score: document.getElementById("confidenceScoreInput")?.value || String(confidenceScore) || "8",
+      target_career: finalMajor,
+      target_university: finalSchool,
+      source_of_influence: finalReason,
+      confidence_score: String(userProfile.initialConfidence),
+      expected_income: userProfile.expectedIncome,
       holland_codes: rawCodes,
-      holland_code: rawCodes.join('') || "AS",
+      holland_code: effectiveCode,
       compatibility_status: compatStatus,
       holland_analysis: analysisText
-    };
+    }
 
-    // Lưu tạm vào bộ nhớ trình duyệt để Bước 2 lấy dùng (đồng bộ cả 3 key)
-    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
-    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData));
+    // Lưu đồng bộ các key LocalStorage cho Bước 2 và toàn hệ thống
+    localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
+    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
+    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
     localStorage.setItem("career_initial_anchor", JSON.stringify({
-      target_major: userAnchorData.target_career,
-      target_university: userAnchorData.target_university,
-      choice_source: userAnchorData.source_of_influence,
-      confidence_score_initial: Number(userAnchorData.confidence_score),
+      ...userProfile,
+      target_major: finalMajor,
+      target_university: finalSchool,
+      choice_source: finalReason,
+      confidence_score_initial: userProfile.initialConfidence,
+      expected_income: userProfile.expectedIncome,
       holland_codes: rawCodes,
-      holland_code: userAnchorData.holland_code,
-      primary_code: userAnchorData.holland_code,
+      holland_code: effectiveCode,
+      primary_code: effectiveCode,
+      scores,
       compatibility_status: compatStatus,
       holland_analysis: analysisText
-    }));
+    }))
 
     // Chuyển hướng sang trang Bước 2 (AI Tham vấn phản tư)
     if (customRedirectUrl.startsWith('http')) {
-      window.location.href = customRedirectUrl;
+      window.location.href = customRedirectUrl
     } else {
-      navigate(customRedirectUrl);
+      navigate(customRedirectUrl)
     }
-  };
+  }
 
-  // Nộp bài và lưu Mỏ Neo + Kết quả RIASEC
+  // Nộp bài tại Form Bước 1: Kiểm tra 4 trường bắt buộc & Lưu Object userProfile
   const handleSubmit = async () => {
     // 1. Kiểm tra toàn bộ câu hỏi đã làm
     const unansweredIds = Object.keys(answers).filter(id => answers[id] === null)
@@ -356,78 +443,80 @@ const HollandTest = () => {
       return
     }
 
-    // 2. Kiểm tra Form Mỏ Neo
+    // 2. Kiểm tra đúng 4 trường thông tin bắt buộc
     if (!targetMajor.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng nhập ngành học cụ thể mà em đang nhắm tới nhất!' })
+      setToast({ type: 'warning', message: 'Vui lòng nhập ngành nghề mục tiêu của em!' })
       return
     }
 
-    const finalChoiceSource = choiceSource === 'Khác' && customChoiceSource.trim() 
-      ? customChoiceSource.trim() 
-      : choiceSource
+    if (!reason.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng điền lý do em chọn ngành nghề này!' })
+      return
+    }
+
+    if (!expectedIncome) {
+      setToast({ type: 'warning', message: 'Vui lòng chọn kỳ vọng mức thu nhập khởi điểm!' })
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      // 1. Tính toán điểm RIASEC
-      const scores = { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
-      questions.forEach(q => {
-        const val = answers[q.id]
-        if (val === 4) scores[q.category] = (scores[q.category] || 0) + 3
-        else if (val === 3) scores[q.category] = (scores[q.category] || 0) + 2
-        else if (val === 2) scores[q.category] = (scores[q.category] || 0) + 1
-      })
+      const { scores, primaryCode } = calculateRiasecCode()
+      const effectiveCode = primaryCode || calculatedRiasecCode || "AEI"
+      const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
 
-      // 2. Tìm mã Holland (3 nhóm điểm cao nhất)
-      const sortedCategories = Object.keys(scores)
-        .map(key => ({ category: key, score: scores[key] }))
-        .sort((a, b) => b.score - a.score || a.category.localeCompare(b.category))
-
-      const primaryCode = sortedCategories.slice(0, 3).map(item => item.category).join('')
-
-      // 3. Đóng gói đối tượng mỏ neo
-      const anchorData = {
-        target_major: targetMajor.trim(),
-        target_university: targetUniversity.trim() || 'Chưa xác định',
-        choice_source: finalChoiceSource,
-        confidence_score_initial: Number(confidenceScore),
-        primary_code: primaryCode,
-        scores,
-        timestamp: new Date().toISOString()
+      // Đóng gói đối tượng userProfile chuẩn ViSEF 2026:
+      // { hollandCode, targetMajor, targetSchool, reason, initialConfidence, expectedIncome }
+      const userProfile = {
+        hollandCode: effectiveCode,
+        targetMajor: targetMajor.trim(),
+        targetSchool: finalSchool,
+        reason: reason.trim(),
+        initialConfidence: Number(confidenceScore),
+        expectedIncome: expectedIncome
       }
 
-      // 4. Lưu vào localStorage cả 3 key (userAnchorData, cbas_anchor_data và career_initial_anchor)
-      const rawCodes = primaryCode.split('');
-      const compatStatus = getCompatibilitySummary(anchorData.target_major, rawCodes);
-      const analysisText = analyzeHollandCompatibility(anchorData.target_major, rawCodes);
+      const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+      const compatStatus = getCompatibilitySummary(userProfile.targetMajor, rawCodes)
+      const analysisText = analyzeHollandCompatibility(userProfile.targetMajor, rawCodes)
 
       const userAnchorData = {
-        target_career: anchorData.target_major,
-        target_university: anchorData.target_university,
-        source_of_influence: anchorData.choice_source,
-        confidence_score: String(anchorData.confidence_score_initial),
+        target_career: userProfile.targetMajor,
+        target_university: userProfile.targetSchool,
+        source_of_influence: userProfile.reason,
+        confidence_score: String(userProfile.initialConfidence),
+        expected_income: userProfile.expectedIncome,
         holland_codes: rawCodes,
-        holland_code: primaryCode,
+        holland_code: effectiveCode,
         compatibility_status: compatStatus,
         holland_analysis: analysisText
-      };
-      localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData));
-      localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData));
-      localStorage.setItem('career_initial_anchor', JSON.stringify({
-        ...anchorData,
-        holland_codes: rawCodes,
-        holland_code: primaryCode,
-        compatibility_status: compatStatus,
-        holland_analysis: analysisText
-      }));
+      }
 
-      // 5. Lưu vào CSDL Supabase (nếu có kết nối)
+      // Lưu vào LocalStorage
+      localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
+      localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
+      localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
+      localStorage.setItem('career_initial_anchor', JSON.stringify({
+        ...userProfile,
+        target_major: userProfile.targetMajor,
+        target_university: userProfile.targetSchool,
+        choice_source: userProfile.reason,
+        confidence_score_initial: userProfile.initialConfidence,
+        expected_income: userProfile.expectedIncome,
+        primary_code: effectiveCode,
+        scores,
+        compatibility_status: compatStatus,
+        holland_analysis: analysisText
+      }))
+
+      // Lưu vào CSDL Supabase (nếu có kết nối)
       try {
         if (user) {
           await supabase.from('test_results').insert({
             student_id: user.id,
             scores_json: scores,
-            primary_code: primaryCode,
-            recommended_majors_json: [anchorData.target_major]
+            primary_code: effectiveCode,
+            recommended_majors_json: [userProfile.targetMajor]
           })
         }
       } catch (dbErr) {
@@ -436,11 +525,23 @@ const HollandTest = () => {
 
       setResult({
         scores,
-        primaryCode,
-        anchorData
+        primaryCode: effectiveCode,
+        anchorData: {
+          ...userProfile,
+          target_major: userProfile.targetMajor,
+          target_university: userProfile.targetSchool,
+          choice_source: userProfile.reason,
+          confidence_score_initial: userProfile.initialConfidence,
+          scores
+        }
       })
-      setToast({ type: 'success', message: '🎉 Đã xác lập Mỏ neo & Hoàn thành trắc nghiệm Holland thành công!' })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+
+      setToast({ type: 'success', message: '🎉 Đã xác lập mỏ neo thành công! Đang chuyển sang Bước 2...' })
+      
+      // Chuyển thẳng sang Bước 2 (AI Tham Vấn Phản Tư)
+      setTimeout(() => {
+        navigate('/student/debias-agent')
+      }, 500)
     } catch (error) {
       console.error('Lỗi nộp bài trắc nghiệm:', error)
       setToast({ type: 'error', message: 'Có lỗi xảy ra khi tính kết quả. Vui lòng thử lại!' })
@@ -704,120 +805,174 @@ const HollandTest = () => {
           })}
         </div>
       ) : (
-        /* FORM XÁC LẬP MỎ NEO NHẬN THỨC (INITIAL ANCHOR FORM - BẮT BUỘC) */
+        /* FORM THU THẬP DỮ LIỆU BƯỚC 1 (CHUẨN VISEF 2026 - ĐÚNG 4 TRƯỜNG THÔNG TIN BẮT BUỘC) */
         <div className="bg-white border-2 border-amber-300 p-6 rounded-sm space-y-6 shadow-sm animate-reveal">
+          
+          {/* BANNER HIỂN THỊ KẾT XUẤT MÃ HOLLAND NỔI TRỘI */}
+          <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-950">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                ✓ ĐÃ HOÀN THÀNH 30 CÂU HỎI TRẮC NGHIỆM
+              </span>
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <span>Thiên hướng Holland nổi trội của em:</span>
+                <span className="text-lg text-emerald-700 bg-white px-2.5 py-0.5 rounded border border-emerald-300 tracking-wider">
+                  {calculatedRiasecCode || result?.primaryCode || 'AEI'}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                {getHollandDescription(calculatedRiasecCode || result?.primaryCode || 'AEI').slice(0, 2).join(' • ')}
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-bold text-emerald-800 bg-white px-3 py-1.5 rounded-sm border border-emerald-200 shadow-2xs block">
+                BƯỚC 1: XÁC LẬP MỎ NEO
+              </span>
+            </div>
+          </div>
+
           <div className="border-b border-amber-200 pb-3 flex items-start gap-3 text-amber-950">
             <div className="p-2 bg-amber-100 text-amber-800 rounded-sm shrink-0 mt-0.5">
               <Anchor className="w-5 h-5 text-amber-700" />
             </div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">
-                BẮT BUỘC ĐỂ HOÀN TẤT BƯỚC 1
+                BẮT BUỘC ĐỂ HOÀN TẤT BƯỚC 1 (VISEF 2026)
               </span>
               <h2 className="text-base font-bold text-slate-900">
-                Form Xác Lập Mỏ Neo Nhận Thức Ban Đầu (Initial Anchor)
+                Form Xác Lập Xuất Phát Điểm Nhận Thức Ban Đầu (Initial Anchor)
               </h2>
               <p className="text-xs text-slate-600 mt-0.5">
-                Các câu trả lời dưới đây ghi nhận xuất phát điểm của bạn trước khi bước vào các vòng phản tư với AI.
+                Vui lòng điền đúng 4 trường thông tin dưới đây. Dữ liệu này sẽ được chuyển trực tiếp vào AI Socrates ở Bước 2 để chất vấn phản tư.
               </p>
             </div>
           </div>
 
           <div className="space-y-5">
-            {/* CÂU HỎI 1 */}
+            {/* TRƯỜNG 1: NGÀNH NGHỀ & TRƯỜNG MỤC TIÊU */}
             <div className="space-y-2 bg-slate-50 p-4 rounded-sm border border-slate-200">
               <label className="text-xs font-bold text-slate-800 block">
-                1. Ngành học cụ thể và Trường đại học em đang mong muốn xét tuyển nhất là gì? <span className="text-rose-500">*</span>
+                1. Ngành nghề & Trường mục tiêu: <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <input
                     id="targetCareerInput"
                     type="text"
+                    required
                     value={targetMajor}
                     onChange={(e) => setTargetMajor(e.target.value)}
-                    placeholder="Ví dụ: Kế toán, Sư phạm Tiếng Anh, CNTT..."
+                    placeholder="Ví dụ: Sư phạm, Công nghệ thông tin..."
                     className="w-full text-xs p-2.5 border border-slate-300 rounded-sm focus:border-brand-500 focus:outline-none bg-white font-medium"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block">Tên ngành học cụ thể</span>
+                  <span className="text-[10px] text-slate-500 mt-1 block">Tên ngành nghề mục tiêu</span>
                 </div>
                 <div>
                   <input
                     id="targetUniversityInput"
                     type="text"
-                    value={targetUniversity}
-                    onChange={(e) => setTargetUniversity(e.target.value)}
-                    placeholder="Ví dụ: ĐH Kinh tế TP.HCM, ĐH Bách Khoa..."
+                    required
+                    value={targetSchool}
+                    onChange={(e) => {
+                      setTargetSchool(e.target.value)
+                      setTargetUniversity(e.target.value)
+                    }}
+                    placeholder="Ví dụ: ĐH Quy Nhơn, ĐH Bách Khoa..."
                     className="w-full text-xs p-2.5 border border-slate-300 rounded-sm focus:border-brand-500 focus:outline-none bg-white font-medium"
                   />
-                  <span className="text-[10px] text-slate-500 mt-1 block">Trường Đại học mục tiêu (không bắt buộc)</span>
+                  <span className="text-[10px] text-slate-500 mt-1 block">Trường đại học mục tiêu</span>
                 </div>
               </div>
-            </div>
 
-            {/* CÂU HỎI 2 */}
-            <div className="space-y-2 bg-slate-50 p-4 rounded-sm border border-slate-200">
-              <label className="text-xs font-bold text-slate-800 block">
-                2. Nguồn nào khiến em muốn chọn ngành này? <span className="text-rose-500">*</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Chips gợi ý nhanh */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
+                <span className="text-slate-500 font-semibold text-[10px]">Gợi ý nhanh:</span>
                 {[
-                  { id: 'TikTok', label: '📱 Xem clip TikTok / Mạng xã hội / Review' },
-                  { id: 'Bạn bè', label: '👥 Bạn bè rủ / Thấy nhiều bạn cùng chọn' },
-                  { id: 'Ba mẹ', label: '👨‍👩‍👧 Ba mẹ định hướng / Gia đình khuyên' },
-                  { id: 'Đam mê từ nhỏ', label: '❤️ Đam mê và ấp ủ từ nhỏ' },
-                  { id: 'Khác', label: '💡 Tự tìm hiểu tài liệu / Lý do khác' }
-                ].map((item) => (
-                  <label 
-                    key={item.id}
-                    className={`flex items-center gap-2 p-2.5 rounded-sm border cursor-pointer transition-all ${
-                      choiceSource === item.id 
-                        ? 'bg-amber-100/70 border-amber-400 text-amber-950 font-bold' 
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
+                  { major: 'Sư phạm', school: 'ĐH Quy Nhơn', label: 'Sư phạm - ĐH Quy Nhơn' },
+                  { major: 'Công nghệ thông tin', school: 'ĐH Bách Khoa', label: 'CNTT - ĐH Bách Khoa' },
+                  { major: 'Quản trị kinh doanh', school: 'ĐH Kinh tế TP.HCM', label: 'Kinh tế - ĐH Kinh tế TP.HCM' },
+                  { major: 'Ngôn ngữ Anh', school: 'ĐH Ngoại ngữ', label: 'Ngôn ngữ Anh - ĐH Ngoại ngữ' }
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setTargetMajor(item.major)
+                      setTargetSchool(item.school)
+                      setTargetUniversity(item.school)
+                    }}
+                    className="px-2 py-1 bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-900 border border-slate-200 rounded text-[11px] font-medium transition-colors cursor-pointer"
                   >
-                    <input
-                      type="radio"
-                      name="choice_source"
-                      value={item.id}
-                      checked={choiceSource === item.id}
-                      onChange={() => setChoiceSource(item.id)}
-                      className="text-amber-600 focus:ring-amber-500"
-                    />
-                    <span>{item.label}</span>
-                  </label>
+                    + {item.label}
+                  </button>
                 ))}
               </div>
-              {choiceSource === 'Khác' && (
-                <input
-                  type="text"
-                  value={customChoiceSource}
-                  onChange={(e) => setCustomChoiceSource(e.target.value)}
-                  placeholder="Ghi rõ lý do khác của em..."
-                  className="w-full text-xs p-2.5 border border-slate-300 rounded-sm focus:border-brand-500 focus:outline-none bg-white font-medium mt-2"
-                />
-              )}
             </div>
 
-            
-            {/* Hidden inputs phục vụ DOM retrieval chuẩn xác theo ID */}
-            <input type="hidden" id="influenceSourceInput" value={choiceSource === 'Khác' && customChoiceSource ? customChoiceSource : choiceSource} />
-            <input type="hidden" id="confidenceScoreInput" value={String(confidenceScore)} />
-            <input type="hidden" id="hollandResultText" value={result?.primaryCode || "Nghệ thuật (A) - Xã hội (S)"} />
+            {/* TRƯỜNG 2: LÝ DO CHỌN NGÀNH */}
+            <div className="space-y-2 bg-slate-50 p-4 rounded-sm border border-slate-200">
+              <label className="text-xs font-bold text-slate-800 block">
+                2. Lý do em chọn ngành này: <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                id="reasonInput"
+                required
+                rows="3"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Ví dụ: Em thích từ nhỏ, Mẹ định hướng, Thấy trên mạng bảo lương cao và nhiều cơ hội việc làm..."
+                className="w-full text-xs p-2.5 border border-slate-300 rounded-sm focus:border-brand-500 focus:outline-none bg-white font-medium"
+              />
+              {/* Chips gợi ý nhanh lý do */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span className="text-slate-500 font-semibold text-[10px]">Chọn nhanh lý do:</span>
+                {[
+                  'Em thích từ nhỏ',
+                  'Mẹ định hướng',
+                  'Thấy trên mạng bảo lương cao',
+                  'Bạn bè cùng rủ chọn',
+                  'Mong muốn có việc làm và thu nhập ổn định'
+                ].map((txt, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setReason(txt)}
+                    className={`px-2 py-1 rounded text-[11px] border font-medium transition-colors cursor-pointer ${
+                      reason === txt 
+                        ? 'bg-amber-100 text-amber-900 border-amber-400 font-bold' 
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    {txt}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            {/* CÂU HỎI 3: OVERCONFIDENCE BIAS MEASURE */}
+            {/* TRƯỜNG 3: MỨC ĐỘ TỰ TIN TRÚNG TUYỂN VÀ THEO NGHỀ (THANG ĐO T0) */}
             <div className="space-y-2.5 bg-slate-50 p-4 rounded-sm border border-slate-200">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800">
-                  3. Trên thang điểm 1–10, em tự tin bao nhiêu điểm rằng mình sẽ theo học tốt và thành công với ngành này? <span className="text-rose-500">*</span>
+                  3. Mức độ tự tin trúng tuyển và theo nghề (Thang đo T0: 1 - 10 điểm): <span className="text-rose-500">*</span>
                 </label>
-                <span className="text-sm font-black px-2 py-0.5 rounded-sm bg-brand-600 text-white">
-                  {confidenceScore} / 10
+                <span className="text-sm font-black px-2.5 py-0.5 rounded-sm bg-brand-600 text-white">
+                  {confidenceScore} / 10 điểm
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Đánh giá mức độ tự tin hiện tại của em trước khi nhận phản biện từ AI và chuyên gia:
+                Đánh giá mức độ tự tin hiện tại của em trước khi nhận phản biện từ Thầy Socrates:
               </p>
+
+              {/* Slider tương tác */}
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={confidenceScore}
+                onChange={(e) => setConfidenceScore(Number(e.target.value))}
+                className="w-full accent-amber-500 cursor-pointer"
+              />
 
               {/* 10 nút bấm chọn điểm 1-10 */}
               <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-1">
@@ -828,7 +983,7 @@ const HollandTest = () => {
                       key={score}
                       type="button"
                       onClick={() => setConfidenceScore(score)}
-                      className={`py-2.5 text-xs font-black rounded-sm border transition-all cursor-pointer ${
+                      className={`py-2 text-xs font-black rounded-sm border transition-all cursor-pointer ${
                         isSelected 
                           ? 'bg-amber-500 border-amber-600 text-slate-950 shadow-sm scale-105' 
                           : 'bg-white border-slate-200 text-slate-700 hover:bg-amber-50 hover:border-amber-300'
@@ -840,11 +995,50 @@ const HollandTest = () => {
                 })}
               </div>
               <div className="flex justify-between text-[10px] text-slate-400 font-semibold px-1 pt-1">
-                <span>1: Rất phân vân, chưa chắc chắn</span>
-                <span>5: Khá tự tin</span>
+                <span>1: Rất phân vân, lo lắng</span>
+                <span>5: Tương đối tự tin</span>
                 <span>10: Tuyệt đối tự tin</span>
               </div>
             </div>
+
+            {/* TRƯỜNG 4: KỲ VỌNG MỨC THU NHẬP KHỞI ĐIỂM SAU KHI RA TRƯỜNG */}
+            <div className="space-y-2.5 bg-slate-50 p-4 rounded-sm border border-slate-200">
+              <label className="text-xs font-bold text-slate-800 block">
+                4. Kỳ vọng mức thu nhập khởi điểm sau khi ra trường: <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {[
+                  { value: 'Dưới 10 triệu/tháng', label: '💵 Dưới 10 triệu/tháng' },
+                  { value: '10 - 15 triệu/tháng', label: '💰 10 - 15 triệu/tháng' },
+                  { value: '15 - 20 triệu/tháng', label: '💎 15 - 20 triệu/tháng' },
+                  { value: 'Trên 20 triệu/tháng', label: '🚀 Trên 20 triệu/tháng' }
+                ].map((item) => (
+                  <label
+                    key={item.value}
+                    className={`flex items-center gap-2 p-2.5 rounded-sm border cursor-pointer transition-all ${
+                      expectedIncome === item.value 
+                        ? 'bg-emerald-100/80 border-emerald-500 text-emerald-950 font-bold' 
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="expected_income"
+                      value={item.value}
+                      checked={expectedIncome === item.value}
+                      onChange={() => setExpectedIncome(item.value)}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Hidden inputs phục vụ DOM retrieval chuẩn xác theo ID */}
+            <input type="hidden" id="influenceSourceInput" value={reason} />
+            <input type="hidden" id="confidenceScoreInput" value={String(confidenceScore)} />
+            <input type="hidden" id="hollandResultText" value={calculatedRiasecCode || result?.primaryCode || "AEI"} />
           </div>
         </div>
       )}
@@ -877,7 +1071,7 @@ const HollandTest = () => {
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Hoàn tất & Lưu mỏ neo</span>
+                <span>Hoàn tất Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
               </>
             )}
           </button>
@@ -887,7 +1081,7 @@ const HollandTest = () => {
             onClick={handleNext}
             className="text-xs font-bold uppercase tracking-wider gap-1.5"
           >
-            {currentPage === totalQuestionPages - 1 ? 'Tiếp sang Form mỏ neo' : 'Tiếp theo'}
+            {currentPage === totalQuestionPages - 1 ? 'Tiếp sang Form mỏ neo Bước 1' : 'Tiếp theo'}
             <ArrowRight className="w-4 h-4" />
           </Button>
         )}
