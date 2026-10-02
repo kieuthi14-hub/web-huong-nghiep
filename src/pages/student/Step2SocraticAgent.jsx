@@ -71,7 +71,9 @@ export function isCounterArguing(text) {
     /(đâu có|làm gì có|không hề|đâu phải)\s+(nghịch|mâu thuẫn)/i,
     /thầy\s+(nói|bảo|phán)\s+(thế|vậy|vậy là)\s+(không đúng|sai|chưa đúng|kỳ|lạ)/i,
     /(em|mình)\s+đã\s+(nói|bảo|giải thích)\s+(rồi|là)/i,
-    /chưa\s+(chọn|biết|định hình)\s+(được\s+)?(môn|sẽ dạy)/i
+    /(chưa|không)\s+(biết|rõ|chắc|định hình|chọn)\s+.*?(dạy|môn|tổ hợp)/i,
+    /(làm sao|sao|thế nào)\s+.*?(tra cứu|biết|chọn|tìm)/i,
+    /chưa\s+(chọn|biết|định hình|rõ)\s+(được\s+)?(môn|sẽ dạy|tổ hợp)/i
   ];
   return counterPatterns.some(p => p.test(clean)) || 
     (clean.includes('nghịch') && (clean.includes('đâu') || clean.includes('không') || clean.includes('gì') || clean.includes('sao') || clean.includes('chưa')));
@@ -114,9 +116,15 @@ export function hasDeclaredSubjectsOrGrades(text) {
   if (/(địa\s*lý|dia\s*ly|địa\s*lí|dia\s*li|môn\s*địa|mon\s*dia|\bđịa\b|\bdia\b)/i.test(cleanWithoutDiaDiem)) return true;
 
   // 9. Tin học / GDCD / GDQP / KTPL / Công nghệ / KHTN / KHXH
-  if (/(tin\s*học|tin\s*hoc|gdcd|gdqp|ktpl|quốc\s*phòng|kinh\s*tế\s*pháp\s*luật|công\s*nghệ|khtn|khxh)/i.test(clean)) return true;
+  if (/(tin\s*học|tin\s*hoc|gdcd|gdqp|ktpl|quốc\s*phòng|kinh\s*tế\s*pháp\s*luật|công\s*nghệ|khtn|khxh|giáo\s*dục\s*công\s*dân)/i.test(clean)) return true;
 
-  // 10. Tuyên bố học lực rõ ràng
+  // 10. Tổ hợp / Khối xét tuyển
+  if (/(tổ\s*hợp\s*([a-d]\d{2}|[a-d]|khtn|khxh|môn)|khối\s*([a-d]\d{2}|[a-d]|tự\s*nhiên|xã\s*hội)|\b[a-d]\d{2}\b)/i.test(clean)) return true;
+
+  // 11. Từ khóa kết hợp năng lực môn học
+  if (/(học\s*tốt|hoc\s*tot|đuối|duoi|học\s*khá|hoc\s*kha|môn\s*mạnh|môn\s*yếu|sở\s*trường|thế\s*mạnh|môn\s*sở\s*trường|môn\s*thế\s*mạnh)/i.test(clean)) return true;
+
+  // 12. Tuyên bố học lực rõ ràng
   const hasExplicitGradeDeclaration = [
     'học đều', 'hoc deu', 'đều đều', 'deu deu', 'học tàn tàn', 'tàn tàn', 'tan tan',
     'các môn như nhau', 'môn nào cũng như nhau', 'môn nào cũng vậy', 'môn nào cũng thế',
@@ -124,6 +132,43 @@ export function hasDeclaredSubjectsOrGrades(text) {
   ].some(k => clean.includes(k));
 
   return hasExplicitGradeDeclaration;
+}
+
+export function extractSubjectsFeedback(text) {
+  const clean = text.toLowerCase();
+  
+  const subjects = [
+    { name: 'Giáo dục Kinh tế và Pháp luật (KTPL)', patterns: ['ktpl', 'kinh tế pháp luật', 'kinh tế và pháp luật'] },
+    { name: 'Giáo dục Công dân (GDCD)', patterns: ['gdcd', 'công dân'] },
+    { name: 'Toán học', patterns: ['toán', 'toan'] },
+    { name: 'Ngữ văn', patterns: ['ngữ văn', 'ngu van', 'văn', 'van'] },
+    { name: 'Tiếng Anh', patterns: ['tiếng anh', 'tieng anh', 'ngoại ngữ', 'anh'] },
+    { name: 'Lịch sử', patterns: ['lịch sử', 'lich su', 'sử', 'su'] },
+    { name: 'Địa lý', patterns: ['địa lý', 'địa lí', 'dia ly', 'địa', 'dia'] },
+    { name: 'Vật lý', patterns: ['vật lý', 'vật lí', 'vat ly', 'lý', 'lí'] },
+    { name: 'Hóa học', patterns: ['hóa học', 'hoa hoc', 'hóa', 'hoa'] },
+    { name: 'Sinh học', patterns: ['sinh học', 'sinh hoc', 'sinh'] },
+    { name: 'Tin học', patterns: ['tin học', 'tin hoc', 'tin'] }
+  ];
+
+  let strongSubject = '';
+  let weakSubject = '';
+
+  for (const sub of subjects) {
+    for (const p of sub.patterns) {
+      const strongReg = new RegExp('(học tốt|giỏi|khá|thế mạnh|sở trường|mạnh|thích|ổn)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*)?(giỏi|tốt|khá|cao|ổn|được 8|được 9|8|9)', 'i');
+      const weakReg = new RegExp('(hơi đuối|đuối|yếu|kém|dốt|sợ|thấp|lo)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*|hơi\\s*)?(hơi đuối|đuối|yếu|kém|dốt|sợ|thấp|được 5|được 6|5|6)', 'i');
+
+      if (!strongSubject && strongReg.test(clean)) {
+        strongSubject = sub.name;
+      }
+      if (!weakSubject && weakReg.test(clean)) {
+        weakSubject = sub.name;
+      }
+    }
+  }
+
+  return { strongSubject, weakSubject };
 }
 
 export default function Step2SocraticAgent() {
@@ -290,7 +335,7 @@ Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ - BƯỚC NGOẶT T1):
+BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
 - Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
 - Học sinh vừa phản hồi: "${userText}".
 NHIỆM VỤ THỰC HIỆN:
@@ -301,25 +346,32 @@ NHIỆM VỤ THỰC HIỆN:
     (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${uni} (thường từ 24 - 27 điểm).
     (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
 * NẾU HỌC SINH ĐÃ NÊU RÕ MÔN HỌC THẾ MẠNH / MÔN YẾU (HOẶC HỌC LỰC RÕ RÀNG):
-  Thực hiện phân tích cặp môn theo Mô hình Thích ứng Kép và ra lệnh chuyển Bước 3:
-  1. Ghi nhận sự trung thực của học sinh khi đối diện với năng lực học tập.
-  2. Đưa ra 2 giải pháp thích ứng: (1) Bứt phá điểm số ở môn thế mạnh HOẶC (2) Cân nhắc hệ Cao đẳng thực hành vừa sức hơn (2.5 - 3 năm) để sớm có tay nghề vững chắc và giảm áp lực điểm thi.
-  3. MỆNH LỆNH CHUYỂN BƯỚC DỨT KHOÁT:
-     "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!"
+  Thực hiện MÔ HÌNH HẠ BẬC MỀM (SOFT LADDERING) với 3 tầng nấc thích ứng (TUYỆT ĐỐI KHÔNG VỘI VÀNG HẠ NGAY XUỐNG CAO ĐẲNG):
+  1. Ghi nhận môn thế mạnh của học sinh, chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp 3 môn vào ${career} tại ${uni} (thường từ 24 - 27 điểm).
+  2. Đưa ra 3 tầng nấc thích ứng:
+     - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá điểm số quyết tâm thi Nguyện vọng 1 vào ${uni}.
+     - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
+     - Tầng 3 (Lưới an toàn): Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
+  3. CÂU CHỈ DẪN ĐIỀU HƯỚNG CHỐT HẠ BẮT BUỘC:
+     "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
   [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC HỎI THÊM BẤT KỲ CÂU NÀO NỮA!
-Quy chuẩn: Dưới 140 từ. Dứt khoát, trao quyền tự quyết.`;
+Quy chuẩn: Dưới 150 từ. Dứt khoát, trao quyền tự quyết.`;
 
         case 4:
         default:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (TÁI CẤU TRÚC MỤC TIÊU & MỆNH LỆNH CHUYỂN BƯỚC 3 - TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
-- Học sinh vừa trả lời: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-1. Đúng 01 câu khen ngợi sự trung thực và bước trưởng thành nhận thức của học sinh qua các vòng đối thoại.
-2. Phân tích thích ứng kép (bứt phá điểm số môn thế mạnh hoặc lựa chọn hệ Cao đẳng thực hành 2.5 - 3 năm vừa sức).
-3. RA LỆNH RÕ RÀNG (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!"
-Quy chuẩn: Dưới 140 từ. Dứt khoát, trao quyền tự quyết.`;
+BỐI CẢNH VÒNG 4 (TỔNG KẾT THEO MÔ HÌNH HẠ BẬC MỀM - SOFT LADDERING - KẾT THÚC BƯỚC 2):
+- Học sinh vừa trả lời về môn học hoặc học lực: "${userText}".
+NHIỆM VỤ THỰC HIỆN (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
+1. Khen ngợi sự trung thực và thẳng thắn của học sinh khi nhìn nhận rõ năng lực học tập thực tế.
+2. Ghi nhận môn thế mạnh và chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp 3 môn vào ${career} tại ${uni} (24 - 27 điểm).
+3. Đưa ra 3 tầng nấc thích ứng theo Mô hình Hạ bậc mềm (Soft Laddering):
+   - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá điểm số quyết tâm thi Nguyện vọng 1 vào ${uni}.
+   - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng (Nguyện vọng 2) có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (ví dụ ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
+   - Tầng 3 (Lưới an toàn): Phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
+4. CÂU CHỈ DẪN ĐIỀU HƯỚNG CHỐT HẠ BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
+   "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
+Quy chuẩn: Dưới 150 từ. Dứt khoát, trao quyền tự quyết.`;
       }
     } else {
       // ==========================================
@@ -483,88 +535,56 @@ Quy chuẩn: Dưới 120 từ.`;
               `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
           }
 
+          const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
+
           const hasMath = lowerUser.includes('toán') || lowerUser.includes('toan');
           const hasLit = lowerUser.includes('văn') || lowerUser.includes('van');
+          const isWeakBoth = (hasMath && hasLit && (lowerUser.includes('yếu') || lowerUser.includes('kém') || lowerUser.includes('sợ'))) ||
+            /(yếu|kém|đuối|sợ|thấp)[^,.;!?\n]*(văn\s*(và|với|\+)\s*toán|toán\s*(và|với|\+)\s*văn)/i.test(lowerUser);
 
-          // 1. Kiểm tra trường hợp YẾU CẢ TOÁN VÀ VĂN:
-          const weakBothPatterns = [
-            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)[^,.;!?\n]*(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)/i,
-            /(văn\s*(và|với|lẫn|\+)\s*toán|toán\s*(và|với|lẫn|\+)\s*văn)[^,.;!?\n]*(đều|cũng|thì|là môn)?[^,.;!?\n]*(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-            /(yếu cả|kém cả|đuối cả|sợ cả)[^,.;!?\n]*(toán|văn)/i,
-            /(cả toán lẫn văn|cả văn lẫn toán|cả toán và văn|cả văn và toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i,
-            /(hai môn|2 môn|cả hai môn)\s*(toán[^,.;!?\n]*văn|văn[^,.;!?\n]*toán)[^,.;!?\n]*(đều|cũng)?[^,.;!?\n]*(yếu|kém|đuối|sợ)/i
-          ];
-
-          if (weakBothPatterns.some(p => p.test(lowerUser))) {
+          if (isWeakBoth) {
             return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành **${career}** tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống (như A00, B00, C00, D01) đều bắt buộc phải có Toán hoặc Văn với điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
-              `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
-              `1. **Tận dụng các môn còn lại học tốt**: Nỗ lực bứt phá các môn sở trường còn lại (Ngoại ngữ, Lịch sử, Địa lý, KHTN) để kéo điểm tổ hợp xét tuyển đại học.\n` +
-              `2. **Cân nhắc phân khúc vừa sức**: Cân nhắc hệ **Cao đẳng thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề).\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
+              `Khi đối diện với ngưỡng điểm chuẩn rất cao của ngành **${career}** tại **${uni}** (thường từ 24 - 27 điểm), việc có khoảng cách ở cả Toán và Văn là một rủi ro lớn kéo tụt tổng điểm tổ hợp xét tuyển. Tuy nhiên, thay vì vội vàng từ bỏ, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá, nỗ lực tối đa cải thiện hai môn Toán - Văn và tận dụng các môn sở trường còn lại để quyết tâm thi đỗ ${uni}.\n` +
+              `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
           }
 
-          // Math strong
-          const mathStrongPatterns = [
-            /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?toán/i,
-            /toán\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
-            /(sở trường|thế mạnh)[^,.;!?\n]*toán/i
-          ];
-          // Math weak
-          const mathWeakPatterns = [
-            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?toán/i,
-            /toán\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-            /(yếu nhất|kém nhất)[^,.;!?\n]*toán/i
-          ];
-
-          // Lit strong
-          const litStrongPatterns = [
-            /(giỏi|tốt|khá|thế mạnh|sở trường|thích|ổn)\s+(môn\s+)?văn/i,
-            /văn\s+(thì\s+)?(em\s+)?(học\s+)?(giỏi|tốt|khá|thế mạnh|sở trường|cao|ổn)/i,
-            /(sở trường|thế mạnh)[^,.;!?\n]*văn/i
-          ];
-          // Lit weak
-          const litWeakPatterns = [
-            /(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)\s+(môn\s+)?văn/i,
-            /văn\s+(thì\s+)?(em\s+)?(hơi\s+|học\s+)?(yếu|kém|đuối|sợ|thấp|không tốt|mất gốc|tệ)/i,
-            /(yếu nhất|kém nhất)[^,.;!?\n]*văn/i
-          ];
-
-          const mathStrong = mathStrongPatterns.some(p => p.test(lowerUser));
-          const mathWeak = mathWeakPatterns.some(p => p.test(lowerUser));
-          const litStrong = litStrongPatterns.some(p => p.test(lowerUser));
-          const litWeak = litWeakPatterns.some(p => p.test(lowerUser));
-
-          if (mathWeak && litWeak && !mathStrong && !litStrong) {
-            return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-              `Khi yếu cả hai môn cốt lõi là Toán và Ngữ văn, đây là một thử thách rất lớn đối với ước mơ vào ngành **${career}** tại **${uni}**, bởi vì phần lớn các tổ hợp xét tuyển truyền thống đều có điểm chuẩn rất cao (thường từ 24 - 27 điểm).\n\n` +
-              `Tuy nhiên, việc các môn còn lại em học tốt mở ra 2 hướng thích ứng rất cụ thể:\n` +
-              `1. **Tận dụng các môn sở trường còn lại**: Tập trung bứt phá điểm số các môn thế mạnh để kéo điểm tổ hợp xét tuyển đại học.\n` +
-              `2. **Cân nhắc phân khúc vừa sức**: Cân nhắc hệ **Cao đẳng thực hành** (thời gian đào tạo 2.5 - 3 năm, chú trọng tay nghề, áp lực thi tuyển nhẹ nhàng hơn và vẫn đảm bảo cơ hội làm nghề).\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
+          if (strongSubject && weakSubject) {
+            return `Thầy khen ngợi sự thẳng thắn và trung thực rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
+              `Có thế mạnh ở môn **${strongSubject}** là điểm tựa rất tốt. Tuy nhiên, nếu môn **${weakSubject}** còn đuối sức, rủi ro lớn nhất là điểm môn này sẽ kéo tụt tổng điểm tổ hợp 3 môn khi xét tuyển vào ngành **${career}** tại **${uni}** (vốn có ngưỡng điểm chuẩn cạnh tranh từ 24 - 27 điểm).\n\n` +
+              `Để chủ động làm chủ tương lai và không rơi vào thế bị động, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá điểm số, tập trung khắc phục môn ${weakSubject} và phát huy tối đa môn ${strongSubject}, quyết tâm thi đỗ ${uni}.\n` +
+              `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để luôn có tay nghề vững chắc.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
           }
 
-          if (litStrong && (mathWeak || !mathStrong)) {
-            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Năng khiếu Ngữ văn là nền tảng rất vững chắc cho các tổ hợp khối C00, D01, giúp em phát huy trọn vẹn thế mạnh ngôn ngữ và hoàn toàn tránh được rào cản môn Toán!\n\n` +
-              `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
-              `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Văn và các môn xã hội/ngoại ngữ đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
-              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề vững vàng.\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
+          if (strongSubject && !weakSubject) {
+            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ môn sở trường. Có thế mạnh ở môn **${strongSubject}** là một lợi thế điểm số rất tốt.\n\n` +
+              `Tuy nhiên, để xét tuyển vào ngành **${career}** tại **${uni}** với ngưỡng điểm chuẩn cạnh tranh (24 - 27 điểm), em cần đảm bảo cả 3 môn trong tổ hợp không môn nào bị đuối điểm. Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá điểm số toàn diện cả tổ hợp, phát huy môn ${strongSubject} để quyết tâm thi vào ${uni}.\n` +
+              `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
           }
 
-          if (mathStrong && (litWeak || !litStrong)) {
-            return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ cặp môn sở trường và môn còn khoảng cách. Giỏi Toán là thế mạnh tuyệt vời để em hướng tới các khối xét tuyển A00, A01, hoàn toàn tránh được rào cản môn Ngữ văn!\n\n` +
-              `Để tối ưu cơ hội tương lai, em có 2 hướng thích ứng:\n` +
-              `1. **Tập trung bứt phá điểm số**: Dồn sức cho môn Toán và các môn tự nhiên đi kèm để đạt ngưỡng điểm chuẩn đại học (24 - 27 điểm).\n` +
-              `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng thực hành nếu muốn giảm tải áp lực thi cử và sớm có tay nghề.\n\n` +
-              `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
+          if (weakSubject && !strongSubject) {
+            return `Thầy khen ngợi sự trung thực và thẳng thắn của em khi dũng cảm nhìn nhận khó khăn trong học tập.\n\n` +
+              `Khi môn **${weakSubject}** còn đuối sức, rủi ro lớn nhất là điểm môn này sẽ kéo tụt tổng điểm xét tuyển vào ngành **${career}** tại **${uni}** (thường từ 24 - 27 điểm). Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá, dồn sức cải thiện môn ${weakSubject} và tối ưu các môn còn lại để quyết tâm thi vào ${uni}.\n` +
+              `• **Tầng 2 (Nguyện vọng 2)**: Tìm hiểu các trường Đại học dự phòng có cùng ngành với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn phương án dự phòng cuối cùng với hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để sớm có việc làm.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
           }
 
-          return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 vòng phản tư.\n\n` +
-            `Dù theo đuổi ngành nào, em luôn có 2 hướng thích ứng rất rõ ràng:\n` +
-            `1. **Bứt phá điểm số**: Tập trung cao độ vào tổ hợp môn có thế mạnh để cạnh tranh vào hệ Đại học chính quy (24 - 27 điểm).\n` +
-            `2. **Lựa chọn phân khúc vừa sức**: Cân nhắc hệ Cao đẳng nghề/thực hành (2.5 - 3 năm) để sớm gia nhập thị trường việc làm với tay nghề vững chắc.\n\n` +
-            `Bây giờ, em hãy dừng suy đoán và bấm chuyển sang Bước 3: Môi trường đối chứng dữ liệu thực tế để tự tay tra cứu Đề án tuyển sinh, điểm chuẩn 3 năm và học phí chính thức nhé!`;
+          return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 giai đoạn phản tư.\n\n` +
+            `Trước ngưỡng điểm chuẩn cạnh tranh (thường từ 24 - 27 điểm) của ngành **${career}** tại **${uni}**, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
+            `• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá điểm số tổ hợp môn thế mạnh, quyết tâm thi vào ${uni}.\n` +
+            `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
+            `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để sớm có tay nghề vững chắc.\n\n` +
+            `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
         }
       }
     } else {
@@ -588,7 +608,7 @@ Quy chuẩn: Dưới 120 từ.`;
         default:
           return `Thầy chúc mừng em vì đã dũng cảm vượt qua sự mơ hồ ban đầu để tự tay định hình mục tiêu đầu tiên cho bản thân.\n\n` +
             `Sự tự chủ này là chiếc chìa khóa quan trọng nhất giúp em làm chủ hành trình nghề nghiệp tương lai mà không bị cuốn theo đám đông.\n\n` +
-            `Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân. Bây giờ, em hãy chuyển sang **Bước 3: Đối chứng Dữ liệu Khách quan** để tự tra cứu Đề án tuyển sinh xem ngành này ở các trường đại học hoặc cao đẳng gần địa phương yêu cầu điều kiện gì nhé!`;
+            `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
       }
     }
   };
@@ -630,7 +650,11 @@ Quy chuẩn: Dưới 120 từ.`;
       specialInstruction: specialInstruction
     };
 
-    const studentHasDeclaredSubjects = hasDeclaredSubjectsOrGrades(userText);
+    const studentIsCounterArguing = isCounterArguing(userText);
+    const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
+    const hasExplicitSubjectFeedback = Boolean(strongSubject || weakSubject);
+    const studentHasDeclaredSubjects = (hasExplicitSubjectFeedback || hasDeclaredSubjectsOrGrades(userText)) && (!studentIsCounterArguing || hasExplicitSubjectFeedback);
+    const promptStage = (stage >= 4 || (stage >= 3 && studentHasDeclaredSubjects)) ? 4 : stage;
     let targetNextStage = stage + 1;
     let targetIsCompleted = false;
 
@@ -667,12 +691,23 @@ Quy chuẩn: Dưới 120 từ.`;
 
         if (serverlessRes.ok) {
           const sData = await serverlessRes.json();
-          const replyText = sData?.response || sData?.reply;
+          let replyText = sData?.response || sData?.reply;
           if (replyText && replyText.trim().length >= 25) {
+            let cleaned = replyText.trim();
+            if (targetIsCompleted || targetNextStage === 4 || promptStage === 4) {
+              cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
+              cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
+              cleaned = cleaned.trim();
+
+              const step3Directive = "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!";
+              if (!cleaned.includes("Bước 3") && !cleaned.includes("bước 3")) {
+                cleaned = cleaned + "\n\n" + step3Directive;
+              }
+            }
             return {
-              replyText: replyText.trim(),
+              replyText: cleaned,
               chatStage: sData?.chatStage || sData?.stage || targetNextStage,
-              isCompleted: sData?.isCompleted === true
+              isCompleted: sData?.isCompleted === true || targetIsCompleted
             };
           }
         }
@@ -690,7 +725,7 @@ Quy chuẩn: Dưới 120 từ.`;
         || fallbackKey;
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(stage, studentProfile, userText, specialInstruction);
+      const systemPrompt = generatePromptForRound(promptStage, studentProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -738,6 +773,17 @@ Quy chuẩn: Dưới 120 từ.`;
               .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ).*?\]\s*/i, '')
               .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
               .trim();
+
+            if (targetIsCompleted || targetNextStage === 4 || promptStage === 4) {
+              text = text.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
+              text = text.replace(/^[^\n\r?]+\?\s*$/g, '');
+              text = text.trim();
+
+              const step3Directive = "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!";
+              if (!text.includes("Bước 3") && !text.includes("bước 3")) {
+                text = text + "\n\n" + step3Directive;
+              }
+            }
           }
         }
         if (text && text.trim().length >= 25) {
@@ -753,7 +799,7 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    const fallbackText = generateHeuristicFallback(stage, studentProfile, userText, specialInstruction);
+    const fallbackText = generateHeuristicFallback(promptStage, studentProfile, userText, specialInstruction);
     return {
       replyText: fallbackText,
       chatStage: targetNextStage,
