@@ -203,9 +203,13 @@ app.post('/api/socrates-chat', async (req, res) => {
       return res.status(200).json({
         success: true,
         round: req.body?.round && Number(req.body.round) > 0 ? Number(req.body.round) : 1,
+        stage: req.body?.stage && Number(req.body.stage) > 0 ? Number(req.body.stage) : (req.body?.round ? Number(req.body.round) : 1),
+        chatStage: req.body?.chatStage && Number(req.body.chatStage) > 0 ? Number(req.body.chatStage) : 1,
         response: greetingReply,
         reply: greetingReply,
-        isCompleted: false
+        isComplete: false,
+        isCompleted: false,
+        progress: "1/4"
       });
     }
 
@@ -215,9 +219,13 @@ app.post('/api/socrates-chat', async (req, res) => {
       return res.status(200).json({
         success: true,
         round: req.body?.round && Number(req.body.round) > 0 ? Number(req.body.round) : 1,
+        stage: req.body?.stage && Number(req.body.stage) > 0 ? Number(req.body.stage) : (req.body?.round ? Number(req.body.round) : 1),
+        chatStage: req.body?.chatStage && Number(req.body.chatStage) > 0 ? Number(req.body.chatStage) : 1,
         response: clarifyReply,
         reply: clarifyReply,
-        isCompleted: false
+        isComplete: false,
+        isCompleted: false,
+        progress: "1/4"
       });
     }
 
@@ -462,14 +470,27 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
       });
     }
 
+    const hasStep3Directive = Boolean(replyText && (
+      replyText.includes("chuyển sang Bước 3") || 
+      replyText.includes("chuyển sang bước 3") || 
+      replyText.toLowerCase().includes("bước 3")
+    ));
+    const isFinishedStage4 = targetNextStage >= 4 || incomingStage >= 4 || promptStage >= 4 || isCompleted || hasStep3Directive;
+
+    const finalStage = isFinishedStage4 ? 4 : targetNextStage;
+    const finalIsComplete = isFinishedStage4;
+    const progressStr = isFinishedStage4 ? "4/4" : `${Math.min(finalStage, 4)}/4`;
+
     return res.status(200).json({
       success: true,
-      chatStage: targetNextStage,
-      stage: targetNextStage,
-      round: targetNextStage,
+      chatStage: finalStage,
+      stage: finalStage,
+      round: finalStage,
       response: replyText,
       reply: replyText,
-      isCompleted: isCompleted
+      isComplete: finalIsComplete,
+      isCompleted: finalIsComplete,
+      progress: progressStr
     });
 
   } catch (error) {

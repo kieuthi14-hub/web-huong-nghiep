@@ -174,6 +174,7 @@ export function extractSubjectsFeedback(text) {
 export default function Step2SocraticAgent() {
   const [chatStage, setChatStage] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isChatFinished, setIsChatFinished] = useState(false);
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -184,14 +185,19 @@ export default function Step2SocraticAgent() {
 
   const maxStages = 4;
   const messagesEndRef = useRef(null);
+  const step3CtaRef = useRef(null);
   const lastAiMsgRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      if (isChatFinished || isCompleted) {
+        step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      } else {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
     }, 150);
     return () => clearTimeout(timer);
-  }, [messages, isLoading, chatStage, isCompleted]);
+  }, [messages, isLoading, chatStage, isCompleted, isChatFinished]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -230,10 +236,13 @@ export default function Step2SocraticAgent() {
     };
     setStudentProfile(resolvedProfile);
 
-    // Dọn sạch trạng thái kẹt cũ của các phiên test trước
-    localStorage.removeItem("cbas_step2_messages");
-    localStorage.removeItem("cbas_step2_round");
-    localStorage.removeItem("cbas_step2_completed");
+    let savedMessages = null;
+    let savedCompleted = false;
+    try {
+      const rawMsgs = localStorage.getItem("cbas_step2_messages");
+      if (rawMsgs) savedMessages = JSON.parse(rawMsgs);
+      savedCompleted = localStorage.getItem("cbas_step2_completed") === "true";
+    } catch (e) {}
 
     const isBranchB = isUndecidedOrVague(targetMajor);
 
@@ -247,15 +256,37 @@ export default function Step2SocraticAgent() {
       initialGreeting = `Chào em. Thầy ghi nhận em có thiên hướng Holland **${hollandCode}**, dự định chọn **${targetMajor}** tại **${targetSchool}** với mức tự tin **${initialConfidence}/10** và lý do: '${reason}'.\n\nEm thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
     }
 
-    const initMsg = [{
-      role: 'model',
-      text: initialGreeting,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }];
-    setMessages(initMsg);
-    try { localStorage.setItem("cbas_step2_messages", JSON.stringify(initMsg)); } catch (e) {}
-    setChatStage(1);
-    setIsCompleted(false);
+    if (Array.isArray(savedMessages) && savedMessages.length > 0) {
+      setMessages(savedMessages);
+      const lastMsg = savedMessages[savedMessages.length - 1];
+      const hasStep3InLast = Boolean(lastMsg?.text && (
+        lastMsg.text.includes("chuyển sang Bước 3") || 
+        lastMsg.text.includes("chuyển sang bước 3") || 
+        lastMsg.text.includes("Bước 3") || 
+        lastMsg.text.includes("bước 3")
+      ));
+      if (savedCompleted || hasStep3InLast) {
+        setIsCompleted(true);
+        setIsChatFinished(true);
+        setChatStage(4);
+      } else {
+        const userMsgCount = savedMessages.filter(m => m.role === 'user').length;
+        setChatStage(Math.min(userMsgCount + 1, 4));
+        setIsCompleted(false);
+        setIsChatFinished(false);
+      }
+    } else {
+      const initMsg = [{
+        role: 'model',
+        text: initialGreeting,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }];
+      setMessages(initMsg);
+      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(initMsg)); } catch (e) {}
+      setChatStage(1);
+      setIsCompleted(false);
+      setIsChatFinished(false);
+    }
   }, []);
 
   // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN VISEF 2026 - MÔ HÌNH NHẬN THỨC LINH HOẠT
@@ -694,7 +725,16 @@ Quy chuẩn: Dưới 120 từ.`;
           let replyText = sData?.response || sData?.reply;
           if (replyText && replyText.trim().length >= 25) {
             let cleaned = replyText.trim();
-            if (targetIsCompleted || targetNextStage === 4 || promptStage === 4) {
+            const hasStep3Directive = Boolean(cleaned && (
+              cleaned.includes("chuyển sang Bước 3") || 
+              cleaned.includes("chuyển sang bước 3") || 
+              cleaned.includes("Bước 3") || 
+              cleaned.includes("bước 3")
+            ));
+            const isCompleteFromBackend = sData?.isComplete === true || sData?.isCompleted === true;
+            const isReallyComplete = isCompleteFromBackend || targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
+
+            if (isReallyComplete) {
               cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
               cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
               cleaned = cleaned.trim();
@@ -706,8 +746,9 @@ Quy chuẩn: Dưới 120 từ.`;
             }
             return {
               replyText: cleaned,
-              chatStage: sData?.chatStage || sData?.stage || targetNextStage,
-              isCompleted: sData?.isCompleted === true || targetIsCompleted
+              chatStage: isReallyComplete ? 4 : (sData?.chatStage || sData?.stage || targetNextStage),
+              isCompleted: isReallyComplete,
+              isComplete: isReallyComplete
             };
           }
         }
@@ -774,7 +815,15 @@ Quy chuẩn: Dưới 120 từ.`;
               .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
               .trim();
 
-            if (targetIsCompleted || targetNextStage === 4 || promptStage === 4) {
+            const hasStep3Directive = Boolean(text && (
+              text.includes("chuyển sang Bước 3") || 
+              text.includes("chuyển sang bước 3") || 
+              text.includes("Bước 3") || 
+              text.includes("bước 3")
+            ));
+            const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
+
+            if (isReallyComplete) {
               text = text.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
               text = text.replace(/^[^\n\r?]+\?\s*$/g, '');
               text = text.trim();
@@ -787,10 +836,18 @@ Quy chuẩn: Dưới 120 từ.`;
           }
         }
         if (text && text.trim().length >= 25) {
+          const hasStep3Directive = Boolean(text && (
+            text.includes("chuyển sang Bước 3") || 
+            text.includes("chuyển sang bước 3") || 
+            text.includes("Bước 3") || 
+            text.includes("bước 3")
+          ));
+          const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
           return {
             replyText: text.trim(),
-            chatStage: targetNextStage,
-            isCompleted: targetIsCompleted
+            chatStage: isReallyComplete ? 4 : targetNextStage,
+            isCompleted: isReallyComplete,
+            isComplete: isReallyComplete
           };
         }
       }
@@ -800,10 +857,18 @@ Quy chuẩn: Dưới 120 từ.`;
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
     const fallbackText = generateHeuristicFallback(promptStage, studentProfile, userText, specialInstruction);
+    const hasStep3Fallback = Boolean(fallbackText && (
+      fallbackText.includes("chuyển sang Bước 3") || 
+      fallbackText.includes("chuyển sang bước 3") || 
+      fallbackText.includes("Bước 3") || 
+      fallbackText.includes("bước 3")
+    ));
+    const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Fallback;
     return {
       replyText: fallbackText,
-      chatStage: targetNextStage,
-      isCompleted: targetIsCompleted
+      chatStage: isReallyComplete ? 4 : targetNextStage,
+      isCompleted: isReallyComplete,
+      isComplete: isReallyComplete
     };
   };
 
@@ -839,8 +904,8 @@ Quy chuẩn: Dưới 120 từ.`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
     content += `💵 Kỳ vọng thu nhập (Bước 1): ${expectedIncome}\n`;
     content += `📝 Lý do chọn ban đầu: ${reason}\n`;
-    content += `🧬 Thiên hướng Holland (RIASEC): ${holland}\n`;
-    content += `🔄 Tiến trình hoàn thành: ${Math.min(chatStage, maxStages)} / ${maxStages} giai đoạn phản tư${isCompleted ? ' (Đã hoàn thành đầy đủ)' : ''}\n\n`;
+    const isSessionDone = isChatFinished || isCompleted || chatStage >= 4;
+    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, maxStages)} / ${maxStages} giai đoạn phản tư`}\n\n`;
 
     if (sessionTelemetry) {
       content += `-----------------------------------------------------------------\n`;
@@ -988,8 +1053,14 @@ Quy chuẩn: Dưới 120 từ.`;
       }
       
       const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
-      const nextStage = aiResult?.chatStage || (chatStage + 1);
-      const isFinished = aiResult?.isCompleted === true;
+      const hasStep3InReply = Boolean(replyContent && (
+        replyContent.includes("chuyển sang Bước 3") || 
+        replyContent.includes("chuyển sang bước 3") || 
+        replyContent.includes("Bước 3") || 
+        replyContent.includes("bước 3")
+      ));
+      const isFinished = aiResult?.isComplete === true || aiResult?.isCompleted === true || hasStep3InReply || (aiResult?.chatStage >= 4);
+      const nextStage = isFinished ? 4 : (aiResult?.chatStage || (chatStage + 1));
 
       const aiMsg = {
         role: 'model',
@@ -1005,7 +1076,13 @@ Quy chuẩn: Dưới 120 từ.`;
         setChatStage(nextStage);
         if (isFinished) {
           setIsCompleted(true);
+          setIsChatFinished(true);
           try { localStorage.setItem("cbas_step2_completed", "true"); } catch (e) {}
+
+          // Tự động cuộn xuống đúng vị trí nút bấm
+          setTimeout(() => {
+            step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          }, 100);
 
           // Tính toán Telemetry chuẩn ViSEF 2026:
           let tpDetected = false;
@@ -1105,9 +1182,9 @@ Quy chuẩn: Dưới 120 từ.`;
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
             <span>Tiến trình:</span>
-            <span style={{ color: '#2563eb' }}>{Math.min(chatStage, maxStages)}</span>
+            <span style={{ color: '#2563eb' }}>{Math.min((isChatFinished || isCompleted) ? 4 : chatStage, maxStages)}</span>
             <span>/ {maxStages} giai đoạn</span>
-            {isCompleted ? (
+            {(isChatFinished || isCompleted) ? (
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
                 ✓ Đã hoàn thành 4 giai đoạn phản tư
               </span>
@@ -1250,23 +1327,25 @@ Quy chuẩn: Dưới 120 từ.`;
         ) : null}
 
         {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI */}
-        {isCompleted ? (
+        {/* HỘP ĐIỀU HƯỚNG CỐ ĐỊNH / THẺ NỔI BẬT NGAY DƯỚI TIN NHẮN CUỐI CÙNG */}
+        {(isChatFinished || isCompleted) ? (
           <div 
+            ref={step3CtaRef}
             className="no-print"
             style={{
               background: '#f0fdf4',
-              border: '1.5px solid #10b981',
+              border: '2px solid #10b981',
               borderRadius: '12px',
-              padding: '16px 20px',
-              marginTop: '10px',
-              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.08)'
+              padding: '18px 22px',
+              marginTop: '12px',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '24px', lineHeight: 1 }}>🎯</div>
+              <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
               <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#065f46', fontWeight: 'bold' }}>
-                  Phiên phản tư nhận thức Socrates đã hoàn tất thành công!
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
+                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
                 </h4>
                 <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
                   Em hãy đọc kỹ lời phân tích và định hướng thích ứng của Thầy ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
@@ -1294,24 +1373,24 @@ Quy chuẩn: Dưới 120 từ.`;
                 onClick={() => window.location.href = '/student/fact-check'}
                 style={{
                   flex: 1,
-                  minWidth: '280px',
+                  minWidth: '320px',
                   background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '13px 22px',
+                  padding: '14px 22px',
                   borderRadius: '8px',
                   fontWeight: 'bold',
-                  fontSize: '14.5px',
+                  fontSize: '15px',
                   cursor: 'pointer',
-                  boxShadow: '0 3px 8px rgba(5, 150, 105, 0.25)',
+                  boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px'
                 }}
               >
-                <span>TIẾP TỤC BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-                <span style={{ fontSize: '16px' }}>➔</span>
+                <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
+                <span style={{ fontSize: '18px' }}>➔</span>
               </button>
 
               <button
@@ -1368,8 +1447,8 @@ Quy chuẩn: Dưới 120 từ.`;
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || isCompleted}
-            placeholder={isCompleted ? "Phiên phản tư Bước 2 đã hoàn tất." : "Tự tay nhập câu trả lời phản biện của em..."}
+            disabled={isLoading || isChatFinished || isCompleted}
+            placeholder={(isChatFinished || isCompleted) ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -1377,23 +1456,23 @@ Quy chuẩn: Dưới 120 từ.`;
               borderRadius: '8px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor: isCompleted ? '#f1f5f9' : '#ffffff',
-              color: isCompleted ? '#64748b' : '#0f172a',
-              cursor: isCompleted ? 'not-allowed' : 'text'
+              backgroundColor: (isChatFinished || isCompleted) ? '#f1f5f9' : '#ffffff',
+              color: (isChatFinished || isCompleted) ? '#64748b' : '#0f172a',
+              cursor: (isChatFinished || isCompleted) ? 'not-allowed' : 'text'
             }}
           />
           <button
             type="submit"
-            disabled={isLoading || !inputValue.trim() || isCompleted}
+            disabled={isLoading || !inputValue.trim() || isChatFinished || isCompleted}
             style={{
-              background: isCompleted ? '#94a3b8' : '#10b981',
+              background: (isChatFinished || isCompleted) ? '#94a3b8' : '#10b981',
               color: '#ffffff',
               border: 'none',
               padding: '0 24px',
               borderRadius: '8px',
               fontWeight: 'bold',
-              cursor: isLoading || !inputValue.trim() || isCompleted ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !inputValue.trim() || isCompleted ? 0.6 : 1
+              cursor: isLoading || !inputValue.trim() || isChatFinished || isCompleted ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !inputValue.trim() || isChatFinished || isCompleted ? 0.6 : 1
             }}
           >
             GỬI ➔
