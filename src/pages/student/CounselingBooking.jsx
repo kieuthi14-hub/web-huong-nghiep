@@ -504,7 +504,7 @@ const CounselingBooking = () => {
     localStorage.setItem('mentor_feedback_record', JSON.stringify(record))
     localStorage.setItem('cbas_step4_feedback', JSON.stringify(record))
     setFeedbackSaved(record)
-    setToast({ type: 'success', message: '🎉 Đã lưu Biên bản tư vấn 1-1 thành công!' })
+    setToast({ type: 'success', message: '🎉 Đã lưu Nhật ký thu hoạch sau buổi tham vấn thành công!' })
   }
 
   // Khởi tạo và đọc dữ liệu đã lưu
@@ -756,7 +756,7 @@ const CounselingBooking = () => {
                   : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
               }`}
             >
-              <span>4B. Biên Bản Đánh Giá</span>
+              <span>4B. Nhật Ký Thu Hoạch</span>
               {feedbackSaved && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
             </button>
           </div>
@@ -1136,15 +1136,15 @@ const CounselingBooking = () => {
                   {feedbackSaved && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-full border border-emerald-300">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      Đã lưu Biên bản
+                      Đã lưu Nhật ký
                     </span>
                   )}
                 </div>
                 <h3 className="text-base md:text-xl font-extrabold text-slate-900 mt-1 uppercase">
-                  BIÊN BẢN SAU BUỔI TƯ VẤN 1-1 (MENTOR FEEDBACK FORM)
+                  GIAI ĐOẠN 4B: NHẬT KÝ THU HOẠCH SAU BUỔI THAM VẤN 1-1 (STUDENT REFLECTION LOG)
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Đánh giá sự chuyển biến nhận thức của học sinh sau khi đối thoại trực tiếp với Mentor/Chuyên gia
+                <p className="text-xs md:text-sm text-slate-500 mt-0.5">
+                  Ghi nhận sự chuyển biến nhận thức và đúc kết của em sau khi đối thoại trực tiếp cùng Thầy/Cô/Mentor.
                 </p>
               </div>
             </div>
@@ -1160,27 +1160,24 @@ const CounselingBooking = () => {
           </div>
 
           <div className="space-y-6 text-xs md:text-sm">
-            {/* MỤC 1: Mức độ nhận thức thực tế của học sinh sau buổi tư vấn */}
+            {/* MỤC 1: Góc nhìn về mục tiêu nghề nghiệp thay đổi */}
             <div className="p-4 md:p-5 bg-slate-50 rounded-xl border border-slate-200">
               <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-3">
-                1. Mức độ nhận thức thực tế của học sinh sau buổi tư vấn: <span className="text-rose-500">*</span>
+                1. Sau buổi trò chuyện trực tiếp, góc nhìn của em về mục tiêu nghề nghiệp đã thay đổi như thế nào? <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-1 gap-2.5">
                 {[
                   { 
                     val: 'persisted', 
-                    label: 'Vẫn còn giữ kỳ vọng chủ quan / chưa sát với thực tế',
-                    desc: 'Học sinh vẫn giữ nguyên định kiến mỏ neo, chưa thực sự sẵn sàng chấp nhận khoảng cách điểm số hoặc rủi ro việc làm.'
+                    label: 'Em vẫn giữ nguyên kỳ vọng ban đầu, chưa thực sự sẵn sàng thay đổi phương án.'
                   },
                   { 
                     val: 'reduced', 
-                    label: 'Đã điều chỉnh góc nhìn, nhận thức rõ ràng và sát thực tế hơn',
-                    desc: 'Học sinh đã lắng nghe phân tích rủi ro, bắt đầu nhìn nhận độ phân hóa điểm thi và cân nhắc giải pháp dự phòng.'
+                    label: 'Em đã nhìn nhận rõ hơn độ khó của điểm chuẩn/việc làm và bắt đầu cân nhắc các phương án thích ứng.'
                   },
                   { 
                     val: 'cleared', 
-                    label: 'Đã nắm vững bức tranh tổng thể, hiểu rõ cơ hội & thách thức nghề nghiệp',
-                    desc: 'Học sinh hoàn toàn chuyển đổi nhận thức, chủ động xây dựng phương án thích ứng đa tầng và chấp nhận sự thật số liệu.'
+                    label: 'Em đã nắm vững bức tranh thực tế và chủ động định hình lộ trình đa tuyến an toàn.'
                   }
                 ].map(opt => (
                   <label 
@@ -1200,28 +1197,24 @@ const CounselingBooking = () => {
                       className="mt-0.5 accent-violet-600"
                     />
                     <div>
-                      <span className="font-bold block text-xs md:text-sm">{opt.label}</span>
-                      <span className="text-[11px] text-slate-500 block mt-0.5 leading-normal">{opt.desc}</span>
+                      <span className="font-bold block text-xs md:text-sm leading-relaxed">{opt.label}</span>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* MỤC 2: Tinh thần sẵn sàng đón nhận thực tế và Lời khuyên chốt của Mentor */}
+            {/* MỤC 2: Mức độ sẵn sàng vượt khó và đón nhận thực tế */}
             <div className="p-4 md:p-5 bg-slate-50 rounded-xl border border-slate-200">
-              <div className="mb-5">
+              <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    2. Tinh thần sẵn sàng đón nhận thực tế sau buổi tư vấn:
+                    2. Mức độ sẵn sàng vượt khó và đón nhận thực tế của em lúc này:
                   </label>
                   <span className="px-3 py-1 bg-violet-600 text-white rounded-lg font-black text-sm shadow-sm">
                     {feedbackReadiness}/10
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 mb-3">
-                  Kéo thanh trượt để chấm điểm mức độ sẵn sàng vượt khó và tâm thế thực tế của học sinh:
-                </p>
                 <input
                   type="range"
                   min="1"
@@ -1231,24 +1224,25 @@ const CounselingBooking = () => {
                   className="w-full accent-violet-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
                 />
                 <div className="flex justify-between text-[11px] font-bold text-slate-500 mt-2 px-1">
-                  <span>1: Còn băn khoăn</span>
-                  <span>5: Đang cân nhắc</span>
-                  <span>10: Sẵn sàng dấn thân</span>
+                  <span>Còn băn khoăn</span>
+                  <span>Đang cân nhắc</span>
+                  <span>Sẵn sàng dấn thân</span>
                 </div>
               </div>
+            </div>
 
-              <div className="pt-4 border-t border-slate-200">
-                <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-1.5">
-                  Nhận xét / Lời khuyên chốt của Mentor: <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  placeholder="Ghi nhận xét ngắn về tinh thần, sự chuyển biến nhận thức và lời khuyên chốt của Cố vấn dành cho học sinh..."
-                  value={feedbackNotes}
-                  onChange={(e) => setFeedbackNotes(e.target.value)}
-                  className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs md:text-sm text-slate-900 focus:ring-2 focus:ring-violet-500 focus:outline-none"
-                />
-              </div>
+            {/* MỤC 3: Lời khuyên hoặc bài học kinh nghiệm sâu sắc nhất từ Thầy/Cô/Mentor */}
+            <div className="p-4 md:p-5 bg-slate-50 rounded-xl border border-slate-200">
+              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-1.5">
+                3. Lời khuyên hoặc bài học kinh nghiệm sâu sắc nhất từ Thầy/Cô/Mentor mà em đúc kết được: <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Ghi lại 1-2 lời dặn dò then chốt của người tư vấn giúp em định hướng rõ ràng hơn..."
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                className="w-full p-3 bg-white border border-slate-300 rounded-xl text-xs md:text-sm text-slate-900 focus:ring-2 focus:ring-violet-500 focus:outline-none"
+              />
             </div>
 
             {/* NÚT BẤM HOÀN TẤT */}
@@ -1258,7 +1252,7 @@ const CounselingBooking = () => {
                 onClick={handleSaveFeedback}
                 className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow transition transform active:scale-95 text-xs md:text-sm cursor-pointer"
               >
-                Lưu Biên Bản Buổi Gặp 💾
+                Lưu Nhật Ký Thu Hoạch 💾
               </button>
 
               <button
@@ -1266,7 +1260,7 @@ const CounselingBooking = () => {
                 onClick={goToStep5}
                 className="inline-flex items-center gap-2 px-7 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-xs md:text-sm cursor-pointer"
               >
-                <span>Sang Bước 5: Nhật Ký Ra Quyết Định Đa Tuyến</span>
+                <span>Sang Bước 5: Thiết Lập Kế Hoạch Hành Động Đa Tuyến</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
