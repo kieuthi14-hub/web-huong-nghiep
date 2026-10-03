@@ -229,56 +229,23 @@ app.post('/api/socrates-chat', async (req, res) => {
       });
     }
 
-    // 3. Quản lý Tiến trình Hội thoại theo Trạng thái (FINITE STATE MACHINE - VISEF 2026)
-    // STAGE 1: Động cơ chọn ngành (Nội sinh vs Ngoại sinh)
-    // STAGE 2: Thách thức áp lực nghề & Xu hướng chuyển đổi số tương lai (và hỏi về tổ hợp môn)
-    // STAGE 3: Đối chất Tổ hợp môn & Học lực thực tế (Kỹ thuật 3 Nhịp: hỏi môn sở trường vs môn yếu)
-    // STAGE 4: Tái cấu trúc mục tiêu theo Mô hình Hạ bậc mềm (Soft Laddering) & Chốt lệnh chuyển Bước 3 (Hoàn thành)
-    
+    // 3. Quản lý Tiến trình Hội thoại theo Trạng thái Cứng (STRICT STATE MACHINE - VISEF 2026)
+    // Khởi tạo biến: currentStage = 1 (Chỉ số từ 1 đến 4).
+    // Mỗi khi học sinh bấm gửi một tin nhắn, currentStage mới được tăng lên 1 đơn vị.
     const substantiveUserMsgs = validHistory.filter(m => m.role === 'user' && !isGreetingOnly(m.text) && !isTechnicalConfusion(m.text));
 
-    let incomingStage = 1;
-    if (req.body?.chatStage && Number(req.body.chatStage) >= 1) {
-      incomingStage = Number(req.body.chatStage);
+    let currentStage = 1;
+    if (req.body?.currentStage && Number(req.body.currentStage) >= 1) {
+      currentStage = Math.min(Math.max(Number(req.body.currentStage), 1), 4);
     } else if (req.body?.stage && Number(req.body.stage) >= 1) {
-      incomingStage = Number(req.body.stage);
+      currentStage = Math.min(Math.max(Number(req.body.stage), 1), 4);
+    } else if (req.body?.chatStage && Number(req.body.chatStage) >= 1) {
+      currentStage = Math.min(Math.max(Number(req.body.chatStage), 1), 4);
     } else if (req.body?.round && Number(req.body.round) >= 1) {
-      incomingStage = Number(req.body.round);
+      currentStage = Math.min(Math.max(Number(req.body.round), 1), 4);
     } else {
-      incomingStage = Math.min(substantiveUserMsgs.length + 1, 3);
+      currentStage = Math.min(Math.max(substantiveUserMsgs.length + 1, 1), 4);
     }
-
-    // Kiểm tra xem học sinh đã khai báo môn học hoặc học lực cụ thể chưa:
-    const studentIsCounterArguing = isCounterArguing(trimmedMsg);
-    const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
-    const hasExplicitSubjectFeedback = Boolean(strongSubject || weakSubject);
-    const studentHasDeclaredSubjects = (hasExplicitSubjectFeedback || hasDeclaredSubjectsOrGrades(trimmedMsg)) && (!studentIsCounterArguing || hasExplicitSubjectFeedback);
-
-    // Xác định giai đoạn mục tiêu và kiểm soát cờ hiệu isCompleted:
-    let targetNextStage = incomingStage + 1;
-    let isCompleted = false;
-
-    if (incomingStage === 1) {
-      targetNextStage = 2;
-      isCompleted = false;
-    } else if (incomingStage === 2) {
-      targetNextStage = 3;
-      isCompleted = false; // BẮT BUỘC: Khung chat phải giữ mở để học sinh trả lời ở Stage 3!
-    } else if (incomingStage >= 3) {
-      if (!studentHasDeclaredSubjects) {
-        // Học sinh phản biện lại hoặc chưa nêu môn cụ thể: GIỮ NGUYÊN GIAI ĐOẠN 3, CHƯA ĐƯỢC KẾT THÚC!
-        targetNextStage = 3;
-        isCompleted = false;
-      } else {
-        // Học sinh ĐÃ nêu rõ môn học: CHÍNH THỨC SANG GIAI ĐOẠN 4 VÀ HOÀN TẤT!
-        targetNextStage = 4;
-        isCompleted = true;
-      }
-    }
-
-    // Xác định giai đoạn kích hoạt cho System Prompt:
-    // Khi học sinh đã khai báo môn ở Stage 3 hoặc đang ở Stage 4, AI BẮT BUỘC thực hiện phản hồi Giai đoạn 4!
-    const promptStage = (incomingStage >= 4 || (incomingStage >= 3 && studentHasDeclaredSubjects)) ? 4 : incomingStage;
 
     const studentProfile = req.body?.studentProfile || req.body?.userProfile || req.body?.anchor || {};
     const targetCareer = studentProfile?.targetMajor || studentProfile?.targetCareer || studentProfile?.target_career || "Sư phạm";
@@ -288,88 +255,24 @@ app.post('/api/socrates-chat', async (req, res) => {
     const initialConfidence = studentProfile?.initialConfidence || studentProfile?.confidenceT0 || studentProfile?.confidence_score || studentProfile?.confidence || 5;
     const expectedIncome = studentProfile?.expectedIncome || studentProfile?.targetIncome || "10 - 15 triệu/tháng";
 
-    // 4. Trích xuất các câu phát ngôn gần nhất của Thầy để đưa vào rào cản chống lặp tuyệt đối
+    // 4. Trích xuất các câu phát ngôn gần nhất của Thầy để chống lặp
     const pastModelUtterances = validHistory
       .filter(m => m.role === 'model' && m.text)
       .slice(-3)
       .map((m, i) => `Lượt trước ${i + 1}: "${m.text.slice(0, 120)}..."`)
       .join('\n');
 
-    // 5. Xây dựng System Instruction theo "MÔ HÌNH NHẬN THỨC LINH HOẠT" (COGNITIVE AGENT ARCHITECTURE)
-    const systemPrompt = `
-BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
-Bạn đang trò chuyện 1-1 với một học sinh THPT đang đứng trước ngưỡng cửa chọn ngành nghề tương lai.
+    // 5. TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP (KHÔNG DÙNG 1 PROMPT CHUNG)
+    const systemPrompt = getStageSystemPrompt(currentStage, {
+      targetCareer,
+      targetSchool,
+      hollandCode,
+      reason,
+      initialConfidence,
+      expectedIncome
+    }, trimmedMsg, pastModelUtterances);
 
-[HỒ SƠ HỌC SINH TẠI BƯỚC 1]:
-- Ngành mong muốn: ${targetCareer}
-- Trường mục tiêu: ${targetSchool}
-- Thiên hướng Holland (RIASEC): ${hollandCode}
-- Mức tự tin ban đầu (T0): ${initialConfidence}/10
-- Lý do chọn ngành (Bước 1): "${reason}"
-- Kỳ vọng thu nhập khởi điểm: "${expectedIncome}"
-- Trạng thái phản tư hiện tại: GIAI ĐOẠN ${promptStage} / 4
-
-[BẢN CHẤT CỐT LÕI - KHÔNG PHẢI BOT KỊCH BẢN CỨNG NHẮC]:
-Bạn KHÔNG PHẢI là một kịch bản bot lặp khuôn hay mẫu câu máy móc. Bạn sở hữu trí tuệ cảm xúc (EQ) cao, khả năng lắng nghe sâu, sự ấm áp của người thầy và nghệ thuật dẫn dắt Socrates giúp học sinh tự nhận thức.
-
-[CƠ CHẾ SUY NGHĨ NỘI TÂM TRƯỚC KHI TRẢ LỜI - BẮT BUỘC]:
-Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiềm thức:
-1. "Học sinh này đang bộc lộ trạng thái tâm lý gì?" (Ví dụ: Thực dụng vì tiền/thu nhập; Tự ti, hoang mang về học lực; Bị phụ huynh áp đặt/ngoại sinh; Bốc đồng theo trào lưu; hay Tự tin có căn cứ?).
-2. "Làm sao để công nhận cảm xúc của em ấy một cách chân thành nhất mà không phán xét?"
-3. "Làm sao để dùng chính câu nói bất ngờ đó làm bàn đạp dẫn dắt em ấy về hiện thực nghề nghiệp?"
-
-[QUY TẮC ĐIỀU PHỐI THEO TRẠNG THÁI (FINITE STATE MACHINE - BẮT BUỘC)]:
-Hệ thống ĐANG Ở GIAI ĐOẠN ${promptStage} / 4. Bạn PHẢI tuân thủ nghiêm ngặt quy tắc chuyển trạng thái:
-
-* NẾU ĐANG Ở GIAI ĐOẠN 1 (Động cơ chọn ngành & Đối chiếu Nội sinh vs Ngoại sinh):
-  Học sinh vừa phản hồi về câu hỏi mở đầu (về động cơ chọn ngành và lý do: "${reason}").
-  - Hãy thấu cảm / ghi nhận động cơ của học sinh (đặc biệt nếu bị phụ huynh định hướng, đam mê thật sự, hay theo trào lưu/tiền bạc).
-  - Sau đó CHỦ ĐỘNG DẪN DẮT SANG GIAI ĐOẠN 2: Đối chất trực tiếp với con số kỳ vọng thu nhập [${expectedIncome}] học sinh đã chọn ở Bước 1 trong bối cảnh AI và tự động hóa 5-10 năm tới.
-  - KẾT THÚC BẰNG ĐÚNG CÂU HỎI PHẢN TƯ GIAI ĐOẠN 2:
-    "Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
-  - TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây!
-
-* NẾU ĐANG Ở GIAI ĐOẠN 2 (Thách thức áp lực nghề, xu hướng AI & Kiểm chứng kỳ vọng thu nhập):
-  Học sinh vừa trả lời về áp lực nghề, xu hướng AI và năng lực cạnh tranh cho mức thu nhập ${expectedIncome}.
-  - Hãy ghi nhận góc nhìn của học sinh về năng lực và thách thức thị trường.
-  - Sau đó CHỦ ĐỘNG DẪN DẮT SANG GIAI ĐOẠN 3: Đưa ra nghịch lý tuyển sinh - dù kỳ vọng thế nào thì chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh vào ${targetCareer} tại ${targetSchool}.
-  - KẾT THÚC BẰNG CÂU HỎI ĐỐI CHẤT TỔ HỢP & HỌC LỰC THỰC TẾ:
-    "Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${targetCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
-  - TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây! Khung chat bắt buộc phải giữ mở để học sinh trả lời ở Giai đoạn 3!
-
-* NẾU ĐANG Ở GIAI ĐOẠN 3 (Đối chất Tổ hợp môn & Học lực thực tế - Chưa nêu môn hoặc đang phản biện):
-  Học sinh CHƯA NÊU RÕ CẶP MÔN THẾ MẠNH / MÔN YẾU, hoặc đang phản biện lại Thầy (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc giải thích lý do):
-  - [CẤM TUYỆT ĐỐI]: AI TUYỆT ĐỐI KHÔNG ĐƯỢC tự ý phán đoán học sinh "học lực đều đều", KHÔNG ĐƯỢC khuyên học Cao đẳng, và TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc phiên chat tại đây!
-  - [NHIỆM VỤ 3 BƯỚC BẮT BUỘC]:
-    (1) Bước a: Công nhận tư duy phản biện thẳng thắn và góc nhìn thực tế của học sinh.
-    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${targetSchool} (thường từ 24 - 27 điểm).
-    (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
-
-* NẾU ĐANG Ở GIAI ĐOẠN 4 (TỔNG KẾT THEO MÔ HÌNH HẠ BẬC MỀM - SOFT LADDERING - KẾT THÚC BƯỚC 2):
-  Học sinh đã chia sẻ về môn học sở trường và môn yếu / học lực thực tế: "${trimmedMsg}".
-  Nhiệm vụ của Thầy:
-  1. Ghi nhận và khen ngợi môn thế mạnh của học sinh, đồng thời chỉ ra rủi ro điểm chuẩn thực tế nếu môn còn yếu/đuối kéo tụt tổng điểm của cả tổ hợp 3 môn khi xét tuyển vào ${targetCareer} tại ${targetSchool} (ngưỡng điểm chuẩn thường từ 24 - 27 điểm).
-  2. Đưa ra MÔ HÌNH HẠ BẬC MỀM (SOFT LADDERING) với 3 tầng nấc thích ứng toàn diện (TUYỆT ĐỐI KHÔNG VỘI VÀNG HẠ NGAY XUỐNG CAO ĐẲNG):
-     - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá điểm số quyết tâm thi Nguyện vọng 1 trường mục tiêu (${targetSchool}).
-     - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng (Nguyện vọng 2) có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (ví dụ ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
-     - Tầng 3 (Lưới an toàn): Phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
-  3. CÂU CHỈ DẪN ĐIỀU HƯỚNG CHỐT HẠ BẮT BUỘC:
-     "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
-  - [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT THÊM BẤT KỲ CÂU HỎI NÀO Ở CUỐI GIAI ĐOẠN 4!
-
-[RÀO CẢN CHỐNG LẶP LẠI TUYỆT ĐỐI]:
-${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất của bạn:\n${pastModelUtterances}\nBẠN TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại các cấu trúc câu, từ ngữ chào đón hoặc câu hỏi đã xuất hiện ở trên!` : ''}
-
-[ĐỊNH DẠNG ĐẦU RA BẮT BUỘC]:
-- Mỗi phản hồi chỉ từ 2 đến 4 câu ngắn gọn, súc tích, văn phong sư phạm ổn định, điềm tĩnh, ấm áp.
-- Kết thúc bằng ĐÚNG 01 câu hỏi phản tư duy nhất (ở Giai đoạn 1, 2, 3), HOẶC kết thúc bằng lời chỉ dẫn điều hướng chuyển bước (ở Giai đoạn 4: "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!").
-- Ở Giai đoạn 4: TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi phản tư. BẮT BUỘC kết thúc bằng đúng câu chỉ dẫn điều hướng chuyển sang Bước 3.
-- Phải kết thúc bằng dấu chấm câu hoàn chỉnh (. ! ?), tuyệt đối không ngắt quãng lửng lơ.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề, ghi chú hay phân tích kỹ thuật.
-- TUYỆT ĐỐI KHÔNG xuất các khối ghi chú suy nghĩ trong dấu ngoặc đơn hoặc dấu sao như *(...)* hay [Suy nghĩ:...]. Bắt đầu ngay bằng lời thoại của Thầy Socrates.
-`;
-
-    // 6. Chuẩn bị nội dung gửi lên Gemini API (đảm bảo tin nhắn đầu tiên phải có role là 'user')
+    // 6. Chuẩn bị nội dung gửi lên Gemini API
     let contents = validHistory
       .filter(msg => msg && msg.text && typeof msg.text === 'string')
       .map(msg => ({
@@ -388,7 +291,7 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
 
     let replyText = null;
 
-    // 7. Cấu hình mô hình hoạt động ổn định với Token và Tham số chuẩn ViSEF 2026
+    // 7. Cấu hình mô hình hoạt động ổn định
     const candidateModelNames = [
       'gemini-3.5-flash-lite',
       'gemini-flash-lite-latest',
@@ -409,7 +312,6 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
           }
         });
 
-        // Bảo hiểm timeout 6 giây mỗi model để không bao giờ bị nghẽn
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Model generation timeout')), 6000)
         );
@@ -431,10 +333,9 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
             .replace(/^#+.*?\n/gi, '')
             .trim();
 
-          // Kiểm tra xem phản hồi có hoàn chỉnh và kết thúc bằng dấu chấm câu không
           if (isCompleteSentence(cleaned)) {
-            // RÀO CẢN BẢO VỆ GIAI ĐOẠN 4: Lọc sạch câu hỏi ở cuối và đảm bảo câu kết chuyển sang Bước 3
-            if (targetNextStage === 4 || isCompleted || promptStage === 4) {
+            if (currentStage === 4) {
+              // GIAI ĐOẠN 4: LỌC SẠCH DẤU HỎI ? VÀ ĐẢM BẢO KẾT LỆNH BƯỚC 3
               cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
               cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
               cleaned = cleaned.trim();
@@ -443,6 +344,9 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
               if (!cleaned.includes("Bước 3") && !cleaned.includes("bước 3")) {
                 cleaned = cleaned + "\n\n" + step3Directive;
               }
+            } else {
+              // GIAI ĐOẠN 1, 2, 3: NGHIÊM CẤM NHẮC ĐẾN BƯỚC 3
+              cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
             }
             replyText = cleaned;
             break;
@@ -453,43 +357,33 @@ ${pastModelUtterances ? `Dưới đây là các câu trả lời gần nhất c�
       }
     }
 
-    // 8. Heuristic Fallback Nhận thức (Chỉ kích hoạt nếu toàn bộ API Gemini gặp sự cố hoặc trả về đứt gãy)
+    // 8. Heuristic Fallback Nhận thức (Dự phòng khẩn cấp nếu API gặp sự cố)
     if (!replyText || !isCompleteSentence(replyText)) {
       replyText = generateCognitiveFallback({
-        incomingStage: promptStage,
+        stage: currentStage,
         targetCareer,
         targetSchool,
         hollandCode,
         reason,
         initialConfidence,
         expectedIncome,
-        trimmedMsg,
-        lowerTrimmed,
-        studentHasDeclaredSubjects,
-        studentIsCounterArguing
+        trimmedMsg
       });
     }
 
-    const hasStep3Directive = Boolean(replyText && (
-      replyText.includes("chuyển sang Bước 3") || 
-      replyText.includes("chuyển sang bước 3") || 
-      replyText.toLowerCase().includes("bước 3")
-    ));
-    const isFinishedStage4 = targetNextStage >= 4 || incomingStage >= 4 || promptStage >= 4 || isCompleted || hasStep3Directive;
-
-    const finalStage = isFinishedStage4 ? 4 : targetNextStage;
-    const finalIsComplete = isFinishedStage4;
-    const progressStr = isFinishedStage4 ? "4/4" : `${Math.min(finalStage, 4)}/4`;
+    const isComplete = currentStage === 4;
+    const progressStr = `${currentStage}/4`;
 
     return res.status(200).json({
       success: true,
-      chatStage: finalStage,
-      stage: finalStage,
-      round: finalStage,
+      stage: currentStage,
+      currentStage: currentStage,
+      chatStage: currentStage,
+      round: currentStage,
       response: replyText,
       reply: replyText,
-      isComplete: finalIsComplete,
-      isCompleted: finalIsComplete,
+      isComplete: isComplete,
+      isCompleted: isComplete,
       progress: progressStr
     });
 
@@ -505,96 +399,130 @@ app.post('/api/chat', (req, res) => {
   app.handle(req, res);
 });
 
-// Hàm Fallback Nhận thức Linh hoạt (Dự phòng khẩn cấp chuẩn ViSEF 2026 - 100% Trọn vẹn)
-function generateCognitiveFallback({ incomingStage, targetCareer, targetSchool, hollandCode, reason, initialConfidence, expectedIncome, trimmedMsg, lowerTrimmed, studentHasDeclaredSubjects, studentIsCounterArguing }) {
-  // 1. Phản xạ tâm lý bất ngờ: Tự ti / hoang mang
-  const isInsecure = [
-    'dốt', 'kém', 'sợ trượt', 'không biết làm được', 'không biết có làm được', 'lo lắng', 'hoang mang', 'tự ti', 'áp lực', 'sợ không đỗ'
-  ].some(k => lowerTrimmed.includes(k));
-  if (isInsecure && incomingStage === 1) {
-    return `Sự lo lắng và cảm giác hoài nghi bản thân là trạng thái tâm lý rất thật và đáng được tôn trọng khi em đứng trước cánh cửa tương lai quan trọng.\n\nNhìn lại chính mình lúc này, điều gì đang làm em cảm thấy áp lực nhất: khối lượng kiến thức chuyên môn, điểm số thi tuyển, hay áp lực từ sự kỳ vọng của người khác?`;
+// ==============================================================================
+// TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP
+// ==============================================================================
+function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = '') {
+  const { targetCareer, targetSchool, hollandCode, reason, initialConfidence, expectedIncome } = profile;
+  const avoidRepetition = pastModelUtterances
+    ? `\n[CÂU THOẠI TRƯỚC ĐÓ CỦA THẦY - TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI]:\n${pastModelUtterances}\n`
+    : '';
+
+  // ● KHI currentStage === 1 (Lượt khởi đầu):
+  if (stage === 1) {
+    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
+Bạn đang bắt đầu phiên đối thoại phản tư với một học sinh THPT.
+
+[HỒ SƠ HỌC SINH]:
+- Nhóm thiên hướng Holland (RIASEC): ${hollandCode}
+- Ngành mong muốn: ${targetCareer}
+- Trường đại học mục tiêu: ${targetSchool}
+- Mức tự tin ban đầu: ${initialConfidence}/10
+- Lý do chọn ngành ban đầu: "${reason}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 1]:
+1. Chào học sinh theo mã Holland [${hollandCode}], ngành [${targetCareer}], lý do [${reason}].
+2. HỎI ĐÚNG 01 CÂU DUY NHẤT:
+"Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG nói về thu nhập hay tiền bạc.
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
   }
 
-  // 2. GIAI ĐOẠN 1: Động cơ chọn ngành -> Chuyển sang Giai đoạn 2 (Áp lực nghề & Kiểm chứng kỳ vọng thu nhập)
-  if (incomingStage === 1) {
-    const isFamily = [
-      'mẹ định hướng', 'mẹ em định hướng', 'bố định hướng', 'bố em định hướng', 'ba định hướng', 'ba em định hướng',
-      'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình muốn', 'bố mẹ chọn', 'ba mẹ chọn', 'bố mẹ bắt', 'ba mẹ bắt'
-    ].some(k => lowerTrimmed.includes(k)) || /(mẹ|bố|ba|gia đình)\s+(em\s+)?(định hướng|chọn|bắt|muốn|khuyên|bảo)/i.test(lowerTrimmed);
+  // ● KHI currentStage === 2 (Lượt thách thức việc làm & thu nhập):
+  if (stage === 2) {
+    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
+Bạn đang ở Lượt 2 của phiên đối thoại phản tư. Học sinh vừa trả lời câu hỏi ở Stage 1.
 
-    const motivationAck = isFamily
-      ? `Gia đình luôn mong muốn điều an toàn và ổn định cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.`
-      : `Thầy ghi nhận chia sẻ chân thành của em về động cơ hướng tới ngành **${targetCareer}**.`;
+[HỒ SƠ HỌC SINH]:
+- Ngành mong muốn: ${targetCareer}
+- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}"
+- Câu trả lời của học sinh ở Stage 1: "${userText}"
 
-    return `${motivationAck}\n\nEm kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 2]:
+1. Ghi nhận câu trả lời của học sinh trong 1-2 câu ngắn gọn, ấm áp.
+2. Xoáy vào dữ liệu thu nhập [${expectedIncome}] với ĐÚNG CÂU HỎI SAU:
+"Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Khung chat bắt buộc phải giữ mở để học sinh trả lời tiếp ở Stage 3.
+- Kết thúc bằng đúng câu hỏi về thu nhập & AI ở trên.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
   }
 
-  // 3. GIAI ĐOẠN 2: Kiểm chứng kỳ vọng thu nhập -> Chuyển sang Giai đoạn 3 (Đối chất Tổ hợp & Điểm gãy T1)
-  if (incomingStage === 2) {
-    return `Thầy rất ủng hộ tinh thần cầu tiến và nhận thức thực tế của em về thị trường lao động.\n\nTuy nhiên, dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
+  // ● KHI currentStage === 3 (Lượt đối chất tổ hợp môn & học lực thực tế):
+  if (stage === 3) {
+    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
+Bạn đang ở Lượt 3 của phiên đối thoại phản tư. Học sinh vừa trả lời câu hỏi ở Stage 2.
+
+[HỒ SƠ HỌC SINH]:
+- Ngành mong muốn: ${targetCareer}
+- Trường đại học mục tiêu: ${targetSchool}
+- Câu trả lời của học sinh ở Stage 2 (về thu nhập/AI/cạnh tranh): "${userText}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 3]:
+1. Ghi nhận ngắn gọn góc nhìn của học sinh về việc làm/thu nhập.
+2. Dẫn dắt vào bài toán điểm số với ĐÚNG CÂU HỎI SAU:
+"Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${targetCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG đưa ra kết luận hay giải pháp hạ bậc ở lượt này.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Khung chat bắt buộc phải giữ mở để học sinh trả lời về môn học ở Stage 4.
+- Kết thúc bằng đúng câu hỏi về tổ hợp & môn sở trường/đuối sức ở trên.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
   }
 
-  // 4. GIAI ĐOẠN 3 / 4: Đối chất Học lực thực tế & Mô hình Hạ bậc mềm (Soft Laddering)
-  const isCounter = studentIsCounterArguing || isCounterArguing(trimmedMsg);
-  const hasDeclared = studentHasDeclaredSubjects !== undefined ? studentHasDeclaredSubjects : hasDeclaredSubjectsOrGrades(trimmedMsg);
+  // ● KHI currentStage === 4 (Lượt kết thúc & Tái cấu trúc 3 tầng nấc):
+  return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
+Bạn đang ở Lượt 4 (Lượt kết thúc phản tư) của phiên đối thoại. Học sinh vừa trả lời về môn học ở Stage 3.
 
-  // Nếu học sinh phản biện hoặc CHƯA khai báo môn học cụ thể:
-  // Giữ nguyên Stage 3, yêu cầu nêu rõ môn mạnh/yếu đối chiếu với 24-27 điểm
-  if (!hasDeclared || (isCounter && !hasDeclared)) {
-    return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và góc nhìn thực tế của em. Đúng là khi chưa xác định cụ thể thì không nên vội vã đưa ra kết luận cảm tính.\n\nTuy nhiên, mọi tính toán về nhu cầu thị trường hay lựa chọn môn học đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại **${targetSchool}** (thường từ 24 đến 27 điểm).\n\nĐể giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
+[HỒ SƠ HỌC SINH]:
+- Ngành mong muốn: ${targetCareer}
+- Trường đại học mục tiêu: ${targetSchool}
+- Câu trả lời của học sinh ở Stage 3 (về tổ hợp môn/môn sở trường/môn đuối sức): "${userText}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 4]:
+1. AI phân tích môn thế mạnh và môn yếu học sinh vừa nêu trong tin nhắn "${userText}". Ghi nhận môn thế mạnh và chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp xét tuyển vào ${targetCareer} tại ${targetSchool}.
+2. Trình bày Chiến lược Thích ứng Đa tầng (3 tầng nấc):
+   + Tầng 1: Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${targetSchool}.
+   + Tầng 2: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên).
+   + Tầng 3: Lưới an toàn với các hệ đào tạo thực hành vững chắc để luôn chủ động.
+3. KẾT LỆNH BẮT BUỘC:
+"Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
+
+[CẢNH BÁO TỐI CAO - ĐẶC BIỆT]:
+- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt thêm bất kỳ câu hỏi nào. KHÔNG CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
+}
+
+// ==============================================================================
+// HÀM FALLBACK NHẬN THỨC THEO TỪNG GIAI ĐOẠN ĐỘC LẬP
+// ==============================================================================
+function generateCognitiveFallback({ stage, targetCareer, targetSchool, hollandCode, reason, initialConfidence, expectedIncome, trimmedMsg }) {
+  if (stage === 1) {
+    return `Chào em. Thầy ghi nhận em có thiên hướng Holland **${hollandCode}**, dự định chọn **${targetCareer}** tại **${targetSchool}** với mức tự tin **${initialConfidence}/10** và lý do: '${reason}'.\n\nEm thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
   }
 
-  // GIAI ĐOẠN 4: HỌC SINH ĐÃ NÊU MÔN HỌC HOẶC HỌC LỰC -> MÔ HÌNH HẠ BẬC MỀM (SOFT LADDERING)
+  if (stage === 2) {
+    return `Thầy rất ghi nhận và thấu cảm với chia sẻ chân thành của em về động cơ chọn ngành.\n\nEm kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
+  }
+
+  if (stage === 3) {
+    return `Thầy rất ủng hộ tinh thần tích cực và nhận thức thực tế của em về thị trường lao động.\n\nDù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
+  }
+
+  // Stage 4
   const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
+  const strongName = strongSubject || 'môn sở trường của em';
+  const weakName = weakSubject || 'môn học em đang thấy lo lắng';
 
-  const hasMath = lowerTrimmed.includes('toán') || lowerTrimmed.includes('toan');
-  const hasLit = lowerTrimmed.includes('văn') || lowerTrimmed.includes('van');
-  const isWeakBoth = (hasMath && hasLit && (lowerTrimmed.includes('yếu') || lowerTrimmed.includes('kém') || lowerTrimmed.includes('sợ'))) ||
-    /(yếu|kém|đuối|sợ|thấp)[^,.;!?\n]*(văn\s*(và|với|\+)\s*toán|toán\s*(và|với|\+)\s*văn)/i.test(lowerTrimmed);
-
-  if (isWeakBoth) {
-    return `Thầy ghi nhận sự trung thực và thẳng thắn rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-      `Khi đối diện với ngưỡng điểm chuẩn rất cao của ngành **${targetCareer}** tại **${targetSchool}** (thường từ 24 - 27 điểm), việc có khoảng cách ở cả Toán và Văn là một rủi ro lớn kéo tụt tổng điểm tổ hợp xét tuyển. Tuy nhiên, thay vì vội vàng từ bỏ, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá, nỗ lực tối đa cải thiện hai môn Toán - Văn và tận dụng các môn sở trường còn lại để quyết tâm thi đỗ ${targetSchool}.\n` +
-      `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
-  }
-
-  if (strongSubject && weakSubject) {
-    return `Thầy khen ngợi sự thẳng thắn và trung thực rất đáng quý của em khi dũng cảm đối diện với năng lực học tập thực tế.\n\n` +
-      `Có thế mạnh ở môn **${strongSubject}** là điểm tựa rất tốt. Tuy nhiên, nếu môn **${weakSubject}** còn đuối sức, rủi ro lớn nhất là điểm môn này sẽ kéo tụt tổng điểm tổ hợp 3 môn khi xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}** (vốn có ngưỡng điểm chuẩn cạnh tranh từ 24 - 27 điểm).\n\n` +
-      `Để chủ động làm chủ tương lai và không rơi vào thế bị động, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá điểm số, tập trung khắc phục môn ${weakSubject} và phát huy tối đa môn ${strongSubject}, quyết tâm thi đỗ ${targetSchool}.\n` +
-      `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để luôn có tay nghề vững chắc.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
-  }
-
-  if (strongSubject && !weakSubject) {
-    return `Thầy khen ngợi sự thẳng thắn của em khi nhìn nhận rõ môn sở trường. Có thế mạnh ở môn **${strongSubject}** là một lợi thế điểm số rất tốt.\n\n` +
-      `Tuy nhiên, để xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}** với ngưỡng điểm chuẩn cạnh tranh (24 - 27 điểm), em cần đảm bảo cả 3 môn trong tổ hợp không môn nào bị đuối điểm. Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá điểm số toàn diện cả tổ hợp, phát huy môn ${strongSubject} để quyết tâm thi vào ${targetSchool}.\n` +
-      `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
-  }
-
-  if (weakSubject && !strongSubject) {
-    return `Thầy khen ngợi sự trung thực và thẳng thắn của em khi dũng cảm nhìn nhận khó khăn trong học tập.\n\n` +
-      `Khi môn **${weakSubject}** còn đuối sức, rủi ro lớn nhất là điểm môn này sẽ kéo tụt tổng điểm xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}** (thường từ 24 - 27 điểm). Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá, dồn sức cải thiện môn ${weakSubject} và tối ưu các môn còn lại để quyết tâm thi vào ${targetSchool}.\n` +
-      `• **Tầng 2 (Nguyện vọng 2)**: Tìm hiểu các trường Đại học dự phòng có cùng ngành với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn phương án dự phòng cuối cùng với hệ Cao đẳng thực hành hoặc đào tạo nghề chất lượng cao để sớm có việc làm.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
-  }
-
-  return `Thầy khen ngợi tinh thần cầu thị, sự trung thực và bước trưởng thành nhận thức rõ rệt của em qua 4 giai đoạn phản tư.\n\n` +
-    `Trước ngưỡng điểm chuẩn cạnh tranh (thường từ 24 - 27 điểm) của ngành **${targetCareer}** tại **${targetSchool}**, Thầy định hướng cho em mô hình hạ bậc mềm (Soft Laddering) với 3 tầng nấc thích ứng:\n\n` +
-    `• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá điểm số tổ hợp môn thế mạnh, quyết tâm thi vào ${targetSchool}.\n` +
-    `• **Tầng 2 (Nguyện vọng 2)**: Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).\n` +
-    `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để sớm có tay nghề vững chắc.\n\n` +
-    `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
+  return `Thầy phân tích thấy việc có thế mạnh ở môn ${strongName} là điểm tựa rất tốt. Tuy nhiên, nếu môn ${weakName} còn đuối sức, rủi ro điểm chuẩn sẽ kéo tụt tổng điểm cả tổ hợp khi xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**.\n\nĐể luôn làm chủ lộ trình tương lai, Thầy định hướng cho em Chiến lược Thích ứng Đa tầng với 3 tầng nấc:\n\n• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${targetSchool}.\n• **Tầng 2 (Nguyện vọng 2)**: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên).\n• **Tầng 3 (Lưới an toàn)**: Lưới an toàn với các hệ đào tạo thực hành vững chắc để luôn chủ động.\n\nBây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
 }
 
 const PORT = process.env.PORT || 5000;

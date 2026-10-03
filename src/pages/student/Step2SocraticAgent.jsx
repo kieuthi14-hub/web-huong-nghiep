@@ -184,20 +184,21 @@ export default function Step2SocraticAgent() {
   const [sessionTelemetry, setSessionTelemetry] = useState(null);
 
   const maxStages = 4;
+  const isReadyForStep3 = chatStage === 4 && (isCompleted || isChatFinished);
   const messagesEndRef = useRef(null);
   const step3CtaRef = useRef(null);
   const lastAiMsgRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (isChatFinished || isCompleted) {
+      if (isReadyForStep3) {
         step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       } else {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
       }
     }, 150);
     return () => clearTimeout(timer);
-  }, [messages, isLoading, chatStage, isCompleted, isChatFinished]);
+  }, [messages, isLoading, chatStage, isCompleted, isChatFinished, isReadyForStep3]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -258,20 +259,21 @@ export default function Step2SocraticAgent() {
 
     if (Array.isArray(savedMessages) && savedMessages.length > 0) {
       setMessages(savedMessages);
+      const userMsgCount = savedMessages.filter(m => m.role === 'user').length;
       const lastMsg = savedMessages[savedMessages.length - 1];
-      const hasStep3InLast = Boolean(lastMsg?.text && (
+      const hasStep3InLast = Boolean(lastMsg?.role === 'model' && lastMsg?.text && (
         lastMsg.text.includes("chuyển sang Bước 3") || 
         lastMsg.text.includes("chuyển sang bước 3") || 
         lastMsg.text.includes("Bước 3") || 
         lastMsg.text.includes("bước 3")
       ));
-      if (savedCompleted || hasStep3InLast) {
+      if (userMsgCount >= 3 && (savedCompleted || hasStep3InLast)) {
         setIsCompleted(true);
         setIsChatFinished(true);
         setChatStage(4);
       } else {
-        const userMsgCount = savedMessages.filter(m => m.role === 'user').length;
-        setChatStage(Math.min(userMsgCount + 1, 4));
+        const resolvedStage = Math.min(userMsgCount + 1, 4);
+        setChatStage(resolvedStage);
         setIsCompleted(false);
         setIsChatFinished(false);
       }
@@ -339,69 +341,85 @@ Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiề
       switch (round) {
         case 1:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (ĐÀO SÂU ĐỘNG CƠ CHỌN NGÀNH & BẺ GÃY KỲ VỌNG THU NHẬP):
-- Học sinh vừa trả lời câu hỏi mở đầu về động cơ chọn ngành ${career} và lý do "${reason}": "${userText}".
-- Nhóm Holland nổi trội của học sinh: ${holland}. Mức tự tin ban đầu: ${score}/10.
-- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}".
-NHIỆM VỤ THỰC HIỆN:
-1. Thấu cảm / ghi nhận động cơ của học sinh (nếu do gia đình áp đặt thì nhắc nhở người trực tiếp học và làm nghề là em; nếu khẳng định đam mê thật sự thì ghi nhận tinh thần tích cực).
-2. Sau đó CHỦ ĐỘNG DẪN DẮT SANG GIAI ĐOẠN 2: Đối chất trực tiếp với con số kỳ vọng thu nhập [${expectedIncome}] trong bối cảnh AI và tự động hóa 5-10 năm tới.
-3. KẾT THÚC BẰNG ĐÚNG CÂU HỎI PHẢN TƯ GIAI ĐOẠN 2:
-   "Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
-[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI CẤM hỏi lại câu: "chọn vì thực sự yêu thích hay vì hot/khen ngợi". Không kết thúc phiên chat tại đây!
-Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
+BỐI CẢNH VÒNG 1 (LƯỢT KHỞI ĐẦU - ĐỐI CHIẾU MÃ HOLLAND & ĐỘNG CƠ):
+- Nhóm thiên hướng Holland (RIASEC): ${holland}
+- Ngành mong muốn: ${career}
+- Trường đại học mục tiêu: ${uni}
+- Mức tự tin ban đầu: ${score}/10
+- Lý do chọn ngành ban đầu: "${reason}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 1]:
+1. Chào học sinh theo mã Holland [${holland}], ngành [${career}], lý do [${reason}].
+2. HỎI ĐÚNG 01 CÂU DUY NHẤT:
+"Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG nói về thu nhập hay tiền bạc.
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.
+Quy chuẩn: Dưới 120 từ. Giữ âm hưởng đồng hành, chân thành, tôn trọng.`;
 
         case 2:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (ÁP LỰC NGHỀ, XU HƯỚNG AI & NGHỊCH LÝ TUYỂN SINH):
+BỐI CẢNH VÒNG 2 (LƯỢT THÁCH THỨC VIỆC LÀM & KỲ VỌNG THU NHẬP TRONG KỶ NGUYÊN AI):
 - Ngành: ${career}, trường: ${uni}, mã Holland: ${holland}.
-- Học sinh vừa trả lời về áp lực nghề, xu hướng AI và năng lực cạnh tranh cho mức thu nhập ${expectedIncome}: "${userText}".
-NHIỆM VỤ THỰC HIỆN (BẮT BUỘC LỒNG GHÉP 2 YẾU TỐ):
-1. Đúng 01 câu ghi nhận và đồng cảm với góc nhìn của học sinh về cạnh tranh và thị trường.
-2. Dẫn dắt sang Giai đoạn 3: Nghịch lý tuyển sinh - dù kỳ vọng thế nào thì chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh vào ${career} tại ${uni}.
-3. ĐÚNG 01 CÂU HỎI KẾT NỐI VÒNG 3:
-   "Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${career} tại ${uni}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
-[RÀO CẢN BẮT BUỘC]: TUYỆT ĐỐI KHÔNG kết thúc phiên chat tại đây! Khung chat bắt buộc phải giữ mở để học sinh trả lời ở Giai đoạn 3!
+- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}".
+- Học sinh vừa trả lời câu hỏi ở Stage 1: "${userText}".
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 2]:
+1. Ghi nhận câu trả lời của học sinh trong 1-2 câu ngắn gọn, ấm áp.
+2. Xoáy vào dữ liệu thu nhập [${expectedIncome}] với ĐÚNG CÂU HỎI SAU:
+"Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Khung chat bắt buộc phải giữ mở để học sinh trả lời tiếp ở Stage 3.
+- Kết thúc bằng đúng câu hỏi về thu nhập & AI ở trên.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.
 Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 3:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
-- Ngành ${career} tại ${uni}, điểm tự tin ${score}/10.
-- Học sinh vừa phản hồi: "${userText}".
-NHIỆM VỤ THỰC HIỆN:
-* NẾU HỌC SINH CHƯA NÊU RÕ CẶP MÔN HOẶC PHẢN BIỆN LẠI THẦY (Ví dụ: "đâu có nghịch lý gì thầy ơi", "em thấy bình thường", hoặc chưa định hình môn dạy):
-  - [CẤM TUYỆT ĐỐI]: AI TUYỆT ĐỐI KHÔNG ĐƯỢC tự ý phán đoán học sinh "học lực đều đều", KHÔNG ĐƯỢC khuyên học Cao đẳng, và TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc phiên chat tại đây!
-  - [NHIỆM VỤ 3 BƯỚC BẮT BUỘC]:
-    (1) Bước a: Công nhận tư duy thực tế và tinh thần phản biện thẳng thắn của học sinh.
-    (2) Bước b: Chỉ ra rằng mọi tính toán về nhu cầu thị trường hay lựa chọn môn dạy đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại ${uni} (thường từ 24 - 27 điểm).
-    (3) Bước c: BẮT BUỘC kết thúc bằng câu hỏi dứt khoát: "Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?"
-* NẾU HỌC SINH ĐÃ NÊU RÕ MÔN HỌC THẾ MẠNH / MÔN YẾU (HOẶC HỌC LỰC RÕ RÀNG):
-  Thực hiện MÔ HÌNH HẠ BẬC MỀM (SOFT LADDERING) với 3 tầng nấc thích ứng (TUYỆT ĐỐI KHÔNG VỘI VÀNG HẠ NGAY XUỐNG CAO ĐẲNG):
-  1. Ghi nhận môn thế mạnh của học sinh, chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp 3 môn vào ${career} tại ${uni} (thường từ 24 - 27 điểm).
-  2. Đưa ra 3 tầng nấc thích ứng:
-     - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá điểm số quyết tâm thi Nguyện vọng 1 vào ${uni}.
-     - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
-     - Tầng 3 (Lưới an toàn): Chuẩn bị phương án dự phòng cuối cùng như hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
-  3. CÂU CHỈ DẪN ĐIỀU HƯỚNG CHỐT HẠ BẮT BUỘC:
-     "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
-  [CẢNH BÁO TỐI CAO]: TUYỆT ĐỐI KHÔNG ĐƯỢC HỎI THÊM BẤT KỲ CÂU NÀO NỮA!
-Quy chuẩn: Dưới 150 từ. Dứt khoát, trao quyền tự quyết.`;
+BỐI CẢNH VÒNG 3 (LƯỢT ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
+- Ngành mong muốn: ${career}
+- Trường đại học mục tiêu: ${uni}
+- Câu trả lời của học sinh ở Stage 2 (về thu nhập/AI/cạnh tranh): "${userText}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 3]:
+1. Ghi nhận ngắn gọn góc nhìn của học sinh về việc làm/thu nhập.
+2. Dẫn dắt vào bài toán điểm số với ĐÚNG CÂU HỎI SAU:
+"Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${career} tại ${uni}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
+
+[NGHIÊM CẤM TUYỆT ĐỐI]:
+- TUYỆT ĐỐI KHÔNG đưa ra kết luận hay giải pháp hạ bậc ở lượt này.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
+- Khung chat bắt buộc phải giữ mở để học sinh trả lời về môn học ở Stage 4.
+- Kết thúc bằng đúng câu hỏi về tổ hợp & môn sở trường/đuối sức ở trên.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.
+Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 4:
         default:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (TỔNG KẾT THEO MÔ HÌNH HẠ BẬC MỀM - SOFT LADDERING - KẾT THÚC BƯỚC 2):
-- Học sinh vừa trả lời về môn học hoặc học lực: "${userText}".
-NHIỆM VỤ THỰC HIỆN (TUYỆT ĐỐI KHÔNG ĐẶT THÊM CÂU HỎI):
-1. Khen ngợi sự trung thực và thẳng thắn của học sinh khi nhìn nhận rõ năng lực học tập thực tế.
-2. Ghi nhận môn thế mạnh và chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp 3 môn vào ${career} tại ${uni} (24 - 27 điểm).
-3. Đưa ra 3 tầng nấc thích ứng theo Mô hình Hạ bậc mềm (Soft Laddering):
-   - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá điểm số quyết tâm thi Nguyện vọng 1 vào ${uni}.
-   - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng (Nguyện vọng 2) có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (ví dụ ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
+BỐI CẢNH VÒNG 4 (LƯỢT KẾT THÚC & TỔNG KẾT THEO MÔ HÌNH HẠ BẬC MỀM - SOFT LADDERING):
+- Ngành mong muốn: ${career}
+- Trường đại học mục tiêu: ${uni}
+- Câu trả lời của học sinh ở Stage 3 (về tổ hợp môn/môn sở trường/môn đuối sức): "${userText}"
+
+[NHIỆM VỤ DUY NHẤT Ở LƯỢT 4]:
+1. Phân tích môn thế mạnh và môn yếu học sinh vừa nêu trong tin nhắn "${userText}". Ghi nhận môn thế mạnh và chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp xét tuyển vào ${career} tại ${uni} (24 - 27 điểm).
+2. Trình bày Chiến lược Thích ứng Đa tầng (3 tầng nấc theo Soft Laddering):
+   - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${uni}.
+   - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (ví dụ ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
    - Tầng 3 (Lưới an toàn): Phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
-4. CÂU CHỈ DẪN ĐIỀU HƯỚNG CHỐT HẠ BẮT BUỘC (TUYỆT ĐỐI KHÔNG HỎI THÊM):
-   "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
+3. KẾT LỆNH BẮT BUỘC:
+"Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
+
+[CẢNH BÁO TỐI CAO - ĐẶC BIỆT]:
+- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt thêm bất kỳ câu hỏi nào. KHÔNG CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.
 Quy chuẩn: Dưới 150 từ. Dứt khoát, trao quyền tự quyết.`;
       }
     } else {
@@ -492,67 +510,16 @@ Quy chuẩn: Dưới 120 từ.`;
       }
 
       switch (round) {
-        case 1: {
-          const isFamily = [
-            'mẹ định hướng', 'me dinh huong', 'bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình định hướng', 'gia đình muốn',
-            'bố mẹ chọn', 'ba mẹ chọn', 'mẹ chọn', 'bố chọn', 'mẹ em chọn', 'bố em chọn', 'ba em chọn',
-            'theo ý bố', 'theo ý mẹ', 'theo ý ba', 'nghe lời bố', 'nghe lời mẹ', 'nghe lời ba', 'nghe lời gia đình',
-            'bố mẹ bắt', 'ba mẹ bắt', 'mẹ bắt', 'bố bắt', 'gia đình bắt', 'gia đình khuyên', 'bố mẹ khuyên',
-            'bố mẹ hướng', 'mẹ hướng', 'ba hướng', 'định hướng của gia đình', 'định hướng từ bố', 'định hướng từ mẹ',
-            'bố mẹ muốn', 'ba mẹ muốn', 'mẹ em muốn', 'bố em muốn', 'nhà em muốn', 'ba mẹ định hướng',
-            'mẹ em bảo', 'bố em bảo', 'ba em bảo'
-          ].some(k => lowerUser.includes(k));
-
-          if (isFamily) {
-            return `Gia đình luôn mong muốn điều an toàn cho em, nhưng người trực tiếp học 4 năm và làm nghề suốt đời là chính em.\n\n` +
-              `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
-          }
-
-          return `Thầy rất ghi nhận niềm yêu thích tự nhiên và sự khẳng định chân thành của em dành cho ngành **${career}**.\n\n` +
-            `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và công nghệ tự động hóa làm thay đổi thị trường việc làm, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
-        }
+        case 1:
+          return `Chào em. Thầy ghi nhận em có thiên hướng Holland **${holland}**, dự định chọn **${career}** tại **${uni}** với mức tự tin **${score}/10** và lý do: '${reason}'.\n\nEm thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
 
         case 2:
-          return `Thầy rất ủng hộ tinh thần tích cực và khát vọng của em khi nhìn nhận về sự cạnh tranh trong kỷ nguyên số.\n\n` +
+          return `Thầy rất ghi nhận và thấu cảm với chia sẻ chân thành của em về động cơ chọn ngành.\n\n` +
+            `Em kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
+
+        case 3:
+          return `Thầy rất ủng hộ tinh thần tích cực và nhận thức thực tế của em về thị trường lao động.\n\n` +
             `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${career}** tại **${uni}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
-
-        case 3: {
-          const lowerUser = (userText || '').toLowerCase();
-
-          if (isCounterArguing(userText)) {
-            return `Thầy rất ghi nhận tinh thần phản biện thẳng thắn và tư duy thực tế của em. Đúng là khi chưa chọn được môn dạy cụ thể thì việc chưa thể tra cứu ngay tổ hợp xét tuyển là hoàn toàn tự nhiên.\n\n` +
-              `Tuy nhiên, mọi dự định về môn dạy hay nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đầu vào tại **${uni}** (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm/môn).\n\n` +
-              `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
-          }
-
-          const isExplainingUndecided = [
-            'chưa định hình', 'chua dinh hinh', 'chưa biết dạy môn', 'chưa biết môn nào',
-            'chưa biết dạy gì', 'chưa chọn môn', 'chưa biết sư phạm gì', 'chưa rõ dạy môn',
-            'chưa biết là dạy', 'chưa biết sẽ dạy', 'chưa định hình dạy', 'phân vân môn', 'chưa chọn được môn'
-          ].some(k => lowerUser.includes(k)) || (lowerUser.includes('dạy môn') && (lowerUser.includes('chưa') || lowerUser.includes('không')));
-
-          if (isExplainingUndecided) {
-            return `Thầy rất thấu cảm với lý do của em. Hoàn toàn tự nhiên và hợp lý khi chưa định hình mình muốn dạy môn gì thì rất khó để biết phải tra cứu tổ hợp môn nào!\n\n` +
-              `Tuy nhiên, mọi tính toán về nhu cầu thị trường đều trở nên vô nghĩa nếu không vượt qua được ngưỡng điểm chuẩn đại học tại **${uni}** (thường từ 24 - 27 điểm).\n\n` +
-              `Để giúp em định hình chính xác môn dạy và tổ hợp phù hợp nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
-          }
-
-          const isEvenGrades = [
-            'đều đều', 'deu deu', 'học đều', 'hoc deu', 'các môn như nhau',
-            'ngang nhau', 'bình thường', 'trung bình', 'không có môn nào nổi',
-            'môn nào cũng vậy', 'như nhau'
-          ].some(k => lowerUser.includes(k));
-
-          if (isEvenGrades) {
-            return `Thầy ghi nhận sự thẳng thắn của em. Tuy nhiên, việc "học đều đều các môn" thường mang lại cảm giác an toàn ảo. Thực tế xét tuyển đại học vào các ngành hot của **${uni}** đòi hỏi điểm chuẩn rất cao (thường từ 24 đến 27 điểm, tức trung bình 8 đến 9 điểm mỗi môn trong tổ hợp).\n\n` +
-              `Nếu em học đều nhưng không có môn nào bứt phá đạt ngưỡng 8.5 - 9.0 điểm, em sẽ rất khó cạnh tranh với các bạn có môn sở trường vượt trội.\n\n` +
-              `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
-          }
-
-          return `Thầy đánh giá cao sự trung thực của em. Nuôi dưỡng ước mơ với ngành **${career}** là bước khởi đầu rất đẹp, nhưng để bước chân qua cánh cổng trường đại học, tổ hợp môn xét tuyển chính là chiếc chìa khóa quyết định mà em không thể bỏ quên!\n\n` +
-            `Điểm chuẩn đại học tại **${uni}** thường rất cao (thường từ 24 đến 27 điểm, tức 8 đến 9 điểm mỗi môn).\n\n` +
-            `Để giúp em tìm ra điểm tựa thực tế nhất: Đâu là môn học sở trường có điểm số cao nhất hiện tại của em, và môn nào em đang thấy đuối sức nhất?`;
-        }
 
         case 4:
         default: {
@@ -681,31 +648,7 @@ Quy chuẩn: Dưới 120 từ.`;
       specialInstruction: specialInstruction
     };
 
-    const studentIsCounterArguing = isCounterArguing(userText);
-    const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
-    const hasExplicitSubjectFeedback = Boolean(strongSubject || weakSubject);
-    const studentHasDeclaredSubjects = (hasExplicitSubjectFeedback || hasDeclaredSubjectsOrGrades(userText)) && (!studentIsCounterArguing || hasExplicitSubjectFeedback);
-    const promptStage = (stage >= 4 || (stage >= 3 && studentHasDeclaredSubjects)) ? 4 : stage;
-    let targetNextStage = stage + 1;
-    let targetIsCompleted = false;
-
-    if (stage === 1) {
-      targetNextStage = 2;
-      targetIsCompleted = false;
-    } else if (stage === 2) {
-      targetNextStage = 3;
-      targetIsCompleted = false; // BẮT BUỘC: Khung chat phải giữ mở để học sinh trả lời ở Stage 3!
-    } else if (stage >= 3) {
-      if (!studentHasDeclaredSubjects) {
-        // Học sinh phản biện lại hoặc chưa nêu môn cụ thể: GIỮ NGUYÊN GIAI ĐOẠN 3, CHƯA ĐƯỢC KẾT THÚC!
-        targetNextStage = 3;
-        targetIsCompleted = false;
-      } else {
-        // Học sinh ĐÃ nêu rõ môn học: CHÍNH THỨC SANG GIAI ĐOẠN 4 VÀ HOÀN TẤT!
-        targetNextStage = 4;
-        targetIsCompleted = true;
-      }
-    }
+    const isStage4 = stage === 4;
 
     for (const ep of endpointsToTry) {
       try {
@@ -725,14 +668,7 @@ Quy chuẩn: Dưới 120 từ.`;
           let replyText = sData?.response || sData?.reply;
           if (replyText && replyText.trim().length >= 25) {
             let cleaned = replyText.trim();
-            const hasStep3Directive = Boolean(cleaned && (
-              cleaned.includes("chuyển sang Bước 3") || 
-              cleaned.includes("chuyển sang bước 3") || 
-              cleaned.includes("Bước 3") || 
-              cleaned.includes("bước 3")
-            ));
-            const isCompleteFromBackend = sData?.isComplete === true || sData?.isCompleted === true;
-            const isReallyComplete = isCompleteFromBackend || targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
+            const isReallyComplete = isStage4 && (sData?.isComplete === true || sData?.isCompleted === true || sData?.stage === 4);
 
             if (isReallyComplete) {
               cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
@@ -743,10 +679,12 @@ Quy chuẩn: Dưới 120 từ.`;
               if (!cleaned.includes("Bước 3") && !cleaned.includes("bước 3")) {
                 cleaned = cleaned + "\n\n" + step3Directive;
               }
+            } else {
+              cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
             }
             return {
               replyText: cleaned,
-              chatStage: isReallyComplete ? 4 : (sData?.chatStage || sData?.stage || targetNextStage),
+              chatStage: isReallyComplete ? 4 : stage,
               isCompleted: isReallyComplete,
               isComplete: isReallyComplete
             };
@@ -766,7 +704,7 @@ Quy chuẩn: Dưới 120 từ.`;
         || fallbackKey;
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(promptStage, studentProfile, userText, specialInstruction);
+      const systemPrompt = generatePromptForRound(stage, studentProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -815,14 +753,7 @@ Quy chuẩn: Dưới 120 từ.`;
               .replace(/^#+.*?(CHỈ ĐẠO|CHỈ THỊ).*?\n/i, '')
               .trim();
 
-            const hasStep3Directive = Boolean(text && (
-              text.includes("chuyển sang Bước 3") || 
-              text.includes("chuyển sang bước 3") || 
-              text.includes("Bước 3") || 
-              text.includes("bước 3")
-            ));
-            const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
-
+            const isReallyComplete = isStage4;
             if (isReallyComplete) {
               text = text.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
               text = text.replace(/^[^\n\r?]+\?\s*$/g, '');
@@ -832,23 +763,16 @@ Quy chuẩn: Dưới 120 từ.`;
               if (!text.includes("Bước 3") && !text.includes("bước 3")) {
                 text = text + "\n\n" + step3Directive;
               }
+            } else {
+              text = text.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
             }
+            return {
+              replyText: text.trim(),
+              chatStage: isReallyComplete ? 4 : stage,
+              isCompleted: isReallyComplete,
+              isComplete: isReallyComplete
+            };
           }
-        }
-        if (text && text.trim().length >= 25) {
-          const hasStep3Directive = Boolean(text && (
-            text.includes("chuyển sang Bước 3") || 
-            text.includes("chuyển sang bước 3") || 
-            text.includes("Bước 3") || 
-            text.includes("bước 3")
-          ));
-          const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Directive;
-          return {
-            replyText: text.trim(),
-            chatStage: isReallyComplete ? 4 : targetNextStage,
-            isCompleted: isReallyComplete,
-            isComplete: isReallyComplete
-          };
         }
       }
     } catch (e) {
@@ -856,17 +780,22 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    const fallbackText = generateHeuristicFallback(promptStage, studentProfile, userText, specialInstruction);
-    const hasStep3Fallback = Boolean(fallbackText && (
-      fallbackText.includes("chuyển sang Bước 3") || 
-      fallbackText.includes("chuyển sang bước 3") || 
-      fallbackText.includes("Bước 3") || 
-      fallbackText.includes("bước 3")
-    ));
-    const isReallyComplete = targetIsCompleted || targetNextStage === 4 || promptStage === 4 || hasStep3Fallback;
+    let fallbackText = generateHeuristicFallback(stage, studentProfile, userText, specialInstruction);
+    const isReallyComplete = isStage4;
+    if (isReallyComplete) {
+      fallbackText = fallbackText.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
+      fallbackText = fallbackText.replace(/^[^\n\r?]+\?\s*$/g, '');
+      fallbackText = fallbackText.trim();
+      const step3Directive = "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!";
+      if (!fallbackText.includes("Bước 3") && !fallbackText.includes("bước 3")) {
+        fallbackText = fallbackText + "\n\n" + step3Directive;
+      }
+    } else {
+      fallbackText = fallbackText.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
+    }
     return {
       replyText: fallbackText,
-      chatStage: isReallyComplete ? 4 : targetNextStage,
+      chatStage: isReallyComplete ? 4 : stage,
       isCompleted: isReallyComplete,
       isComplete: isReallyComplete
     };
@@ -904,8 +833,8 @@ Quy chuẩn: Dưới 120 từ.`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
     content += `💵 Kỳ vọng thu nhập (Bước 1): ${expectedIncome}\n`;
     content += `📝 Lý do chọn ban đầu: ${reason}\n`;
-    const isSessionDone = isChatFinished || isCompleted || chatStage >= 4;
-    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, maxStages)} / ${maxStages} giai đoạn phản tư`}\n\n`;
+    const isSessionDone = isReadyForStep3;
+    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, 3)} / ${maxStages} giai đoạn phản tư`}\n\n`;
 
     if (sessionTelemetry) {
       content += `-----------------------------------------------------------------\n`;
@@ -1040,27 +969,24 @@ Quy chuẩn: Dưới 120 từ.`;
     setInputValue('');
     setIsLoading(true);
 
+    const targetStage = Math.min(chatStage + 1, 4);
+
     try {
       let aiResult = null;
       if (reflex.directReply) {
         aiResult = {
           replyText: reflex.directReply,
-          chatStage: chatStage,
-          isCompleted: false
+          chatStage: targetStage,
+          isCompleted: false,
+          isComplete: false
         };
       } else {
-        aiResult = await callGeminiSocratic(messages, cleanText, chatStage, reflex.instructionForAI);
+        aiResult = await callGeminiSocratic(nextHistory, cleanText, targetStage, reflex.instructionForAI);
       }
       
       const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
-      const hasStep3InReply = Boolean(replyContent && (
-        replyContent.includes("chuyển sang Bước 3") || 
-        replyContent.includes("chuyển sang bước 3") || 
-        replyContent.includes("Bước 3") || 
-        replyContent.includes("bước 3")
-      ));
-      const isFinished = aiResult?.isComplete === true || aiResult?.isCompleted === true || hasStep3InReply || (aiResult?.chatStage >= 4);
-      const nextStage = isFinished ? 4 : (aiResult?.chatStage || (chatStage + 1));
+      const isFinished = targetStage === 4 && (aiResult?.isComplete === true || aiResult?.isCompleted === true);
+      const nextStage = isFinished ? 4 : targetStage;
 
       const aiMsg = {
         role: 'model',
@@ -1182,9 +1108,9 @@ Quy chuẩn: Dưới 120 từ.`;
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
             <span>Tiến trình:</span>
-            <span style={{ color: '#2563eb' }}>{Math.min((isChatFinished || isCompleted) ? 4 : chatStage, maxStages)}</span>
+            <span style={{ color: '#2563eb' }}>{isReadyForStep3 ? 4 : Math.min(chatStage, 3)}</span>
             <span>/ {maxStages} giai đoạn</span>
-            {(isChatFinished || isCompleted) ? (
+            {isReadyForStep3 ? (
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
                 ✓ Đã hoàn thành 4 giai đoạn phản tư
               </span>
@@ -1328,7 +1254,7 @@ Quy chuẩn: Dưới 120 từ.`;
 
         {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI */}
         {/* HỘP ĐIỀU HƯỚNG CỐ ĐỊNH / THẺ NỔI BẬT NGAY DƯỚI TIN NHẮN CUỐI CÙNG */}
-        {(isChatFinished || isCompleted) ? (
+        {isReadyForStep3 ? (
           <div 
             ref={step3CtaRef}
             className="no-print"
@@ -1447,8 +1373,8 @@ Quy chuẩn: Dưới 120 từ.`;
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || isChatFinished || isCompleted}
-            placeholder={(isChatFinished || isCompleted) ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : "Tự tay nhập câu trả lời phản biện của em..."}
+            disabled={isLoading || isReadyForStep3}
+            placeholder={isReadyForStep3 ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -1456,23 +1382,23 @@ Quy chuẩn: Dưới 120 từ.`;
               borderRadius: '8px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor: (isChatFinished || isCompleted) ? '#f1f5f9' : '#ffffff',
-              color: (isChatFinished || isCompleted) ? '#64748b' : '#0f172a',
-              cursor: (isChatFinished || isCompleted) ? 'not-allowed' : 'text'
+              backgroundColor: isReadyForStep3 ? '#f1f5f9' : '#ffffff',
+              color: isReadyForStep3 ? '#64748b' : '#0f172a',
+              cursor: isReadyForStep3 ? 'not-allowed' : 'text'
             }}
           />
           <button
             type="submit"
-            disabled={isLoading || !inputValue.trim() || isChatFinished || isCompleted}
+            disabled={isLoading || !inputValue.trim() || isReadyForStep3}
             style={{
-              background: (isChatFinished || isCompleted) ? '#94a3b8' : '#10b981',
+              background: isReadyForStep3 ? '#94a3b8' : '#10b981',
               color: '#ffffff',
               border: 'none',
               padding: '0 24px',
               borderRadius: '8px',
               fontWeight: 'bold',
-              cursor: isLoading || !inputValue.trim() || isChatFinished || isCompleted ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !inputValue.trim() || isChatFinished || isCompleted ? 0.6 : 1
+              cursor: isLoading || !inputValue.trim() || isReadyForStep3 ? 'not-allowed' : 'pointer',
+              opacity: isLoading || !inputValue.trim() || isReadyForStep3 ? 0.6 : 1
             }}
           >
             GỬI ➔
