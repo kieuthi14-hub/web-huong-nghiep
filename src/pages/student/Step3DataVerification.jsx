@@ -25,12 +25,17 @@ export default function Step3DataVerification({
       if (a) storedAnchor = JSON.parse(a);
     } catch (e) {}
 
+    const rawMajor = propUserProfile?.targetMajor || storedProfile?.targetMajor || storedAnchor?.target_career || storedAnchor?.targetMajor || '';
+    const rawSchool = propUserProfile?.targetSchool || storedProfile?.targetSchool || storedAnchor?.target_university || storedAnchor?.targetSchool || '';
+    const cleanMajor = (rawMajor && rawMajor !== 'Chưa xác định') ? rawMajor : '';
+    const cleanSchool = (rawSchool && rawSchool !== 'Chưa xác định') ? rawSchool : '';
+
     return {
-      targetMajor: propUserProfile?.targetMajor || storedProfile?.targetMajor || storedAnchor?.target_career || storedAnchor?.targetMajor || 'Chưa xác định',
-      targetSchool: propUserProfile?.targetSchool || storedProfile?.targetSchool || storedAnchor?.target_university || storedAnchor?.targetSchool || 'Chưa xác định',
       reason: propUserProfile?.reason || storedProfile?.reason || storedAnchor?.source_of_influence || storedAnchor?.reason || '',
       expectedIncome: propUserProfile?.expectedIncome || storedProfile?.expectedIncome || storedAnchor?.expected_income || 'Chưa xác định',
-      ...propUserProfile
+      ...propUserProfile,
+      targetMajor: cleanMajor,
+      targetSchool: cleanSchool,
     };
   }, [propUserProfile]);
 
@@ -217,36 +222,46 @@ export default function Step3DataVerification({
           sau đó cập nhật số liệu khách quan vào biểu mẫu đối chứng dưới đây.
         </p>
 
-        {/* GIÀN GIÁO CỔNG CHỈ MỤC XÁC THỰC (RESOURCE LINKS) */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-            🔗 Cổng Tra Cứu Dữ Liệu Khách Quan Đề Xuất (Nhấp để mở tab mới):
+        {/* HỘP HƯỚNG DẪN TRA CỨU GOOGLE DỰA TRÊN DỮ LIỆU HỒ SƠ */}
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              🔍 Hướng Dẫn Tra Cứu Dữ Liệu Thực Tế Trên Google:
+            </p>
+            <a
+              href="https://www.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm transition"
+            >
+              Mở Google Trong Tab Mới ↗
+            </a>
+          </div>
+          
+          <p className="text-xs text-slate-500 mb-2.5">
+            Em hãy mở tab mới và tìm kiếm bằng các từ khóa gợi ý bên dưới để có số liệu chính xác nhất:
           </p>
-          <div className="flex flex-wrap gap-2">
-            <a 
-              href="https://moet.gov.vn" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-xs font-semibold text-indigo-700 transition"
-            >
-              📄 Cổng Thông Tin Tuyển Sinh & Đề Án Bộ GD&ĐT ↗
-            </a>
-            <a 
-              href="https://molisa.gov.vn" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-xs font-semibold text-indigo-700 transition"
-            >
-              📊 Bản Tin Thị Trường Lao Động (Bộ LĐ-TB&XH) ↗
-            </a>
-            <a 
-              href="https://www.google.com" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-3 py-1.5 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-xs font-semibold text-indigo-700 transition"
-            >
-              🔍 Báo Cáo Ba Công Khai (Tỷ Lệ Việc Làm Của Trường) ↗
-            </a>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            {/* Gợi ý 1: Điểm chuẩn & Học phí */}
+            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+              <span className="font-bold text-indigo-700 block mb-1">
+                1. Tra cứu Điểm chuẩn & Học phí:
+              </span>
+              <code className="text-[11px] bg-slate-100 text-slate-800 px-2 py-1 rounded block font-mono">
+                "Điểm chuẩn Đề án tuyển sinh {userProfile.targetMajor || 'ngành học'} {userProfile.targetSchool || 'trường đại học'}"
+              </code>
+            </div>
+
+            {/* Gợi ý 2: Báo cáo việc làm */}
+            <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+              <span className="font-bold text-emerald-700 block mb-1">
+                2. Tra cứu Tỷ lệ Việc làm & Khảo sát sinh viên:
+              </span>
+              <code className="text-[11px] bg-slate-100 text-slate-800 px-2 py-1 rounded block font-mono">
+                "Báo cáo ba công khai việc làm {userProfile.targetSchool || 'trường đại học'}"
+              </code>
+            </div>
           </div>
         </div>
       </div>
