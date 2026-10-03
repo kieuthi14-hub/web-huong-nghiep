@@ -1,447 +1,254 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
-import { 
-  Brain, 
-  UserCheck, 
-  Search, 
-  AlertTriangle, 
-  HelpCircle, 
-  Save, 
-  Sparkles, 
-  History, 
-  Trash2, 
-  MessageSquareCode, 
-  Lightbulb, 
-  Target, 
-  CheckCircle2, 
-  XCircle, 
-  Award, 
-  ShieldCheck, 
-  Compass, 
-  RefreshCw,
+import {
+  Brain,
+  Target,
+  ShieldCheck,
+  CheckCircle2,
+  Sparkles,
   TrendingUp,
-  Scale
+  Printer,
+  Download,
+  ArrowRight,
+  RotateCcw,
+  Sliders,
+  Scale,
+  FileText,
+  Compass,
+  AlertTriangle,
+  Award,
+  UserCheck,
+  Calendar,
+  Home,
+  Check
 } from 'lucide-react'
 
 // =========================================================================
-// 1. DỮ LIỆU 4 BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ (TRUNG TÍNH, KHOA HỌC)
+// BƯỚC 5: THIẾT LẬP KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN & TỰ CHỦ RA QUYẾT ĐỊNH (T2)
+// DỰ ÁN VISEF 2026 - PHÂN NGÀNH KHOA HỌC XÃ HỘI VÀ HÀNH VI (CBAS MODEL)
 // =========================================================================
-const SCENARIO_QUESTIONS = [
+
+const DECISION_OPTIONS = [
   {
-    id: 'sc-1',
-    biasCode: 'BANDWAGON_BIAS',
-    title: '📱 Tình huống 1: Xu hướng nghề nghiệp nổi bật trên Mạng xã hội',
-    tagLabel: 'Tình huống thực tế 1',
-    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
-    context: 'Bạn tình cờ theo dõi một video clip nhận được lượng tương tác rất lớn trên mạng xã hội, chia sẻ rằng: "Ngành Logistics & Quản lý Chuỗi cung ứng hiện có mức thu nhập khởi điểm 50 triệu/tháng và các doanh nghiệp lớn luôn săn đón ngay khi ra trường".',
-    question: 'Theo bạn, hướng tiếp cận và xử lý thông tin phù hợp nhất là gì?',
-    options: [
-      {
-        id: 'A',
-        text: 'A. Lưu lại video và quyết định đăng ký ngay ngành Logistics làm Nguyện vọng 1 vì tin đây là ngành học có thu nhập cao nhất hiện nay.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này phản ánh việc tiếp nhận thông tin đơn chiều từ mạng xã hội khi chưa có số liệu thống kê và đối chứng thực tế.'
-      },
-      {
-        id: 'B',
-        text: 'B. Tìm xem thêm các bài đăng và video clip khác từ cùng người sáng tạo nội dung để xem các nhận xét tương tự.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này có xu hướng tìm kiếm thêm các nội dung củng cố ấn tượng ban đầu thay vì tìm kiếm dữ liệu đối chứng độc lập.'
-      },
-      {
-        id: 'C',
-        text: 'C. Tra cứu các báo cáo thị trường lao động chính thống (VietnamWorks, Navigos, Tổng cục Thống kê), xem chuẩn đầu ra thực tế và tham vấn ý kiến từ sinh viên hoặc chuyên gia đang làm việc trong ngành.',
-        isCorrect: true,
-        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Đây là phương pháp đối chứng dữ liệu khoa học, kết hợp giữa số liệu thị trường chính thống và trải nghiệm thực tế để đưa ra quyết định vững chắc.'
-      }
-    ]
+    id: 'maintain',
+    label: 'Giữ nguyên ngành/trường mục tiêu ban đầu nhưng nâng cấp lộ trình học tập thực tế.',
+    subtext: 'Bứt phá năng lực, cam kết kế hoạch học tập 100 ngày để chạm ngưỡng điểm chuẩn.',
+    badge: '🚀 Giữ nguyên & Bứt phá',
+    badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300'
   },
   {
-    id: 'sc-2',
-    biasCode: 'SUNK_COST_BIAS',
-    title: '📚 Tình huống 2: Cân nhắc sự phù hợp giữa Tổ hợp môn đã học và Sở thích',
-    tagLabel: 'Tình huống thực tế 2',
-    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
-    context: 'Bạn đã dành gần 3 năm THPT tập trung học và ôn luyện theo tổ hợp môn Khoa học Tự nhiên (Toán - Lý - Hóa). Tuy nhiên, gần đây bạn nhận ra bản thân có tố chất nổi trội về tư duy thẩm mỹ, sáng tạo nội dung và yêu thích môi trường làm việc linh hoạt hơn kỹ thuật thuần túy.',
-    question: 'Phương án xử lý thấu đáo và phù hợp nhất với bạn là gì?',
-    options: [
-      {
-        id: 'A',
-        text: 'A. Tiếp tục đăng ký ngành Kỹ thuật cơ khí vì tiếc 3 năm ôn thi khối Tự nhiên và không muốn lãng phí thời gian, công sức đã đầu tư.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này chịu ảnh hưởng bởi việc tiếc nuối thời gian đã học trong quá khứ thay vì đánh giá sự phù hợp năng lực lâu dài cho tương lai.'
-      },
-      {
-        id: 'B',
-        text: 'B. Cảm thấy phân vân, giảm động lực học tập và để việc chọn ngành phụ thuộc vào kết quả thi cuối cùng.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Đây là phản ứng bị động, chưa giúp bạn chủ động tìm ra giải pháp kết hợp hiệu quả giữa thế mạnh và sở thích.'
-      },
-      {
-        id: 'C',
-        text: 'C. Đánh giá lại năng lực thực chất, tìm hiểu các ngành học giao thoa (như Thiết kế Đồ họa số, UI/UX, Truyền thông Đa phương tiện) có thể tận dụng tư duy logic của khối Tự nhiên kết hợp với sở thích sáng tạo để chuyển hướng linh hoạt.',
-        isCorrect: true,
-        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Bạn đã biết đánh giá lại năng lực thực chất, kết hợp hiệu quả giữa nền tảng tư duy logic sẵn có với định hướng phát triển mới.'
-      }
-    ]
+    id: 'adjust',
+    label: 'Điều chỉnh sang ngành hoặc trường khác phù hợp hơn với sở trường và học lực.',
+    subtext: 'Thích ứng linh hoạt, chọn phương án có tỷ lệ chọi và điểm chuẩn an toàn hơn.',
+    badge: '🔄 Điều chỉnh thích ứng',
+    badgeClass: 'bg-blue-100 text-blue-800 border-blue-300'
   },
   {
-    id: 'sc-3',
-    biasCode: 'EMOTIONAL_BIAS',
-    title: '🎬 Tình huống 3: Động lực chọn nghề từ Truyền thông và Hình tượng xã hội',
-    tagLabel: 'Tình huống thực tế 3',
-    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
-    context: 'Bạn có mong muốn theo học ngành Y khoa từ những năm THCS sau khi xem các bộ phim truyền hình về đề tài y tế. Tuy nhiên trong thực tế, bạn khá e ngại môi trường bệnh viện và điểm tổng kết môn Sinh học lớp 11, 12 ở mức trung bình khá (khoảng 6.2).',
-    question: 'Cách nhìn nhận khách quan và thực tế nhất trong trường hợp này là gì?',
-    options: [
-      {
-        id: 'A',
-        text: 'A. Đặt ngay ngành Bác sĩ Đa khoa làm nguyện vọng ưu tiên duy nhất vì tin rằng lòng yêu thích từ nhỏ sẽ giúp vượt qua mọi khó khăn.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này phản ánh việc đưa ra quyết định dựa trên cảm xúc yêu thích hình tượng bên ngoài hơn là đánh giá toàn diện năng lực học tập thực tế.'
-      },
-      {
-        id: 'B',
-        text: 'B. Cho rằng khi bước vào môi trường đại học sẽ tự thích nghi và hy vọng điểm thi thực tế sẽ cao hơn quá trình học bạ.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này mang tính kỳ vọng chủ quan, chưa có giải pháp cụ thể để bù đắp điểm số và rào cản thực tế.'
-      },
-      {
-        id: 'C',
-        text: 'C. Phân biệt rõ nét giữa ấn tượng truyền thông với yêu cầu đào tạo thực tế; đối chiếu lại năng lực môn Sinh học để xem xét thêm các ngành khối sức khỏe bổ trợ (như Quản lý Y tế, Kỹ thuật Y sinh, Thiết bị Y tế) hoặc chuẩn bị phương án dự phòng an toàn.',
-        isCorrect: true,
-        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Bạn đã biết phân biệt rõ giữa cảm xúc yêu thích hình tượng truyền thông với yêu cầu nghề nghiệp thực tế, chủ động tìm kiếm các hướng đi phù hợp.'
-      }
-    ]
-  },
-  {
-    id: 'sc-4',
-    biasCode: 'OPTIMISM_BIAS',
-    title: '🏫 Tình huống 4: Đánh giá các cam kết đầu ra của Cơ sở đào tạo',
-    tagLabel: 'Tình huống thực tế 4',
-    badgeClass: 'bg-slate-100 text-slate-800 border-slate-300',
-    context: 'Một cơ sở giáo dục đại học giới thiệu chương trình đào tạo với thông tin cam kết: "100% sinh viên tốt nghiệp có việc làm quốc tế với mức thu nhập từ 1.500 USD/tháng", mức học phí công bố là 180 triệu VNĐ/năm.',
-    question: 'Quy trình tìm hiểu và xác minh thông tin thấu đáo của bạn gồm những bước nào?',
-    options: [
-      {
-        id: 'A',
-        text: 'A. Đề xuất gia đình chuẩn bị kinh phí để nộp hồ sơ xét tuyển ngay vì tin tưởng vào mức thu nhập cam kết sau khi tốt nghiệp.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này mang tính vội vàng khi chưa đánh giá kỹ tính khả thi về tài chính và các điều kiện thực tế của gia đình.'
-      },
-      {
-        id: 'B',
-        text: 'B. Dựa hoàn toàn vào các nội dung truyền thông của tờ rơi quảng cáo mà không tìm kiếm thêm thông tin kiểm chứng độc lập.',
-        isCorrect: false,
-        biasFeedback: '⚠️ Lựa chọn này thiếu bước kiểm chứng độc lập về tính pháp lý và các điều khoản cụ thể của chương trình.'
-      },
-      {
-        id: 'C',
-        text: 'C. Tìm hiểu giấy phép kiểm định chất lượng đào tạo, đọc kỹ các điều kiện ràng buộc trong thỏa thuận cam kết việc làm, tính toán tổng chi phí cho toàn khóa học và cùng gia đình thảo luận phương án tài chính dự phòng.',
-        isCorrect: true,
-        biasFeedback: '🎉 LỰA CHỌN TỐI ƯU: Luôn chủ động kiểm chứng tính pháp lý, đọc kỹ các điều khoản cam kết và lập kế hoạch tài chính rõ ràng trước khi quyết định.'
-      }
-    ]
+    id: 'vocational',
+    label: 'Lựa chọn hướng đào tạo thực hành / trường có chi phí và thời gian ngắn hơn để sớm tự lập.',
+    subtext: 'Tập trung vào tay nghề thực tiễn, giảm gánh nặng tài chính và gia nhập thị trường sớm.',
+    badge: '🛠️ Hướng thực hành tự lập',
+    badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
   }
 ]
 
-// =========================================================================
-// 2. THUẬT TOÁN CHẨN ĐOÁN BẪY TƯ DUY TỰ ĐỘNG CHO MA TRẬN PHẢN TƯ
-// =========================================================================
-const getBiasDiagnosis = (matrix) => {
-  const { risk_analysis, verified_sources, final_decision, bias_check } = matrix
-
-  const textBiasCheck = (bias_check || '').toLowerCase()
-  const textSources = (verified_sources || '').toLowerCase()
-  const textRisk = (risk_analysis || '').toLowerCase()
-
-  if (final_decision === 'BACKUP' || final_decision === 'CHANGED') {
-    return {
-      type: 'DEBIASED_SUCCESS',
-      icon: '🎉',
-      badge: 'THOÁT BẪY TƯ DUY THÀNH CÔNG',
-      title: '🎉 TUYỆT VỜI! BẠN ĐÃ THOÁT BẪY TƯ DUY THÀNH CÔNG',
-      message: 'Việc dũng cảm nhìn vào thực tế để điều chỉnh nguyện vọng chính là biểu hiện của Tư duy Phản tư trưởng thành.',
-      cardStyle: 'bg-emerald-50 border-emerald-300 text-emerald-950',
-      badgeStyle: 'bg-emerald-200 text-emerald-900 border-emerald-300',
-      aiHighlight: 'Bạn đã tỉnh táo điều chỉnh nguyện vọng dựa trên phân tích thực tế thay vì cố bám trụ cảm xúc ban đầu.',
-      aiWarning: 'Nhận diện rủi ro rất thực tế. Hãy duy trì sự chủ động này khi sắp xếp thứ tự nguyện vọng chính thức.'
-    }
-  }
-
-  const emotionalKeywords = ["thích từ nhỏ", "đam mê", "ước mơ", "từ bé", "thích từ lâu", "sở thích", "thích"]
-  const hasEmotionalBias = emotionalKeywords.some(kw => textBiasCheck.includes(kw))
-
-  if (hasEmotionalBias) {
-    return {
-      type: 'EMOTIONAL_BIAS',
-      icon: '⚠️',
-      badge: 'BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY',
-      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CẢM XÚC & CỐ ĐỊNH TƯ DUY (THÍCH TỪ BÉ)',
-      message: 'Bạn đang chọn nghề dựa vào cảm xúc quen thuộc từ quá khứ. Yêu thích là tốt, nhưng hãy đối chiếu xem ngành này hiện tại có thay đổi hoặc bị AI ảnh hưởng so với hình dung ngày nhỏ của bạn không nhé!',
-      cardStyle: 'bg-amber-50 border-amber-300 text-amber-950',
-      badgeStyle: 'bg-amber-200 text-amber-900 border-amber-300',
-      aiHighlight: 'Bạn có đam mê cá nhân rõ ràng và kiên định với ước mơ ban đầu.',
-      aiWarning: 'Đam mê cần gắn liền với năng lực thực tế và bối cảnh thị trường tuyển dụng hiện đại.'
-    }
-  }
-
-  const bandwagonKeywords = ["bạn bè", "mạng xã hội", "tiktok", "facebook", "nghe đồn", "hot trend", "nhiều người theo", "xu hướng"]
-  const hasBandwagonBias = bandwagonKeywords.some(kw => textBiasCheck.includes(kw) || textSources.includes(kw)) || textSources.trim().length < 30
-
-  if (hasBandwagonBias) {
-    return {
-      type: 'BANDWAGON_BIAS',
-      icon: '⚠️',
-      badge: 'BẪY PHONG TRÀO / ĐÁM ĐÔNG',
-      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CHỌN NGHỀ THEO PHONG TRÀO / ĐÁM ĐÔNG',
-      message: 'Quyết định của bạn đang bị ảnh hưởng bởi tâm lý đám đông hoặc truyền thông. Hãy tập trung vào năng lực và điểm số thực tế của chính bạn!',
-      cardStyle: 'bg-blue-50 border-blue-300 text-blue-950',
-      badgeStyle: 'bg-blue-200 text-blue-900 border-blue-300',
-      aiHighlight: 'Bạn đã nắm bắt được các ngành học đang nhận được nhiều sự quan tâm của thị trường.',
-      aiWarning: 'Cần bổ sung nguồn đối chứng chính thống từ Bộ GD&ĐT thay vì tin vào video mạng xã hội.'
-    }
-  }
-
-  const isRiskTooShort = textRisk.trim().length < 15
-  const optimismKeywords = ["không có", "không rủi ro", "hoàn hảo", "lương cao", "không"]
-  const hasOptimismBias = isRiskTooShort || (optimismKeywords.some(kw => textRisk.includes(kw)) && textRisk.trim().length < 25)
-
-  if (hasOptimismBias) {
-    return {
-      type: 'OPTIMISM_BIAS',
-      icon: '⚠️',
-      badge: 'BẪY CHỈ NHÌN MẶT MÀU HỒNG',
-      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY CHỈ NHÌN MẶT MÀU HỒNG (PHỚT LỜ RỦI RO)',
-      message: 'Không có ngành nghề nào hoàn hảo. Việc phớt lờ rủi ro sẽ khiến bạn dễ bị sốc thực tế khi bước vào Đại học. Hãy tìm hiểu kỹ mặt tối và thách thức thực tế của ngành!',
-      cardStyle: 'bg-rose-50 border-rose-300 text-rose-950',
-      badgeStyle: 'bg-rose-200 text-rose-900 border-rose-300',
-      aiHighlight: 'Bạn có tinh thần tích cực và kỳ vọng lớn vào tương lai sự nghiệp.',
-      aiWarning: 'Mọi ngành học đều có áp lực riêng (tỷ lệ đào thải, sự thay đổi công nghệ). Hãy chủ động nhận diện rủi ro.'
-    }
-  }
-
-  const sunkCostKeywords = ["tiếc", "công sức", "ôn thi", "đã học", "bố mẹ bảo", "gia đình"]
-  const hasSunkCostBias = sunkCostKeywords.some(kw => textBiasCheck.includes(kw))
-
-  if (hasSunkCostBias) {
-    return {
-      type: 'SUNK_COST_BIAS',
-      icon: '⚠️',
-      badge: 'BẪY TIẾC CÔNG SỨC / CHI PHÍ CHÌM',
-      title: '⚠️ BẠN CÓ THỂ ĐANG MẮC BẪY TIẾC CÔNG SỨC (CHI PHÍ CHÌM)',
-      message: 'Bạn đang cố bám trụ một ngành vì tiếc thời gian đã ôn thi hoặc vì kỳ vọng của gia đình dù trong lòng không còn phù hợp. Hãy dũng cảm tái định hướng trước khi quá muộn!',
-      cardStyle: 'bg-purple-50 border-purple-300 text-purple-950',
-      badgeStyle: 'bg-purple-200 text-purple-900 border-purple-300',
-      aiHighlight: 'Bạn là người kiên trì và coi trọng công sức đã bỏ ra trong quá khứ.',
-      aiWarning: 'Đừng để tiếc nuối 1-2 năm ôn thi làm bạn mắc kẹt trong 40 năm sự nghiệp không phù hợp.'
-    }
-  }
-
-  return {
-    type: 'BALANCED',
-    icon: '✨',
-    badge: 'TƯ DUY PHẢN TƯ CÂN BẰNG',
-    title: '✨ BẠN ĐANG CÓ TƯ DUY PHẢN TƯ TỐT!',
-    message: 'Bạn đã biết đối chứng dữ liệu thực tế và nhận diện được rủi ro của ngành. Đây là nền tảng vững chắc để đưa ra quyết định chọn nghề chính xác.',
-    cardStyle: 'bg-emerald-50 border-emerald-300 text-emerald-950',
-    badgeStyle: 'bg-emerald-200 text-emerald-900 border-emerald-300',
-    aiHighlight: 'Thông tin có cơ sở thực tế và phân tích thách thức rất khách quan.',
-    aiWarning: 'Hãy duy trì việc đối chứng này khi xem xét các trường đại học cụ thể.'
-  }
+const getConfidenceLabel = (score) => {
+  if (score <= 3) return { text: 'Rất hoang mang / Áp lực cao', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200' }
+  if (score <= 6) return { text: 'Cân nhắc thận trọng / Đang tìm giải pháp', color: 'text-amber-600', bg: 'bg-amber-50 border-amber-200' }
+  if (score <= 8) return { text: 'Vững vàng / Kế hoạch khả thi', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200' }
+  return { text: 'Tuyệt đối vững vàng / Sẵn sàng bứt phá', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' }
 }
 
-// =========================================================================
-// 3. MAIN COMPONENT: NHẬT KÝ PHẢN TƯ & BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP
-// =========================================================================
 const DebiasMatrix = () => {
-  const { user } = useAuth()
-  const [searchParams] = useSearchParams()
-  const initialMajor = searchParams.get('major') || ''
+  const { user, profile } = useAuth()
+  const navigate = useNavigate()
 
-  // 2 Tabs: 'matrix' (Ma trận tự phản tư) | 'scenarios' (Bài tập tình huống thực tế)
-  const [activeTab, setActiveTab] = useState('matrix')
+  // --- TRẠNG THÁI BƯỚC 1 (T0) & DỮ LIỆU ĐÃ LƯU TỪ CÁC BƯỚC ---
+  const [step1Data, setStep1Data] = useState({
+    targetMajor: '',
+    targetSchool: '',
+    hollandCode: 'Chưa xác định',
+    initialConfidence: 8,
+    reason: ''
+  })
+  const [step2Data, setStep2Data] = useState(null)
+  const [step3Data, setStep3Data] = useState(null)
+  const [step4Data, setStep4Data] = useState(null)
 
-  // State cho Tab A: Ma trận tự phản tư
-  const [targetMajor, setTargetMajor] = useState(initialMajor)
-  const [evidence, setEvidence] = useState('')
-  const [verifiedSources, setVerifiedSources] = useState('')
-  const [riskAnalysis, setRiskAnalysis] = useState('')
-  const [biasCheck, setBiasCheck] = useState('')
-  const [finalDecision, setFinalDecision] = useState('CONFIRMED')
+  // --- FORM STATE BƯỚC 5 (T2) ---
+  const [decisionChoice, setDecisionChoice] = useState('maintain')
+  const [confidenceT2, setConfidenceT2] = useState(8)
+  const [trackAMajorSchool, setTrackAMajorSchool] = useState('')
+  const [trackAAction100Days, setTrackAAction100Days] = useState('')
+  const [trackBMajorSchool, setTrackBMajorSchool] = useState('')
+  const [trackBReason, setTrackBReason] = useState('')
+  const [careerCommitmentSkills, setCareerCommitmentSkills] = useState('')
+
+  // --- TRẠNG THÁI HOÀN TẤT & DASHBOARD BÁO CÁO ---
+  const [isCompleted, setIsCompleted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [toast, setToast] = useState(null)
-  const [savedMatrices, setSavedMatrices] = useState([])
+  const [completedAt, setCompletedAt] = useState(null)
 
-  // State cho Tab B: Bài tập tình huống thực tế
-  const [scenarioAnswers, setScenarioAnswers] = useState({})
-  const [scenarioSubmitted, setScenarioSubmitted] = useState(false)
-  const [scenarioScore, setScenarioScore] = useState(0)
-  const [isSubmittingScenario, setIsSubmittingScenario] = useState(false)
-
+  // 1. Khởi tạo dữ liệu từ LocalStorage qua các bước 1, 2, 3, 4, 5
   useEffect(() => {
-    if (initialMajor) {
-      setTargetMajor(initialMajor)
-    } else {
-      try {
-        const stored = localStorage.getItem('userAnchorData') || localStorage.getItem('cbas_anchor_data')
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (parsed?.target_career) {
-            setTargetMajor(parsed.target_career)
-          }
-        }
-      } catch (e) {}
-    }
-  }, [initialMajor])
-
-  useEffect(() => {
-    fetchSavedMatrices()
-    loadSavedScenarioResult()
-  }, [user])
-
-  const fetchSavedMatrices = async () => {
-    if (!user) return
+    // Step 1
     try {
-      const { data, error } = await supabase
-        .from('metacognitive_matrix')
-        .select('*')
-        .eq('student_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setSavedMatrices(data)
+      const rawProfile = localStorage.getItem('cbas_user_profile')
+      const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData')
+      const p = rawProfile ? JSON.parse(rawProfile) : {}
+      const a = rawAnchor ? JSON.parse(rawAnchor) : {}
+      const s1 = {
+        targetMajor: p.targetMajor || a.target_career || 'Công nghệ Thông tin',
+        targetSchool: p.targetSchool || a.target_school || 'Đại học Quốc gia',
+        hollandCode: p.hollandCode || a.holland_code || 'RIA',
+        initialConfidence: Number(p.initialConfidence || a.confidence_score || 8),
+        reason: p.reason || a.reasons || 'Em đam mê từ nhỏ và thấy cơ hội việc làm rộng mở.'
       }
-    } catch (err) {
-      console.warn('Lấy lịch sử phản tư:', err)
-    }
-  }
+      setStep1Data(s1)
 
-  const loadSavedScenarioResult = async () => {
-    if (!user) return
-    try {
-      const raw = localStorage.getItem(`scenario_result_${user.id}`)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        setScenarioAnswers(parsed.answers || {})
-        setScenarioScore(parsed.score || 0)
-        setScenarioSubmitted(true)
+      // Gán giá trị mặc định cho Tuyến A nếu chưa có
+      if (!trackAMajorSchool) {
+        const fullDefault = s1.targetMajor + (s1.targetSchool ? ` - ${s1.targetSchool}` : '')
+        setTrackAMajorSchool(fullDefault)
       }
     } catch (e) {
-      console.warn('Lỗi đọc local scenario:', e)
+      console.warn('Lỗi đọc Step 1:', e)
     }
-  }
 
-  // Lưu Ma Trận Tự Phản Tư (Tab A)
-  const handleSaveMatrix = async (e) => {
-    e.preventDefault()
+    // Step 2
+    try {
+      const rawStep2 = localStorage.getItem('cbas_step2_telemetry')
+      if (rawStep2) {
+        setStep2Data(JSON.parse(rawStep2))
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc Step 2:', e)
+    }
 
-    if (!targetMajor.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng nhập tên Ngành học dự định chọn.' })
+    // Step 3
+    try {
+      const rawStep3 = localStorage.getItem('cbas_step3_triage')
+      if (rawStep3) {
+        setStep3Data(JSON.parse(rawStep3))
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc Step 3:', e)
+    }
+
+    // Step 4
+    try {
+      const rawBooking = localStorage.getItem('cbas_step4_booking')
+      const rawFeedback = localStorage.getItem('mentor_feedback_record') || localStorage.getItem('cbas_step4_feedback')
+      const b = rawBooking ? JSON.parse(rawBooking) : null
+      const f = rawFeedback ? JSON.parse(rawFeedback) : null
+      if (b || f) {
+        setStep4Data({ booking: b, feedback: f })
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc Step 4:', e)
+    }
+
+    // Kiểm tra xem đã từng lưu Bước 5 chưa
+    try {
+      const rawStep5 = localStorage.getItem('cbas_step5_action_plan')
+      if (rawStep5) {
+        const parsed5 = JSON.parse(rawStep5)
+        if (parsed5.decisionChoice) setDecisionChoice(parsed5.decisionChoice)
+        if (parsed5.confidenceT2) setConfidenceT2(Number(parsed5.confidenceT2))
+        if (parsed5.trackAMajorSchool) setTrackAMajorSchool(parsed5.trackAMajorSchool)
+        if (parsed5.trackAAction100Days) setTrackAAction100Days(parsed5.trackAAction100Days)
+        if (parsed5.trackBMajorSchool) setTrackBMajorSchool(parsed5.trackBMajorSchool)
+        if (parsed5.trackBReason) setTrackBReason(parsed5.trackBReason)
+        if (parsed5.careerCommitmentSkills) setCareerCommitmentSkills(parsed5.careerCommitmentSkills)
+        if (parsed5.completedAt) {
+          setCompletedAt(parsed5.completedAt)
+          setIsCompleted(true)
+        }
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc Step 5:', e)
+    }
+  }, [])
+
+  // 2. Xử lý lưu và Hoàn tất Bước 5 & Đóng gói Báo cáo Tổng Thể
+  const handleCompleteStep5 = async (e) => {
+    if (e && e.preventDefault) e.preventDefault()
+
+    if (!trackAMajorSchool.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập Tên Ngành & Trường mục tiêu cao nhất (Tuyến A)!' })
       return
     }
 
-    if (!evidence.trim() || !verifiedSources.trim() || !riskAnalysis.trim() || !biasCheck.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng điền đầy đủ cả 4 ô phản tư để hệ thống phân tích chuẩn xác nhất.' })
+    if (!trackAAction100Days.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập Hành động cụ thể trong 100 ngày tới (Tuyến A)!' })
+      return
+    }
+
+    if (!trackBMajorSchool.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập Trường hoặc Ngành dự phòng (Tuyến B)!' })
+      return
+    }
+
+    if (!trackBReason.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập Lý do chọn phương án dự phòng làm lưới an toàn!' })
+      return
+    }
+
+    if (!careerCommitmentSkills.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập 2 năng lực/kỹ năng cam kết rèn luyện để tránh thất nghiệp!' })
       return
     }
 
     setIsSubmitting(true)
-    const currentEntry = {
-      target_major: targetMajor,
-      evidence,
-      verified_sources: verifiedSources,
-      risk_analysis: riskAnalysis,
-      bias_check: biasCheck,
-      final_decision: finalDecision
+    const timestamp = new Date().toISOString()
+    setCompletedAt(timestamp)
+
+    // Đóng gói kế hoạch Bước 5
+    const step5Payload = {
+      decisionChoice,
+      confidenceT2,
+      trackAMajorSchool,
+      trackAAction100Days,
+      trackBMajorSchool,
+      trackBReason,
+      careerCommitmentSkills,
+      completedAt: timestamp
     }
 
-    const diagnosis = getBiasDiagnosis(currentEntry)
-
-    try {
-      if (user) {
-        const { data, error } = await supabase
-          .from('metacognitive_matrix')
-          .insert([
-            {
-              student_id: user.id,
-              target_major: targetMajor,
-              evidence: evidence,
-              verified_sources: verifiedSources,
-              risk_analysis: riskAnalysis,
-              bias_check: biasCheck,
-              detected_bias: diagnosis.type,
-              final_decision: finalDecision
-            }
-          ])
-          .select()
-          .single()
-
-        if (!error && data) {
-          setSavedMatrices(prev => [data, ...prev])
-        }
-      }
-
-      setToast({ 
-        type: 'success', 
-        message: 'Lưu bài làm Phản tư & Đồng bộ vào CSDL thành công!' 
-      })
-    } catch (error) {
-      console.error('Lỗi khi lưu bảng phản tư:', error)
-      setToast({ type: 'error', message: 'Không thể lưu bảng phản tư.' })
-    } finally {
-      setIsSubmitting(false)
+    // Đóng gói toàn bộ 5 bước can thiệp CBAS
+    const fullInterventionDossier = {
+      studentInfo: {
+        id: user?.id || profile?.id || 'guest-student',
+        fullName: profile?.full_name || user?.user_metadata?.full_name || 'Học sinh tham gia can thiệp',
+        email: user?.email || profile?.email || 'student@visef.edu.vn',
+        school: profile?.school || 'THPT Đối chứng CBAS',
+        grade: profile?.grade || 'Lớp 12'
+      },
+      step1_T0: step1Data,
+      step2_Socrates: step2Data,
+      step3_DataVerification: step3Data,
+      step4_Mentorship: step4Data,
+      step5_ActionPlan_T2: step5Payload,
+      summaryMetrics: {
+        t0_confidence: step1Data.initialConfidence,
+        t2_confidence: confidenceT2,
+        confidence_delta: confidenceT2 - step1Data.initialConfidence,
+        final_decision: decisionChoice,
+        intervention_status: 'COMPLETED_DEBIASED'
+      },
+      generatedAt: timestamp
     }
-  }
-
-  // Nộp Bài Test Tác Vụ Tình Huống (Tab B)
-  const handleScenarioOptionSelect = (scenarioId, optionId) => {
-    setScenarioAnswers(prev => ({
-      ...prev,
-      [scenarioId]: optionId
-    }))
-  }
-
-  const handleSubmitScenarioTest = async () => {
-    const answeredCount = Object.keys(scenarioAnswers).length
-    if (answeredCount < SCENARIO_QUESTIONS.length) {
-      setToast({ 
-        type: 'warning', 
-        message: `Bạn mới trả lời ${answeredCount}/${SCENARIO_QUESTIONS.length} tình huống. Vui lòng hoàn thành cả 4 câu hỏi!` 
-      })
-      return
-    }
-
-    setIsSubmittingScenario(true)
-
-    let correctCount = 0
-    SCENARIO_QUESTIONS.forEach(sc => {
-      const chosen = scenarioAnswers[sc.id]
-      const correctOpt = sc.options.find(o => o.isCorrect)
-      if (chosen === correctOpt?.id) {
-        correctCount++
-      }
-    })
-
-    setScenarioScore(correctCount)
-    setScenarioSubmitted(true)
 
     // Lưu vào LocalStorage
-    if (user?.id) {
-      const payload = {
-        answers: scenarioAnswers,
-        score: correctCount,
-        total: SCENARIO_QUESTIONS.length,
-        submittedAt: new Date().toISOString()
-      }
-      localStorage.setItem(`scenario_result_${user.id}`, JSON.stringify(payload))
-    }
+    localStorage.setItem('cbas_step5_action_plan', JSON.stringify(step5Payload))
+    localStorage.setItem('cbas_full_intervention_dossier', JSON.stringify(fullInterventionDossier))
 
-    // Đồng bộ vào Supabase Database với mã hóa khoa học chuẩn
+    // Đồng bộ lên Supabase CSDL nghiên cứu
     try {
       if (user?.id) {
         await supabase
@@ -449,523 +256,807 @@ const DebiasMatrix = () => {
           .insert([
             {
               student_id: user.id,
-              target_major: `[Bài Tập Tình Huống] Kết quả: ${correctCount}/${SCENARIO_QUESTIONS.length} Đạt`,
-              evidence: `Học sinh đã hoàn thành 4 tình huống hướng nghiệp thực tế với điểm số ${correctCount}/4.`,
-              verified_sources: 'Bộ câu hỏi tình huống thực nghiệm chuẩn khoa học ViSEF 2026.',
-              risk_analysis: 'Đã hoàn thành đánh giá các tình huống xử lý thông tin nghề nghiệp.',
-              bias_check: `Lựa chọn câu trả lời: ${JSON.stringify(scenarioAnswers)}`,
-              detected_bias: correctCount >= 3 ? 'DEBIASED_SUCCESS' : 'BANDWAGON_BIAS',
-              final_decision: 'CONFIRMED'
+              target_major: trackAMajorSchool,
+              evidence: `[Tuyến A: ${trackAMajorSchool}]\nHành động 100 ngày: ${trackAAction100Days}`,
+              verified_sources: `[Tuyến B Dự phòng: ${trackBMajorSchool}]\nLý do: ${trackBReason}`,
+              risk_analysis: `[Kỹ năng chống thất nghiệp]: ${careerCommitmentSkills}`,
+              bias_check: `Quyết định: ${decisionChoice} | Tự tin T0=${step1Data.initialConfidence} -> T2=${confidenceT2}`,
+              detected_bias: 'DEBIASED_SUCCESS',
+              final_decision: decisionChoice === 'maintain' ? 'CONFIRMED' : (decisionChoice === 'adjust' ? 'CHANGED' : 'BACKUP')
             }
           ])
       }
-    } catch (e) {
-      console.warn('Lưu kết quả tình huống vào Supabase:', e)
+    } catch (err) {
+      console.warn('Lỗi đồng bộ Supabase:', err)
     }
 
-    setIsSubmittingScenario(false)
+    setIsSubmitting(false)
+    setIsCompleted(true)
     setToast({
       type: 'success',
-      message: `🎉 Nộp bài thành công! Bạn đạt ${correctCount}/${SCENARIO_QUESTIONS.length} điểm đánh giá!`
+      message: '🎉 Chúc mừng! Đã hoàn tất chu trình 5 bước và đóng gói Hồ sơ Phản tư thành công!'
     })
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleResetScenarioTest = () => {
-    setScenarioAnswers({})
-    setScenarioSubmitted(false)
-    setScenarioScore(0)
-    if (user?.id) {
-      localStorage.removeItem(`scenario_result_${user.id}`)
-    }
-  }
-
-  const handleDelete = async (id) => {
+  // 3. Tải file JSON phục vụ Hội đồng Nghiên cứu Khoa học
+  const handleDownloadJSON = () => {
     try {
-      if (user) {
-        await supabase
-          .from('metacognitive_matrix')
-          .delete()
-          .eq('id', id)
-      }
-    } catch (err) {
-      console.warn('Lỗi xóa Supabase:', err)
-    }
-
-    const nextList = savedMatrices.filter(m => m.id !== id)
-    setSavedMatrices(nextList)
-    setToast({ type: 'info', message: 'Đã xóa bản ghi phản tư.' })
-  }
-
-  const renderDecisionTag = (decision) => {
-    switch (decision) {
-      case 'BACKUP':
-        return <span className="px-2.5 py-1 text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300 rounded-sm inline-flex items-center gap-1">🟡 Nguyện vọng Dự phòng</span>
-      case 'CHANGED':
-        return <span className="px-2.5 py-1 text-[10px] font-black bg-rose-100 text-rose-900 border border-rose-300 rounded-sm inline-flex items-center gap-1">🔴 Đã Hủy / Đổi Ngành</span>
-      case 'CONFIRMED':
-      default:
-        return <span className="px-2.5 py-1 text-[10px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-sm inline-flex items-center gap-1">🟢 Nguyện vọng Chính thức</span>
+      const raw = localStorage.getItem('cbas_full_intervention_dossier')
+      if (!raw) return
+      const blob = new Blob([raw], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `CBAS_VISEF2026_Dossier_${user?.id ? user.id.slice(0, 8) : 'Student'}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setToast({ type: 'info', message: 'Đã tải xuống file dữ liệu nghiên cứu JSON thành công!' })
+    } catch (e) {
+      console.error('Lỗi tải JSON:', e)
     }
   }
+
+  const confidenceStatus = getConfidenceLabel(confidenceT2)
+  const selectedDecisionObj = DECISION_OPTIONS.find(d => d.id === decisionChoice) || DECISION_OPTIONS[0]
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6 animate-reveal font-sans">
-      {/* Header Trang Phản Tư */}
-      <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-brand-50 border border-brand-100 rounded-sm text-brand-600">
-              <Brain className="w-7 h-7" />
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-reveal font-sans text-slate-800">
+      
+      {/* CSS CHO IN ẤN CHUẨN A4 - BÁO CÁO TỔNG HỢP 5 BƯỚC */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          #full-dossier-report, #full-dossier-report * {
+            visibility: visible !important;
+          }
+          #full-dossier-report {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 24px !important;
+            border: 2px solid #0f172a !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* =========================================================================
+          1. HEADER BƯỚC 5 (CHUẨN ĐẶC TẢ VISEF 2026)
+          ========================================================================= */}
+      <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-xl space-y-4 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-brand-50 to-indigo-50 rounded-full blur-2xl opacity-60 -mr-16 -mt-16 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="p-3.5 bg-brand-50 border border-brand-200 rounded-xl text-brand-600 shadow-2xs shrink-0">
+              <Compass className="w-8 h-8 text-brand-600" />
             </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                📝 Nhật Ký Phản Tư & Bài Tập Tình Huống Hướng Nghiệp
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider bg-brand-100 text-brand-800 border border-brand-200 rounded-md">
+                  Chặng Cuối 5/5
+                </span>
+                <span className="px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-md">
+                  Tự Chủ Ra Quyết Định (T2)
+                </span>
+                {isCompleted && (
+                  <span className="px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-md flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Đã Hoàn Tất Chu Trình
+                  </span>
+                )}
+              </div>
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                BƯỚC 5: THIẾT LẬP KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN & TỰ CHỦ RA QUYẾT ĐỊNH
               </h1>
-              <p className="text-xs text-slate-500 font-semibold mt-1">
-                Công cụ giúp bạn tự soi chiếu năng lực thực tế, đối chứng thông tin và rèn luyện kỹ năng ra quyết định nghề nghiệp vững chắc.
+              <p className="text-xs md:text-sm text-slate-600 font-medium leading-relaxed max-w-3xl">
+                Tổng kết toàn bộ chu trình can thiệp phản tư để xác lập quyết định thực tế và lộ trình bứt phá của bản thân.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <a
-              href="/student/roadmap"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-sm transition-all shadow-2xs"
+          <div className="flex items-center gap-2 shrink-0 no-print">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/student/counseling')}
+              className="text-xs font-bold py-2.5 px-3.5 gap-1.5 border-slate-200 text-slate-700 hover:bg-slate-100"
             >
-              <Target className="w-4 h-4 text-brand-600" />
-              <span>Lộ trình Mục tiêu (3 Khối lớp)</span>
-            </a>
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Xem Lại Bước 4</span>
+            </Button>
           </div>
-        </div>
-
-        {/* Thanh 2 Tabs chuyển đổi trung tính */}
-        <div className="flex border-b border-slate-200 gap-4 pt-2 overflow-x-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab('matrix')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
-              activeTab === 'matrix'
-                ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm'
-                : 'border-transparent text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <Brain className="w-4 h-4 text-brand-600" />
-            <span>TAB A: 📝 Ma Trận Tự Phản Tư (Form 4 Ô)</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('scenarios')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
-              activeTab === 'scenarios'
-                ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm'
-                : 'border-transparent text-slate-400 hover:text-slate-700'
-            }`}
-          >
-            <Compass className="w-4 h-4 text-brand-600" />
-            <span>TAB B: 🎯 BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ</span>
-            {scenarioSubmitted && (
-              <span className="px-1.5 py-0.2 text-[10px] font-black bg-emerald-600 text-white rounded-full">
-                {scenarioScore}/4 Đạt
-              </span>
-            )}
-          </button>
         </div>
       </div>
 
       {/* =========================================================================
-          TAB A: MA TRẬN TỰ PHẢN TƯ (FORM 4 Ô)
+          NẾU ĐÃ HOÀN THÀNH: HIỂN THỊ DASHBOARD CHÚC MỪNG & XUẤT HỒ SƠ 5 BƯỚC
           ========================================================================= */}
-      {activeTab === 'matrix' && (
-        <div className="space-y-6 animate-reveal">
-          {/* Banner Cú Hích Giải Thích Bình Dị */}
-          <div className="bg-blue-50/80 border border-blue-200 text-blue-950 p-4 rounded-sm flex items-start gap-3 shadow-2xs font-semibold text-xs leading-relaxed">
-            <div className="p-1.5 bg-blue-500 text-white rounded-sm flex-shrink-0 mt-0.5">
-              <Lightbulb className="w-4 h-4" />
-            </div>
-            <div>
-              <span className="font-bold text-blue-900">💡 Phản tư đơn giản là gì?</span> Là việc bạn dành 2 phút "soi" lại xem mình chọn ngành này vì <span className="font-bold uppercase text-blue-900 underline">NĂNG LỰC THỰC TẾ & DỮ LIỆU CHÍNH THỐNG</span> hay chỉ vì cảm xúc nhất thời & xem clip mạng xã hội!
-            </div>
-          </div>
-
-          {/* Form Điền 4 Ô */}
-          <form onSubmit={handleSaveMatrix} className="space-y-6">
-            <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-2 shadow-sm">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                Tên Ngành Học Dự Định Chọn
-              </label>
-              <input
-                type="text"
-                placeholder="Nhập tên ngành học bạn đang dự định chọn (Ví dụ: Khoa học máy tính, Marketing, Y khoa...)"
-                value={targetMajor}
-                onChange={(e) => setTargetMajor(e.target.value)}
-                className="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-sm font-bold text-slate-800 placeholder-slate-400"
-              />
-            </div>
-
-            {/* 4 Ô Ma Trận */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Ô 1 */}
-              <div className="bg-blue-50/40 border border-blue-200 p-5 rounded-sm space-y-3">
-                <div className="flex items-center gap-2.5 text-blue-900 border-b border-blue-100 pb-2.5">
-                  <div className="p-1.5 bg-blue-500 text-white rounded-sm">
-                    <UserCheck className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    1. Năng lực & Bằng chứng thực tế
-                  </h3>
+      {isCompleted ? (
+        <div className="space-y-8 animate-reveal">
+          
+          {/* BANNER CHÚC MỪNG HOÀN TẤT CHU TRÌNH */}
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 md:p-8 rounded-xl shadow-md space-y-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-amber-300 shrink-0">
+                  <Award className="w-8 h-8" />
                 </div>
-                <p className="text-[11px] text-blue-700 font-semibold leading-relaxed">
-                  Liệt kê ít nhất 2 điểm số, kỹ năng hoặc trải nghiệm thực tế chứng minh bạn phù hợp với ngành này.
-                </p>
-                <textarea
-                  rows={4}
-                  placeholder="VD: Điểm học bạ Toán - Lý đều trên 8.5; đã tự học xây dựng website cá nhân bằng HTML/CSS..."
-                  value={evidence}
-                  onChange={(e) => setEvidence(e.target.value)}
-                  className="w-full p-3 text-xs bg-white border border-blue-200 focus:border-blue-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
-                />
-              </div>
-
-              {/* Ô 2 */}
-              <div className="bg-indigo-50/40 border border-indigo-200 p-5 rounded-sm space-y-3">
-                <div className="flex items-center gap-2.5 text-indigo-900 border-b border-indigo-100 pb-2.5">
-                  <div className="p-1.5 bg-indigo-500 text-white rounded-sm">
-                    <Search className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    2. Dữ liệu đối chứng chính thống
-                  </h3>
+                <div>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-emerald-200">
+                    Hội Đồng Khoa Học CBAS - VISEF 2026
+                  </span>
+                  <h2 className="text-lg md:text-2xl font-black tracking-tight mt-1">
+                    🎉 CHÚC MỪNG EM ĐÃ HOÀN TẤT TOÀN BỘ 5 BƯỚC CAN THIỆP PHẢN TƯ!
+                  </h2>
+                  <p className="text-xs md:text-sm text-emerald-100 font-medium mt-1 leading-relaxed max-w-3xl">
+                    Em đã chính thức hoàn thành chu trình giải trừ thiên lệch nhận thức, từ trực giác cảm tính (T0) chuyển hoá thành người ra quyết định có cơ sở dữ liệu đối chứng và phương án bảo hiểm đa tuyến an toàn (T2).
+                  </p>
                 </div>
-                <p className="text-[11px] text-indigo-700 font-semibold leading-relaxed">
-                  Nhập nguồn thông tin/báo cáo thị trường bạn đã tham khảo (tránh thông tin đơn chiều từ mạng xã hội).
-                </p>
-                <textarea
-                  rows={4}
-                  placeholder="VD: Báo cáo nhu cầu nhân lực của VietnamWorks 2025; Đã đọc chuẩn đầu ra và học phí 4 năm trên website trường ĐH..."
-                  value={verifiedSources}
-                  onChange={(e) => setVerifiedSources(e.target.value)}
-                  className="w-full p-3 text-xs bg-white border border-indigo-200 focus:border-indigo-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
-                />
               </div>
 
-              {/* Ô 3 */}
-              <div className="bg-amber-50/40 border border-amber-200 p-5 rounded-sm space-y-3">
-                <div className="flex items-center gap-2.5 text-amber-900 border-b border-amber-100 pb-2.5">
-                  <div className="p-1.5 bg-amber-500 text-white rounded-sm">
-                    <AlertTriangle className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    3. Phân tích Rủi ro & Thách thức
-                  </h3>
-                </div>
-                <p className="text-[11px] text-amber-800 font-semibold leading-relaxed">
-                  Liệt kê 2 thách thức, áp lực hoặc nguy cơ (như bị AI thay thế, tỷ lệ đào thải) mà bạn sẵn sàng đón nhận.
-                </p>
-                <textarea
-                  rows={4}
-                  placeholder="VD: Áp lực OT cập nhật kiến thức liên tục; Nguy cơ lập trình viên cấp thấp bị AI thay thế trong 5 năm tới..."
-                  value={riskAnalysis}
-                  onChange={(e) => setRiskAnalysis(e.target.value)}
-                  className="w-full p-3 text-xs bg-white border border-amber-200 focus:border-amber-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
-                />
-              </div>
-
-              {/* Ô 4 */}
-              <div className="bg-rose-50/40 border border-rose-200 p-5 rounded-sm space-y-3">
-                <div className="flex items-center gap-2.5 text-rose-900 border-b border-rose-100 pb-2.5">
-                  <div className="p-1.5 bg-rose-500 text-white rounded-sm">
-                    <HelpCircle className="w-4.5 h-4.5" />
-                  </div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    4. Soi chiếu Yếu tố Nhận thức
-                  </h3>
-                </div>
-                <p className="text-[11px] text-rose-800 font-semibold leading-relaxed">
-                  Tự hỏi: Mình có đang chọn vì "thích từ bé", "bạn bè rủ", "xem video mạng xã hội" hay "tiếc công ôn thi" không?
-                </p>
-                <textarea
-                  rows={4}
-                  placeholder="VD: Ban đầu thích vì xem phim, nhưng sau khi đối chiếu thấy cần nhiều tư duy toán học và đã tự học thử thấy phù hợp..."
-                  value={biasCheck}
-                  onChange={(e) => setBiasCheck(e.target.value)}
-                  className="w-full p-3 text-xs bg-white border border-rose-200 focus:border-rose-500 focus:outline-none rounded-sm font-medium text-slate-700 leading-relaxed"
-                />
-              </div>
-            </div>
-
-            {/* Khung Quyết Định Cuối Cùng */}
-            <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-sm">
-              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
-                🎯 Quyết Định Của Bạn Sau Khi Hoàn Thành Bảng Phản Tư:
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <label className={`flex items-center gap-3 p-3.5 rounded-sm border cursor-pointer transition-all ${
-                  finalDecision === 'CONFIRMED' ? 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}>
-                  <input
-                    type="radio"
-                    name="decision"
-                    value="CONFIRMED"
-                    checked={finalDecision === 'CONFIRMED'}
-                    onChange={(e) => setFinalDecision(e.target.value)}
-                    className="w-4 h-4 text-emerald-600"
-                  />
-                  <div>
-                    <p className="text-xs font-black">🟢 Giữ làm Nguyện Vọng Chính</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Đã đủ bằng chứng và chấp nhận rủi ro</p>
-                  </div>
-                </label>
-
-                <label className={`flex items-center gap-3 p-3.5 rounded-sm border cursor-pointer transition-all ${
-                  finalDecision === 'BACKUP' ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}>
-                  <input
-                    type="radio"
-                    name="decision"
-                    value="BACKUP"
-                    checked={finalDecision === 'BACKUP'}
-                    onChange={(e) => setFinalDecision(e.target.value)}
-                    className="w-4 h-4 text-amber-600"
-                  />
-                  <div>
-                    <p className="text-xs font-black">🟡 Chuyển thành NV Dự Phòng</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Cần tích lũy thêm năng lực thực tế</p>
-                  </div>
-                </label>
-
-                <label className={`flex items-center gap-3 p-3.5 rounded-sm border cursor-pointer transition-all ${
-                  finalDecision === 'CHANGED' ? 'bg-rose-50 border-rose-500 text-rose-950 font-bold' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}>
-                  <input
-                    type="radio"
-                    name="decision"
-                    value="CHANGED"
-                    checked={finalDecision === 'CHANGED'}
-                    onChange={(e) => setFinalDecision(e.target.value)}
-                    className="w-4 h-4 text-rose-600"
-                  />
-                  <div>
-                    <p className="text-xs font-black">🔴 Đã Hủy & Tìm Ngành Khác</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">Nhận thấy hoàn toàn không phù hợp</p>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            {/* Nút Submit */}
-            <div className="flex justify-end gap-3">
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={isSubmitting}
-                className="font-bold text-xs uppercase tracking-wider py-3 px-8 gap-2 bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isSubmitting ? 'Đang lưu vào CSDL...' : 'LƯU BÀI PHẢN TƯ VÀO HỆ THỐNG'}</span>
-              </Button>
-            </div>
-          </form>
-
-          {/* Lịch Sử Các Bài Làm Phản Tư Đã Lưu */}
-          {savedMatrices.length > 0 && (
-            <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-3">
-                <History className="w-4 h-4 text-brand-600" />
-                <span>Lịch Sử Bài Làm Phản Tư Của Bạn ({savedMatrices.length} bản ghi)</span>
-              </h3>
-
-              <div className="space-y-3">
-                {savedMatrices.map((item) => (
-                  <div key={item.id} className="p-4 bg-slate-50/70 border border-slate-200 rounded-sm flex flex-col md:flex-row md:items-center justify-between gap-3 hover:border-brand-300 transition-all">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-800 text-xs">{item.target_major}</span>
-                        {renderDecisionTag(item.final_decision)}
-                      </div>
-                      <p className="text-[11px] text-slate-500 font-medium mt-1">
-                        Đối chứng: <em>{item.verified_sources || 'Chưa ghi nguồn'}</em>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 self-end md:self-auto">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                        title="Xóa bài làm này"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* =========================================================================
-          TAB B: BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ (4 TÌNH HUỐNG)
-          ========================================================================= */}
-      {activeTab === 'scenarios' && (
-        <div className="space-y-6 animate-reveal">
-          {/* Banner Giới Thiệu Tab B Chuẩn Trung Tính */}
-          <div className="bg-slate-50 border-l-4 border-brand-600 p-5 rounded-r-sm shadow-2xs">
-            <div className="flex items-start gap-3.5">
-              <div className="p-2 bg-brand-600 text-white rounded-sm font-black flex-shrink-0 mt-0.5 shadow-xs text-base">
-                🎯
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>BÀI TẬP TÌNH HUỐNG HƯỚNG NGHIỆP THỰC TẾ</span>
-                </h4>
-                <p className="text-xs text-slate-600 font-semibold mt-1 leading-relaxed">
-                  Đọc các tình huống thực tế thường gặp khi tiếp cận thông tin chọn ngành và lựa chọn hướng xử lý phù hợp nhất với bạn.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Kết quả sau khi nộp bài */}
-          {scenarioSubmitted && (
-            <div className="bg-emerald-50 border border-emerald-300 p-5 rounded-sm shadow-sm space-y-3 animate-reveal">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-600 text-white rounded-full font-black">
-                    <Award className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-emerald-950 uppercase tracking-wider">
-                      🎉 BẠN ĐÃ HOÀN THÀNH BÀI TẬP! KẾT QUẢ ĐÁNH GIÁ: {scenarioScore}/{SCENARIO_QUESTIONS.length} ĐIỂM
-                    </h3>
-                    <p className="text-xs text-emerald-800 font-medium mt-0.5">
-                      {scenarioScore === 4 && 'Xuất sắc! Bạn có phương pháp tiếp cận thông tin và đối chứng dữ liệu rất thấu đáo.'}
-                      {scenarioScore === 3 && 'Rất tốt! Bạn đã có kỹ năng nhìn nhận đa chiều trước các nguồn tin khác nhau.'}
-                      {scenarioScore < 3 && 'Hãy xem kỹ các phân tích bên dưới để rút kinh nghiệm khi tra cứu thông tin tuyển sinh thực tế nhé!'}
-                    </p>
-                  </div>
-                </div>
-
-                <Button
+              <div className="flex items-center gap-2 self-start md:self-center shrink-0 no-print">
+                <button
                   type="button"
-                  variant="secondary"
-                  onClick={handleResetScenarioTest}
-                  className="text-xs font-bold uppercase tracking-wider py-2 px-4 gap-1.5 border-emerald-400 text-emerald-900 hover:bg-emerald-100"
+                  onClick={() => setIsCompleted(false)}
+                  className="px-3 py-2 text-xs font-bold bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-lg transition-all flex items-center gap-1.5"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Làm lại bài tập</span>
-                </Button>
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>Chỉnh Sửa Kế Hoạch</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {/* 4 Câu Hỏi Tình Huống Trung Tính */}
-          <div className="space-y-6">
-            {SCENARIO_QUESTIONS.map((sc, idx) => {
-              const selectedOption = scenarioAnswers[sc.id]
+            {/* THANH ĐIỀU HƯỚNG TÁC VỤ IN & XUẤT */}
+            <div className="pt-4 border-t border-white/20 flex flex-wrap items-center justify-between gap-3 no-print">
+              <div className="text-xs text-emerald-100 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Toàn bộ biến số T0, Holland, Chat Socrates, Step 3, Mentor Step 4 & Action Plan Step 5 đã đóng gói.</span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2.5 text-xs font-black uppercase tracking-wider bg-white text-emerald-900 hover:bg-emerald-50 rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4 text-emerald-700" />
+                  <span>In / Lưu Báo Cáo PDF (A4)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadJSON}
+                  className="px-4 py-2.5 text-xs font-black uppercase tracking-wider bg-emerald-800 hover:bg-emerald-900 text-white rounded-lg transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Download className="w-4 h-4 text-emerald-200" />
+                  <span>Tải Dữ Liệu Nghiên Cứu (JSON)</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-              return (
-                <div key={sc.id} className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-brand-600 text-white text-xs font-black flex items-center justify-center">
-                        {idx + 1}
-                      </span>
-                      <h3 className="text-xs md:text-sm font-black text-slate-800 tracking-tight">
-                        {sc.title}
-                      </h3>
-                    </div>
-                    <span className={`px-2.5 py-1 text-[10px] font-bold rounded-sm border ${sc.badgeClass}`}>
-                      {sc.tagLabel}
+          {/* 3 THẺ ĐỐI CHỨNG CHỈ SỐ NHẬN THỨC THEO MÔ HÌNH NGHIÊN CỨU */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Thẻ 1: Delta Tự Tin T0 vs T2 */}
+            <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Biến Số Tự Tin Nhận Thức
+                </span>
+                <Scale className="w-4 h-4 text-brand-600" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <div>
+                  <p className="text-[11px] font-bold text-slate-400">T0 (Ban đầu):</p>
+                  <p className="text-xl font-black text-slate-700">{step1Data.initialConfidence}/10</p>
+                </div>
+                <div className="text-center font-black text-slate-400">➔</div>
+                <div className="text-right">
+                  <p className="text-[11px] font-bold text-brand-600">T2 (Sau can thiệp):</p>
+                  <p className="text-2xl font-black text-emerald-600">{confidenceT2}/10</p>
+                </div>
+              </div>
+              <div className={`p-2 rounded-lg text-xs font-bold text-center ${confidenceStatus.bg} ${confidenceStatus.color}`}>
+                Hiệu chuẩn: {confidenceT2 >= step1Data.initialConfidence ? `Tăng +${confidenceT2 - step1Data.initialConfidence}đ vững tin` : `Điều chỉnh ${confidenceT2 - step1Data.initialConfidence}đ sát thực tế`}
+              </div>
+            </div>
+
+            {/* Thẻ 2: Quyết định cuối cùng */}
+            <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Quyết Định Cuối Cùng
+                </span>
+                <Target className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="space-y-1.5">
+                <span className={`inline-block px-3 py-1 text-xs font-black rounded-md border ${selectedDecisionObj.badgeClass}`}>
+                  {selectedDecisionObj.badge}
+                </span>
+                <p className="text-xs text-slate-600 font-semibold line-clamp-2">
+                  {selectedDecisionObj.label}
+                </p>
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Dựa trên ma trận đối chứng điểm chuẩn và tham vấn 1-1.
+              </p>
+            </div>
+
+            {/* Thẻ 3: Trạng thái giải trừ thiên lệch */}
+            <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
+                  Đánh Giá Nghiên Cứu CBAS
+                </span>
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div className="space-y-1">
+                <span className="inline-block px-2.5 py-1 text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 rounded-md">
+                  ✨ DEBIASED & CALIBRATED
+                </span>
+                <p className="text-xs text-slate-700 font-bold mt-1">
+                  Đã giải trừ thiên lệch nhận thức
+                </p>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                Học sinh đã thiết lập 2 tuyến mục tiêu đa tuyến an toàn và nhận diện rõ nguy cơ thị trường lao động.
+              </p>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              HỒ SƠ PHẢN TƯ TỔNG HỢP TOÀN BỘ 5 BƯỚC (IN ẤN CHUẨN A4 / XUẤT HỘI ĐỒNG)
+              ========================================================================= */}
+          <div id="full-dossier-report" className="bg-white border-2 border-slate-800 p-6 md:p-10 rounded-2xl shadow-sm space-y-8 text-slate-900">
+            
+            {/* Header Tài Liệu Khoa Học */}
+            <div className="border-b-2 border-slate-800 pb-6 space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs font-bold text-slate-600">
+                <span className="uppercase tracking-widest text-brand-700 font-black">
+                  DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
+                </span>
+                <span>
+                  Ngày xuất hồ sơ: {completedAt ? new Date(completedAt).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleDateString('vi-VN')}
+                </span>
+              </div>
+              <h2 className="text-xl md:text-2xl font-black tracking-tight text-slate-950 uppercase">
+                BÁO CÁO KẾT QUẢ CAN THIỆP PHẢN TƯ & KẾ HOẠCH HÀNH ĐỘNG HƯỚNG NGHIỆP
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-2 font-medium text-slate-700">
+                <div><strong>Họ và tên:</strong> {profile?.full_name || user?.user_metadata?.full_name || 'Học sinh nghiên cứu'}</div>
+                <div><strong>Email/Mã số:</strong> {user?.email || 'student@visef.edu.vn'}</div>
+                <div><strong>Trường/Lớp:</strong> {profile?.school || 'THPT'} ({profile?.grade || 'Khối 12'})</div>
+              </div>
+            </div>
+
+            {/* PHẦN 1: TỔNG HỢP BƯỚC 1 (T0) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">1</span>
+                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
+                  BƯỚC 1: KHỞI TẠO MỤC TIÊU & ĐIỂM NEO BAN ĐẦU (T0)
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-500">Ngành & Trường mục tiêu ban đầu:</span>
+                  <p className="font-black text-slate-900 text-sm mt-0.5">{step1Data.targetMajor} tại {step1Data.targetSchool}</p>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500">Thiên hướng Holland & Điểm tự tin ban đầu (T0):</span>
+                  <p className="font-black text-slate-900 text-sm mt-0.5">
+                    Mã Holland: <span className="text-brand-700">{step1Data.hollandCode}</span> | Mức tự tin T0: <span className="text-brand-700">{step1Data.initialConfidence}/10</span>
+                  </p>
+                </div>
+                <div className="md:col-span-2">
+                  <span className="font-bold text-slate-500">Lý do lựa chọn ban đầu (Điểm neo trực giác):</span>
+                  <p className="text-slate-800 font-medium italic mt-0.5">"{step1Data.reason || 'Chưa ghi nhận'}"</p>
+                </div>
+              </div>
+            </div>
+
+            {/* PHẦN 2: TỔNG HỢP BƯỚC 2 (SOCRATES CHAT) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">2</span>
+                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
+                  BƯỚC 2: PHẢN TƯ TRUY VẤN SOCRATES (AI DIALOGUE TURNING POINT)
+                </h3>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="font-bold text-slate-700">Tiến trình đối thoại:</span>
+                  <span className="px-2 py-0.5 font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-[11px]">
+                    Hoàn tất đủ 4/4 giai đoạn truy vấn độc lập
+                  </span>
+                </div>
+                <p className="text-slate-700 font-medium leading-relaxed">
+                  <strong>Đúc kết bước ngoặt:</strong> Học sinh đã nhận diện được các góc khuất nghề nghiệp về yêu cầu đào tạo, thách thức thị trường và rào cản điểm số thay vì chỉ dựa vào hình mẫu cảm xúc ban đầu.
+                </p>
+              </div>
+            </div>
+
+            {/* PHẦN 3: TỔNG HỢP BƯỚC 3 (ĐỐI CHỨNG DỮ LIỆU) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">3</span>
+                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
+                  BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU KHÁCH QUAN & KHOẢNG CÁCH NĂNG LỰC
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-500">Tổ hợp môn & Điểm học bạ:</span>
+                  <p className="font-black text-slate-900 mt-0.5">
+                    {step3Data?.targetCombination || 'Tổ hợp'} : {step3Data?.totalStudentScore !== null && step3Data?.totalStudentScore !== undefined ? `${step3Data.totalStudentScore}đ` : 'Chưa nhập'}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500">Điểm chuẩn trung bình 2 năm:</span>
+                  <p className="font-black text-slate-900 mt-0.5">
+                    {step3Data?.avgCutoff !== null && step3Data?.avgCutoff !== undefined ? `${step3Data.avgCutoff}đ` : 'Chưa nhập'}
+                  </p>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500">Khoảng cách năng lực (scoreGap):</span>
+                  <p className={`font-black mt-0.5 ${step3Data?.scoreGap >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    {step3Data?.scoreGap !== null && step3Data?.scoreGap !== undefined ? `${step3Data.scoreGap > 0 ? '+' : ''}${step3Data.scoreGap}đ` : 'Chưa tính'}
+                    {step3Data?.scoreGap >= 0 ? ' (Lợi thế cạnh tranh)' : ' (Cần giải pháp bứt phá/dự phòng)'}
+                  </p>
+                </div>
+                <div className="md:col-span-3 pt-2 border-t border-slate-200">
+                  <span className="font-bold text-slate-500">Tự đánh giá rào cản và nguy cơ thất nghiệp:</span>
+                  <p className="text-slate-800 font-medium italic mt-0.5">
+                    "{step3Data?.reflectionText || 'Đã nhận diện nguy cơ thị trường và chuẩn bị phương án khắc phục.'}"
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* PHẦN 4: TỔNG HỢP BƯỚC 4 (MENTORSHIP & POST-LOG) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">4</span>
+                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
+                  BƯỚC 4: THAM VẤN 1-1 & NHẬT KÝ THU HOẠCH SAU THAM VẤN
+                </h3>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <span className="font-bold text-slate-500">Cố vấn tham vấn:</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{step4Data?.booking?.mentor_name || 'Thầy/Cô Cố vấn Chuyên môn'}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-500">Hình thức đối thoại:</span>
+                    <p className="font-bold text-slate-900 mt-0.5">{step4Data?.booking?.meeting_type || 'Google Meet / Trực tiếp'}</p>
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="font-bold text-slate-500">Đúc kết chuyển biến sau buổi tham vấn:</span>
+                  <p className="text-slate-800 font-medium mt-0.5">
+                    {step4Data?.feedback?.notes || 'Đã nhìn nhận rõ bức tranh thực tế về độ khó của điểm chuẩn và cơ hội việc làm, sẵn sàng đón nhận thử thách và xây dựng phương án đa tuyến.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* PHẦN 5: KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN & TỰ CHỦ RA QUYẾT ĐỊNH (T2) */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 border-b-2 border-slate-900 pb-2">
+                <span className="w-5 h-5 rounded-full bg-brand-600 text-white text-[11px] font-black flex items-center justify-center">5</span>
+                <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
+                  BƯỚC 5: KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN & TỰ CHỦ RA QUYẾT ĐỊNH (T2)
+                </h3>
+              </div>
+
+              {/* Quyết định & Điểm tự tin T2 */}
+              <div className="p-4 bg-brand-50/70 border border-brand-200 rounded-xl space-y-2 text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="font-black text-brand-900 uppercase">Quyết định chính thức:</span>
+                  <span className={`px-2.5 py-0.5 font-black rounded border text-[11px] ${selectedDecisionObj.badgeClass}`}>
+                    {selectedDecisionObj.badge}
+                  </span>
+                </div>
+                <p className="font-bold text-slate-900 text-sm leading-relaxed">
+                  {selectedDecisionObj.label}
+                </p>
+                <div className="pt-2 border-t border-brand-200/60 flex items-center justify-between text-xs font-bold text-brand-900">
+                  <span>Mức độ tự tin thực tế sau chu trình (T2):</span>
+                  <span className="text-base text-emerald-700 font-black">{confidenceT2}/10 ({confidenceStatus.text})</span>
+                </div>
+              </div>
+
+              {/* 2 Tuyến Nguyện Vọng Song Song */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {/* Tuyến A */}
+                <div className="bg-slate-50 border-2 border-emerald-500/80 p-4 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between border-b border-emerald-200 pb-2">
+                    <span className="font-black uppercase tracking-wider text-emerald-900">
+                      🚀 TUYẾN A: MỤC TIÊU ƯU TIÊN SỐ 1 (BỨT PHÁ)
                     </span>
                   </div>
-
-                  {/* Ngữ cảnh */}
-                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-sm text-xs text-slate-700 font-medium leading-relaxed">
-                    <strong>Bối cảnh thực tế:</strong> {sc.context}
+                  <div>
+                    <span className="font-bold text-slate-500">Ngành & Trường mục tiêu:</span>
+                    <p className="font-black text-slate-900 text-sm mt-0.5">{trackAMajorSchool}</p>
                   </div>
-
-                  <p className="text-xs font-bold text-slate-900">
-                    ❓ {sc.question}
-                  </p>
-
-                  {/* 3 Lựa Chọn A, B, C */}
-                  <div className="space-y-2.5">
-                    {sc.options.map((opt) => {
-                      const isSelected = selectedOption === opt.id
-                      const showResult = scenarioSubmitted
-
-                      let optionStyle = 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
-                      if (isSelected && !showResult) {
-                        optionStyle = 'bg-brand-50 border-brand-500 text-brand-950 font-bold ring-1 ring-brand-300'
-                      }
-                      if (showResult) {
-                        if (opt.isCorrect) {
-                          optionStyle = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold ring-1 ring-emerald-400'
-                        } else if (isSelected && !opt.isCorrect) {
-                          optionStyle = 'bg-rose-50 border-rose-500 text-rose-950 font-bold ring-1 ring-rose-400'
-                        }
-                      }
-
-                      return (
-                        <div key={opt.id} className="space-y-1.5">
-                          <label className={`flex items-start gap-3 p-3.5 rounded-sm border cursor-pointer transition-all ${optionStyle}`}>
-                            <input
-                              type="radio"
-                              name={`scenario_${sc.id}`}
-                              value={opt.id}
-                              checked={isSelected}
-                              disabled={scenarioSubmitted}
-                              onChange={() => handleScenarioOptionSelect(sc.id, opt.id)}
-                              className="w-4 h-4 text-brand-600 mt-0.5"
-                            />
-                            <div className="flex-1 text-xs leading-relaxed font-semibold">
-                              <span>{opt.text}</span>
-                            </div>
-                            {showResult && opt.isCorrect && (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                            )}
-                            {showResult && isSelected && !opt.isCorrect && (
-                              <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                            )}
-                          </label>
-
-                          {/* Giải thích sau khi nộp bài */}
-                          {showResult && isSelected && (
-                            <div className={`p-2.5 rounded-sm text-[11px] font-medium leading-relaxed ${
-                              opt.isCorrect ? 'bg-emerald-100/60 text-emerald-900 border border-emerald-300' : 'bg-rose-100/60 text-rose-900 border border-rose-300'
-                            }`}>
-                              {opt.biasFeedback}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                  <div>
+                    <span className="font-bold text-slate-500">Hành động cụ thể trong 100 ngày tới:</span>
+                    <p className="text-slate-800 font-medium leading-relaxed mt-0.5 whitespace-pre-wrap">{trackAAction100Days}</p>
                   </div>
                 </div>
-              )
-            })}
+
+                {/* Tuyến B */}
+                <div className="bg-slate-50 border-2 border-blue-500/80 p-4 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between border-b border-blue-200 pb-2">
+                    <span className="font-black uppercase tracking-wider text-blue-900">
+                      🛡️ TUYẾN B: PHƯƠNG ÁN DỰ PHÒNG (LƯỚI AN TOÀN)
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-500">Trường/Ngành dự phòng:</span>
+                    <p className="font-black text-slate-900 text-sm mt-0.5">{trackBMajorSchool}</p>
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-500">Lý do chọn làm lưới an toàn:</span>
+                    <p className="text-slate-800 font-medium leading-relaxed mt-0.5 whitespace-pre-wrap">{trackBReason}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Khối 3 Kỹ năng chống thất nghiệp */}
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-2 text-xs">
+                <span className="font-black uppercase tracking-wider text-slate-800">
+                  🎯 CAM KẾT RÈN LUYỆN KỸ NĂNG TRÁNH NGUY CƠ THẤT NGHIỆP:
+                </span>
+                <p className="text-slate-900 font-medium leading-relaxed whitespace-pre-wrap">
+                  {careerCommitmentSkills}
+                </p>
+              </div>
+            </div>
+
+            {/* Chữ Ký Xác Nhận & Cam Kết Bản Thân */}
+            <div className="pt-6 border-t-2 border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-700">
+              <div className="space-y-1">
+                <p className="font-bold">Chứng nhận hoàn thành can thiệp CBAS</p>
+                <p className="text-slate-500 text-[11px]">Hệ thống Hướng nghiệp & Tự chủ Ra quyết định</p>
+              </div>
+              <div className="text-center sm:text-right space-y-8">
+                <div>
+                  <p className="font-bold">Học sinh cam kết thực hiện</p>
+                  <p className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</p>
+                </div>
+                <p className="font-black text-slate-900">{profile?.full_name || user?.user_metadata?.full_name || 'Học sinh'}</p>
+              </div>
+            </div>
+
           </div>
 
-          {/* Nút Nộp Bài Test Tình Huống */}
-          {!scenarioSubmitted && (
-            <div className="flex justify-end pt-2">
+          {/* CÁC NÚT ĐIỀU HƯỚNG CUỐI CÙNG */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200 no-print">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/student/dashboard')}
+              className="font-bold text-xs uppercase tracking-wider py-3 px-6 gap-2"
+            >
+              <Home className="w-4 h-4" />
+              <span>Về Trang Chủ Học Sinh</span>
+            </Button>
+
+            <div className="flex items-center gap-3">
               <Button
                 type="button"
                 variant="primary"
-                onClick={handleSubmitScenarioTest}
-                disabled={isSubmittingScenario}
-                className="font-bold text-xs uppercase tracking-wider py-3 px-8 gap-2 bg-brand-600 hover:bg-brand-700 text-white shadow-sm transition-all"
+                onClick={() => window.print()}
+                className="font-bold text-xs uppercase tracking-wider py-3 px-6 gap-2 bg-slate-900 hover:bg-black text-white"
               >
-                <Award className="w-4 h-4" />
-                <span>{isSubmittingScenario ? 'Đang chấm điểm...' : 'NỘP BÀI ĐÁNH GIÁ TÌNH HUỐNG'}</span>
+                <Printer className="w-4 h-4" />
+                <span>In Bản Báo Cáo Này (PDF)</span>
               </Button>
             </div>
-          )}
+          </div>
+
         </div>
+      ) : (
+
+        /* =========================================================================
+            GIAO DIỆN KẾ HOẠCH HÀNH ĐỘNG TINH GỌN 3 KHỐI THEO ĐẶC TẢ
+            ========================================================================= */
+        <form onSubmit={handleCompleteStep5} className="space-y-8 animate-reveal">
+
+          {/* =========================================================================
+              KHỐI 1: TÁI ĐỊNH VỊ QUYẾT ĐỊNH & THU THẬP BIẾN SỐ T2 (BẮT BUỘC)
+              ========================================================================= */}
+          <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-xl space-y-6 shadow-sm">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+              <div className="p-2 bg-brand-50 text-brand-600 rounded-lg">
+                <Target className="w-5 h-5 text-brand-600" />
+              </div>
+              <div>
+                <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-wide">
+                  KHỐI 1: TÁI ĐỊNH VỊ QUYẾT ĐỊNH & THU THẬP BIẾN SỐ T2 (BẮT BUỘC)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Đánh giá lại nguyện vọng sau khi đã đối chứng số liệu học bạ, điểm chuẩn và lời khuyên của chuyên gia.
+                </p>
+              </div>
+            </div>
+
+            {/* 1.1 Single-choice Radio */}
+            <div className="space-y-3">
+              <label className="text-xs md:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <span>Sau khi trải qua các vòng phản tư và đối chứng dữ liệu, quyết định cuối cùng của em là:</span>
+                <span className="text-rose-500">*</span>
+              </label>
+
+              <div className="grid grid-cols-1 gap-3">
+                {DECISION_OPTIONS.map((opt) => {
+                  const isSelected = decisionChoice === opt.id
+                  return (
+                    <label
+                      key={opt.id}
+                      className={`flex items-start gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-brand-50/50 border-brand-500 ring-1 ring-brand-400 text-slate-900'
+                          : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="decisionChoice"
+                        value={opt.id}
+                        checked={isSelected}
+                        onChange={() => setDecisionChoice(opt.id)}
+                        className="w-4 h-4 text-brand-600 mt-1 shrink-0 cursor-pointer"
+                      />
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs md:text-sm font-bold text-slate-900 leading-snug">
+                            {opt.label}
+                          </span>
+                          <span className={`px-2 py-0.5 text-[10px] font-black rounded border ${opt.badgeClass}`}>
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                          {opt.subtext}
+                        </p>
+                      </div>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 1.2 Slider Thang đo T2 (Confidence Score 1 - 10) */}
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-xs md:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-brand-600" />
+                  <span>Đánh giá lại mức độ tự tin thực tế của em vào quyết định này (Thang điểm 1 - 10):</span>
+                  <span className="text-rose-500">*</span>
+                </label>
+                <div className={`px-3 py-1 rounded-lg border text-xs font-black inline-flex items-center gap-2 ${confidenceStatus.bg} ${confidenceStatus.color}`}>
+                  <span className="text-base font-black">{confidenceT2}/10</span>
+                  <span>{confidenceStatus.text}</span>
+                </div>
+              </div>
+
+              {/* Slider Input */}
+              <div className="space-y-2">
+                <input
+                  type="range"
+                  min="1"
+                  max="10"
+                  step="1"
+                  value={confidenceT2}
+                  onChange={(e) => setConfidenceT2(Number(e.target.value))}
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                />
+                <div className="flex justify-between text-[11px] font-bold text-slate-400">
+                  <span>1 (Rất hoang mang)</span>
+                  <span className="hidden sm:inline">5 (Cân nhắc thận trọng)</span>
+                  <span>10 (Tuyệt đối vững vàng)</span>
+                </div>
+              </div>
+
+              {/* Thông tin đối chiếu với điểm T0 ban đầu */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs flex items-center justify-between text-slate-600">
+                <span>Điểm tự tin ban đầu ở Bước 1 (T0): <strong>{step1Data.initialConfidence}/10</strong></span>
+                <span className="font-bold text-brand-700">
+                  {confidenceT2 === step1Data.initialConfidence && '→ Giữ nguyên mức tự tin'}
+                  {confidenceT2 > step1Data.initialConfidence && `→ Tăng +${confidenceT2 - step1Data.initialConfidence} điểm sau khi có giải pháp`}
+                  {confidenceT2 < step1Data.initialConfidence && `→ Giảm ${step1Data.initialConfidence - confidenceT2} điểm để nhìn nhận thực tế hơn`}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              KHỐI 2: LẬP LỘ TRÌNH 2 TUYẾN BẢO HIỂM NGUYỆN VỌNG (MULTI-TRACK ROADMAP)
+              ========================================================================= */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <Scale className="w-5 h-5 text-brand-600" />
+              <div>
+                <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-wide">
+                  KHỐI 2: LẬP LỘ TRÌNH 2 TUYẾN BẢO HIỂM NGUYỆN VỌNG (MULTI-TRACK ROADMAP)
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Không đặt toàn bộ cược vào một cửa duy nhất — luôn thiết lập sẵn lưới an toàn dự phòng rủi ro.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* THẺ TUYẾN A: MỤC TIÊU ƯU TIÊN SỐ 1 (BỨT PHÁ) */}
+              <div className="bg-white border-2 border-emerald-500/80 p-5 md:p-6 rounded-xl space-y-4 shadow-xs relative">
+                <div className="flex items-center justify-between border-b border-emerald-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-black">
+                      🚀
+                    </span>
+                    <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-emerald-900">
+                      THẺ TUYẾN A: MỤC TIÊU ƯU TIÊN SỐ 1 (BỨT PHÁ)
+                    </h4>
+                  </div>
+                  <span className="px-2 py-0.5 text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 rounded">
+                    Nguyện Vọng 1
+                  </span>
+                </div>
+
+                {/* Input Text Tuyến A */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                    <span>Tên Ngành & Trường mục tiêu cao nhất: *</span>
+                    <span className="text-[10px] font-normal text-slate-400">Cho phép chỉnh sửa</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={trackAMajorSchool}
+                    onChange={(e) => setTrackAMajorSchool(e.target.value)}
+                    placeholder="VD: Khoa học máy tính - ĐH Bách Khoa..."
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-lg font-bold text-slate-900"
+                  />
+                </div>
+
+                {/* Textarea Hành động 100 ngày Tuyến A */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Hành động cụ thể trong 100 ngày tới để nâng điểm môn còn yếu/kéo điểm tổ hợp: *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={trackAAction100Days}
+                    onChange={(e) => setTrackAAction100Days(e.target.value)}
+                    placeholder="VD: Dành 2 tiếng mỗi tối luyện đề Toán phần hàm số và hình học, nhờ bạn kèm thêm..."
+                    className="w-full p-3 text-xs bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:bg-white focus:outline-none rounded-lg font-medium text-slate-800 leading-relaxed"
+                  />
+                </div>
+              </div>
+
+              {/* THẺ TUYẾN B: PHƯƠNG ÁN DỰ PHÒNG AN TOÀN (LƯỚI AN TOÀN) */}
+              <div className="bg-white border-2 border-blue-500/80 p-5 md:p-6 rounded-xl space-y-4 shadow-xs relative">
+                <div className="flex items-center justify-between border-b border-blue-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 bg-blue-100 text-blue-800 rounded-lg text-xs font-black">
+                      🛡️
+                    </span>
+                    <h4 className="text-xs md:text-sm font-black uppercase tracking-wider text-blue-900">
+                      THẺ TUYẾN B: PHƯƠNG ÁN DỰ PHÒNG (LƯỚI AN TOÀN)
+                    </h4>
+                  </div>
+                  <span className="px-2 py-0.5 text-[10px] font-black uppercase bg-blue-100 text-blue-800 rounded">
+                    Lưới Bảo Hiểm
+                  </span>
+                </div>
+
+                {/* Input Text Tuyến B */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Trường hoặc Ngành dự phòng (có điểm chuẩn mềm hơn 2 - 3 điểm): *
+                  </label>
+                  <input
+                    type="text"
+                    value={trackBMajorSchool}
+                    onChange={(e) => setTrackBMajorSchool(e.target.value)}
+                    placeholder="VD: Ngành Luật hoặc SP GDCT tại ĐH Phú Yên / ĐH Tây Nguyên / Hệ CĐ..."
+                    className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:outline-none rounded-lg font-bold text-slate-900"
+                  />
+                </div>
+
+                {/* Textarea Lý do chọn Tuyến B */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Lý do lựa chọn phương án này làm lưới an toàn nếu kỳ thi có biến cố: *
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={trackBReason}
+                    onChange={(e) => setTrackBReason(e.target.value)}
+                    placeholder="VD: Điểm chuẩn năm ngoái vừa sức với học lực hiện tại, cơ hội trúng tuyển cao..."
+                    className="w-full p-3 text-xs bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white focus:outline-none rounded-lg font-medium text-slate-800 leading-relaxed"
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* =========================================================================
+              KHỐI 3: KẾ HOẠCH NÂNG CAO NĂNG LỰC TRÁNH NGUY CƠ THẤT NGHIỆP
+              ========================================================================= */}
+          <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-xl space-y-4 shadow-sm">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+                <Brain className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-sm md:text-base font-black text-slate-900 uppercase tracking-wide">
+                  KHỐI 3: KẾ HOẠCH NÂNG CAO NĂNG LỰC TRÁNH NGUY CƠ THẤT NGHIỆP
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">
+                  Đại học chỉ là bước đệm, năng lực thực chiến mới quyết định khả năng có việc làm và thu nhập bền vững.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs md:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <span>Để không rơi vào nhóm cử nhân thất nghiệp sau này, em cam kết tự rèn luyện 2 năng lực/kỹ năng cụ thể nào ngay từ bây giờ?</span>
+                <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={careerCommitmentSkills}
+                onChange={(e) => setCareerCommitmentSkills(e.target.value)}
+                placeholder="VD: Năng lực ứng dụng AI tạo sinh vào tự học và chứng chỉ Tiếng Anh giao tiếp..."
+                className="w-full p-4 text-xs md:text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none rounded-xl font-medium text-slate-800 leading-relaxed"
+              />
+            </div>
+          </div>
+
+          {/* =========================================================================
+              NÚT CHỐT HẠ & XUẤT BÁO CÁO TỔNG THỂ TOÀN BỘ CHU TRÌNH (CTA LỚN)
+              ========================================================================= */}
+          <div className="p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg">
+            <div className="space-y-1.5 text-center md:text-left">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">
+                Chốt Hạ Toàn Bộ Chu Trình Can Thiệp Phản Tư
+              </span>
+              <h4 className="text-base md:text-lg font-black tracking-tight">
+                Sẵn Sàng Đóng Gói Hồ Sơ Ra Quyết Định Đa Tuyến?
+              </h4>
+              <p className="text-xs text-slate-300 font-medium max-w-xl">
+                Bấm nút bên dưới để đóng gói toàn bộ dữ liệu 5 bước (T0, Holland, Chat Socrates, Step 3, Mentor Step 4 & Action Plan Step 5) và xuất Báo cáo Đối chứng Nghiên cứu.
+              </p>
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSubmitting}
+              className="w-full md:w-auto font-black text-xs md:text-sm uppercase tracking-wider py-4 px-8 gap-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl shrink-0 cursor-pointer"
+            >
+              <span>{isSubmitting ? 'ĐANG ĐÓNG GÓI DỮ LIỆU...' : 'HOÀN TẤT CHU TRÌNH & XUẤT HỒ SƠ PHẢN TƯ TOÀN BỘ 5 BƯỚC (PDF/SUMMARY) ➔'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+        </form>
       )}
 
       {toast && (
