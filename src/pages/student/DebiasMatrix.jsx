@@ -465,10 +465,36 @@ const DebiasMatrix = () => {
             </div>
           </div>
 
+          {/* THANH THAO TÁC XUẤT NHANH NGAY TRÊN ĐẦU BÁO CÁO */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-emerald-50 border-2 border-emerald-400 rounded-xl shadow-xs no-print">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-emerald-950">
+              <Printer className="w-5 h-5 text-emerald-700 shrink-0" />
+              <span>Em có thể bấm nút bên cạnh hoặc nhấn <strong>Ctrl + P</strong> trên bàn phím để xuất bảng này thành file PDF:</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-4 py-2.5 text-xs font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Xuất / In PDF Ngay 🖨️</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadJSON}
+                className="px-3.5 py-2.5 text-xs font-black uppercase tracking-wider bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Tải JSON 📥</span>
+              </button>
+            </div>
+          </div>
+
           {/* =========================================================================
               HỒ SƠ PHẢN TƯ TỔNG HỢP TOÀN BỘ 5 BƯỚC (IN ẤN CHUẨN A4 / XUẤT HỘI ĐỒNG)
               ========================================================================= */}
-          <div id="full-dossier-report" className="bg-white border-2 border-slate-800 p-6 md:p-10 rounded-2xl shadow-sm space-y-8 text-slate-900">
+          <div id="full-dossier-report" className="bg-white border-2 border-slate-800 p-6 md:p-10 rounded-2xl shadow-sm space-y-8 text-slate-900 relative">
             
             {/* Header Báo Cáo Khoa Học */}
             <div className="border-b-2 border-slate-800 pb-6 space-y-2">
@@ -715,6 +741,19 @@ const DebiasMatrix = () => {
                 <span>In Bản Báo Cáo Này (PDF)</span>
               </Button>
             </div>
+          </div>
+
+          {/* NÚT NỔI CỐ ĐỊNH Ở GÓC DƯỚI MÀN HÌNH (FLOATING ACTION BUTTON) */}
+          <div className="fixed bottom-6 right-6 z-50 no-print">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-5 py-3 text-xs md:text-sm font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl transition-all flex items-center gap-2.5 cursor-pointer ring-4 ring-emerald-300/70 hover:scale-105"
+              title="Bấm để in hoặc lưu thành file PDF"
+            >
+              <Printer className="w-5 h-5" />
+              <span>Xuất / In PDF (A4) 🖨️</span>
+            </button>
           </div>
 
         </div>
