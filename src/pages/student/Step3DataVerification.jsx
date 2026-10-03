@@ -410,22 +410,41 @@ export default function Step3DataVerification({
 
             {/* REAL-TIME VISUAL INDICATOR (KHOẢNG CÁCH ĐIỂM) */}
             {scoreGap !== null && (
-              <div className={`mt-4 p-3 rounded-xl border text-xs flex items-center justify-between ${
+              <div className={`mt-4 p-4 rounded-xl border text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 ${
                 scoreGap >= 0 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
-                  : scoreGap >= -1.5 
-                  ? 'bg-amber-50 border-amber-200 text-amber-800' 
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                  : 'bg-rose-50 border-rose-300 text-rose-900'
               }`}>
                 <div>
-                  <span className="font-bold">Điểm chuẩn trung bình 2 năm: {avgCutoff} điểm.</span>
-                  <p className="mt-0.5">
-                    {scoreGap >= 0 
-                      ? '✓ Năng lực hiện tại của em đang nằm trong ngưỡng an toàn xét tuyển.' 
-                      : `⚠️ Năng lực hiện tại đang thấp hơn điểm chuẩn thực tế ${Math.abs(scoreGap)} điểm.`}
+                  <div className="font-extrabold text-sm flex items-center gap-2 mb-1">
+                    {scoreGap >= 0 ? (
+                      <span className="flex items-center gap-1 text-emerald-700">
+                        🌟 LỢI THẾ CẠNH TRANH RÕ RỆT
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-rose-700">
+                        ⚠️ CẢNH BÁO KHOẢNG CÁCH ĐIỂM SỐ
+                      </span>
+                    )}
+                    <span className="font-normal text-xs text-slate-500">
+                      (Điểm chuẩn TB 2 năm: {avgCutoff} điểm)
+                    </span>
+                  </div>
+                  
+                  <p className="leading-relaxed">
+                    {scoreGap >= 0 ? (
+                      `Dữ liệu đối chứng ghi nhận em đang có lợi thế cạnh tranh rất tốt (+${scoreGap} điểm) để hiện thực hóa mục tiêu ngành học mong muốn. Tuy nhiên, đề thi tốt nghiệp THPT luôn có độ phân hóa khắt khe hơn học bạ; hãy tiếp tục duy trì kỷ luật ôn tập và rèn luyện tâm lý phòng thi vững vàng để chuyển hóa trọn vẹn ưu thế này thành điểm số thực tế!`
+                    ) : (
+                      `Điểm học bạ hiện tại (${totalStudentScore} điểm) đang thấp hơn điểm chuẩn thực tế ${Math.abs(scoreGap)} điểm. Em cần tập trung bứt phá môn sở trường hoặc kích hoạt phương án nguyện vọng dự phòng vừa sức.`
+                    )}
                   </p>
                 </div>
-                <div className="font-extrabold text-sm px-2.5 py-1 rounded-lg bg-white/80 shadow-sm">
+
+                <div className={`font-black text-sm px-3.5 py-2 rounded-lg shrink-0 self-start md:self-center shadow-sm border ${
+                  scoreGap >= 0 
+                    ? 'bg-white text-emerald-700 border-emerald-200' 
+                    : 'bg-white text-rose-700 border-rose-200'
+                }`}>
                   {scoreGap > 0 ? `+${scoreGap}` : scoreGap} điểm
                 </div>
               </div>
