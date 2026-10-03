@@ -162,6 +162,7 @@ export default function Step3DataVerification({
       employmentRate: parseFloat(employmentRate) || 0,
       laborMarketTrend,
       unemploymentReasons,
+      reflectionText: reflectionText.trim(),
       triageDecision: requiresInDepth ? 'In-depth' : 'Fast-Track',
       timestamp: new Date().toISOString()
     };
@@ -169,6 +170,7 @@ export default function Step3DataVerification({
     // Tự động lưu cache cho bước 4 / bước 5 và tương thích ngược
     try {
       localStorage.setItem('cbas_step3_triage', JSON.stringify(resultData));
+      localStorage.setItem('cbas_step3_reflection', reflectionText.trim());
       const step3Evidence = {
         cutoff_score: `${resultData.targetCombination}: ${resultData.totalStudentScore}đ vs Chuẩn TB ${resultData.avgCutoff}đ (Lệch: ${resultData.scoreGap}đ)`,
         tuition: `${resultData.tuitionFee} triệu/năm`,
