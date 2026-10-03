@@ -102,7 +102,7 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* Grid 6 Thẻ Phối Hợp Trụ Cột Can Thiệp */}
+      {/* Grid 5 Thẻ Phối Hợp Trụ Cột Can Thiệp */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Thẻ 1: Trắc nghiệm Holland */}
         <Link 
@@ -227,7 +227,7 @@ const StudentDashboard = () => {
           </div>
         </Link>
 
-        {/* Thẻ 5: Bảng Nhật ký Phản tư Ra Quyết định */}
+        {/* Thẻ 5: Kế Hoạch Hành Động Tự Chủ (Action Triad) */}
         <Link 
           to="/student/reflection"
           className="bg-white border border-slate-200 p-5 rounded-sm hover:border-rose-500 transition-all shadow-sm group space-y-3 flex flex-col justify-between"
@@ -244,7 +244,7 @@ const StudentDashboard = () => {
             <div>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 group-hover:text-rose-600 transition-colors">
-                  📝 Nhật Ký Phản Tư Ra Quyết Định
+                  🎯 Kế Hoạch Hành Động Tự Chủ (Action Triad)
                 </h3>
                 {hasDebias && (
                   <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-100 text-rose-900 border border-rose-300 rounded-sm">
@@ -253,41 +253,12 @@ const StudentDashboard = () => {
                 )}
               </div>
               <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                Soi chiếu năng lực thực tế, nhận diện rủi ro & chốt nguyện vọng vững chắc.
+                Tam giác hành động thực chiến: Học tập bứt phá, Khám phá thực tế & Rèn luyện kỹ năng thời kỳ AI.
               </p>
             </div>
           </div>
           <div className="flex items-center text-xs font-bold text-rose-600 gap-1 pt-2 border-t border-slate-100">
-            <span>Mở nhật ký phản tư</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-          </div>
-        </Link>
-
-        {/* Thẻ 6: Lộ trình Hướng nghiệp 3 Khối Lớp */}
-        <Link 
-          to="/student/roadmap"
-          className="bg-white border border-slate-200 p-5 rounded-sm hover:border-brand-500 transition-all shadow-sm group space-y-3 flex flex-col justify-between"
-        >
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="p-3 bg-brand-50 text-brand-600 rounded-sm w-fit border border-brand-100 group-hover:scale-105 transition-transform">
-                <Milestone className="w-6 h-6" />
-              </div>
-              <span className="text-[10px] font-extrabold px-2 py-0.5 bg-brand-100 text-brand-800 rounded-sm uppercase tracking-wider">
-                Bước 6
-              </span>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 group-hover:text-brand-600 transition-colors">
-                🎯 Lộ Trình Mục Tiêu & Ký Cam Kết Hành Động
-              </h3>
-              <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
-                Ma trận kế hoạch hành động 3 khối lớp, thiết lập mục tiêu điểm số và xuất bản cam kết PDF.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center text-xs font-bold text-brand-600 gap-1 pt-2 border-t border-slate-100">
-            <span>Theo dõi lộ trình</span>
+            <span>Thiết lập kế hoạch hành động</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>

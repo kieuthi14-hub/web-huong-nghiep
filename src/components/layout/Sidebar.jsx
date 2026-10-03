@@ -31,8 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
     { to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
     { to: '/student/booking', label: '4️⃣ Tư vấn 1-1 Thực tế', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
-    { to: '/student/reflection', label: '5️⃣ Nhật ký Ra Quyết định', icon: <Brain className="w-4 h-4 text-rose-400" /> },
-    { to: '/student/roadmap', label: '6️⃣ Lộ trình Mục tiêu & Ký Cam kết', icon: <Milestone className="w-4 h-4 text-cyan-400" /> },
+    { to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động Tự chủ', icon: <Brain className="w-4 h-4 text-rose-400" /> },
   ]
 
   const counselorLinks = [
