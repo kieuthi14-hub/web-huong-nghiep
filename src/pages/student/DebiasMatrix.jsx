@@ -259,26 +259,49 @@ const DebiasMatrix = () => {
       {/* CSS CHO IN ẤN CHUẨN A4 - BÁO CÁO TỔNG HỢP 5 BƯỚC */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 10mm 12mm 15mm 12mm;
+          }
+          html, body, #root, main {
+            overflow: visible !important;
+            height: auto !important;
+            min-height: auto !important;
+            max-height: none !important;
+            position: static !important;
+            background: #ffffff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          /* Ẩn triệt để navbar, sidebar và các phần giao diện ngoài */
+          header, aside, nav, footer, .no-print {
+            display: none !important;
+          }
           body * {
-            visibility: hidden !important;
+            visibility: hidden;
           }
           #full-dossier-report, #full-dossier-report * {
             visibility: visible !important;
           }
           #full-dossier-report {
-            position: absolute !important;
+            display: block !important;
+            position: relative !important;
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
+            max-width: 100% !important;
             margin: 0 !important;
-            padding: 24px !important;
+            padding: 20px !important;
             border: 2px solid #0f172a !important;
+            border-radius: 8px !important;
             box-shadow: none !important;
             background: #ffffff !important;
             color: #0f172a !important;
+            page-break-after: auto !important;
           }
-          .no-print {
-            display: none !important;
+          .print-break-avoid {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -286,7 +309,7 @@ const DebiasMatrix = () => {
       {/* =========================================================================
           1. HEADER BƯỚC 5 (CHUẨN ĐẶC TẢ ACTION TRIAD - VISEF 2026)
           ========================================================================= */}
-      <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-xl space-y-4 shadow-sm relative overflow-hidden">
+      <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-xl space-y-4 shadow-sm relative overflow-hidden no-print">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-brand-50 to-indigo-50 rounded-full blur-2xl opacity-60 -mr-16 -mt-16 pointer-events-none" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -338,7 +361,7 @@ const DebiasMatrix = () => {
         <div className="space-y-8 animate-reveal">
           
           {/* BANNER CHÚC MỪNG HOÀN TẤT CHU TRÌNH */}
-          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 md:p-8 rounded-xl shadow-md space-y-4">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white p-6 md:p-8 rounded-xl shadow-md space-y-4 no-print">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-start gap-3.5">
                 <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl text-amber-300 shrink-0">
@@ -397,7 +420,7 @@ const DebiasMatrix = () => {
           </div>
 
           {/* 3 THẺ ĐỐI CHỨNG CHỈ SỐ NHẬN THỨC VÀ TAM GIÁC HÀNH ĐỘNG */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 no-print">
             {/* Thẻ 1: Delta Tự Tin T0 vs T2 */}
             <div className="bg-white border border-slate-200 p-5 rounded-xl space-y-3 shadow-xs">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -517,7 +540,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* PHẦN 1: TỔNG HỢP BƯỚC 1 (T0) */}
-            <div className="space-y-3">
+            <div className="space-y-3 print-break-avoid">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">1</span>
                 <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
@@ -543,7 +566,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* PHẦN 2: TỔNG HỢP BƯỚC 2 (SOCRATES CHAT) */}
-            <div className="space-y-3">
+            <div className="space-y-3 print-break-avoid">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">2</span>
                 <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
@@ -564,7 +587,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* PHẦN 3: TỔNG HỢP BƯỚC 3 (ĐỐI CHỨNG DỮ LIỆU) */}
-            <div className="space-y-3">
+            <div className="space-y-3 print-break-avoid">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">3</span>
                 <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
@@ -601,7 +624,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* PHẦN 4: TỔNG HỢP BƯỚC 4 (MENTORSHIP & POST-LOG) */}
-            <div className="space-y-3">
+            <div className="space-y-3 print-break-avoid">
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[11px] font-black flex items-center justify-center">4</span>
                 <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
@@ -629,7 +652,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* PHẦN 5: BƯỚC 5 - TAM GIÁC HÀNH ĐỘNG TỰ CHỦ (ACTION TRIAD) */}
-            <div className="space-y-4">
+            <div className="space-y-4 print-break-avoid">
               <div className="flex items-center gap-2 border-b-2 border-slate-900 pb-2">
                 <span className="w-5 h-5 rounded-full bg-brand-600 text-white text-[11px] font-black flex items-center justify-center">5</span>
                 <h3 className="text-xs md:text-sm font-black uppercase tracking-wider text-slate-900">
@@ -702,7 +725,7 @@ const DebiasMatrix = () => {
             </div>
 
             {/* Chữ Ký Xác Nhận */}
-            <div className="pt-6 border-t-2 border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-700">
+            <div className="pt-6 border-t-2 border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-slate-700 print-break-avoid">
               <div className="space-y-1">
                 <p className="font-bold">Chứng nhận hoàn thành can thiệp CBAS</p>
                 <p className="text-slate-500 text-[11px]">Hệ thống Hướng nghiệp & Tự chủ Ra quyết định</p>
