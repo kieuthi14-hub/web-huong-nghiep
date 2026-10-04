@@ -172,6 +172,66 @@ export function extractSubjectsFeedback(text) {
   return { strongSubject, weakSubject };
 }
 
+export function detectGoalShift(text) {
+  if (!text || typeof text !== 'string') return null;
+  const clean = text.toLowerCase().trim();
+
+  const knownMajors = [
+    { patterns: ['sư phạm giáo dục chính trị', 'sp giáo dục chính trị', 'giáo dục chính trị', 'sư phạm gdct', 'sp gdct'], name: 'Sư phạm Giáo dục Chính trị', field: 'soc' },
+    { patterns: ['sư phạm giáo dục công dân', 'sp giáo dục công dân', 'giáo dục công dân', 'sư phạm gdcd', 'sp gdcd'], name: 'Sư phạm Giáo dục Công dân', field: 'soc' },
+    { patterns: ['sư phạm ngữ văn', 'sư phạm văn', 'sp văn', 'sp ngữ văn'], name: 'Sư phạm Ngữ văn', field: 'soc' },
+    { patterns: ['sư phạm tiếng anh', 'sư phạm anh', 'sp tiếng anh', 'sp anh', 'ngôn ngữ anh'], name: 'Sư phạm Tiếng Anh', field: 'lang' },
+    { patterns: ['sư phạm lịch sử', 'sư phạm sử', 'sp sử', 'sp lịch sử'], name: 'Sư phạm Lịch sử', field: 'soc' },
+    { patterns: ['sư phạm địa lý', 'sư phạm địa', 'sp địa', 'sp địa lý'], name: 'Sư phạm Địa lý', field: 'soc' },
+    { patterns: ['sư phạm toán', 'sp toán', 'sư phạm toán học'], name: 'Sư phạm Toán', field: 'sci' },
+    { patterns: ['sư phạm vật lý', 'sư phạm lý', 'sp lý', 'sp vật lý'], name: 'Sư phạm Vật lý', field: 'sci' },
+    { patterns: ['sư phạm hóa học', 'sư phạm hóa', 'sp hóa'], name: 'Sư phạm Hóa học', field: 'sci' },
+    { patterns: ['sư phạm sinh học', 'sư phạm sinh', 'sp sinh'], name: 'Sư phạm Sinh học', field: 'sci' },
+    { patterns: ['sư phạm tin học', 'sư phạm tin', 'sp tin'], name: 'Sư phạm Tin học', field: 'tech' },
+    { patterns: ['giáo dục tiểu học', 'sp tiểu học', 'sư phạm tiểu học'], name: 'Giáo dục Tiểu học', field: 'edu' },
+    { patterns: ['giáo dục mầm non', 'sp mầm non', 'sư phạm mầm non'], name: 'Giáo dục Mầm non', field: 'edu' },
+    { patterns: ['công nghệ thông tin', 'cntt', 'khoa học máy tính', 'kỹ thuật phần mềm'], name: 'Công nghệ Thông tin', field: 'tech' },
+    { patterns: ['quản trị kinh doanh', 'marketing', 'kinh doanh quốc tế', 'thương mại điện tử'], name: 'Quản trị Kinh doanh', field: 'biz' },
+    { patterns: ['tài chính ngân hàng', 'kế toán', 'kiểm toán'], name: 'Tài chính - Ngân hàng', field: 'biz' },
+    { patterns: ['luật kinh tế', 'luật dân sự', 'ngành luật', 'học luật', 'khoa luật'], name: 'Ngành Luật', field: 'law' },
+    { patterns: ['y đa khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'dược học'], name: 'Y - Dược', field: 'med' },
+    { patterns: ['tâm lý học', 'tâm lý giáo dục', 'công tác xã hội'], name: 'Tâm lý học & Xã hội', field: 'soc' }
+  ];
+
+  for (const item of knownMajors) {
+    if (item.patterns.some(p => clean.includes(p))) {
+      return {
+        newMajor: item.name,
+        field: item.field
+      };
+    }
+  }
+
+  const matchGeneric = clean.match(/(?:dự định|tính|muốn|đổi sang|chuyển sang|thi|học)\s+(?:ngành|chuyên ngành)\s+([a-zà-ỹ\s]{3,30}?)(?:\s+(?:mà|nhưng|tại|ở|ạ|được|có|để|[.,!?]|$))/i);
+  if (matchGeneric && matchGeneric[1]) {
+    const candidate = matchGeneric[1].trim();
+    if (candidate.length >= 3 && !['này', 'đó', 'kia', 'gì', 'nào', 'khác'].includes(candidate)) {
+      return {
+        newMajor: candidate.charAt(0).toUpperCase() + candidate.slice(1),
+        field: 'other'
+      };
+    }
+  }
+
+  return null;
+}
+
+export function isAskingAboutSubjectsOrCombos(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim();
+  const patterns = [
+    'chưa biết xét môn gì', 'chưa biết thi môn gì', 'xét môn gì', 'thi môn gì', 'tổ hợp gì',
+    'xét tổ hợp nào', 'tổ hợp môn nào', 'khối nào', 'xét khối gì', 'gồm những môn nào',
+    'chưa rõ tổ hợp', 'chưa biết khối', 'chưa biết tổ hợp'
+  ];
+  return patterns.some(p => clean.includes(p));
+}
+
 export default function Step2SocraticAgent() {
   const [chatStage, setChatStage] = useState(1);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -333,6 +393,28 @@ Với mỗi tin nhắn của học sinh, hãy tự đặt câu hỏi trong tiề
     const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
     const isBranchB = isUndecidedOrVague(career);
 
+    // Nhận diện chuyển biến mục tiêu / thắc mắc ngành mới từ tin nhắn học sinh
+    const goalShift = detectGoalShift(userText);
+    const isShifted = Boolean(goalShift && goalShift.newMajor.toLowerCase() !== career.toLowerCase());
+    const effectiveCareer = isShifted ? goalShift.newMajor : (profile?.shiftedMajor || career);
+    const askingCombo = isAskingAboutSubjectsOrCombos(userText);
+    const lowerUser = (userText || '').toLowerCase();
+
+    let adaptiveDirective = '';
+    if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị')) {
+      adaptiveDirective = `\n\n[CHỈ DẪN QUAN TRỌNG KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP MÔN]:\n` +
+        `- Học sinh vừa đề cập ngành: "${effectiveCareer}" và/hoặc hỏi về tổ hợp môn ("${userText}").\n` +
+        `- TUYỆT ĐỐI KHÔNG ÉP HỌC SINH QUAY LẠI NGÀNH CŨ ("${career}")! Hãy nhiệt liệt hoan nghênh và công nhận bước ngoặt chuyển biến nhận thức (Turning Point) này của học sinh khi em dũng cảm nhìn lại năng lực thực tế.\n` +
+        `- NẾU HỌC SINH HỎI VỀ MÔN XÉT TUYỂN HOẶC NHẮC ĐẾN NGÀNH SƯ PHẠM GIÁO DỤC CHÍNH TRỊ / GDCD:\n` +
+        `  + Phải giải thích rõ ngành này xét tuyển các tổ hợp: C19 (Ngữ văn, Lịch sử, Giáo dục Kinh tế và Pháp luật - KTPL), C20 (Ngữ văn, Địa lý, KTPL), C00 (Văn, Sử, Địa), D14 (Văn, Sử, Anh), D01 (Toán, Văn, Anh)...\n` +
+        `  + Nhấn mạnh: Học tốt môn KTPL là một lợi thế điểm số cực kỳ đắt giá khi xét tuyển tổ hợp C19 hoặc C20!\n` +
+        `  + Đối chất thực tế: Chỉ tiêu ngành này thường khá ít, điểm chuẩn thường rất cao (25 - 28 điểm). Để trúng tuyển, không chỉ môn KTPL điểm cao mà môn Văn và môn Sử (hoặc Địa/Anh) đi kèm cũng phải từ 8.0 - 8.5+ điểm, không được để môn nào kéo tụt tổng điểm.\n` +
+        `- Chiến lược Thích ứng Đa tầng PHẢI THIẾT LẬP HOÀN TOÀN THEO NGÀNH MỚI "${effectiveCareer}":\n` +
+        `  + Tầng 1: Kế hoạch bứt phá tối đa môn thế mạnh (như KTPL) và kéo điểm các môn trong tổ hợp xét tuyển của ngành ${effectiveCareer} để đỗ vào trường đại học mục tiêu.\n` +
+        `  + Tầng 2: Chuẩn bị nguyện vọng dự phòng các ngành gần (Khối Khoa học Xã hội, Luật, Quản lý nhà nước, Công tác xã hội hoặc Sư phạm tại các trường lân cận vừa sức).\n` +
+        `  + Tầng 3: Lưới an toàn với hệ Cao đẳng Sư phạm hoặc các hệ đào tạo thực hành dịch vụ pháp lý, hành chính.\n`;
+    }
+
     const specialDirective = specialInstruction ? `\n\nCHỈ DẪN ĐẶC BIỆT KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}\n` : '';
 
     if (!isBranchB) {
@@ -382,16 +464,16 @@ BỐI CẢNH VÒNG 2 (LƯỢT THÁCH THỨC VIỆC LÀM & KỲ VỌNG THU NHẬP
 Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 3:
-          return `${SOCRATIC_PERSONA}${specialDirective}
+          return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
 BỐI CẢNH VÒNG 3 (LƯỢT ĐỐI CHẤT TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
-- Ngành mong muốn: ${career}
+- Ngành mong muốn hiện tại: ${effectiveCareer}
 - Trường đại học mục tiêu: ${uni}
 - Câu trả lời của học sinh ở Stage 2 (về thu nhập/AI/cạnh tranh): "${userText}"
 
 [NHIỆM VỤ DUY NHẤT Ở LƯỢT 3]:
 1. Ghi nhận ngắn gọn góc nhìn của học sinh về việc làm/thu nhập.
 2. Dẫn dắt vào bài toán điểm số với ĐÚNG CÂU HỎI SAU:
-"Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${career} tại ${uni}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
+"Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${uni}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
 
 [NGHIÊM CẤM TUYỆT ĐỐI]:
 - TUYỆT ĐỐI KHÔNG đưa ra kết luận hay giải pháp hạ bậc ở lượt này.
@@ -403,16 +485,18 @@ Quy chuẩn: Dưới 130 từ. Giữ âm hưởng đồng hành, tôn trọng.`;
 
         case 4:
         default:
-          return `${SOCRATIC_PERSONA}${specialDirective}
+          return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
 BỐI CẢNH VÒNG 4 (LƯỢT KẾT THÚC & TỔNG KẾT THEO MÔ HÌNH HẠ BẬC MỀM - SOFT LADDERING):
-- Ngành mong muốn: ${career}
+- Ngành mong muốn hiện tại: ${effectiveCareer} (Ban đầu: ${career})
 - Trường đại học mục tiêu: ${uni}
 - Câu trả lời của học sinh ở Stage 3 (về tổ hợp môn/môn sở trường/môn đuối sức): "${userText}"
 
 [NHIỆM VỤ DUY NHẤT Ở LƯỢT 4]:
-1. Phân tích môn thế mạnh và môn yếu học sinh vừa nêu trong tin nhắn "${userText}". Ghi nhận môn thế mạnh và chỉ ra rủi ro điểm chuẩn nếu môn yếu kéo tụt tổng điểm tổ hợp xét tuyển vào ${career} tại ${uni} (24 - 27 điểm).
-2. Trình bày Chiến lược Thích ứng Đa tầng (3 tầng nấc theo Soft Laddering):
-   - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${uni}.
+1. Phân tích môn thế mạnh và môn yếu học sinh vừa nêu trong tin nhắn "${userText}".
+   - Nếu học sinh đổi ý sang ngành mới "${effectiveCareer}" hoặc hỏi tổ hợp xét tuyển, hãy công nhận ngay sự chuyển biến đó và giải đáp rõ ràng tổ hợp xét tuyển của ngành ${effectiveCareer} (như C19, C20 cho KTPL và Sư phạm Giáo dục Chính trị).
+   - Chỉ ra thách thức điểm chuẩn thực tế (25 - 28 điểm) và rủi ro nếu các môn còn lại trong tổ hợp bị đuối điểm.
+2. Trình bày Chiến lược Thích ứng Đa tầng (3 tầng nấc theo Soft Laddering) XOAY QUANH NGÀNH ${effectiveCareer}:
+   - Tầng 1 (Nguyện vọng 1): Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${effectiveCareer} tại ${uni}.
    - Tầng 2 (Nguyện vọng 2): Nghiên cứu các trường Đại học dự phòng có cùng ngành hoặc ngành liên quan với ngưỡng điểm chuẩn vừa sức hơn (ví dụ ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên...).
    - Tầng 3 (Lưới an toàn): Phương án dự phòng cuối cùng với hệ Cao đẳng thực hành / đào tạo nghề chất lượng cao để đảm bảo luôn có tay nghề vững chắc.
 3. KẾT LỆNH BẮT BUỘC:
@@ -420,6 +504,7 @@ BỐI CẢNH VÒNG 4 (LƯỢT KẾT THÚC & TỔNG KẾT THEO MÔ HÌNH HẠ B�
 
 [CẢNH BÁO TỐI CAO - ĐẶC BIỆT]:
 - TUYỆT ĐỐI KHÔNG ĐƯỢC đặt thêm bất kỳ câu hỏi nào. KHÔNG CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
+- TUYỆT ĐỐI KHÔNG ép học sinh thi ngành cũ "${career}" nếu học sinh đã nêu hướng đi mới "${effectiveCareer}".
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.
 Quy chuẩn: Dưới 150 từ. Dứt khoát, trao quyền tự quyết.`;
       }
@@ -484,6 +569,11 @@ Quy chuẩn: Dưới 120 từ.`;
     const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
     const isBranchB = isUndecidedOrVague(career);
 
+    const goalShift = detectGoalShift(userText);
+    const isShifted = Boolean(goalShift && goalShift.newMajor.toLowerCase() !== career.toLowerCase());
+    const effectiveCareer = isShifted ? goalShift.newMajor : (profile?.shiftedMajor || career);
+    const lowerUser = (userText || '').toLowerCase();
+
     if (specialInstruction) {
       return `Thầy rất thấu cảm và trân trọng sự trung thực của em khi chia sẻ: "${userText}".\n\n` +
         `Những rào cản kỹ năng như giao tiếp trước đám đông hay áp lực tính toán đều có thể rèn luyện và bồi đắp được theo thời gian. Tuy nhiên, đối chiếu với nhóm tính cách Holland của em (${holland}), điều cốt lõi là em cần lắng nghe xem bản thân có thực sự tìm thấy niềm hứng khởi khi gắn bó với đặc thù công việc hay không?\n\n` +
@@ -491,8 +581,6 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     if (!isBranchB) {
-      const lowerUser = (userText || '').toLowerCase();
-
       // 1. Phản xạ tâm lý bất ngờ: Thực dụng / nói về tiền / dạy thêm
       const isPragmaticMoney = [
         'nhiều tiền', 'dạy thêm', 'lương', 'thu nhập', 'kiếm tiền', 'kiếm dc nhiều', 'giàu', 'kinh tế'
@@ -520,11 +608,37 @@ Quy chuẩn: Dưới 120 từ.`;
 
         case 3:
           return `Thầy rất ủng hộ tinh thần tích cực và nhận thức thực tế của em về thị trường lao động.\n\n` +
-            `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${career}** tại **${uni}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
+            `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${effectiveCareer}** tại **${uni}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
 
         case 4:
         default: {
-          const lowerUser = (userText || '').toLowerCase();
+          // TRƯỜNG HỢP ĐẶC BIỆT: HỌC SINH NÊU NGÀNH SƯ PHẠM GIÁO DỤC CHÍNH TRỊ / GDCD / KTPL
+          if (effectiveCareer.toLowerCase().includes('chính trị') || effectiveCareer.toLowerCase().includes('công dân') || lowerUser.includes('ktpl') || lowerUser.includes('chính trị')) {
+            return `Thầy rất hoan nghênh và ghi nhận bước chuyển biến nhận thức rất thực tế của em! Việc em tự nhìn nhận lại năng lực và chủ động hướng sang ngành **Sư phạm Giáo dục Chính trị** (đào tạo giáo viên dạy môn KTPL và GDCD) là một quyết định rất đáng khích lệ khi em nhận ra thế mạnh của mình.\n\n` +
+              `Về tổ hợp xét tuyển, ngành Sư phạm Giáo dục Chính trị hiện nay tuyển sinh các tổ hợp trọng điểm như:\n` +
+              `• **C19** (Ngữ văn, Lịch sử, Giáo dục Kinh tế và Pháp luật) hoặc **C20** (Ngữ văn, Địa lý, GDKT&PL).\n` +
+              `• **C00** (Ngữ văn, Lịch sử, Địa lý) hoặc **D14** (Ngữ văn, Lịch sử, Tiếng Anh) / **D01** (Toán, Văn, Anh).\n` +
+              `Việc em **học tốt môn KTPL** chính là một "vũ khí điểm số" cực kỳ lợi thế nếu em chọn xét tuyển theo tổ hợp C19 hoặc C20!\n\n` +
+              `Tuy nhiên, em cần lưu ý rằng ngành Sư phạm Giáo dục Chính trị có chỉ tiêu tuyển sinh thường khá ít, do đó điểm chuẩn trúng tuyển luôn ở mức rất cao (thường từ 25 đến 28 điểm). Để trúng tuyển, chỉ giỏi môn KTPL là chưa đủ mà em cần đảm bảo cả môn Ngữ văn và môn Lịch sử (hoặc Địa lý) cũng phải đạt từ 8 - 8.5 điểm trở lên, không được để môn nào kéo tụt tổng điểm.\n\n` +
+              `Để giúp em hiện thực hóa ước mơ trở thành giáo viên một cách vững vàng nhất, Thầy đề xuất Chiến lược Thích ứng Đa tầng như sau:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1 - Bứt phá)**: Tối ưu tối đa điểm môn KTPL (mục tiêu 9+) và lên kế hoạch kéo điểm môn Văn, Sử trong tổ hợp C19 để tự tin cạnh tranh vào ngành Sư phạm Giáo dục Chính trị tại trường đại học mục tiêu.\n\n` +
+              `• **Tầng 2 (Nguyện vọng 2 - Dự phòng vừa sức)**: Đăng ký thêm nguyện vọng dự phòng vào các ngành đào tạo gần hoặc cùng khối xã hội như Luật, Quản lý nhà nước, Công tác xã hội hoặc các trường Đại học lân cận có đào tạo sư phạm với điểm chuẩn mềm hơn.\n\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Xây dựng lưới an toàn với hệ Cao đẳng Sư phạm hoặc các ngành thực hành dịch vụ pháp lý, hành chính - văn phòng để em luôn chủ động trong mọi tình huống.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm của ngành nhé!`;
+          }
+
+          // TRƯỜNG HỢP HỌC SINH ĐỔI SANG NGÀNH KHÁC BẤT KỲ
+          if (isShifted) {
+            const { strongSubject } = extractSubjectsFeedback(userText);
+            const strongName = strongSubject || 'môn sở trường của em';
+            return `Thầy rất hoan nghênh và ghi nhận bước chuyển biến nhận thức rất thực tế của em khi chủ động hướng sang ngành **${effectiveCareer}** phù hợp hơn với năng lực.\n\n` +
+              `Có thế mạnh ở ${strongName} là điểm tựa rất tốt. Tuy nhiên, em cần tìm hiểu kỹ các tổ hợp xét tuyển của ngành ${effectiveCareer} để đảm bảo không môn nào trong tổ hợp bị đuối điểm làm kéo tụt tổng điểm chuẩn trúng tuyển.\n\n` +
+              `Để làm chủ lộ trình, Thầy định hướng Chiến lược Thích ứng Đa tầng như sau:\n\n` +
+              `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá tối đa môn sở trường và các môn trong tổ hợp xét tuyển của ngành ${effectiveCareer}.\n` +
+              `• **Tầng 2 (Nguyện vọng 2)**: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học có cùng ngành hoặc ngành liên quan vừa sức hơn.\n` +
+              `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn với các hệ đào tạo thực hành chất lượng cao để đảm bảo cơ hội việc làm vững chắc.\n\n` +
+              `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
+          }
 
           // Nếu học sinh phản biện hoặc CHƯA khai báo môn học cụ thể:
           // TUYỆT ĐỐI KHÔNG ĐƯỢC kết thúc, không được tự ý phán đoán "đều đều" hay khuyên Cao đẳng!
@@ -614,6 +728,17 @@ Quy chuẩn: Dưới 120 từ.`;
 
   // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
   const callGeminiSocratic = async (historyMessages, userText, stage, specialInstruction = null) => {
+    const goalShift = detectGoalShift(userText);
+    const curMajor = studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm';
+    const effectiveMajor = (goalShift && goalShift.newMajor) ? goalShift.newMajor : (studentProfile?.shiftedMajor || curMajor);
+    const effectiveProfile = {
+      ...studentProfile,
+      targetMajor: effectiveMajor,
+      target_career: effectiveMajor,
+      targetCareer: effectiveMajor,
+      shiftedMajor: effectiveMajor
+    };
+
     // 3.1. Thử gọi Serverless Backend /api/socrates-chat hoặc /api/chat
     const endpointsToTry = ['/api/socrates-chat', '/api/chat'];
     const requestPayload = {
@@ -622,19 +747,19 @@ Quy chuẩn: Dưới 120 từ.`;
       round: stage,
       studentProfile: {
         hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
-        targetMajor: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        targetMajor: effectiveMajor,
         targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || 'ĐH Quy Nhơn',
         reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
         initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
         expectedIncome: studentProfile?.expectedIncome || studentProfile?.expected_income || '10 - 15 triệu/tháng',
         // Tương thích ngược:
-        targetCareer: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        targetCareer: effectiveMajor,
         confidenceT0: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
         competenceSelfEval: 'Vừa sức'
       },
       userProfile: {
         hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
-        targetMajor: studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm',
+        targetMajor: effectiveMajor,
         targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || 'ĐH Quy Nhơn',
         reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
         initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
@@ -645,7 +770,7 @@ Quy chuẩn: Dưới 120 từ.`;
       // Hỗ trợ trường tương thích:
       message: userText,
       history: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
-      anchor: studentProfile,
+      anchor: effectiveProfile,
       specialInstruction: specialInstruction
     };
 
@@ -687,7 +812,8 @@ Quy chuẩn: Dưới 120 từ.`;
               replyText: cleaned,
               chatStage: isReallyComplete ? 4 : stage,
               isCompleted: isReallyComplete,
-              isComplete: isReallyComplete
+              isComplete: isReallyComplete,
+              shiftedMajor: sData?.shiftedMajor || (goalShift ? goalShift.newMajor : null)
             };
           }
         }
@@ -705,7 +831,7 @@ Quy chuẩn: Dưới 120 từ.`;
         || fallbackKey;
 
       const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(stage, studentProfile, userText, specialInstruction);
+      const systemPrompt = generatePromptForRound(stage, effectiveProfile, userText, specialInstruction);
 
       const formattedContents = historyMessages.map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
@@ -771,7 +897,8 @@ Quy chuẩn: Dưới 120 từ.`;
               replyText: text.trim(),
               chatStage: isReallyComplete ? 4 : stage,
               isCompleted: isReallyComplete,
-              isComplete: isReallyComplete
+              isComplete: isReallyComplete,
+              shiftedMajor: goalShift ? goalShift.newMajor : null
             };
           }
         }
@@ -781,7 +908,7 @@ Quy chuẩn: Dưới 120 từ.`;
     }
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    let fallbackText = generateHeuristicFallback(stage, studentProfile, userText, specialInstruction);
+    let fallbackText = generateHeuristicFallback(stage, effectiveProfile, userText, specialInstruction);
     const isReallyComplete = isStage4;
     if (isReallyComplete) {
       fallbackText = fallbackText.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
@@ -798,7 +925,8 @@ Quy chuẩn: Dưới 120 từ.`;
       replyText: fallbackText,
       chatStage: isReallyComplete ? 4 : stage,
       isCompleted: isReallyComplete,
-      isComplete: isReallyComplete
+      isComplete: isReallyComplete,
+      shiftedMajor: goalShift ? goalShift.newMajor : null
     };
   };
 
@@ -984,6 +1112,36 @@ Quy chuẩn: Dưới 120 từ.`;
       } else {
         aiResult = await callGeminiSocratic(nextHistory, cleanText, targetStage, reflex.instructionForAI);
       }
+
+      // ĐỒNG BỘ CHUYỂN BIẾN MỤC TIÊU (GOAL SHIFT / TURNING POINT) VÀO PROFILE & LOCALSTORAGE:
+      const goalShift = detectGoalShift(cleanText);
+      const newMajor = goalShift?.newMajor || aiResult?.shiftedMajor;
+      if (newMajor && (!studentProfile?.targetMajor || newMajor.toLowerCase() !== studentProfile.targetMajor.toLowerCase())) {
+        setStudentProfile(prev => ({
+          ...prev,
+          targetMajor: newMajor,
+          target_career: newMajor,
+          shiftedMajor: newMajor
+        }));
+        try {
+          const rawProf = localStorage.getItem("cbas_user_profile");
+          const profObj = rawProf ? JSON.parse(rawProf) : {};
+          profObj.targetMajor = newMajor;
+          profObj.target_career = newMajor;
+          profObj.shiftedMajor = newMajor;
+          localStorage.setItem("cbas_user_profile", JSON.stringify(profObj));
+        } catch (e) {}
+        try {
+          const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
+          if (rawAnchor) {
+            const anchorObj = JSON.parse(rawAnchor);
+            anchorObj.target_career = newMajor;
+            anchorObj.targetMajor = newMajor;
+            anchorObj.shiftedMajor = newMajor;
+            localStorage.setItem("cbas_anchor_data", JSON.stringify(anchorObj));
+          }
+        } catch (e) {}
+      }
       
       const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
       const isFinished = targetStage === 4 && (aiResult?.isComplete === true || aiResult?.isCompleted === true);
@@ -1023,8 +1181,9 @@ Quy chuẩn: Dưới 120 từ.`;
               const isExtrinsic = ['bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình', 'tiền', 'thu nhập', 'dạy thêm', 'kiếm tiền', 'trào lưu', 'hot', 'ổn định', 'bắt ép'].some(k => lower.includes(k));
               const isInsecureOrWeak = ['chưa', 'lo', 'sợ', 'áp lực', 'không biết', 'khó', 'đuối', 'kém', 'yếu', 'dốt', 'thấp', 'mất gốc', 'tệ', 'không giỏi', 'không chắc'].some(k => lower.includes(k));
               const isComboIssue = ['chưa tìm hiểu', 'chưa biết tổ hợp', 'chưa định hình', 'đều đều', 'deu deu', 'trung bình', 'ngang nhau', 'bằng nhau', 'không có môn nổi trội'].some(k => lower.includes(k));
+              const isGoalShiftTurn = Boolean(detectGoalShift(m.text));
 
-              if (isExtrinsic || isInsecureOrWeak || isComboIssue) {
+              if (isExtrinsic || isInsecureOrWeak || isComboIssue || isGoalShiftTurn) {
                 if (!tpDetected) {
                   tpDetected = true;
                   tpRound = `Giai đoạn ${Math.min(userTurnCount, 4)}`;
@@ -1043,7 +1202,8 @@ Quy chuẩn: Dưới 120 từ.`;
             lastUserMsg.includes('chuyển') ||
             lastUserMsg.includes('đổi ngành') ||
             lastUserMsg.includes('ngành khác') ||
-            lastUserMsg.includes('phù hợp hơn')
+            lastUserMsg.includes('phù hợp hơn') ||
+            Boolean(goalShift || aiResult?.shiftedMajor)
           ) {
             outcome = 'Adaptive_Shift';
           } else {
