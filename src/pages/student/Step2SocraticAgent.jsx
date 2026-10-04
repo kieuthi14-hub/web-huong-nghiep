@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import StepProgressHeader from '../../components/common/StepProgressHeader';
 
 // HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
 export function isUndecidedOrVague(career) {
@@ -1072,7 +1073,12 @@ Quy chuẩn: Dưới 120 từ.`;
   };
 
   return (
-    <div style={{ maxWidth: '920px', margin: '0 auto', display: 'flex', flexDirection: 'column', height: '88vh', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '920px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '88vh', fontFamily: 'sans-serif' }}>
+      <StepProgressHeader 
+        currentStep={2} 
+        title="Bước 2: AI Tham Vấn Phản Tư (Socratic Agent)" 
+        subtitle="Đối thoại phản biện cùng Trợ lý AI để bóc tách điểm mù tư duy và bẫy tâm lý chọn nghề." 
+      />
       
       {/* CSS CHO CHẾ ĐỘ IN / LƯU FILE PDF */}
       <style>{`

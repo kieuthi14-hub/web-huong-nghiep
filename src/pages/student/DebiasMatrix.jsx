@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
+import StepProgressHeader from '../../components/common/StepProgressHeader'
 import {
   Brain,
   Target,
@@ -305,6 +306,15 @@ const DebiasMatrix = () => {
           }
         }
       `}</style>
+
+      {/* THANH TIẾN TRÌNH 5 BƯỚC VISEF CBAS */}
+      <div className="no-print">
+        <StepProgressHeader 
+          currentStep={5} 
+          title="Bước 5: Kế Hoạch Hành Động Tự Chủ (Action Triad)" 
+          subtitle="Đo lường mức tự tin thực tế T2, cam kết 3 trụ cột hành động và xuất Báo cáo Hồ sơ phản tư toàn diện A4/PDF." 
+        />
+      </div>
 
       {/* =========================================================================
           1. HEADER BƯỚC 5 (CHUẨN ĐẶC TẢ ACTION TRIAD - VISEF 2026)

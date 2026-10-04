@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
+import StepProgressHeader from '../../components/common/StepProgressHeader'
 import { 
   CalendarDays, 
   UserCheck, 
@@ -719,6 +720,15 @@ const CounselingBooking = () => {
           }
         }
       `}</style>
+
+      {/* THANH TIẾN TRÌNH 5 BƯỚC VISEF CBAS */}
+      <div className="no-print">
+        <StepProgressHeader 
+          currentStep={4} 
+          title="Bước 4: Tư Vấn 1-1 Đối Chứng Thực Tế" 
+          subtitle="Xuất Hồ sơ lâm sàng mang theo gặp Mentor/Cố vấn và ghi lại Nhật ký thu hoạch sau buổi đối thoại." 
+        />
+      </div>
 
       {/* HEADER SECTION: BƯỚC 4 TIÊU ĐỀ & CHỈ SỐ TIẾN TRÌNH */}
       <div className="no-print bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">

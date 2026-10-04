@@ -6,6 +6,7 @@ import MajorExplorer from './MajorExplorer'
 import UniversityExplorer from './UniversityExplorer'
 import Step3VocationalVerification from './Step3VocationalVerification'
 import Step3DataVerification from './Step3DataVerification'
+import StepProgressHeader from '../../components/common/StepProgressHeader'
 import { 
   FileCheck2, 
   ExternalLink, 
@@ -270,6 +271,14 @@ const FactCheckHub = () => {
 
   return (
     <div className="py-6 px-4 bg-slate-50 min-h-screen">
+      <div className="max-w-[850px] mx-auto">
+        <StepProgressHeader 
+          currentStep={3} 
+          title="Bước 3: Đối Chứng Dữ Liệu Khách Quan (Điểm Chuẩn & Học Phí)" 
+          subtitle="Nhập điểm học bạ, đối chiếu điểm chuẩn thực tế 2 năm và khảo sát bài toán tài chính trước khi chọn trường." 
+        />
+      </div>
+
       {/* THANH CHUYỂN TAB MỞ RỘNG */}
       <div className="max-w-[850px] mx-auto mb-4 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 bg-slate-200/80 p-1 rounded-lg text-xs font-bold">

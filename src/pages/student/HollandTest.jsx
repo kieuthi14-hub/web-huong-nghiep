@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import HollandChart from '../../components/common/HollandChart'
+import StepProgressHeader from '../../components/common/StepProgressHeader'
 import { 
   ClipboardList, 
   ArrowLeft, 
@@ -722,21 +723,12 @@ const HollandTest = () => {
   // GIAO DIỆN LÀM BÀI TRẮC NGHIỆM VÀ FORM MỎ NEO
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6 animate-reveal">
-      {/* TIÊU ĐỀ BƯỚC 1 */}
-      <div className="flex items-start justify-between gap-4 border-b border-slate-200 pb-4">
-        <div>
-          <span className="text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-0.5 rounded-full inline-block mb-1.5">
-            BƯỚC 1 / 6: XÁC LẬP MỎ NEO NHẬN THỨC
-          </span>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-emerald-600" />
-            <span>Trắc Nghiệm Thiên Hướng (Holland RIASEC 30 Câu)</span>
-          </h1>
-          <p className="text-xs text-slate-500 font-semibold mt-1">
-            Ghi nhận xuất phát điểm nhận thức ban đầu (Initial Anchor) để tạo nguyên liệu cho AI phản biện ở bước sau.
-          </p>
-        </div>
-      </div>
+      {/* THANH TIẾN TRÌNH 5 BƯỚC VISEF CBAS */}
+      <StepProgressHeader 
+        currentStep={1} 
+        title="Bước 1: Trắc Nghiệm Thiên Hướng (Holland RIASEC) & Mỏ Neo T0" 
+        subtitle="Ghi nhận xuất phát điểm nhận thức ban đầu (Initial Anchor) để tạo nguyên liệu cho AI phản biện ở bước sau." 
+      />
 
       {/* THANH TIẾN TRÌNH */}
       <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-2 shadow-2xs">
