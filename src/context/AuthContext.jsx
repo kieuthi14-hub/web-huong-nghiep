@@ -3,13 +3,9 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
-// Danh sách Whitelist Email Admin được phép truy cập tự động
+// Danh sách Whitelist Email Admin được phép truy cập Quản trị
 export const ADMIN_EMAILS = [
-  'kieuthi14@gmail.com',
-  'minhthi.01121985@gmail.com',
-  'ttlkieu.c3tqcap@khanhhoa.edu.vn',
-  'lmthi.c3tqcap@khanhhoa.edu.vn',
-  'huukhoa2017@gmail.com'
+  'kieuthi14@gmail.com'
 ]
 
 export const AuthProvider = ({ children }) => {
@@ -67,8 +63,8 @@ export const AuthProvider = ({ children }) => {
         console.error('Lỗi khi lấy profile từ bảng profiles của Supabase:', error)
       }
 
-      const userEmail = currentUser?.email?.toLowerCase() || ''
-      const isWhitelistedAdmin = ADMIN_EMAILS.includes(userEmail)
+      const userEmail = currentUser?.email?.toLowerCase().trim() || ''
+      const isWhitelistedAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)
 
       if (!data && currentUser) {
         const newProfile = {
@@ -98,7 +94,7 @@ export const AuthProvider = ({ children }) => {
 
   // Đăng ký
   const signUp = async (email, password, fullName) => {
-    const isWhitelisted = ADMIN_EMAILS.includes(email?.toLowerCase())
+    const isWhitelisted = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(email?.toLowerCase().trim() || '')
     const { data, error } = await supabase.auth.signUp({
       email,
       password,

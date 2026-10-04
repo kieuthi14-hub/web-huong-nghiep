@@ -22,7 +22,7 @@ const Navbar = ({ onToggleSidebar }) => {
   }
 
   const userEmail = (profile?.email || '').toLowerCase().trim()
-  const isTeacherAdmin = profile?.role === 'admin' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail)) || userEmail === 'kieuthi14@gmail.com'
+  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail))
   const isInAdminView = location.pathname.startsWith('/admin')
 
   return (

@@ -87,7 +87,7 @@ const AdminProtectedRoute = ({ children }) => {
   }
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const isTeacherAdmin = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com' || profile?.role === 'admin'
+  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail))
 
   // 2. Nếu là Học sinh (hoặc tài khoản không phải Admin) truy cập vào link admin -> TỰ ĐỘNG CHUYỂN VỀ TRANG HỌC SINH
   if (!isTeacherAdmin) {
@@ -116,24 +116,20 @@ const MainLayout = ({ children }) => {
   )
 }
 
-// Chuyển hướng thông minh trang chủ '/' dựa vào vai trò
+// Chuyển hướng thông minh trang chủ '/': Mặc định tất cả người dùng và học sinh vào Cổng Học sinh
 const HomeRedirect = () => {
-  const { user, profile, loading } = useAuth()
+  const { profile, loading } = useAuth()
 
   if (loading) return null
 
-  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const isTeacherAdmin = (ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || userEmail === 'kieuthi14@gmail.com' || profile?.role === 'admin'
-
-  // Chỉ Giáo viên / Admin mới tự động chuyển vào Admin Dashboard
-  if (isTeacherAdmin) {
-    return <Navigate to="/admin/dashboard" replace />
-  } else if (profile?.role === 'counselor' || profile?.role === 'teacher') {
+  // Chuyên viên tư vấn vào trang tư vấn
+  if (profile?.role === 'counselor') {
     return <Navigate to="/counselor/dashboard" replace />
-  } else {
-    // TẤT CẢ HỌC SINH MẶC ĐỊNH 100% VÀO TRANG HỌC SINH
-    return <Navigate to="/student/dashboard" replace />
   }
+
+  // TẤT CẢ HỌC SINH VÀ NGƯỜI DÙNG KHI VÀO WEB ĐỀU MẶC ĐỊNH 100% VÀO TRANG HỌC SINH
+  // Giáo viên Quản trị viên (Admin) có thể bấm "ADMIN ⚙️" ở thanh bên để truy cập Bảng Quản trị
+  return <Navigate to="/student/dashboard" replace />
 }
 
 const App = () => {

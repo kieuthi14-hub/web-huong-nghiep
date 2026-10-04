@@ -21,8 +21,8 @@ const Sidebar = ({ isOpen, onClose }) => {
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
   
-  // Quyền Admin: Kiểm tra whitelist email giáo viên hoặc role admin trong DB
-  const isTeacherAdmin = userRole === 'admin' || userEmail === 'kieuthi14@gmail.com' || (ADMIN_EMAILS && ADMIN_EMAILS.includes(userEmail))
+  // Quyền Admin: Kiểm tra whitelist email giáo viên
+  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail))
   const isInAdminView = location.pathname.startsWith('/admin')
 
   const studentLinks = [
