@@ -356,7 +356,26 @@ const saveLocalSession = (userId, session) => {
 // =========================================================================
 const CounselingBooking = () => {
   const navigate = useNavigate()
-  const { user, profile } = useAuth()
+  const { user, profile, studentCode } = useAuth()
+
+  // Mã học sinh ẩn danh theo chuẩn nghiên cứu ViSEF (CT_01 -> CT_30 hoặc mã thử nghiệm) - Tuyệt đối không xuất tên thật
+  const displayStudentCode = (() => {
+    if (studentCode && /^CT_\d{2}$/i.test(studentCode)) return studentCode.toUpperCase()
+    try {
+      const local = localStorage.getItem('cbas_student_code')
+      if (local && /^CT_\d{2}$/i.test(local)) return local.toUpperCase()
+    } catch (e) {}
+    const email = (user?.email || profile?.email || '').toLowerCase()
+    const ctMatch = email.match(/^ct[_\-]?(\d{1,2})@/)
+    if (ctMatch) {
+      const n = parseInt(ctMatch[1], 10)
+      return `CT_${n < 10 ? '0' + n : n}`
+    }
+    if (profile?.full_name && /^CT_\d{2}$/i.test(profile.full_name)) {
+      return profile.full_name.toUpperCase()
+    }
+    return studentCode || profile?.student_code || 'CT_01'
+  })()
 
   // 1. Quản lý trạng thái 2 Giai đoạn: 4A (Chuẩn bị & Hồ sơ đối chất) | 4B (Biên bản sau buổi gặp)
   const [currentStage, setCurrentStage] = useState(() => {
@@ -804,6 +823,9 @@ const CounselingBooking = () => {
                 <h3 className="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
                   📋 HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (DÙNG ĐỂ THAM VẤN 1-1)
                 </h3>
+                <p className="text-xs font-black text-indigo-700 mt-1">
+                  MÃ HỌC SINH THỰC NGHIỆM: <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-indigo-900">{displayStudentCode}</span>
+                </p>
               </div>
 
               {/* Nút In / Lưu Ảnh Hồ Sơ */}

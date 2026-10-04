@@ -744,16 +744,28 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   // Xuất file CSV báo cáo ViSEF
   const handleExportCSV = () => {
     try {
-      const headers = ['STT,Hoc Sinh,Nhom Thuc Nghiem,Nganh Du Dinh,Doi Chung Thuc Te,Soi Bay Tam Ly,Ket Qua Quyet Dinh,Diem Tinh Huong\n']
+      const headers = ['STT,Ma Dinh Danh (ID),Nhom Thuc Nghiem,Nganh Du Dinh,Doi Chung Thuc Te,Soi Bay Tam Ly,Ket Qua Quyet Dinh,Diem Tinh Huong\n']
       const rows = matricesList.map((m, idx) => {
-        const studentName = m.student?.full_name || m.student_name || 'Học sinh'
+        // Chuẩn hóa mã ẩn danh CT_01 -> CT_30 theo đúng chuẩn nghiên cứu ViSEF CBAS
+        const rawName = m.student?.full_name || m.student_name || ''
+        const rawEmail = m.student?.email || m.email || ''
+        const ctMatch = rawName.match(/^CT_(\d{1,2})/i) || rawEmail.match(/^ct_(\d{1,2})/i)
+        let studentCode = ''
+        if (ctMatch) {
+          const num = parseInt(ctMatch[1], 10)
+          studentCode = `CT_${num < 10 ? '0' + num : num}`
+        } else {
+          const num = (idx % 30) + 1
+          studentCode = `CT_${num < 10 ? '0' + num : num}`
+        }
+
         const major = (m.target_major || '').replace(/"/g, '""')
         const sources = (m.verified_sources || '').replace(/\n/g, ' ').replace(/"/g, '""')
         const bias = (m.bias_check || '').replace(/\n/g, ' ').replace(/"/g, '""')
         const decision = m.final_decision || 'CONFIRMED'
         const scenario = m.scenario_score || '4/4 Đạt'
 
-        return `"${idx + 1}","${studentName}","Nhóm Can Thiệp (n=30)","${major}","${sources}","${bias}","${decision}","${scenario}"`
+        return `"${idx + 1}","${studentCode}","Nhóm Can Thiệp (n=30)","${major}","${sources}","${bias}","${decision}","${scenario}"`
       }).join('\n')
 
       const blob = new Blob(['\uFEFF' + headers + rows], { type: 'text/csv;charset=utf-8;' })

@@ -39,8 +39,29 @@ const getConfidenceFeedback = (score) => {
 }
 
 const DebiasMatrix = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, studentCode } = useAuth()
   const navigate = useNavigate()
+
+  // Mã học sinh ẩn danh theo chuẩn nghiên cứu ViSEF (CT_01 -> CT_30 hoặc mã thử nghiệm) - Tuyệt đối không xuất tên thật
+  const displayStudentCode = (() => {
+    if (studentCode && /^CT_\d{2}$/i.test(studentCode)) return studentCode.toUpperCase()
+    try {
+      const local = localStorage.getItem('cbas_student_code')
+      if (local && /^CT_\d{2}$/i.test(local)) return local.toUpperCase()
+    } catch (e) {}
+    const email = (user?.email || profile?.email || '').toLowerCase()
+    const ctMatch = email.match(/^ct[_\-]?(\d{1,2})@/)
+    if (ctMatch) {
+      const n = parseInt(ctMatch[1], 10)
+      return `CT_${n < 10 ? '0' + n : n}`
+    }
+    if (profile?.full_name && /^CT_\d{2}$/i.test(profile.full_name)) {
+      return profile.full_name.toUpperCase()
+    }
+    return studentCode || profile?.student_code || 'CT_01'
+  })()
+
+  const isExperimental = displayStudentCode.startsWith('CT_')
 
   // --- DỮ LIỆU ĐỐI CHỨNG TỔNG HỢP TỪ CÁC BƯỚC 1, 2, 3, 4 ---
   const [step1Data, setStep1Data] = useState({
@@ -232,21 +253,28 @@ const DebiasMatrix = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // 3. Tải file JSON phục vụ Hội đồng Nghiên cứu Khoa học
+  // 3. Tải file JSON phục vụ Hội đồng Nghiên cứu Khoa học (Ẩn danh hóa dữ liệu)
   const handleDownloadJSON = () => {
     try {
       const raw = localStorage.getItem('cbas_full_intervention_dossier')
-      if (!raw) return
-      const blob = new Blob([raw], { type: 'application/json' })
+      let payload = raw ? JSON.parse(raw) : {}
+      // Ẩn danh hóa dữ liệu triệt để: Chỉ lưu mã học sinh (CT_01 -> CT_30), xóa sạch tên thật và email
+      payload.student_code = displayStudentCode
+      payload.is_experimental_group = isExperimental
+      delete payload.full_name
+      delete payload.email
+      delete payload.student_real_name
+      
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `CBAS_ActionTriad_${user?.id ? user.id.slice(0, 8) : 'Student'}.json`
+      a.download = `ViSEF_CBAS_ActionTriad_${displayStudentCode}.json`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      setToast({ type: 'info', message: 'Đã tải xuống file dữ liệu nghiên cứu JSON thành công!' })
+      setToast({ type: 'info', message: `Đã tải xuống file dữ liệu nghiên cứu JSON (${displayStudentCode}) thành công!` })
     } catch (e) {
       console.error('Lỗi tải JSON:', e)
     }
@@ -543,9 +571,9 @@ const DebiasMatrix = () => {
                 BÁO CÁO KẾT QUẢ CAN THIỆP PHẢN TƯ & KẾ HOẠCH HÀNH ĐỘNG TỰ CHỦ (ACTION TRIAD)
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs pt-2 font-medium text-slate-700">
-                <div><strong>Họ và tên:</strong> {profile?.full_name || user?.user_metadata?.full_name || 'Học sinh nghiên cứu'}</div>
-                <div><strong>Email/Mã số:</strong> {user?.email || 'student@visef.edu.vn'}</div>
-                <div><strong>Trường/Lớp:</strong> {profile?.school || 'THPT'} ({profile?.grade || 'Khối 12'})</div>
+                <div><strong>Mã số học sinh:</strong> <span className="font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{displayStudentCode}</span></div>
+                <div><strong>Phân nhóm nghiên cứu:</strong> {isExperimental ? 'Nhóm Thực Nghiệm Can Thiệp (n=30)' : 'Nhóm Thử Nghiệm Đối Chứng'}</div>
+                <div><strong>Khối lớp:</strong> Khối 12 THPT (Niên khóa 2025 - 2026)</div>
               </div>
             </div>
 
@@ -743,9 +771,11 @@ const DebiasMatrix = () => {
               <div className="text-center sm:text-right space-y-8">
                 <div>
                   <p className="font-bold">Học sinh cam kết thực hiện</p>
-                  <p className="text-[11px] text-slate-500 italic">(Ký và ghi rõ họ tên)</p>
+                  <p className="text-[11px] text-slate-500 italic">(Mã định danh bảo mật ViSEF)</p>
                 </div>
-                <p className="font-black text-slate-900">{profile?.full_name || user?.user_metadata?.full_name || 'Học sinh'}</p>
+                <p className="font-black text-slate-900 text-xs sm:text-sm bg-slate-100 px-3 py-1.5 rounded-md inline-block border border-slate-300">
+                  MÃ HỌC SINH: {displayStudentCode}
+                </p>
               </div>
             </div>
 

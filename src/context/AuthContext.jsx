@@ -66,12 +66,23 @@ export const AuthProvider = ({ children }) => {
       const userEmail = currentUser?.email?.toLowerCase().trim() || ''
       const isWhitelistedAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)
 
+      // Nhận diện mã học sinh thực nghiệm CT_01 -> CT_30
+      let detectedStudentCode = null
+      const ctMatch = userEmail.match(/^ct[_\-]?(\d{1,2})@/)
+      if (ctMatch) {
+        const n = parseInt(ctMatch[1], 10)
+        detectedStudentCode = `CT_${n < 10 ? '0' + n : n}`
+      } else if (currentUser?.user_metadata?.student_code) {
+        detectedStudentCode = currentUser.user_metadata.student_code
+      }
+
       if (!data && currentUser) {
         const newProfile = {
           id: userId,
           email: currentUser.email,
-          full_name: currentUser.user_metadata?.full_name || 'Học sinh',
-          role: isWhitelistedAdmin ? 'admin' : (currentUser.user_metadata?.role || 'student')
+          full_name: detectedStudentCode || currentUser.user_metadata?.full_name || 'Học sinh',
+          role: isWhitelistedAdmin ? 'admin' : (currentUser.user_metadata?.role || 'student'),
+          student_code: detectedStudentCode
         }
         
         const { data: createdData } = await supabase
@@ -84,6 +95,10 @@ export const AuthProvider = ({ children }) => {
       } else {
         if (isWhitelistedAdmin && data) {
           data.role = 'admin'
+        }
+        if (detectedStudentCode && data) {
+          data.student_code = detectedStudentCode
+          data.full_name = detectedStudentCode
         }
         setProfile(data)
       }
@@ -143,10 +158,29 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const studentCode = (() => {
+    const email = (user?.email || profile?.email || '').toLowerCase().trim()
+    const ctMatch = email.match(/^ct[_\-]?(\d{1,2})@/)
+    if (ctMatch) {
+      const n = parseInt(ctMatch[1], 10)
+      return `CT_${n < 10 ? '0' + n : n}`
+    }
+    if (profile?.student_code) return profile.student_code
+    if (profile?.full_name && /^CT_\d{2}$/i.test(profile.full_name)) {
+      return profile.full_name.toUpperCase()
+    }
+    try {
+      const local = localStorage.getItem('cbas_student_code')
+      if (local) return local
+    } catch (e) {}
+    return profile?.full_name || 'Học sinh'
+  })()
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       profile, 
+      studentCode,
       loading, 
       signIn, 
       signUp, 
