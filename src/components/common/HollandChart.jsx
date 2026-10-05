@@ -51,18 +51,32 @@ const HollandChart = ({ scores = {}, type = 'radar' }) => {
   }
 
   return (
-    <div className="w-full h-80 flex justify-center items-center">
+    <div className="w-full h-[340px] flex justify-center items-center py-2 px-1">
       <ResponsiveContainer width="100%" height="100%">
-        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
-          <PolarGrid stroke="#e2e8f0" />
-          <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 11, fontWeight: 500 }} />
-          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fontSize: 10 }} />
+        <RadarChart 
+          cx="50%" 
+          cy="50%" 
+          outerRadius="60%" 
+          margin={{ top: 20, right: 40, bottom: 20, left: 40 }} 
+          data={chartData}
+        >
+          <PolarGrid stroke="#cbd5e1" strokeDasharray="3 3" />
+          <PolarAngleAxis 
+            dataKey="subject" 
+            tick={{ fill: '#1e293b', fontSize: 11, fontWeight: 600 }} 
+          />
+          <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fontSize: 9, fill: '#64748b' }} />
           <Radar
-            name="ĐiểmHolland"
+            name="Điểm Holland"
             dataKey="score"
             stroke="#059669"
             fill="#34d399"
-            fillOpacity={0.4}
+            fillOpacity={0.45}
+            dot={{ r: 3, fill: '#059669' }}
+          />
+          <Tooltip 
+            contentStyle={{ background: '#0f172a', border: 'none', color: '#fff', fontSize: '12px', borderRadius: '6px' }}
+            formatter={(value) => [`${value} điểm`, 'Điểm Holland']}
           />
         </RadarChart>
       </ResponsiveContainer>

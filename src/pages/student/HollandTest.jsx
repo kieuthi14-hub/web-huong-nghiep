@@ -335,20 +335,11 @@ const HollandTest = () => {
       }
     }
 
-    // Khi hoàn tất 30 câu hỏi (trang 5 chuyển sang trang 6)
+    // Khi hoàn tất 30 câu hỏi (trang 5 chuyển sang trang 6: Form mỏ neo ban đầu)
     if (currentPage === totalQuestionPages - 1) {
       const { scores, primaryCode } = calculateRiasecCode()
       setCalculatedRiasecCode(primaryCode)
-      setResult({
-        scores,
-        primaryCode,
-        anchorData: {
-          primary_code: primaryCode,
-          target_major: targetMajor,
-          target_university: targetSchool || targetUniversity,
-          scores
-        }
-      })
+      // KHÔNG gọi setResult ở đây để học sinh điền Form xác lập mỏ neo!
       setCurrentPage(prev => prev + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
@@ -537,12 +528,8 @@ const HollandTest = () => {
         }
       })
 
-      setToast({ type: 'success', message: '🎉 Đã xác lập mỏ neo thành công! Đang chuyển sang Bước 2...' })
-      
-      // Chuyển thẳng sang Bước 2 (AI Tham Vấn Phản Tư)
-      setTimeout(() => {
-        navigate('/student/debias-agent')
-      }, 500)
+      setToast({ type: 'success', message: '🎉 Đã xác lập mỏ neo thành công! Hãy xem bảng phân tích kết quả bên dưới.' })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       console.error('Lỗi nộp bài trắc nghiệm:', error)
       setToast({ type: 'error', message: 'Có lỗi xảy ra khi tính kết quả. Vui lòng thử lại!' })
@@ -559,12 +546,25 @@ const HollandTest = () => {
         localStorage.removeItem('cbas_anchor_data')
         localStorage.removeItem('career_initial_anchor')
       } catch (e) {}
+      setTargetMajor('')
+      setTargetSchool('')
+      setTargetUniversity('')
+      setReason('')
+      setConfidenceScore(7)
+      setExpectedIncome('')
+      setCalculatedRiasecCode('')
     }
     setResult(null)
     setCurrentPage(0)
     const initialAnswers = {}
     questions.forEach(q => { initialAnswers[q.id] = null })
     setAnswers(initialAnswers)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleEditAnchorOnly = () => {
+    setResult(null)
+    setCurrentPage(totalQuestionPages)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -712,8 +712,21 @@ const HollandTest = () => {
             <p className="text-xs text-slate-300">AI sẽ dùng chính mỏ neo ngành "{result.anchorData.target_major}" để chất vấn các điểm mù thực tế của bạn.</p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Button variant="secondary" onClick={() => handleReset(true)} className="text-xs font-bold py-2.5 px-3">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+            <Button 
+              variant="secondary" 
+              onClick={handleEditAnchorOnly} 
+              className="text-xs font-bold py-2.5 px-3 bg-white text-slate-800 border-slate-300 hover:bg-slate-50 cursor-pointer"
+              title="Chỉnh sửa lại ngành, trường, lý do chọn nghề mà không cần làm lại trắc nghiệm"
+            >
+              <span>✎ Chỉnh sửa Mỏ neo</span>
+            </Button>
+            <Button 
+              variant="secondary" 
+              onClick={() => handleReset(true)} 
+              className="text-xs font-bold py-2.5 px-3 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer"
+              title="Xóa kết quả trắc nghiệm và mỏ neo để làm lại từ đầu"
+            >
               <RefreshCw className="w-3.5 h-3.5 mr-1" />
               Làm lại bài trắc nghiệm
             </Button>
@@ -1074,7 +1087,7 @@ const HollandTest = () => {
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Hoàn tất Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
+                <span>Lưu Mỏ Neo & Xem Biểu Đồ Kết Quả ➔</span>
               </>
             )}
           </button>
