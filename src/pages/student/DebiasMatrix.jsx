@@ -253,6 +253,24 @@ const DebiasMatrix = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  // 2.1. Làm lại Bước 5 (Xóa Kế hoạch Hành động để thiết lập lại từ đầu)
+  const handleResetStep5 = () => {
+    if (window.confirm("Em có muốn làm lại Bước 5 (xóa Kế hoạch Hành động và thang đo T2 hiện tại để thiết lập lại từ đầu) không?")) {
+      try {
+        localStorage.removeItem('cbas_step5_action_plan')
+        localStorage.removeItem('cbas_full_intervention_dossier')
+        localStorage.removeItem('cbas_step5_completed')
+      } catch (e) {}
+      setConfidenceT2(7)
+      setAcademicPlan('')
+      setDiscoveryPlan('')
+      setSupportPlan('')
+      setReflectionSummary('')
+      setIsCompleted(false)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
   // 3. Tải file JSON phục vụ Hội đồng Nghiên cứu Khoa học (Ẩn danh hóa dữ liệu)
   const handleDownloadJSON = () => {
     try {
@@ -388,6 +406,15 @@ const DebiasMatrix = () => {
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Xem Lại Bước 4</span>
             </Button>
+            <button
+              type="button"
+              onClick={handleResetStep5}
+              className="text-xs font-bold py-2.5 px-3.5 gap-1.5 border border-rose-200 text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg flex items-center transition-colors cursor-pointer"
+              title="Xóa kế hoạch cũ và làm lại Bước 5 từ đầu"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Làm Lại Bước 5</span>
+            </button>
           </div>
         </div>
       </div>
@@ -418,14 +445,23 @@ const DebiasMatrix = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 self-start md:self-center shrink-0 no-print">
+              <div className="flex items-center gap-2 self-start md:self-center shrink-0 no-print flex-wrap">
                 <button
                   type="button"
                   onClick={() => setIsCompleted(false)}
-                  className="px-3 py-2 text-xs font-bold bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-lg transition-all flex items-center gap-1.5"
+                  className="px-3 py-2 text-xs font-bold bg-white/15 hover:bg-white/25 text-white border border-white/20 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <Sliders className="w-3.5 h-3.5" />
                   <span>Chỉnh Sửa Kế Hoạch</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetStep5}
+                  className="px-3 py-2 text-xs font-bold bg-rose-700/60 hover:bg-rose-700 text-white border border-rose-300/40 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                  title="Xóa kế hoạch cũ và làm lại Bước 5 từ đầu"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Làm Lại Bước 5</span>
                 </button>
               </div>
             </div>

@@ -33,7 +33,8 @@ import {
   ChevronUp,
   FileText,
   Award,
-  Compass
+  Compass,
+  RotateCcw
 } from 'lucide-react'
 
 // Hàm phân tích thông tin Nền tảng Gặp gỡ (Google Meet, Zoom, Địa điểm trực tiếp) từ ghi chú chuyên viên
@@ -525,6 +526,22 @@ const CounselingBooking = () => {
     localStorage.setItem('cbas_step4_feedback', JSON.stringify(record))
     setFeedbackSaved(record)
     setToast({ type: 'success', message: '🎉 Đã lưu Nhật ký thu hoạch sau buổi tham vấn thành công!' })
+  }
+
+  // Làm lại Bước 4B (xóa nhật ký thu hoạch để viết lại)
+  const handleResetStep4 = () => {
+    if (window.confirm("Em có muốn làm lại Bước 4B (xóa nội dung nhật ký thu hoạch hiện tại để ghi chép lại từ đầu) không?")) {
+      try {
+        localStorage.removeItem('mentor_feedback_record')
+        localStorage.removeItem('cbas_step4_feedback')
+        localStorage.removeItem('cbas_student_reflection_log')
+      } catch (e) {}
+      setFeedbackIllusion('PARTIAL')
+      setFeedbackReadiness(7)
+      setFeedbackNotes('')
+      setFeedbackSaved(null)
+      setToast({ type: 'info', message: 'Đã đặt lại nhật ký thu hoạch. Em có thể ghi chép lại từ đầu!' })
+    }
   }
 
   // Khởi tạo và đọc dữ liệu đã lưu
@@ -1279,13 +1296,24 @@ const CounselingBooking = () => {
 
             {/* NÚT BẤM HOÀN TẤT */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleSaveFeedback}
-                className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow transition transform active:scale-95 text-xs md:text-sm cursor-pointer"
-              >
-                Lưu Nhật Ký Thu Hoạch 💾
-              </button>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSaveFeedback}
+                  className="px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow transition transform active:scale-95 text-xs md:text-sm cursor-pointer"
+                >
+                  Lưu Nhật Ký Thu Hoạch 💾
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetStep4}
+                  className="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl transition text-xs md:text-sm cursor-pointer flex items-center gap-1.5"
+                  title="Xóa nhật ký thu hoạch để viết lại từ đầu"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Làm lại Bước 4B</span>
+                </button>
+              </div>
 
               <button
                 type="button"

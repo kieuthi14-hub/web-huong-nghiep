@@ -194,6 +194,32 @@ export default function Step3DataVerification({
     setSubmitted(true);
   };
 
+  const handleResetStep3 = () => {
+    if (window.confirm("Em có muốn làm lại Bước 3 (xóa số liệu đối chứng hiện tại để nhập lại từ đầu) không?")) {
+      try {
+        localStorage.removeItem('cbas_step3_evidence');
+        localStorage.removeItem('career_evidence_task');
+        localStorage.removeItem('cbas_step3_triage');
+        localStorage.removeItem('cbas_score_gap');
+        localStorage.removeItem('cbas_step3_vocational');
+        localStorage.removeItem('cbas_step3_reflection');
+      } catch (e) {}
+      setScoreSubject1('');
+      setScoreSubject2('');
+      setScoreSubject3('');
+      setCutoff2024('');
+      setCutoff2025('');
+      setTuitionFee('');
+      setEmploymentRate('');
+      setLaborMarketTrend('balanced');
+      setUnemploymentReasons([]);
+      setReflectionText('');
+      setTriageResult(null);
+      setSubmitted(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   const handleCompleteAction = (targetStep) => {
     if (typeof onComplete === 'function') {
       onComplete(triageResult, targetStep);
@@ -605,13 +631,22 @@ export default function Step3DataVerification({
               >
                 TIẾP TỤC BƯỚC 5: THIẾT LẬP KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN ➔
               </button>
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="text-xs text-slate-500 hover:text-slate-800 underline font-medium cursor-pointer"
+                  className="text-xs text-slate-600 hover:text-slate-900 font-semibold cursor-pointer underline"
                 >
-                  ✎ Xem lại hoặc điều chỉnh số liệu đối chứng
+                  ✎ Điều chỉnh số liệu đối chứng
+                </button>
+                <span className="text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={handleResetStep3}
+                  className="text-xs text-rose-600 hover:text-rose-800 font-bold cursor-pointer flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Làm lại Bước 3 (Nhập lại từ đầu)</span>
                 </button>
               </div>
             </div>
@@ -650,13 +685,22 @@ export default function Step3DataVerification({
               >
                 TIẾP TỤC BƯỚC 4: XUẤT HỒ SƠ & ĐẶT LỊCH THAM VẤN 1-1 ➔
               </button>
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setSubmitted(false)}
-                  className="text-xs text-slate-500 hover:text-slate-800 underline font-medium cursor-pointer"
+                  className="text-xs text-slate-600 hover:text-slate-900 font-semibold cursor-pointer underline"
                 >
-                  ✎ Xem lại hoặc điều chỉnh số liệu đối chứng
+                  ✎ Điều chỉnh số liệu đối chứng
+                </button>
+                <span className="text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={handleResetStep3}
+                  className="text-xs text-rose-600 hover:text-rose-800 font-bold cursor-pointer flex items-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Làm lại Bước 3 (Nhập lại từ đầu)</span>
                 </button>
               </div>
             </div>

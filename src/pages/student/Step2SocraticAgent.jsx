@@ -1487,6 +1487,28 @@ Quy chuẩn: Dưới 120 từ.`;
 
               <button
                 type="button"
+                onClick={handleResetSession}
+                title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
+                style={{
+                  background: '#fff1f2',
+                  color: '#be123c',
+                  border: '1.5px solid #fecdd3',
+                  padding: '12px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🔄 Làm lại Bước 2</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleCopyText}
                 title="Sao chép toàn bộ biên bản đối thoại"
                 style={{

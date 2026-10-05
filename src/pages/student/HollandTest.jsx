@@ -551,10 +551,21 @@ const HollandTest = () => {
     }
   }
 
-  const handleReset = () => {
+  const handleReset = (clearStorage = true) => {
+    if (clearStorage) {
+      try {
+        localStorage.removeItem('cbas_user_profile')
+        localStorage.removeItem('userAnchorData')
+        localStorage.removeItem('cbas_anchor_data')
+        localStorage.removeItem('career_initial_anchor')
+      } catch (e) {}
+    }
     setResult(null)
     setCurrentPage(0)
-    fetchTestAndInitialAnchor()
+    const initialAnswers = {}
+    questions.forEach(q => { initialAnswers[q.id] = null })
+    setAnswers(initialAnswers)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const answeredCount = Object.values(answers).filter(val => val !== null).length
@@ -702,9 +713,9 @@ const HollandTest = () => {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            <Button variant="secondary" onClick={handleReset} className="text-xs font-bold py-2.5 px-3">
+            <Button variant="secondary" onClick={() => handleReset(true)} className="text-xs font-bold py-2.5 px-3">
               <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Làm lại
+              Làm lại bài trắc nghiệm
             </Button>
             <button
               type="button"
