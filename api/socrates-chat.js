@@ -237,6 +237,115 @@ function isAskingAboutSubjectsOrCombos(text) {
   return patterns.some(p => clean.includes(p));
 }
 
+export function getRecommendedComboForMajor(majorName, userText = '') {
+  const m = (majorName || '').toLowerCase();
+  const u = (userText || '').toLowerCase();
+
+  if (m.includes('chính trị') || m.includes('công dân') || u.includes('ktpl') || u.includes('chính trị')) {
+    return 'C19 (Văn - Sử - KTPL) hoặc C00';
+  }
+  if (u.includes('toán') && u.includes('lý') && u.includes('anh')) {
+    return 'Toán - Lý - Anh';
+  }
+  if (u.includes('toán') && u.includes('văn') && u.includes('anh')) {
+    return 'Toán - Văn - Anh';
+  }
+  if (m.includes('toán') || m.includes('vật lý') || m.includes('hóa') || m.includes('kỹ thuật') || m.includes('công nghệ') || m.includes('cntt') || m.includes('tin học')) {
+    if (u.includes('anh') || u.includes('tiếng anh')) return 'Toán - Lý - Anh';
+    return 'Toán - Lý - Hóa hoặc Toán - Lý - Anh';
+  }
+  if (m.includes('văn') || m.includes('sử') || m.includes('địa') || m.includes('xã hội')) {
+    return 'Văn - Sử - Địa hoặc Văn - Sử - Anh';
+  }
+  if (m.includes('kinh tế') || m.includes('quản trị') || m.includes('marketing') || m.includes('tài chính') || m.includes('ngân hàng') || m.includes('luật')) {
+    return 'Toán - Văn - Anh hoặc Toán - Lý - Anh';
+  }
+  if (m.includes('ngôn ngữ') || m.includes('tiếng')) {
+    return 'Toán - Văn - Anh hoặc Văn - Sử - Anh';
+  }
+  if (m.includes('y') || m.includes('dược') || m.includes('sinh')) {
+    return 'Toán - Hóa - Sinh';
+  }
+  return 'Toán - Lý - Anh';
+}
+
+export function sanitizeSocraticResponse(rawText, round, effectiveCareer, targetSchool, userText = '') {
+  if (!rawText || typeof rawText !== 'string') return '';
+  let cleaned = rawText.trim();
+
+  // 1. Loại bỏ các tiền tố xưng danh hoặc thẻ hệ thống
+  cleaned = cleaned
+    .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates|Thầy Socrates)[:\s-]*/i, '')
+    .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ|BỐI CẢNH|NHIỆM VỤ).*?\]\s*/gi, '')
+    .replace(/^#+.*?\n/gi, '')
+    .trim();
+
+  // 2. BỘ NGUYÊN TẮC 1: TUYỆT ĐỐI CẤM KHEN NGỢI, XOA DỊU
+  const praisePatterns = [
+    /^(Thầy\s+(rất\s+)?(ghi nhận|thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng|chúc mừng em)[^.!?\n]*[.!?]\s*/i,
+    /(Thầy\s+(rất\s+)?(ghi nhận|thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng)[^.!?\n]*[.!?]\s*/gi
+  ];
+  praisePatterns.forEach(rx => {
+    cleaned = cleaned.replace(rx, '').trim();
+  });
+
+  // Cắt bỏ các danh sách tự vạch chiến lược / tầng nấc thay học sinh
+  cleaned = cleaned.replace(/(?:Để giúp em|Để làm chủ lộ trình|Thầy đề xuất|Thầy định hướng)[^:.\n]*Chiến lược Thích ứng Đa tầng[^:\n]*:?/gi, '');
+  cleaned = cleaned.replace(/[•\-\*]?\s*Tầng\s*[1-3][^:\n]*:?[^\n\r]*/gi, '');
+  cleaned = cleaned.replace(/Chiến lược Thích ứng Đa tầng/gi, '');
+  cleaned = cleaned.replace(/Mô hình hạ bậc mềm \(Soft Laddering\)/gi, '');
+  cleaned = cleaned.trim();
+
+  const combo = getRecommendedComboForMajor(effectiveCareer, userText);
+  const school = targetSchool || 'trường đại học mục tiêu';
+  const major = effectiveCareer || 'ngành mục tiêu';
+
+  if (round === 4) {
+    // NGUYÊN TẮC 4: Ở LƯỢT CUỐI CÙNG, RA LỆNH CHO HỌC SINH TỰ BƯỚC SANG BƯỚC 3 TRA CỨU
+    const standardDirective = `Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${school} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+
+    // Cắt bỏ dấu ? ở cuối câu
+    cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
+    cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
+    cleaned = cleaned.trim();
+
+    // Loại bỏ các câu điều hướng cũ nếu có
+    cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
+
+    // Rút gọn thành tối đa 1-2 câu nhận định mâu thuẫn trước khi ra lệnh
+    const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    let intro = '';
+    if (sentences.length > 0) {
+      intro = sentences.slice(0, 2).join(' ').trim();
+    } else {
+      intro = `Ngành ${major} tại ${school} đòi hỏi điểm số đồng đều của các môn trong tổ hợp xét tuyển (${combo}), việc chỉ có thế mạnh ở một môn không bảo đảm an toàn nếu các môn còn lại bị đuối sức.`;
+    }
+
+    return `${intro} ${standardDirective}`.trim();
+  } else {
+    // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
+    cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
+
+    if (!cleaned.endsWith('?')) {
+      if (round === 1) {
+        cleaned += ` Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
+      } else if (round === 2) {
+        cleaned += ` Trong bối cảnh AI và tự động hóa cạnh tranh gay gắt, em dựa vào năng lực chuyên môn vượt trội nào để nhà tuyển dụng trả cho em mức thu nhập kỳ vọng đó ngay khi mới tốt nghiệp?`;
+      } else if (round === 3) {
+        cleaned += ` Nhìn lại học bạ thực tế, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em đang thấy lo lắng, đuối sức nhất?`;
+      }
+    }
+
+    const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+    if (sentences.length > 3) {
+      const lastQ = sentences[sentences.length - 1];
+      const prevSentences = sentences.slice(0, 2).join(' ');
+      cleaned = `${prevSentences} ${lastQ}`;
+    }
+    return cleaned.trim();
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -412,21 +521,7 @@ export default async function handler(req, res) {
             .trim();
 
           if (isCompleteSentence(cleaned)) {
-            if (currentStage === 4) {
-              // GIAI ĐOẠN 4: LỌC SẠCH DẤU HỎI ? VÀ ĐẢM BẢO KẾT LỆNH BƯỚC 3
-              cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
-              cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
-              cleaned = cleaned.trim();
-
-              const step3Directive = "Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!";
-              if (!cleaned.includes("Bước 3") && !cleaned.includes("bước 3")) {
-                cleaned = cleaned + "\n\n" + step3Directive;
-              }
-            } else {
-              // GIAI ĐOẠN 1, 2, 3: NGHIÊM CẤM NHẮC ĐẾN BƯỚC 3
-              cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
-            }
-            replyText = cleaned;
+            replyText = sanitizeSocraticResponse(cleaned, currentStage, effectiveCareer, targetSchool, trimmedMsg);
             break;
           }
         }
@@ -437,7 +532,7 @@ export default async function handler(req, res) {
 
     // 8. Heuristic Fallback Nhận thức (Dự phòng khẩn cấp nếu API gặp sự cố)
     if (!replyText || !isCompleteSentence(replyText)) {
-      replyText = generateCognitiveFallback({
+      const rawFallback = generateCognitiveFallback({
         stage: currentStage,
         targetCareer,
         effectiveCareer,
@@ -449,6 +544,7 @@ export default async function handler(req, res) {
         expectedIncome,
         trimmedMsg
       });
+      replyText = sanitizeSocraticResponse(rawFallback, currentStage, effectiveCareer, targetSchool, trimmedMsg);
     }
 
     const isComplete = currentStage === 4;
@@ -475,7 +571,7 @@ export default async function handler(req, res) {
 }
 
 // ==============================================================================
-// TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP
+// TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP - BỘ NGUYÊN TẮC SOCRATES
 // ==============================================================================
 function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = '') {
   const { targetCareer, effectiveCareer: profEffective, isShifted: profShifted, targetSchool, hollandCode, reason, initialConfidence, expectedIncome } = profile;
@@ -489,179 +585,151 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
   const effectiveCareer = profEffective || (goalShift ? goalShift.newMajor : targetCareer);
   const askingCombo = isAskingAboutSubjectsOrCombos(userText);
   const lowerUser = (userText || '').toLowerCase();
+  const recommendedCombo = getRecommendedComboForMajor(effectiveCareer, userText);
 
-  // Chỉ thị thích ứng mục tiêu (Adaptive Shift Directive)
+  // Chỉ thị thích ứng mục tiêu
   let adaptiveDirective = '';
   if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị')) {
     adaptiveDirective = `
-[CHỈ DẪN QUAN TRỌNG KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP MÔN]:
-- Học sinh vừa đề cập ngành: "${effectiveCareer}" và/hoặc hỏi về tổ hợp môn ("${userText}").
-- TUYỆT ĐỐI KHÔNG ÉP HỌC SINH QUAY LẠI NGÀNH CŨ ("${targetCareer}")! Hãy nhiệt liệt hoan nghênh và công nhận bước ngoặt chuyển biến nhận thức (Turning Point) này của học sinh khi em dũng cảm nhìn lại năng lực thực tế.
-- NẾU HỌC SINH HỎI VỀ MÔN XÉT TUYỂN HOẶC NHẮC ĐẾN NGÀNH SƯ PHẠM GIÁO DỤC CHÍNH TRỊ / GDCD:
-  + Phải giải thích rõ ngành này xét tuyển các tổ hợp: C19 (Ngữ văn, Lịch sử, Giáo dục Kinh tế và Pháp luật - KTPL), C20 (Ngữ văn, Địa lý, KTPL), C00 (Văn, Sử, Địa), D14 (Văn, Sử, Anh), D01 (Toán, Văn, Anh)...
-  + Nhấn mạnh: Học tốt môn KTPL là một lợi thế điểm số cực kỳ đắt giá khi xét tuyển tổ hợp C19 hoặc C20!
-  + Đối chất thực tế: Chỉ tiêu ngành này thường khá ít, điểm chuẩn thường rất cao (25 - 28 điểm). Để trúng tuyển, không chỉ môn KTPL điểm cao mà môn Văn và môn Sử (hoặc Địa/Anh) đi kèm cũng phải từ 8.0 - 8.5+ điểm, không được để môn nào kéo tụt tổng điểm.
-- Chiến lược Thích ứng Đa tầng PHẢI THIẾT LẬP HOÀN TOÀN THEO NGÀNH MỚI "${effectiveCareer}":
-  + Tầng 1: Kế hoạch bứt phá tối đa môn thế mạnh (như KTPL) và kéo điểm các môn trong tổ hợp xét tuyển của ngành ${effectiveCareer} để đỗ vào trường đại học mục tiêu.
-  + Tầng 2: Chuẩn bị nguyện vọng dự phòng các ngành gần (Khối Khoa học Xã hội, Luật, Quản lý nhà nước, Công tác xã hội hoặc Sư phạm tại các trường lân cận vừa sức).
-  + Tầng 3: Lưới an toàn với hệ Cao đẳng Sư phạm hoặc các hệ đào tạo thực hành dịch vụ pháp lý, hành chính.
+[CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
+- Ngành học sinh đang hướng tới: "${effectiveCareer}".
+- Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}.
+- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu. Không tự vạch ra các Tầng 1, Tầng 2, Tầng 3.
+- Ở Lượt 3: Đối chất mâu thuẫn giữa yêu cầu tổ hợp ${recommendedCombo} và học lực thực tế.
+- Ở Lượt 4: Nhận định rủi ro chênh lệch điểm chuẩn và RA LỆNH học sinh tự sang Bước 3 tra cứu tổ hợp ${recommendedCombo} của ${targetSchool}.
 `;
   }
 
+  const CORE_PROMPT = `
+BẠN LÀ THẦY SOCRATES - TRIẾT GIA PHẢN BIỆN HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC CBAS (VISEF 2026).
+Bạn đang thực hiện phiên đối thoại phản tư 1-1 với một học sinh THPT nhằm bóc tách thiên kiến nhận thức và mỏ neo nghề nghiệp.
+
+BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC TUÂN THỦ 100%):
+1. TUYỆT ĐỐI KHÔNG KHEN NGỢI, KHÔNG XOA DỊU:
+   - CẤM các mẫu câu: "Thầy rất thấu hiểu", "Thầy ghi nhận", "Góc nhìn rất tiến bộ", "Rất tuyệt vời", "Thầy hoan nghênh", "Thầy khen ngợi", "Thầy ủng hộ", "Rất đáng khích lệ", "vũ khí điểm số", "điểm sáng", "bước tiến bộ"...
+   - Giữ văn phong trung tính, điềm đạm, sắc sảo của một triết gia phản biện. Không khen ngợi, không vuốt ve cảm xúc.
+2. QUY TẮC "MỘT CÂU HỎI TRUY VẤN - KHÔNG ĐƯA ĐÁP ÁN":
+   - Mỗi lượt phản hồi chỉ được đưa ra TỐI ĐA 2-3 CÂU VĂN và KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN (ở Vòng 1, 2, 3).
+   - Tuyệt đối không giải thích thay, KHÔNG vạch sẵn chiến lược thay học sinh (CẤM đưa ra các tầng nấc Tầng 1, Tầng 2, Tầng 3).
+3. KỸ THUẬT BÓC TÁCH MÂU THUẪN (ELENCHUS):
+   - Nếu học sinh nói mông lung: Hỏi xoáy vào bằng chứng cụ thể.
+   - Nếu học sinh tự tin ảo: Đem mâu thuẫn giữa kỳ vọng và thực tế để buộc học sinh tự đối diện.
+4. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
+   - Ở lượt cuối cùng (Lượt 4), TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi (không có dấu ?), không tự đọc số liệu điểm chuẩn, mà ra lệnh dứt khoát:
+     "Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp [Tổ hợp môn] của [Trường mục tiêu] 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
+`;
+
   // ● KHI currentStage === 1 (Lượt khởi đầu):
   if (stage === 1) {
-    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
-Bạn đang bắt đầu phiên đối thoại phản tư với một học sinh THPT.
-
-[HỒ SƠ HỌC SINH]:
-- Nhóm thiên hướng Holland (RIASEC): ${hollandCode}
+    return `${CORE_PROMPT}
+BỐI CẢNH VÒNG 1 (ĐỐI CHIẾU MÃ HOLLAND & ĐỘNG CƠ CHỌN NGÀNH):
+- Nhóm thiên hướng Holland: ${hollandCode}
 - Ngành mong muốn: ${targetCareer}
 - Trường đại học mục tiêu: ${targetSchool}
 - Mức tự tin ban đầu: ${initialConfidence}/10
-- Lý do chọn ngành ban đầu: "${reason}"
+- Lý do chọn ngành: "${reason}"
 
-[NHIỆM VỤ DUY NHẤT Ở LƯỢT 1]:
-1. Chào học sinh theo mã Holland [${hollandCode}], ngành [${targetCareer}], lý do [${reason}].
-2. HỎI ĐÚNG 01 CÂU DUY NHẤT:
+[NHIỆM VỤ LƯỢT 1]:
+1. Đối thoại tối đa 2 câu văn trung tính, điềm đạm.
+2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
 "Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?"
 
-[NGHIÊM CẤM TUYỆT ĐỐI]:
-- TUYỆT ĐỐI KHÔNG nói về thu nhập hay tiền bạc.
-- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG khen ngợi, không xoa dịu.
+- TUYỆT ĐỐI KHÔNG nói về thu nhập, điểm chuẩn, tổ hợp môn hay Bước 3.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
   }
 
   // ● KHI currentStage === 2 (Lượt thách thức việc làm & thu nhập):
   if (stage === 2) {
-    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
-Bạn đang ở Lượt 2 của phiên đối thoại phản tư. Học sinh vừa trả lời câu hỏi ở Stage 1.
+    return `${CORE_PROMPT}
+BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN THU NHẬP & KỶ NGUYÊN AI):
+- Ngành: ${targetCareer}, trường: ${targetSchool}.
+- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}".
+- Học sinh vừa trả lời: "${userText}".
 
-[HỒ SƠ HỌC SINH]:
-- Ngành mong muốn: ${targetCareer}
-- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}"
-- Câu trả lời của học sinh ở Stage 1: "${userText}"
+[NHIỆM VỤ LƯỢT 2]:
+1. Phản hồi tối đa 2 câu văn trung tính, bóc tách mâu thuẫn giữa kỳ vọng ${expectedIncome} và áp lực cạnh tranh.
+2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+"Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Trong bối cảnh AI và tự động hóa cạnh tranh gay gắt, em dựa vào năng lực chuyên môn vượt trội nào để nhà tuyển dụng trả cho em mức thu nhập đó ngay khi mới tốt nghiệp?"
 
-[NHIỆM VỤ DUY NHẤT Ở LƯỢT 2]:
-1. Ghi nhận câu trả lời của học sinh trong 1-2 câu ngắn gọn, ấm áp.
-2. Xoáy vào dữ liệu thu nhập [${expectedIncome}] với ĐÚNG CÂU HỎI SAU:
-"Em kỳ vọng mức thu nhập sau khi ra trường là ${expectedIncome}. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?"
-
-[NGHIÊM CẤM TUYỆT ĐỐI]:
-- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay học bạ.
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
-- Khung chat bắt buộc phải giữ mở để học sinh trả lời tiếp ở Stage 3.
-- Kết thúc bằng đúng câu hỏi về thu nhập & AI ở trên.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu.
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay Bước 3.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
   }
 
   // ● KHI currentStage === 3 (Lượt đối chất tổ hợp môn & học lực thực tế):
   if (stage === 3) {
-    return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
-Bạn đang ở Lượt 3 của phiên đối thoại phản tư. Học sinh vừa trả lời câu hỏi ở Stage 2.
-
-[HỒ SƠ HỌC SINH]:
+    return `${CORE_PROMPT}${adaptiveDirective}
+BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
 - Ngành mong muốn hiện tại: ${effectiveCareer}
 - Trường đại học mục tiêu: ${targetSchool}
-- Câu trả lời của học sinh ở Stage 2 (về thu nhập/AI/cạnh tranh): "${userText}"
-${adaptiveDirective}
-[NHIỆM VỤ DUY NHẤT Ở LƯỢT 3]:
-1. Ghi nhận ngắn gọn góc nhìn của học sinh về việc làm/thu nhập.
-2. Dẫn dắt vào bài toán điểm số với ĐÚNG CÂU HỎI SAU:
+- Tổ hợp môn tham chiếu: ${recommendedCombo}
+- Học sinh vừa phản hồi: "${userText}"
+
+[NHIỆM VỤ LƯỢT 3]:
+1. Phản hồi tối đa 2 câu văn trung tính về thực tế tuyển sinh.
+2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
 "Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
 
-[NGHIÊM CẤM TUYỆT ĐỐI]:
-- TUYỆT ĐỐI KHÔNG đưa ra kết luận hay giải pháp hạ bậc ở lượt này.
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 hay kết thúc phiên chat.
-- Khung chat bắt buộc phải giữ mở để học sinh trả lời về môn học ở Stage 4.
-- Kết thúc bằng đúng câu hỏi về tổ hợp & môn sở trường/đuối sức ở trên.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu.
+- TUYỆT ĐỐI KHÔNG đưa ra kết luận hay vạch sẵn chiến lược Tầng 1, 2, 3.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
   }
 
-  // ● KHI currentStage === 4 (Lượt kết thúc & Tái cấu trúc 3 tầng nấc):
-  return `BẠN LÀ THẦY SOCRATES - NHÀ THAM VẤN TÂM LÝ GIÁO DỤC VÀ CAN THIỆP HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC VISEF 2026.
-Bạn đang ở Lượt 4 (Lượt kết thúc phản tư) của phiên đối thoại. Học sinh vừa trả lời về môn học ở Stage 3.
-
-[HỒ SƠ HỌC SINH]:
-- Ngành mong muốn hiện tại: ${effectiveCareer} (Ban đầu: ${targetCareer})
+  // ● KHI currentStage === 4 (Lượt kết thúc & Điều hướng Bước 3 tự chủ):
+  return `${CORE_PROMPT}${adaptiveDirective}
+BỐI CẢNH VÒNG 4 (BÓC TÁCH MÂU THUẪN TUYỂN SINH & ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
+- Ngành mong muốn hiện tại: ${effectiveCareer}
 - Trường đại học mục tiêu: ${targetSchool}
-- Câu trả lời của học sinh ở Stage 3: "${userText}"
-${adaptiveDirective}
-[NHIỆM VỤ DUY NHẤT Ở LƯỢT 4]:
-1. AI phân tích môn thế mạnh và môn yếu học sinh vừa nêu trong tin nhắn "${userText}".
-   - Nếu học sinh đổi ý sang ngành mới "${effectiveCareer}" hoặc hỏi tổ hợp xét tuyển, hãy công nhận ngay sự chuyển biến đó và giải đáp rõ ràng tổ hợp xét tuyển của ngành ${effectiveCareer} (như C19, C20 cho KTPL và Sư phạm Giáo dục Chính trị).
-   - Chỉ ra thách thức điểm chuẩn thực tế (25 - 28 điểm) và rủi ro nếu các môn còn lại trong tổ hợp bị đuối điểm.
-2. Trình bày Chiến lược Thích ứng Đa tầng (3 tầng nấc) XOAY QUANH NGÀNH ${effectiveCareer}:
-   + Tầng 1: Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${effectiveCareer} tại trường mục tiêu.
-   + Tầng 2: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học vừa sức hơn hoặc các ngành gần liên quan.
-   + Tầng 3: Lưới an toàn với các hệ đào tạo thực hành vững chắc để luôn chủ động.
-3. KẾT LỆNH BẮT BUỘC:
-"Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!"
+- Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}
+- Học sinh vừa trả lời về môn học: "${userText}"
 
-[CẢNH BÁO TỐI CAO - ĐẶC BIỆT]:
-- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt thêm bất kỳ câu hỏi nào. KHÔNG CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
-- TUYỆT ĐỐI KHÔNG ép học sinh thi ngành cũ "${targetCareer}" nếu học sinh đã nêu hướng đi mới "${effectiveCareer}".
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", không kèm tiêu đề hay phân tích kỹ thuật.${avoidRepetition}`;
+[NHIỆM VỤ LƯỢT 4 - BẮT BUỘC TUÂN THỦ NGUYÊN TẮC 4]:
+1. Đưa ra đúng 1-2 câu nhận định trung tính, chỉ ra rủi ro chênh lệch điểm chuẩn nếu chỉ dựa vào một môn mà để các môn còn lại trong tổ hợp ${recommendedCombo} bị kéo tụt điểm.
+2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC:
+"Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${recommendedCombo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
+
+[CẢNH BÁO TỐI CAO]:
+- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
+- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu ("Thầy ghi nhận...", "Rất tuyệt vời...").
+- TUYỆT ĐỐI KHÔNG vạch sẵn chiến lược thay học sinh (CẤM đưa ra Tầng 1, Tầng 2, Tầng 3).
+- Toàn bộ phản hồi chỉ gồm 2 đến 3 câu văn dứt khoát.${avoidRepetition}`;
 }
 
 // ==============================================================================
-// HÀM FALLBACK NHẬN THỨC THEO TỪNG GIAI ĐOẠN ĐỘC LẬP
+// HÀM FALLBACK NHẬN THỨC CHUẨN BỘ NGUYÊN TẮC SOCRATES
 // ==============================================================================
 function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propEffective, isShifted: propShifted, targetSchool, hollandCode, reason, initialConfidence, expectedIncome, trimmedMsg }) {
-  if (stage === 1) {
-    return `Chào em. Thầy ghi nhận em có thiên hướng Holland **${hollandCode}**, dự định chọn **${targetCareer}** tại **${targetSchool}** với mức tự tin **${initialConfidence}/10** và lý do: '${reason}'.\n\nEm thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
-  }
-
-  if (stage === 2) {
-    return `Thầy rất ghi nhận và thấu cảm với chia sẻ chân thành của em về động cơ chọn ngành.\n\nEm kỳ vọng mức thu nhập sau khi ra trường là **${expectedIncome}**. Trong bối cảnh 5-10 năm tới khi AI và chuyển đổi số làm thay đổi thị trường giáo dục, theo em một sinh viên mới tốt nghiệp ngành này có dễ dàng tìm việc để đạt ngay mức thu nhập đó không? Em nghĩ mình cần năng lực gì vượt trội để cạnh tranh?`;
-  }
-
-  if (stage === 3) {
-    return `Thầy rất ủng hộ tinh thần tích cực và nhận thức thực tế của em về thị trường lao động.\n\nDù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành **${propEffective || targetCareer}** tại **${targetSchool}**, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
-  }
-
-  // Stage 4
-  const lowerMsg = (trimmedMsg || '').toLowerCase();
   const goalShift = detectGoalShift(trimmedMsg);
   const isShifted = propShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = propEffective || (goalShift ? goalShift.newMajor : targetCareer);
+  const combo = getRecommendedComboForMajor(effectiveCareer, trimmedMsg);
+
+  if (stage === 1) {
+    return `Em đã chọn ngành ${effectiveCareer} tại ${targetSchool} với lý do: '${reason}'. Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
+  }
+
+  if (stage === 2) {
+    return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Trong bối cảnh AI và tự động hóa cạnh tranh gay gắt, em dựa vào năng lực chuyên môn vượt trội nào để nhà tuyển dụng trả cho em mức thu nhập đó ngay khi mới tốt nghiệp?`;
+  }
+
+  if (stage === 3) {
+    return `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
+  }
+
+  // Stage 4
   const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
-
-  // TRƯỜNG HỢP ĐẶC BIỆT: HỌC SINH NÊU NGÀNH SƯ PHẠM GIÁO DỤC CHÍNH TRỊ / GDCD / KTPL
-  if (effectiveCareer.toLowerCase().includes('chính trị') || effectiveCareer.toLowerCase().includes('công dân') || lowerMsg.includes('ktpl') || lowerMsg.includes('chính trị')) {
-    return `Thầy rất hoan nghênh và ghi nhận bước chuyển biến nhận thức rất thực tế của em! Việc em tự nhìn nhận lại năng lực và chủ động hướng sang ngành **Sư phạm Giáo dục Chính trị** (đào tạo giáo viên dạy môn KTPL và GDCD) là một quyết định rất đáng khích lệ khi em nhận ra thế mạnh của mình.\n\n` +
-      `Về tổ hợp xét tuyển, ngành Sư phạm Giáo dục Chính trị hiện nay tuyển sinh các tổ hợp trọng điểm như:\n` +
-      `• **C19** (Ngữ văn, Lịch sử, Giáo dục Kinh tế và Pháp luật) hoặc **C20** (Ngữ văn, Địa lý, GDKT&PL).\n` +
-      `• **C00** (Ngữ văn, Lịch sử, Địa lý) hoặc **D14** (Ngữ văn, Lịch sử, Tiếng Anh) / **D01** (Toán, Văn, Anh).\n` +
-      `Việc em **học tốt môn KTPL** chính là một "vũ khí điểm số" cực kỳ lợi thế nếu em chọn xét tuyển theo tổ hợp C19 hoặc C20!\n\n` +
-      `Tuy nhiên, em cần lưu ý rằng ngành Sư phạm Giáo dục Chính trị có chỉ tiêu tuyển sinh thường khá ít, do đó điểm chuẩn trúng tuyển luôn ở mức rất cao (thường từ 25 đến 28 điểm). Để trúng tuyển, chỉ giỏi môn KTPL là chưa đủ mà em cần đảm bảo cả môn Ngữ văn và môn Lịch sử (hoặc Địa lý) cũng phải đạt từ 8 - 8.5 điểm trở lên, không được để môn nào kéo tụt tổng điểm.\n\n` +
-      `Để giúp em hiện thực hóa ước mơ trở thành giáo viên một cách vững vàng nhất, Thầy đề xuất Chiến lược Thích ứng Đa tầng như sau:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1 - Bứt phá)**: Tối ưu tối đa điểm môn KTPL (mục tiêu 9+) và lên kế hoạch kéo điểm môn Văn, Sử trong tổ hợp C19 để tự tin cạnh tranh vào ngành Sư phạm Giáo dục Chính trị tại trường đại học mục tiêu.\n\n` +
-      `• **Tầng 2 (Nguyện vọng 2 - Dự phòng vừa sức)**: Đăng ký thêm nguyện vọng dự phòng vào các ngành đào tạo gần hoặc cùng khối xã hội như Luật, Quản lý nhà nước, Công tác xã hội hoặc các trường Đại học lân cận có đào tạo sư phạm với điểm chuẩn mềm hơn.\n\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Xây dựng lưới an toàn với hệ Cao đẳng Sư phạm hoặc các ngành thực hành dịch vụ pháp lý, hành chính - văn phòng để em luôn chủ động trong mọi tình huống.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm của ngành nhé!`;
+  if (strongSubject && weakSubject) {
+    return `Có thế mạnh ở môn ${strongSubject} là một lợi thế, nhưng môn ${weakSubject} đuối sức sẽ kéo tụt tổng điểm xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
   }
 
-  // TRƯỜNG HỢP HỌC SINH ĐỔI SANG NGÀNH KHÁC BẤT KỲ
-  if (isShifted) {
-    const strongName = strongSubject || 'môn sở trường của em';
-    return `Thầy rất hoan nghênh và ghi nhận bước chuyển biến nhận thức rất thực tế của em khi chủ động hướng sang ngành **${effectiveCareer}** phù hợp hơn với năng lực.\n\n` +
-      `Có thế mạnh ở ${strongName} là điểm tựa rất tốt. Tuy nhiên, em cần tìm hiểu kỹ các tổ hợp xét tuyển của ngành ${effectiveCareer} để đảm bảo không môn nào trong tổ hợp bị đuối điểm làm kéo tụt tổng điểm chuẩn trúng tuyển.\n\n` +
-      `Để làm chủ lộ trình, Thầy định hướng Chiến lược Thích ứng Đa tầng như sau:\n\n` +
-      `• **Tầng 1 (Nguyện vọng 1)**: Lên kế hoạch bứt phá tối đa môn sở trường và các môn trong tổ hợp xét tuyển của ngành ${effectiveCareer}.\n` +
-      `• **Tầng 2 (Nguyện vọng 2)**: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học có cùng ngành hoặc ngành liên quan vừa sức hơn.\n` +
-      `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn với các hệ đào tạo thực hành chất lượng cao để đảm bảo cơ hội việc làm vững chắc.\n\n` +
-      `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
+  if (strongSubject && !weakSubject) {
+    return `Ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi điểm số cạnh tranh của cả 3 môn trong tổ hợp xét tuyển, một môn sở trường ${strongSubject} không thể gánh trọn vẹn nếu hai môn còn lại thiếu an toàn. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
   }
 
-  // Trường hợp thông thường
-  const strongName = strongSubject || 'môn sở trường của em';
-  const weakName = weakSubject || 'môn học em đang thấy lo lắng';
-
-  return `Thầy phân tích thấy việc có thế mạnh ở môn ${strongName} là điểm tựa rất tốt. Tuy nhiên, nếu môn ${weakName} còn đuối sức, rủi ro điểm chuẩn sẽ kéo tụt tổng điểm cả tổ hợp khi xét tuyển vào ngành **${targetCareer}** tại **${targetSchool}**.\n\n` +
-    `Để luôn làm chủ lộ trình tương lai, Thầy định hướng cho em Chiến lược Thích ứng Đa tầng với 3 tầng nấc:\n\n` +
-    `• **Tầng 1 (Nguyện vọng 1)**: Kế hoạch bứt phá môn thế mạnh để kéo điểm thi vào ${targetSchool}.\n` +
-    `• **Tầng 2 (Nguyện vọng 2)**: Chuẩn bị nguyện vọng dự phòng tại các trường Đại học vừa sức hơn (như ĐH Phú Yên, ĐH Khánh Hòa, ĐH Tây Nguyên).\n` +
-    `• **Tầng 3 (Lưới an toàn)**: Lưới an toàn với các hệ đào tạo thực hành vững chắc để luôn chủ động.\n\n` +
-    `Bây giờ, em hãy bấm chuyển sang Bước 3 để tự tay đối chứng số liệu điểm chuẩn và thị trường việc làm nhé!`;
+  return `Ngành ${effectiveCareer} tại ${targetSchool} thường có điểm chuẩn cạnh tranh và đòi hỏi điểm số đồng đều của các môn trong tổ hợp xét tuyển (${combo}). Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
 }
