@@ -14,13 +14,14 @@ import {
   RefreshCw, 
   Award, 
   GraduationCap, 
-  Lightbulb,
-  Sparkles,
-  Anchor,
-  HelpCircle,
-  TrendingUp,
-  Brain,
-  ShieldCheck
+  Lightbulb, 
+  Sparkles, 
+  Anchor, 
+  HelpCircle, 
+  TrendingUp, 
+  Brain, 
+  ShieldCheck,
+  AlertCircle
 } from 'lucide-react'
 
 // BỘ 30 CÂU HỎI RIASEC CHUẨN KHOA HỌC HÀNH VI (5 CÂU / NHÓM)
@@ -193,9 +194,15 @@ const HollandTest = () => {
   
   const [questions, setQuestions] = useState(DEFAULT_HOLLAND_QUESTIONS)
   const [answers, setAnswers] = useState({})
-  const [currentPage, setCurrentPage] = useState(0) // 0 to 5 for questions, 6 for Anchor form
+  const [currentPage, setCurrentPage] = useState(0) // 0 to 5 for questions (5 questions/page)
+  // 3 Giai đoạn cốt lõi theo đặc tả khoa học ViSEF CBAS 2026:
+  // 'anchor': Giai đoạn 1 - Bộc lộ mỏ neo chủ quan (T0)
+  // 'quiz': Giai đoạn 2 - Khảo sát thiên hướng khách quan (30 câu RIASEC)
+  // 'result': Giai đoạn 3 - Phát hiện mâu thuẫn nhận thức & Đối chiếu kết quả
+  const [stepPhase, setStepPhase] = useState('anchor')
   const [isLoading, setIsLoading] = useState(true)
   const [toast, setToast] = useState(null)
+
   // Trạng thái Form Mỏ Neo Nhận thức (Initial Anchor - Chuẩn ViSEF 2026: 4 trường bắt buộc)
   const [targetMajor, setTargetMajor] = useState('Sư phạm')
   const [targetSchool, setTargetSchool] = useState('ĐH Quy Nhơn')
@@ -214,7 +221,6 @@ const HollandTest = () => {
 
   const questionsPerPage = 5
   const totalQuestionPages = Math.ceil(questions.length / questionsPerPage) // 6 pages for 30 questions
-  const totalStages = totalQuestionPages + 1 // Page 0-5: Questions, Page 6: Anchor Form
 
   useEffect(() => {
     fetchTestAndInitialAnchor()
@@ -240,6 +246,8 @@ const HollandTest = () => {
       qList.forEach(q => { initialAnswers[q.id] = null })
       setAnswers(initialAnswers)
 
+      let hasCompleted = false
+
       // 2. Tải mỏ neo đã lưu từ trước (ưu tiên cbas_user_profile)
       const cachedProfile = localStorage.getItem('cbas_user_profile')
       if (cachedProfile) {
@@ -257,38 +265,54 @@ const HollandTest = () => {
         } catch (e) {
           console.warn('Lỗi đọc cbas_user_profile:', e)
         }
-      } else {
-        const cachedAnchor = localStorage.getItem('career_initial_anchor') || localStorage.getItem('cbas_anchor_data')
-        if (cachedAnchor) {
-          try {
-            const parsed = JSON.parse(cachedAnchor)
-            if (parsed.target_major || parsed.target_career) {
-              setTargetMajor(parsed.target_major || parsed.target_career)
-            }
-            if (parsed.target_university) {
-              setTargetSchool(parsed.target_university)
-              setTargetUniversity(parsed.target_university)
-            }
-            if (parsed.choice_source || parsed.source_of_influence) {
-              setReason(parsed.choice_source || parsed.source_of_influence)
-            }
-            if (parsed.confidence_score_initial || parsed.confidence_score) {
-              setConfidenceScore(Number(parsed.confidence_score_initial || parsed.confidence_score))
-            }
-            if (parsed.expected_income || parsed.expectedIncome) {
-              setExpectedIncome(parsed.expected_income || parsed.expectedIncome)
-            }
-            if (parsed.holland_code || parsed.primary_code) {
-              setCalculatedRiasecCode(parsed.holland_code || parsed.primary_code)
-            }
-          } catch (e) {
-            console.warn('Lỗi đọc mỏ neo từ localStorage:', e)
+      }
+
+      const cachedAnchor = localStorage.getItem('career_initial_anchor') || localStorage.getItem('cbas_anchor_data')
+      if (cachedAnchor) {
+        try {
+          const parsed = JSON.parse(cachedAnchor)
+          if (parsed.target_major || parsed.target_career) {
+            setTargetMajor(parsed.target_major || parsed.target_career)
           }
+          if (parsed.target_university) {
+            setTargetSchool(parsed.target_university)
+            setTargetUniversity(parsed.target_university)
+          }
+          if (parsed.choice_source || parsed.source_of_influence) {
+            setReason(parsed.choice_source || parsed.source_of_influence)
+          }
+          if (parsed.confidence_score_initial || parsed.confidence_score) {
+            setConfidenceScore(Number(parsed.confidence_score_initial || parsed.confidence_score))
+          }
+          if (parsed.expected_income || parsed.expectedIncome) {
+            setExpectedIncome(parsed.expected_income || parsed.expectedIncome)
+          }
+          if (parsed.holland_code || parsed.primary_code) {
+            setCalculatedRiasecCode(parsed.holland_code || parsed.primary_code)
+          }
+          if (parsed.scores && (parsed.primary_code || parsed.holland_code)) {
+            setResult({
+              scores: parsed.scores,
+              primaryCode: parsed.primary_code || parsed.holland_code,
+              anchorData: parsed
+            })
+            hasCompleted = true
+          }
+        } catch (e) {
+          console.warn('Lỗi đọc mỏ neo từ localStorage:', e)
         }
+      }
+
+      // Nếu đã có kết quả hoàn tất trước đó thì hiển thị kết quả (GĐ 3), nếu không bắt đầu từ GĐ 1 (Mỏ neo)
+      if (hasCompleted) {
+        setStepPhase('result')
+      } else {
+        setStepPhase('anchor')
       }
     } catch (err) {
       console.warn('Sử dụng bộ 30 câu hỏi Holland mặc định:', err)
       setQuestions(DEFAULT_HOLLAND_QUESTIONS)
+      setStepPhase('anchor')
     } finally {
       setIsLoading(false)
     }
@@ -301,12 +325,13 @@ const HollandTest = () => {
     }))
   }
 
-  const isAnchorPage = currentPage === totalQuestionPages
-
   const pageQuestions = questions.slice(
     currentPage * questionsPerPage,
     (currentPage + 1) * questionsPerPage
   )
+
+  const answeredCount = Object.values(answers).filter(val => val !== null).length
+  const progressPercent = Math.round((answeredCount / (questions.length || 1)) * 100)
 
   // Hàm tính toán điểm RIASEC và mã nổi trội 3 chữ cái
   const calculateRiasecCode = () => {
@@ -326,34 +351,74 @@ const HollandTest = () => {
     return { scores, primaryCode }
   }
 
-  const handleNext = () => {
-    if (!isAnchorPage) {
-      const unanswered = pageQuestions.some(q => answers[q.id] === null)
-      if (unanswered) {
-        setToast({ type: 'warning', message: 'Vui lòng chọn câu trả lời cho cả 5 câu hỏi ở trang này nhé!' })
-        return
-      }
+  // XỬ LÝ GIAI ĐOẠN 1: XÁC NHẬN MỎ NEO CHỦ QUAN (T0)
+  const handleConfirmAnchor = () => {
+    if (!targetMajor.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng nhập ngành nghề mục tiêu của em!' })
+      return
     }
-
-    // Khi hoàn tất 30 câu hỏi (trang 5 chuyển sang trang 6: Form mỏ neo ban đầu)
-    if (currentPage === totalQuestionPages - 1) {
-      const { scores, primaryCode } = calculateRiasecCode()
-      setCalculatedRiasecCode(primaryCode)
-      // KHÔNG gọi setResult ở đây để học sinh điền Form xác lập mỏ neo!
-      setCurrentPage(prev => prev + 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (!reason.trim()) {
+      setToast({ type: 'warning', message: 'Vui lòng điền lý do em chọn ngành nghề này!' })
+      return
+    }
+    if (!expectedIncome) {
+      setToast({ type: 'warning', message: 'Vui lòng chọn kỳ vọng mức thu nhập khởi điểm!' })
       return
     }
 
-    if (currentPage < totalStages - 1) {
+    const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
+    const tempProfile = {
+      targetMajor: targetMajor.trim(),
+      targetSchool: finalSchool,
+      reason: reason.trim(),
+      initialConfidence: Number(confidenceScore),
+      expectedIncome: expectedIncome
+    }
+    const tempAnchorData = {
+      target_career: tempProfile.targetMajor,
+      target_university: tempProfile.targetSchool,
+      source_of_influence: tempProfile.reason,
+      confidence_score: String(tempProfile.initialConfidence),
+      expected_income: tempProfile.expectedIncome
+    }
+
+    // Lưu tạm mỏ neo vào localStorage để bảo toàn dữ liệu
+    try {
+      localStorage.setItem("cbas_user_profile", JSON.stringify(tempProfile))
+      localStorage.setItem("userAnchorData", JSON.stringify(tempAnchorData))
+      localStorage.setItem("cbas_anchor_data", JSON.stringify(tempAnchorData))
+    } catch(e) {}
+
+    setToast({ type: 'success', message: '✓ Đã ghi nhận Mỏ neo chủ quan (T₀)! Tiếp tục thực hiện 30 câu hỏi trắc nghiệm RIASEC.' })
+    setStepPhase('quiz')
+    setCurrentPage(0)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // XỬ LÝ GIAI ĐOẠN 2: CHUYỂN TRANG CÂU HỎI
+  const handleNextQuizPage = () => {
+    const unanswered = pageQuestions.some(q => answers[q.id] === null)
+    if (unanswered) {
+      setToast({ type: 'warning', message: 'Vui lòng chọn câu trả lời cho cả 5 câu hỏi ở trang này nhé!' })
+      return
+    }
+
+    if (currentPage < totalQuestionPages - 1) {
       setCurrentPage(prev => prev + 1)
       window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      // Đã hoàn tất 30 câu -> Nộp bài & Phát hiện mâu thuẫn nhận thức (GĐ 3)
+      handleSubmitQuizAndDetectConflict()
     }
   }
 
-  const handleBack = () => {
+  const handleBackQuizPage = () => {
     if (currentPage > 0) {
       setCurrentPage(prev => prev - 1)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } else {
+      // Đang ở trang 0 bấm quay lại -> Trở về Form mỏ neo chủ quan T0
+      setStepPhase('anchor')
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
@@ -365,89 +430,20 @@ const HollandTest = () => {
     };
   }, []);
 
-  // Hàm chuyển sang Bước 2 và đóng gói Object userProfile chuẩn ViSEF 2026
-  const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
-    const { scores, primaryCode } = calculateRiasecCode()
-    const effectiveCode = primaryCode || calculatedRiasecCode || result?.primaryCode || "AEI"
-    const finalMajor = targetMajor.trim() || "Sư phạm"
-    const finalSchool = (targetSchool || targetUniversity || "ĐH Quy Nhơn").trim()
-    const finalReason = reason.trim() || "Em thích từ nhỏ"
-
-    const userProfile = {
-      hollandCode: effectiveCode,
-      targetMajor: finalMajor,
-      targetSchool: finalSchool,
-      reason: finalReason,
-      initialConfidence: Number(confidenceScore),
-      expectedIncome: expectedIncome || "15 - 20 triệu/tháng"
-    }
-
-    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
-    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
-    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
-
-    const userAnchorData = {
-      target_career: finalMajor,
-      target_university: finalSchool,
-      source_of_influence: finalReason,
-      confidence_score: String(userProfile.initialConfidence),
-      expected_income: userProfile.expectedIncome,
-      holland_codes: rawCodes,
-      holland_code: effectiveCode,
-      compatibility_status: compatStatus,
-      holland_analysis: analysisText
-    }
-
-    // Lưu đồng bộ các key LocalStorage cho Bước 2 và toàn hệ thống
-    localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
-    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
-    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
-    localStorage.setItem("career_initial_anchor", JSON.stringify({
-      ...userProfile,
-      target_major: finalMajor,
-      target_university: finalSchool,
-      choice_source: finalReason,
-      confidence_score_initial: userProfile.initialConfidence,
-      expected_income: userProfile.expectedIncome,
-      holland_codes: rawCodes,
-      holland_code: effectiveCode,
-      primary_code: effectiveCode,
-      scores,
-      compatibility_status: compatStatus,
-      holland_analysis: analysisText
-    }))
-
-    // Chuyển hướng sang trang Bước 2 (AI Tham vấn phản tư)
-    if (customRedirectUrl.startsWith('http')) {
-      window.location.href = customRedirectUrl
-    } else {
-      navigate(customRedirectUrl)
-    }
-  }
-
-  // Nộp bài tại Form Bước 1: Kiểm tra 4 trường bắt buộc & Lưu Object userProfile
-  const handleSubmit = async () => {
-    // 1. Kiểm tra toàn bộ câu hỏi đã làm
-    const unansweredIds = Object.keys(answers).filter(id => answers[id] === null)
-    if (unansweredIds.length > 0) {
-      setToast({ type: 'warning', message: 'Bạn chưa hoàn thành đầy đủ 30 câu hỏi trắc nghiệm!' })
-      setCurrentPage(0)
+  // XỬ LÝ NỘP BÀI TRẮC NGHIỆM & ĐỐI CHIẾU MÂU THUẪN NHẬN THỨC (GIAI ĐOẠN 3)
+  const handleSubmitQuizAndDetectConflict = async () => {
+    const unansweredCount = questions.filter(q => answers[q.id] === null).length
+    if (unansweredCount > 0) {
+      setToast({ 
+        type: 'warning', 
+        message: `Em còn ${unansweredCount} câu trắc nghiệm chưa trả lời. Vui lòng hoàn thành để hệ thống phân tích chính xác nhất!` 
+      })
       return
     }
 
-    // 2. Kiểm tra đúng 4 trường thông tin bắt buộc
-    if (!targetMajor.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng nhập ngành nghề mục tiêu của em!' })
-      return
-    }
-
-    if (!reason.trim()) {
-      setToast({ type: 'warning', message: 'Vui lòng điền lý do em chọn ngành nghề này!' })
-      return
-    }
-
-    if (!expectedIncome) {
-      setToast({ type: 'warning', message: 'Vui lòng chọn kỳ vọng mức thu nhập khởi điểm!' })
+    if (!targetMajor.trim() || !reason.trim() || !expectedIncome) {
+      setToast({ type: 'warning', message: 'Vui lòng kiểm tra lại thông tin mỏ neo chủ quan T0!' })
+      setStepPhase('anchor')
       return
     }
 
@@ -457,8 +453,6 @@ const HollandTest = () => {
       const effectiveCode = primaryCode || calculatedRiasecCode || "AEI"
       const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
 
-      // Đóng gói đối tượng userProfile chuẩn ViSEF 2026:
-      // { hollandCode, targetMajor, targetSchool, reason, initialConfidence, expectedIncome }
       const userProfile = {
         hollandCode: effectiveCode,
         targetMajor: targetMajor.trim(),
@@ -527,8 +521,8 @@ const HollandTest = () => {
           scores
         }
       })
-
-      setToast({ type: 'success', message: '🎉 Đã xác lập mỏ neo thành công! Hãy xem bảng phân tích kết quả bên dưới.' })
+      setStepPhase('result')
+      setToast({ type: 'success', message: '🎉 Đã hoàn tất Bước 1! Hệ thống đã đối chiếu phát hiện mâu thuẫn nhận thức.' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       console.error('Lỗi nộp bài trắc nghiệm:', error)
@@ -538,38 +532,105 @@ const HollandTest = () => {
     }
   }
 
-  const handleReset = (clearStorage = true) => {
-    if (clearStorage) {
-      try {
-        localStorage.removeItem('cbas_user_profile')
-        localStorage.removeItem('userAnchorData')
-        localStorage.removeItem('cbas_anchor_data')
-        localStorage.removeItem('career_initial_anchor')
-      } catch (e) {}
-      setTargetMajor('')
-      setTargetSchool('')
-      setTargetUniversity('')
-      setReason('')
-      setConfidenceScore(7)
-      setExpectedIncome('')
-      setCalculatedRiasecCode('')
+  // Chuyển sang Bước 2 (AI Tham vấn phản tư Socrates)
+  const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
+    const { scores, primaryCode } = calculateRiasecCode()
+    const effectiveCode = primaryCode || calculatedRiasecCode || result?.primaryCode || "AEI"
+    const finalMajor = targetMajor.trim() || "Sư phạm"
+    const finalSchool = (targetSchool || targetUniversity || "ĐH Quy Nhơn").trim()
+    const finalReason = reason.trim() || "Em thích từ nhỏ"
+
+    const userProfile = {
+      hollandCode: effectiveCode,
+      targetMajor: finalMajor,
+      targetSchool: finalSchool,
+      reason: finalReason,
+      initialConfidence: Number(confidenceScore),
+      expectedIncome: expectedIncome || "15 - 20 triệu/tháng"
     }
+
+    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
+    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
+
+    const userAnchorData = {
+      target_career: finalMajor,
+      target_university: finalSchool,
+      source_of_influence: finalReason,
+      confidence_score: String(userProfile.initialConfidence),
+      expected_income: userProfile.expectedIncome,
+      holland_codes: rawCodes,
+      holland_code: effectiveCode,
+      compatibility_status: compatStatus,
+      holland_analysis: analysisText
+    }
+
+    // Lưu đồng bộ các key LocalStorage cho Bước 2 và toàn hệ thống
+    localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
+    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
+    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
+    localStorage.setItem("career_initial_anchor", JSON.stringify({
+      ...userProfile,
+      target_major: finalMajor,
+      target_university: finalSchool,
+      choice_source: finalReason,
+      confidence_score_initial: userProfile.initialConfidence,
+      expected_income: userProfile.expectedIncome,
+      holland_codes: rawCodes,
+      holland_code: effectiveCode,
+      primary_code: effectiveCode,
+      scores: result?.scores || scores,
+      compatibility_status: compatStatus,
+      holland_analysis: analysisText
+    }))
+
+    if (customRedirectUrl.startsWith('http')) {
+      window.location.href = customRedirectUrl
+    } else {
+      navigate(customRedirectUrl)
+    }
+  }
+
+  // CÁC HÀM ĐIỀU HƯỚNG VÀ LÀM LẠI
+  const handleEditAnchor = () => {
+    setStepPhase('anchor')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleResetQuiz = () => {
     setResult(null)
     setCurrentPage(0)
     const initialAnswers = {}
     questions.forEach(q => { initialAnswers[q.id] = null })
     setAnswers(initialAnswers)
+    setStepPhase('quiz')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setToast({ type: 'info', message: 'Em đang làm lại 30 câu hỏi trắc nghiệm RIASEC.' })
   }
 
-  const handleEditAnchorOnly = () => {
+  const handleResetAll = () => {
+    try {
+      localStorage.removeItem('cbas_user_profile')
+      localStorage.removeItem('userAnchorData')
+      localStorage.removeItem('cbas_anchor_data')
+      localStorage.removeItem('career_initial_anchor')
+    } catch (e) {}
+    setTargetMajor('')
+    setTargetSchool('')
+    setTargetUniversity('')
+    setReason('')
+    setConfidenceScore(7)
+    setExpectedIncome('')
+    setCalculatedRiasecCode('')
     setResult(null)
-    setCurrentPage(totalQuestionPages)
+    setCurrentPage(0)
+    const initialAnswers = {}
+    questions.forEach(q => { initialAnswers[q.id] = null })
+    setAnswers(initialAnswers)
+    setStepPhase('anchor')
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setToast({ type: 'info', message: 'Đã thiết lập lại Bước 1. Em hãy bắt đầu bằng việc khai báo mỏ neo chủ quan T₀!' })
   }
-
-  const answeredCount = Object.values(answers).filter(val => val !== null).length
-  const progressPercent = Math.round((answeredCount / (questions.length || 1)) * 100)
 
   const getHollandDescription = (code) => {
     const descriptions = {
@@ -585,7 +646,7 @@ const HollandTest = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-3xl mx-auto space-y-6 animate-pulse">
+      <div className="p-6 max-w-4xl mx-auto space-y-6 animate-pulse">
         <div className="h-8 bg-slate-200 w-64 rounded-sm"></div>
         <div className="h-4 bg-slate-200 w-full rounded-sm"></div>
         <div className="space-y-4 pt-6">
@@ -597,156 +658,8 @@ const HollandTest = () => {
     )
   }
 
-  // GIAO DIỆN KẾT QUẢ VÀ CHUYỂN BƯỚC 2
-  if (result) {
-    return (
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6 animate-reveal">
-        {/* Banner Chúc Mừng & Tóm Tắt Bước 1 */}
-        <div className="bg-emerald-50 border-2 border-emerald-300 p-6 rounded-sm text-center space-y-3">
-          <div className="mx-auto w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-            <CheckCircle2 className="w-8 h-8" />
-          </div>
-          <div className="space-y-1">
-            <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full">
-              BƯỚC 1: XÁC LẬP XUẤT PHÁT ĐIỂM NHẬN THỨC
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Đã ghi nhận Mỏ neo nhận thức & Kết quả Holland thành công!
-            </h1>
-            <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
-              Mã thiên hướng và mỏ neo ban đầu của bạn đã sẵn sàng. Dữ liệu này sẽ được nạp thẳng vào AI Phản tư ở Bước 2 để chất vấn sâu các điểm mù.
-            </p>
-          </div>
-        </div>
-
-        {/* THẺ TÓM TẮT MỎ NEO NHẬN THỨC (INITIAL ANCHOR SUMMARY) */}
-        <div className="bg-amber-50/90 border-2 border-amber-300 p-5 rounded-sm shadow-xs space-y-3 text-amber-950">
-          <div className="flex items-center gap-2 border-b border-amber-200 pb-2">
-            <Anchor className="w-5 h-5 text-amber-600" />
-            <h3 className="font-extrabold text-xs sm:text-sm text-amber-950 uppercase tracking-wider">
-              ⚓ MỎ NEO NHẬN THỨC BAN ĐẦU (INITIAL ANCHOR) ĐÃ THIẾT LẬP
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
-              <span className="text-slate-500 font-semibold block text-[11px]">Ngành & Trường mục tiêu:</span>
-              <p className="font-bold text-slate-900 text-sm">{result.anchorData.target_major}</p>
-              <p className="text-slate-600 text-[11px]">{result.anchorData.target_university}</p>
-            </div>
-            <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
-              <span className="text-slate-500 font-semibold block text-[11px]">Nguồn gợi mở chọn nghề:</span>
-              <p className="font-bold text-amber-800 text-xs">{result.anchorData.choice_source}</p>
-            </div>
-            <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
-              <span className="text-slate-500 font-semibold block text-[11px]">Độ tự tin ban đầu (Overconfidence):</span>
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-black text-brand-600">{result.anchorData.confidence_score_initial} / 10</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-bold bg-brand-100 text-brand-800">
-                  {result.anchorData.confidence_score_initial >= 8 ? 'Tự tin cao' : 'Khá tự tin'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* PHÂN TÍCH RIASEC */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
-              Biểu đồ 6 nhóm tính cách Holland
-            </h3>
-            <HollandChart scores={result.scores} type="radar" />
-          </div>
-
-          <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-4 shadow-xs">
-            <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mã Holland 3 nhóm nổi trội</span>
-              <p className="text-3xl font-black text-brand-600 tracking-tight mt-1">{result.primaryCode}</p>
-            </div>
-            <div className="space-y-2 pt-1 border-t border-slate-100">
-              {getHollandDescription(result.primaryCode).map((desc, idx) => (
-                <p key={idx} className="text-xs text-slate-700 leading-relaxed font-medium">
-                  • {desc}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* THẺ GIẢI MÃ THIÊN HƯỚNG HOLLAND CHUẨN KHOA HỌC HÀNH VI */}
-        <div className="bg-sky-50 border-2 border-sky-300 p-5 rounded-sm shadow-xs space-y-3 text-sky-950">
-          <div className="flex items-center gap-2 border-b border-sky-200 pb-2">
-            <Sparkles className="w-5 h-5 text-sky-600" />
-            <h3 className="font-extrabold text-xs sm:text-sm text-sky-950 uppercase tracking-wider">
-              📊 KẾT QUẢ GIẢI MÃ THIÊN HƯỚNG HOLLAND CỦA EM
-            </h3>
-          </div>
-          <div className="text-xs space-y-2 leading-relaxed">
-            <p>
-              • <strong>3 nhóm tính cách nổi trội nhất:</strong> <span className="font-black text-brand-700 text-sm tracking-wide">{result.primaryCode.split('').join(', ')}</span>
-            </p>
-            <div className="space-y-1.5 bg-white p-3 rounded border border-sky-200">
-              <p className="font-semibold text-slate-800">
-                + <strong>Nhóm chủ đạo ({result.primaryCode[0]}):</strong> {hollandDescriptions[result.primaryCode[0]]}
-              </p>
-              {result.primaryCode[1] && (
-                <p className="font-semibold text-slate-800">
-                  + <strong>Nhóm hỗ trợ ({result.primaryCode[1]}):</strong> {hollandDescriptions[result.primaryCode[1]]}
-                </p>
-              )}
-            </div>
-            {result?.anchorData?.target_major && (
-              <div className="bg-sky-100/80 p-3 rounded border border-sky-300 text-sky-950 font-medium">
-                <span className="font-bold text-sky-900">🔍 Đánh giá tương thích sơ bộ với ngành "{result.anchorData.target_major}":</span>{' '}
-                <span>{getCompatibilitySummary(result.anchorData.target_major, result.primaryCode.split(''))}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* NÚT HÀNH ĐỘNG TIẾP THEO: SANG BƯỚC 2 */}
-        <div className="p-4 bg-slate-900 text-white rounded-sm flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
-          <div className="space-y-1 text-center sm:text-left">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Bước tiếp theo trong tiến trình</span>
-            <p className="text-sm font-bold text-white">Sẵn sàng đối diện với phản biện Socrates từ AI?</p>
-            <p className="text-xs text-slate-300">AI sẽ dùng chính mỏ neo ngành "{result.anchorData.target_major}" để chất vấn các điểm mù thực tế của bạn.</p>
-          </div>
-
-          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-            <Button 
-              variant="secondary" 
-              onClick={handleEditAnchorOnly} 
-              className="text-xs font-bold py-2.5 px-3 bg-white text-slate-800 border-slate-300 hover:bg-slate-50 cursor-pointer"
-              title="Chỉnh sửa lại ngành, trường, lý do chọn nghề mà không cần làm lại trắc nghiệm"
-            >
-              <span>✎ Chỉnh sửa Mỏ neo</span>
-            </Button>
-            <Button 
-              variant="secondary" 
-              onClick={() => handleReset(true)} 
-              className="text-xs font-bold py-2.5 px-3 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer"
-              title="Xóa kết quả trắc nghiệm và mỏ neo để làm lại từ đầu"
-            >
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />
-              Làm lại bài trắc nghiệm
-            </Button>
-            <button
-              type="button"
-              onClick={() => saveStep1DataAndNext('/student/debias-agent')}
-              className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
-            >
-              <span>🤖 Hoàn Thành Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // GIAO DIỆN LÀM BÀI TRẮC NGHIỆM VÀ FORM MỎ NEO
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-6 animate-reveal">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6 animate-reveal">
       {/* THANH TIẾN TRÌNH 5 BƯỚC VISEF CBAS */}
       <StepProgressHeader 
         currentStep={1} 
@@ -754,112 +667,185 @@ const HollandTest = () => {
         subtitle="Ghi nhận xuất phát điểm nhận thức ban đầu (Initial Anchor) để tạo nguyên liệu cho AI phản biện ở bước sau." 
       />
 
-      {/* THANH TIẾN TRÌNH */}
-      <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-2 shadow-2xs">
-        <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-          <span>Tiến trình trắc nghiệm & Thiết lập mỏ neo</span>
-          <span>
-            {isAnchorPage 
-              ? '🎯 Chặng cuối: Form xác lập mỏ neo' 
-              : `Trang ${currentPage + 1} / ${totalQuestionPages} (${answeredCount}/30 câu)`}
+      {/* KHUNG ĐỊNH HƯỚNG NGHIÊN CỨU CHUẨN VISEF 2026 (3 TRỤ CỘT CỐT LÕI) */}
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-sm shadow-md border-2 border-indigo-400/40 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-500/30 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-500/20 border border-indigo-400/40 rounded-sm text-indigo-300">
+              <Brain className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300 block">
+                QUY TRÌNH CAN THIỆP HÀNH VI CBAS (VISEF 2026)
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
+                Bước 1 — Bộc lộ mỏ neo và Khảo sát thiên hướng ban đầu (T₀)
+              </h2>
+            </div>
+          </div>
+          <span className="self-start sm:self-auto text-[11px] font-bold px-2.5 py-1 bg-amber-400/20 text-amber-300 border border-amber-400/40 rounded-full">
+            3 Trụ cột cốt lõi
           </span>
         </div>
-        <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+          {/* TRỤ CỘT 1 */}
           <div 
-            className="bg-emerald-500 h-full transition-all duration-300"
-            style={{ width: isAnchorPage ? '100%' : `${(answeredCount / 30) * 100}%` }}
-          />
+            onClick={() => setStepPhase('anchor')}
+            className={`p-3.5 rounded-sm border transition-all cursor-pointer ${
+              stepPhase === 'anchor'
+                ? 'bg-amber-950/70 border-amber-400 text-amber-100 ring-2 ring-amber-400/50 shadow-sm'
+                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 mb-1.5 font-bold text-amber-300">
+              <div className="flex items-center gap-1.5">
+                <Anchor className="w-4 h-4 shrink-0 text-amber-400" />
+                <span className="text-[12px] font-black uppercase tracking-wide">Ghi nhận mỏ neo chủ quan</span>
+              </div>
+              {stepPhase === 'anchor' && (
+                <span className="text-[9px] bg-amber-400 text-slate-950 px-1.5 py-0.2 rounded font-black">ĐANG MỞ</span>
+              )}
+            </div>
+            <p className="text-[11.5px] leading-relaxed text-slate-200">
+              Học sinh lập tức khai báo ngành nghề mục tiêu, mức thu nhập kỳ vọng và tự chấm điểm mức độ tự tin (<em>Conf</em>) trước khi tiếp cận bất kỳ thông tin nào khác.
+            </p>
+          </div>
+
+          {/* TRỤ CỘT 2 */}
+          <div 
+            onClick={() => setStepPhase('quiz')}
+            className={`p-3.5 rounded-sm border transition-all cursor-pointer ${
+              stepPhase === 'quiz'
+                ? 'bg-emerald-950/70 border-emerald-400 text-emerald-100 ring-2 ring-emerald-400/50 shadow-sm'
+                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 mb-1.5 font-bold text-emerald-300">
+              <div className="flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 shrink-0 text-emerald-400" />
+                <span className="text-[12px] font-black uppercase tracking-wide">Khảo sát thiên hướng khách quan</span>
+              </div>
+              {stepPhase === 'quiz' && (
+                <span className="text-[9px] bg-emerald-400 text-slate-950 px-1.5 py-0.2 rounded font-black">ĐANG MỞ</span>
+              )}
+            </div>
+            <p className="text-[11.5px] leading-relaxed text-slate-200">
+              Thực hiện bài trắc nghiệm sở thích nghề nghiệp RIASEC (theo mô hình Holland chuẩn hóa gồm 30 câu hỏi) để xác định mã thiên hướng tự nhiên của học sinh.
+            </p>
+          </div>
+
+          {/* TRỤ CỘT 3 */}
+          <div 
+            onClick={() => {
+              if (result) {
+                setStepPhase('result')
+              } else {
+                setToast({ type: 'warning', message: 'Vui lòng hoàn thành trắc nghiệm để mở Trụ cột 3!' })
+              }
+            }}
+            className={`p-3.5 rounded-sm border transition-all ${result ? 'cursor-pointer' : 'opacity-85'} ${
+              stepPhase === 'result'
+                ? 'bg-sky-950/70 border-sky-400 text-sky-100 ring-2 ring-sky-400/50 shadow-sm'
+                : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-1 mb-1.5 font-bold text-sky-300">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 shrink-0 text-sky-400" />
+                <span className="text-[12px] font-black uppercase tracking-wide">Phát hiện mâu thuẫn nhận thức</span>
+              </div>
+              {stepPhase === 'result' && (
+                <span className="text-[9px] bg-sky-400 text-slate-950 px-1.5 py-0.2 rounded font-black">ĐANG MỞ</span>
+              )}
+            </div>
+            <p className="text-[11.5px] leading-relaxed text-slate-200">
+              Hệ thống đối chiếu chéo giữa ngành mơ ước ban đầu và mã RIASEC thực tế, tạo lập cơ sở dữ liệu xung đột phục vụ truy vấn phản tư tại Bước 2.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* NỘI DUNG TRANG: HOẶC 5 CÂU HỎI TRẮC NGHIỆM HOẶC FORM MỎ NEO */}
-      {!isAnchorPage ? (
-        <div className="space-y-5">
-          {pageQuestions.map((q, idx) => {
-            const globalIdx = currentPage * questionsPerPage + idx + 1
-            return (
-              <div 
-                key={q.id} 
-                className="bg-white border border-slate-200 p-5 rounded-sm space-y-3.5 hover:border-slate-300 transition-colors shadow-2xs"
-              >
-                <div className="flex items-start gap-2.5">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0 border border-slate-300">
-                    {globalIdx}
-                  </span>
-                  <p className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed pt-0.5">
-                    {q.text}
-                  </p>
-                </div>
-                
-                {/* 4 mức đo lường Likert */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 pl-8">
-                  {[
-                    { value: 1, label: '1. Rất không đúng' },
-                    { value: 2, label: '2. Không đúng lắm' },
-                    { value: 3, label: '3. Khá đúng' },
-                    { value: 4, label: '4. Rất đúng' }
-                  ].map((opt) => {
-                    const isSelected = answers[q.id] === opt.value
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => handleAnswerSelect(q.id, opt.value)}
-                        className={`py-2 px-2.5 border text-xs font-bold rounded-sm transition-all focus:outline-none text-center cursor-pointer ${
-                          isSelected
-                            ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-300'
-                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        /* FORM THU THẬP DỮ LIỆU BƯỚC 1 (CHUẨN VISEF 2026 - ĐÚNG 4 TRƯỜNG THÔNG TIN BẮT BUỘC) */
-        <div className="bg-white border-2 border-amber-300 p-6 rounded-sm space-y-6 shadow-sm animate-reveal">
-          
-          {/* BANNER HIỂN THỊ KẾT XUẤT MÃ HOLLAND NỔI TRỘI */}
-          <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-950">
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2.5 py-0.5 rounded-full inline-block mb-1">
-                ✓ ĐÃ HOÀN THÀNH 30 CÂU HỎI TRẮC NGHIỆM
-              </span>
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <span>Thiên hướng Holland nổi trội của em:</span>
-                <span className="text-lg text-emerald-700 bg-white px-2.5 py-0.5 rounded border border-emerald-300 tracking-wider">
-                  {calculatedRiasecCode || result?.primaryCode || 'AEI'}
-                </span>
-              </h3>
-              <p className="text-xs text-slate-600 mt-1">
-                {getHollandDescription(calculatedRiasecCode || result?.primaryCode || 'AEI').slice(0, 2).join(' • ')}
-              </p>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-bold text-emerald-800 bg-white px-3 py-1.5 rounded-sm border border-emerald-200 shadow-2xs block">
-                BƯỚC 1: XÁC LẬP MỎ NEO
-              </span>
-            </div>
-          </div>
+      {/* THANH CHUYỂN ĐỔI 3 GIAI ĐOẠN TRONG BƯỚC 1 (SUB-STEP PILLS SWITCHER) */}
+      <div className="bg-white border border-slate-200 p-2.5 rounded-sm shadow-2xs flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setStepPhase('anchor')}
+            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              stepPhase === 'anchor'
+                ? 'bg-amber-500 text-slate-950 shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Anchor className="w-3.5 h-3.5" />
+            <span>1. Mỏ neo chủ quan (T₀)</span>
+          </button>
 
+          <button
+            type="button"
+            onClick={() => setStepPhase('quiz')}
+            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              stepPhase === 'quiz'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            <span>2. Trắc nghiệm 30 câu RIASEC</span>
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-black">
+              {answeredCount}/30
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (result) {
+                setStepPhase('result')
+              } else {
+                setToast({ type: 'warning', message: 'Vui lòng hoàn thành 30 câu hỏi trắc nghiệm để mở Giai đoạn 3!' })
+              }
+            }}
+            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              stepPhase === 'result'
+                ? 'bg-sky-600 text-white shadow-xs'
+                : result
+                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-slate-50 text-slate-400 cursor-not-allowed opacity-60'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>3. Mâu thuẫn nhận thức & Kết quả</span>
+            {result && <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-black">✓ Có sẵn</span>}
+          </button>
+        </div>
+
+        <div className="text-right text-[11px] font-bold text-slate-500 px-2">
+          {stepPhase === 'anchor' && '🎯 Chặng 1/3: Khai báo mỏ neo T₀'}
+          {stepPhase === 'quiz' && `📋 Chặng 2/3: Câu ${currentPage * 5 + 1} - ${Math.min((currentPage + 1) * 5, 30)}/30`}
+          {stepPhase === 'result' && '⚡ Chặng 3/3: Đối chiếu & Chuyển tiếp'}
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* GIAI ĐOẠN 1: BỘC LỘ MỎ NEO CHỦ QUAN (T0)                                   */}
+      {/* ========================================================================= */}
+      {stepPhase === 'anchor' && (
+        <div className="bg-white border-2 border-amber-300 p-6 rounded-sm space-y-6 shadow-sm animate-reveal">
           <div className="border-b border-amber-200 pb-3 flex items-start gap-3 text-amber-950">
             <div className="p-2 bg-amber-100 text-amber-800 rounded-sm shrink-0 mt-0.5">
               <Anchor className="w-5 h-5 text-amber-700" />
             </div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">
-                BẮT BUỘC ĐỂ HOÀN TẤT BƯỚC 1 (VISEF 2026)
+                GIAI ĐOẠN 1: BỘC LỘ MỎ NEO CHỦ QUAN (T₀) — VISEF 2026
               </span>
-              <h2 className="text-base font-bold text-slate-900">
-                Form Xác Lập Xuất Phát Điểm Nhận Thức Ban Đầu (Initial Anchor)
+              <h2 className="text-base sm:text-lg font-black text-slate-900">
+                Khai báo Ngành nghề mục tiêu, Kỳ vọng thu nhập & Tự chấm điểm tự tin (Conf)
               </h2>
-              <p className="text-xs text-slate-600 mt-0.5">
-                Vui lòng điền đúng 4 trường thông tin dưới đây. Dữ liệu này sẽ được chuyển trực tiếp vào AI Socrates ở Bước 2 để chất vấn phản tư.
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                Học sinh lập tức khai báo ngành nghề mục tiêu, mức thu nhập kỳ vọng và tự chấm điểm mức độ tự tin (<em>Conf</em>) trước khi tiếp cận bất kỳ thông tin nào khác.
               </p>
             </div>
           </div>
@@ -868,7 +854,7 @@ const HollandTest = () => {
             {/* TRƯỜNG 1: NGÀNH NGHỀ & TRƯỜNG MỤC TIÊU */}
             <div className="space-y-2 bg-slate-50 p-4 rounded-sm border border-slate-200">
               <label className="text-xs font-bold text-slate-800 block">
-                1. Ngành nghề & Trường mục tiêu: <span className="text-rose-500">*</span>
+                1. Ngành nghề & Trường đại học mục tiêu: <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -965,7 +951,7 @@ const HollandTest = () => {
               </div>
             </div>
 
-            {/* TRƯỜNG 3: MỨC ĐỘ TỰ TIN TRÚNG TUYỂN VÀ THEO NGHỀ (THANG ĐO T0) */}
+            {/* TRƯỜNG 3: MỨC ĐỘ TỰ TIN TRÚNG TUYỂN VÀ THEO NGHÈ (THANG ĐO T0) */}
             <div className="space-y-2.5 bg-slate-50 p-4 rounded-sm border border-slate-200">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-800">
@@ -976,7 +962,7 @@ const HollandTest = () => {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed">
-                Đánh giá mức độ tự tin hiện tại của em trước khi nhận phản biện từ Thầy Socrates:
+                Đánh giá mức độ tự tin hiện tại của em trước khi tiếp cận bất kỳ thông tin nào khác:
               </p>
 
               {/* Slider tương tác */}
@@ -1056,52 +1042,347 @@ const HollandTest = () => {
             <input type="hidden" id="confidenceScoreInput" value={String(confidenceScore)} />
             <input type="hidden" id="hollandResultText" value={calculatedRiasecCode || result?.primaryCode || "AEI"} />
           </div>
+
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+            <span className="text-xs text-slate-500 font-bold">
+              🎯 Hoàn thành khai báo mỏ neo chủ quan để bắt đầu 30 câu hỏi RIASEC
+            </span>
+            <button
+              type="button"
+              onClick={handleConfirmAnchor}
+              className="w-full sm:w-auto py-2.5 px-6 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs uppercase tracking-wider rounded-sm transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Xác nhận Mỏ neo T₀ ➔ Tiếp tục: Khảo sát RIASEC (30 câu)</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ĐIỀU HƯỚNG TRANG / NỘP BÀI */}
-      <div className="flex items-center justify-between pt-4 border-t border-slate-200">
-        <Button
-          variant="secondary"
-          onClick={handleBack}
-          disabled={currentPage === 0}
-          className="text-xs font-bold uppercase tracking-wider gap-1.5"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Quay lại
-        </Button>
+      {/* ========================================================================= */}
+      {/* GIAI ĐOẠN 2: KHẢO SÁT THIÊN HƯỚNG KHÁCH QUAN (RIASEC 30 CÂU)              */}
+      {/* ========================================================================= */}
+      {stepPhase === 'quiz' && (
+        <div className="space-y-5 animate-reveal">
+          {/* Banner thông báo giai đoạn 2 */}
+          <div className="bg-emerald-50 border border-emerald-300 p-4 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-950">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-200/80 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                GIAI ĐOẠN 2: KHẢO SÁT THIÊN HƯỚNG KHÁCH QUAN (RIASEC)
+              </span>
+              <h3 className="text-sm sm:text-base font-black text-slate-900">
+                30 Câu Hỏi Trắc Nghiệm Sở Thích Nghề Nghiệp Holland Chuẩn Hóa
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Thực hiện bài trắc nghiệm sở thích nghề nghiệp RIASEC (30 câu hỏi) để xác định mã thiên hướng tự nhiên của học sinh.
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-xs font-bold text-emerald-800 bg-white px-3 py-1.5 rounded-sm border border-emerald-200 shadow-2xs block">
+                Đã trả lời: {answeredCount}/30 câu ({progressPercent}%)
+              </span>
+            </div>
+          </div>
 
-        <span className="text-xs text-slate-500 font-bold">
-          {isAnchorPage ? '🎯 Bước xác lập mỏ neo' : `Trang ${currentPage + 1} / ${totalQuestionPages}`}
-        </span>
+          {/* Thanh tiến trình */}
+          <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-2 shadow-2xs">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+              <span>Tiến trình trắc nghiệm 30 câu hỏi RIASEC</span>
+              <span>
+                Trang {currentPage + 1} / {totalQuestionPages} ({answeredCount}/30 câu)
+              </span>
+            </div>
+            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden border border-slate-200">
+              <div 
+                className="bg-emerald-500 h-full transition-all duration-300"
+                style={{ width: `${(answeredCount / 30) * 100}%` }}
+              />
+            </div>
+          </div>
 
-        {isAnchorPage ? (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-sm transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <span>Đang lưu mỏ neo...</span>
+          {/* Danh sách 5 câu hỏi của trang */}
+          <div className="space-y-4">
+            {pageQuestions.map((q, idx) => {
+              const globalIdx = currentPage * questionsPerPage + idx + 1
+              return (
+                <div 
+                  key={q.id} 
+                  className="bg-white border border-slate-200 p-5 rounded-sm space-y-3.5 hover:border-slate-300 transition-colors shadow-2xs"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0 border border-slate-300">
+                      {globalIdx}
+                    </span>
+                    <p className="text-xs sm:text-sm font-bold text-slate-800 leading-relaxed pt-0.5">
+                      {q.text}
+                    </p>
+                  </div>
+                  
+                  {/* 4 mức đo lường Likert */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 pl-8">
+                    {[
+                      { value: 1, label: '1. Rất không đúng' },
+                      { value: 2, label: '2. Không đúng lắm' },
+                      { value: 3, label: '3. Khá đúng' },
+                      { value: 4, label: '4. Rất đúng' }
+                    ].map((opt) => {
+                      const isSelected = answers[q.id] === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleAnswerSelect(q.id, opt.value)}
+                          className={`py-2 px-2.5 border text-xs font-bold rounded-sm transition-all focus:outline-none text-center cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-300'
+                              : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Điều hướng trang câu hỏi */}
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+            <Button
+              variant="secondary"
+              onClick={handleBackQuizPage}
+              className="text-xs font-bold uppercase tracking-wider gap-1.5"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {currentPage === 0 ? 'Quay lại Form Mỏ neo T₀' : 'Trang trước'}
+            </Button>
+
+            <span className="text-xs text-slate-500 font-bold">
+              Trang {currentPage + 1} / {totalQuestionPages}
+            </span>
+
+            {currentPage === totalQuestionPages - 1 ? (
+              <button
+                type="button"
+                onClick={handleSubmitQuizAndDetectConflict}
+                disabled={isSubmitting}
+                className="py-2.5 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-sm transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <span>Đang xử lý kết quả...</span>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Hoàn thành 30 câu & Đối chiếu Mâu thuẫn nhận thức ➔</span>
+                  </>
+                )}
+              </button>
             ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Lưu Mỏ Neo & Xem Biểu Đồ Kết Quả ➔</span>
-              </>
+              <Button
+                variant="primary"
+                onClick={handleNextQuizPage}
+                className="text-xs font-bold uppercase tracking-wider gap-1.5"
+              >
+                Trang tiếp theo
+                <ArrowRight className="w-4 h-4" />
+              </Button>
             )}
-          </button>
-        ) : (
-          <Button
-            variant="primary"
-            onClick={handleNext}
-            className="text-xs font-bold uppercase tracking-wider gap-1.5"
-          >
-            {currentPage === totalQuestionPages - 1 ? 'Tiếp sang Form mỏ neo Bước 1' : 'Tiếp theo'}
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* GIAI ĐOẠN 3: PHÁT HIỆN MÂU THUẪN NHẬN THỨC & ĐỐI CHIẾU KẾT QUẢ              */}
+      {/* ========================================================================= */}
+      {stepPhase === 'result' && result && (
+        <div className="space-y-6 animate-reveal">
+          {/* Banner Chúc Mừng & Tóm Tắt Bước 1 */}
+          <div className="bg-emerald-50 border-2 border-emerald-300 p-6 rounded-sm text-center space-y-3">
+            <div className="mx-auto w-14 h-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-emerald-200 text-emerald-900 px-2.5 py-0.5 rounded-full">
+                BƯỚC 1: XÁC LẬP XUẤT PHÁT ĐIỂM NHẬN THỨC THÀNH CÔNG
+              </span>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Đã ghi nhận Mỏ neo nhận thức & Kết quả Holland thành công!
+              </h1>
+              <p className="text-xs text-slate-600 max-w-xl mx-auto leading-relaxed">
+                Mã thiên hướng và mỏ neo ban đầu của bạn đã sẵn sàng. Dữ liệu này sẽ được nạp thẳng vào AI Phản tư ở Bước 2 để chất vấn sâu các điểm mù.
+              </p>
+            </div>
+          </div>
+
+          {/* THẺ TÓM TẮT MỎ NEO NHẬN THỨC (INITIAL ANCHOR SUMMARY) */}
+          <div className="bg-amber-50/90 border-2 border-amber-300 p-5 rounded-sm shadow-xs space-y-3 text-amber-950">
+            <div className="flex items-center gap-2 border-b border-amber-200 pb-2">
+              <Anchor className="w-5 h-5 text-amber-600" />
+              <h3 className="font-extrabold text-xs sm:text-sm text-amber-950 uppercase tracking-wider">
+                ⚓ MỎ NEO NHẬN THỨC BAN ĐẦU (INITIAL ANCHOR T₀) ĐÃ THIẾT LẬP
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
+                <span className="text-slate-500 font-semibold block text-[11px]">Ngành & Trường mục tiêu:</span>
+                <p className="font-bold text-slate-900 text-sm">{result.anchorData.target_major || targetMajor}</p>
+                <p className="text-slate-600 text-[11px]">{result.anchorData.target_university || targetSchool}</p>
+              </div>
+              <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
+                <span className="text-slate-500 font-semibold block text-[11px]">Nguồn gợi mở chọn nghề:</span>
+                <p className="font-bold text-amber-800 text-xs">{result.anchorData.choice_source || reason}</p>
+              </div>
+              <div className="bg-white p-3 rounded-sm border border-amber-200 space-y-1">
+                <span className="text-slate-500 font-semibold block text-[11px]">Độ tự tin ban đầu (Conf):</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-black text-brand-600">{result.anchorData.confidence_score_initial || confidenceScore} / 10</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-sm font-bold bg-brand-100 text-brand-800">
+                    {(result.anchorData.confidence_score_initial || confidenceScore) >= 8 ? 'Tự tin cao' : 'Khá tự tin'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* PHÂN TÍCH RIASEC: BIỂU ĐỒ RADAR KHÔNG MẤT CHỮ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-3 shadow-xs">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-100 pb-2">
+                Biểu đồ 6 nhóm tính cách Holland
+              </h3>
+              <HollandChart scores={result.scores} type="radar" />
+            </div>
+
+            <div className="bg-white border border-slate-200 p-5 rounded-sm space-y-4 shadow-xs">
+              <div>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Mã Holland 3 nhóm nổi trội</span>
+                <p className="text-3xl font-black text-brand-600 tracking-tight mt-1">{result.primaryCode}</p>
+              </div>
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                {getHollandDescription(result.primaryCode).map((desc, idx) => (
+                  <p key={idx} className="text-xs text-slate-700 leading-relaxed font-medium">
+                    • {desc}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* KHUNG ĐẶC BIỆT: ⚡ TRỤ CỘT 3: PHÁT HIỆN MÂU THUẪN NHẬN THỨC (COGNITIVE CONFLICT DETECTION) */}
+          <div className="bg-sky-50 border-2 border-sky-400 p-5 sm:p-6 rounded-sm shadow-sm space-y-4 text-sky-950">
+            <div className="flex items-center gap-2.5 border-b border-sky-200 pb-3">
+              <div className="p-2 bg-sky-200 text-sky-800 rounded-sm">
+                <Sparkles className="w-5 h-5 text-sky-700" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-800 block">
+                  TRỤ CỘT 3: CƠ SỞ DỮ LIỆU XUNG ĐỘT (CBAS VISEF 2026)
+                </span>
+                <h3 className="font-black text-sm sm:text-base text-slate-900">
+                  Phát Hiện Mâu Thuẫn Nhận Thức Giữa Mỏ Neo Chủ Quan Và Thiên Hướng Khách Quan
+                </h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-sky-900 leading-relaxed font-semibold">
+              Hệ thống đối chiếu chéo giữa ngành mơ ước ban đầu và mã RIASEC thực tế, tạo lập cơ sở dữ liệu xung đột phục vụ truy vấn phản tư tại Bước 2.
+            </p>
+
+            {/* Bảng đối chiếu chéo 2 chiều */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+              <div className="bg-white p-4 rounded border border-sky-200 space-y-2 shadow-2xs">
+                <span className="text-amber-800 font-black text-[11px] block uppercase tracking-wide">
+                  ⚓ Mỏ neo chủ quan ban đầu (T₀)
+                </span>
+                <p className="text-slate-900 font-bold text-sm">
+                  {result?.anchorData?.target_major || targetMajor} ({result?.anchorData?.target_university || targetSchool})
+                </p>
+                <div className="space-y-1 text-slate-600 text-[11.5px] border-t border-slate-100 pt-1.5">
+                  <p>• <strong>Động cơ lựa chọn:</strong> "{result?.anchorData?.choice_source || reason}"</p>
+                  <p>• <strong>Độ tự tin khởi điểm (Conf):</strong> <span className="font-black text-brand-700">{result?.anchorData?.confidence_score_initial || confidenceScore}/10</span></p>
+                  <p>• <strong>Kỳ vọng thu nhập:</strong> {result?.anchorData?.expected_income || expectedIncome}</p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded border border-sky-200 space-y-2 shadow-2xs">
+                <span className="text-emerald-800 font-black text-[11px] block uppercase tracking-wide">
+                  🧭 Thiên hướng khách quan đo lường (RIASEC)
+                </span>
+                <p className="text-emerald-700 font-black text-base tracking-wider">
+                  Mã 3 chữ cái: {result?.primaryCode || calculatedRiasecCode || 'AEI'}
+                </p>
+                <div className="space-y-1 text-slate-600 text-[11.5px] border-t border-slate-100 pt-1.5 leading-relaxed">
+                  <p>+ <strong>Chủ đạo ({result.primaryCode[0]}):</strong> {hollandDescriptions[result.primaryCode[0]]}</p>
+                  {result.primaryCode[1] && (
+                    <p>+ <strong>Bổ trợ ({result.primaryCode[1]}):</strong> {hollandDescriptions[result.primaryCode[1]]}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Đánh giá độ tương thích & Cảnh báo độ vênh nhận thức */}
+            <div className="bg-white p-4 rounded border-2 border-sky-300 text-xs space-y-2.5">
+              <div className="flex items-center gap-2 font-bold text-slate-900">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Đánh giá sơ bộ độ tương thích & Điểm mù nhận thức:</span>
+              </div>
+              <p className="text-slate-700 leading-relaxed font-medium">
+                {analyzeHollandCompatibility(result?.anchorData?.target_major || targetMajor, (result?.primaryCode || calculatedRiasecCode || 'AEI').split(''))}
+              </p>
+              <div className="p-3 bg-amber-50 rounded border border-amber-200 text-amber-950 text-[11.5px] leading-relaxed">
+                📌 <strong>Cơ sở dữ liệu xung đột cho Bước 2:</strong> Dữ liệu đối chiếu chéo này sẽ được nạp trực tiếp vào <strong>AI Phản Tư Socrates (Bước 2)</strong>. Thầy Socrates sẽ trực tiếp chất vấn các điểm mù thực tế này để kiểm chứng xem quyết định của em có vững chắc hay không!
+              </div>
+            </div>
+          </div>
+
+          {/* NÚT HÀNH ĐỘNG TIẾP THEO: SANG BƯỚC 2 */}
+          <div className="p-4 bg-slate-900 text-white rounded-sm flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
+            <div className="space-y-1 text-center sm:text-left">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Bước tiếp theo trong tiến trình</span>
+              <p className="text-sm font-bold text-white">Sẵn sàng đối diện với phản biện Socrates từ AI?</p>
+              <p className="text-xs text-slate-300">AI sẽ dùng chính mỏ neo ngành "{result?.anchorData?.target_major || targetMajor}" để chất vấn các điểm mù thực tế của bạn.</p>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              <Button 
+                variant="secondary" 
+                onClick={handleEditAnchor} 
+                className="text-xs font-bold py-2.5 px-3 bg-white text-slate-800 border-slate-300 hover:bg-slate-50 cursor-pointer"
+                title="Chỉnh sửa lại ngành, trường, lý do chọn nghề mà không cần làm lại trắc nghiệm"
+              >
+                <span>✎ Chỉnh sửa Mỏ neo</span>
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleResetQuiz} 
+                className="text-xs font-bold py-2.5 px-3 bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 cursor-pointer"
+                title="Làm lại 30 câu hỏi trắc nghiệm RIASEC"
+              >
+                <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                Làm lại trắc nghiệm
+              </Button>
+              <Button 
+                variant="secondary" 
+                onClick={handleResetAll} 
+                className="text-xs font-bold py-2.5 px-3 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer"
+                title="Xóa kết quả trắc nghiệm và mỏ neo để làm lại từ đầu Bước 1"
+              >
+                Làm lại từ đầu
+              </Button>
+              <button
+                type="button"
+                onClick={() => saveStep1DataAndNext('/student/debias-agent')}
+                className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                <span>🤖 Hoàn Thành Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <Toast
