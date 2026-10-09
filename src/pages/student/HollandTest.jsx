@@ -21,7 +21,10 @@ import {
   TrendingUp, 
   Brain, 
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Bot,
+  Pencil,
+  RotateCcw
 } from 'lucide-react'
 
 // BỘ 30 CÂU HỎI RIASEC CHUẨN KHOA HỌC HÀNH VI (5 CÂU / NHÓM)
@@ -1338,46 +1341,70 @@ const HollandTest = () => {
           </div>
 
           {/* NÚT HÀNH ĐỘNG TIẾP THEO: SANG BƯỚC 2 */}
-          <div className="p-4 bg-slate-900 text-white rounded-sm flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md">
-            <div className="space-y-1 text-center sm:text-left">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Bước tiếp theo trong tiến trình</span>
-              <p className="text-sm font-bold text-white">Sẵn sàng đối diện với phản biện Socrates từ AI?</p>
-              <p className="text-xs text-slate-300">AI sẽ dùng chính mỏ neo ngành "{result?.anchorData?.target_major || targetMajor}" để chất vấn các điểm mù thực tế của bạn.</p>
+          <div className="p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl border border-slate-700/80 shadow-xl space-y-5">
+            {/* Hàng trên: Tiêu đề & Thông điệp chuyển bước (Full Width) */}
+            <div className="flex items-start gap-3.5 pb-4 border-b border-slate-800/80">
+              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0 mt-0.5 shadow-xs">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
+                    Bước tiếp theo • 2 / 4
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">Can thiệp phản tư hành vi (CBAS VISEF 2026)</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+                  Sẵn sàng đối diện với phản biện Socrates từ AI?
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+                  AI sẽ dùng chính mỏ neo ngành <strong className="text-amber-300">"{result?.anchorData?.target_major || targetMajor}"</strong> và mã thiên hướng <strong className="text-emerald-300">{result?.primaryCode || calculatedRiasecCode || 'RIASEC'}</strong> để chất vấn các điểm mù thực tế của bạn.
+                </p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-              <Button 
-                variant="secondary" 
-                onClick={handleEditAnchor} 
-                className="text-xs font-bold py-2.5 px-3 bg-white text-slate-800 border-slate-300 hover:bg-slate-50 cursor-pointer"
-                title="Chỉnh sửa lại ngành, trường, lý do chọn nghề mà không cần làm lại trắc nghiệm"
-              >
-                <span>✎ Chỉnh sửa Mỏ neo</span>
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={handleResetQuiz} 
-                className="text-xs font-bold py-2.5 px-3 bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 cursor-pointer"
-                title="Làm lại 30 câu hỏi trắc nghiệm RIASEC"
-              >
-                <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                Làm lại trắc nghiệm
-              </Button>
-              <Button 
-                variant="secondary" 
-                onClick={handleResetAll} 
-                className="text-xs font-bold py-2.5 px-3 bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer"
-                title="Xóa kết quả trắc nghiệm và mỏ neo để làm lại từ đầu Bước 1"
-              >
-                Làm lại từ đầu
-              </Button>
+            {/* Hàng dưới: Nhóm thao tác phụ và Nút hành động chính */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 pt-1">
+              {/* Cụm thao tác xem lại / làm lại */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleEditAnchor}
+                  className="px-3.5 py-2 bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                  title="Chỉnh sửa lại ngành, trường, lý do chọn nghề mà không cần làm lại trắc nghiệm"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                  <span>Chỉnh sửa Mỏ neo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetQuiz}
+                  className="px-3.5 py-2 bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 hover:border-slate-600 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+                  title="Làm lại 30 câu hỏi trắc nghiệm RIASEC"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Làm lại trắc nghiệm</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetAll}
+                  className="px-3.5 py-2 bg-rose-950/30 hover:bg-rose-950/60 text-rose-300 hover:text-rose-200 border border-rose-900/40 hover:border-rose-800/60 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Xóa kết quả trắc nghiệm và mỏ neo để làm lại từ đầu Bước 1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Làm lại từ đầu</span>
+                </button>
+              </div>
+
+              {/* Nút hành động chính: Chuyển sang Bước 2 */}
               <button
                 type="button"
                 onClick={() => saveStep1DataAndNext('/student/debias-agent')}
-                className="py-2.5 px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-sm transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                className="py-3 px-6 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm rounded-lg transition-all shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 flex items-center justify-center gap-2.5 cursor-pointer hover:scale-[1.01] active:scale-[0.98] shrink-0"
               >
-                <span>🤖 Hoàn Thành Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
-                <ArrowRight className="w-4 h-4" />
+                <Bot className="w-4 h-4 text-slate-950 shrink-0" />
+                <span>Hoàn Thành Bước 1 ➔ Sang Bước 2: AI Phản Tư Socrates</span>
+                <ArrowRight className="w-4 h-4 text-slate-950 shrink-0" />
               </button>
             </div>
           </div>
