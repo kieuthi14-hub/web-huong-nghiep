@@ -81,9 +81,14 @@ export default function Step3DataVerification({
     { code: 'A01', name: 'A01 (Toán, Vật lý, Tiếng Anh)' },
     { code: 'B00', name: 'B00 (Toán, Hóa học, Sinh học)' },
     { code: 'C00', name: 'C00 (Ngữ văn, Lịch sử, Địa lý)' },
+    { code: 'C19', name: 'C19 (Ngữ văn, Lịch sử, GDKT&PL)' },
+    { code: 'C20', name: 'C20 (Ngữ văn, Địa lý, GDKT&PL)' },
     { code: 'D01', name: 'D01 (Toán, Ngữ văn, Tiếng Anh)' },
     { code: 'D07', name: 'D07 (Toán, Hóa học, Tiếng Anh)' },
-    { code: 'OTHER', name: 'Tổ hợp khác (Tự nhập mã)' },
+    { code: 'D84', name: 'D84 (Toán, GDKT&PL, Tiếng Anh)' },
+    { code: 'A10', name: 'A10 (Toán, Vật lý, GDKT&PL)' },
+    { code: 'TIN', name: 'Tổ hợp Tin học (Toán, Tin học, Ngoại ngữ / KHTN)' },
+    { code: 'OTHER', name: 'Tổ hợp tự chọn khác (Tự nhập mã)' },
   ];
 
   // TÍNH TOÁN ĐỘNG CÁC CHỈ SỐ ĐIỂM SỐ
@@ -304,9 +309,20 @@ export default function Step3DataVerification({
               <span className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs mr-2">1</span>
               Hiện Thực Điểm Chuẩn & Năng Lực Tổ Hợp Xét Tuyển
             </h2>
-            <p className="text-xs text-slate-500 mb-4">
+            <p className="text-xs text-slate-500 mb-3">
               Ngành mục tiêu: <span className="font-bold text-slate-800">{userProfile.targetMajor || 'Chưa xác định'}</span> tại <span className="font-bold text-slate-800">{userProfile.targetSchool || 'Chưa xác định'}</span>
             </p>
+
+            {/* LƯU Ý CƠ CHẾ TUYỂN SINH MỚI THEO GDPT 2018 */}
+            <div className="mb-4 p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 text-xs text-indigo-900 flex items-start gap-2">
+              <span className="text-base leading-none mt-0.5">💡</span>
+              <div className="space-y-0.5">
+                <span className="font-bold">Cơ chế tuyển sinh mới theo Chương trình GDPT 2018:</span>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Các trường đại học mở rộng nhiều tổ hợp tự chọn (như Tin học, GDKT&PL). Nếu ngành em chọn áp dụng <strong>môn trọng số nhân hệ số 2</strong> (Toán ở khối Kinh tế/Kỹ thuật, Ngoại ngữ ở khối Ngôn ngữ/Sư phạm) hoặc <strong>chuẩn điều kiện môn Ngoại ngữ</strong>, hãy đối chứng trực tiếp với đề án tuyển sinh 3 năm gần nhất để chọn tổ hợp có lợi thế điểm số cao nhất cho học bạ của mình.
+                </p>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>

@@ -237,36 +237,39 @@ function isAskingAboutSubjectsOrCombos(text) {
   return patterns.some(p => clean.includes(p));
 }
 
+// HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC KHỐI CŨ)
 export function getRecommendedComboForMajor(majorName, userText = '') {
   const m = (majorName || '').toLowerCase();
   const u = (userText || '').toLowerCase();
 
   if (m.includes('chính trị') || m.includes('công dân') || u.includes('ktpl') || u.includes('chính trị')) {
-    return 'C19 (Văn - Sử - KTPL) hoặc C00';
+    return 'tổ hợp có GDKT&PL (như C19, C20, D84) hoặc C00/D01';
+  }
+  if (m.includes('tin') || m.includes('cntt') || m.includes('phần mềm') || u.includes('tin học') || u.includes('tin')) {
+    return 'tổ hợp có Tin học/Toán trọng số (Toán nhân hệ số 2) hoặc Toán - Lý - Anh';
   }
   if (u.includes('toán') && u.includes('lý') && u.includes('anh')) {
-    return 'Toán - Lý - Anh';
+    return 'Toán - Lý - Anh (hoặc tổ hợp có Toán trọng số)';
   }
   if (u.includes('toán') && u.includes('văn') && u.includes('anh')) {
-    return 'Toán - Văn - Anh';
+    return 'Toán - Văn - Anh (hoặc tổ hợp có Ngoại ngữ trọng số)';
   }
-  if (m.includes('toán') || m.includes('vật lý') || m.includes('hóa') || m.includes('kỹ thuật') || m.includes('công nghệ') || m.includes('cntt') || m.includes('tin học')) {
-    if (u.includes('anh') || u.includes('tiếng anh')) return 'Toán - Lý - Anh';
-    return 'Toán - Lý - Hóa hoặc Toán - Lý - Anh';
+  if (m.includes('toán') || m.includes('vật lý') || m.includes('hóa') || m.includes('kỹ thuật') || m.includes('công nghệ')) {
+    return 'tổ hợp môn KHTN/Tin học với môn Toán nhân hệ số 2';
   }
   if (m.includes('văn') || m.includes('sử') || m.includes('địa') || m.includes('xã hội')) {
-    return 'Văn - Sử - Địa hoặc Văn - Sử - Anh';
+    return 'tổ hợp KHXH hoặc tổ hợp tự chọn có GDKT&PL/Ngoại ngữ';
   }
   if (m.includes('kinh tế') || m.includes('quản trị') || m.includes('marketing') || m.includes('tài chính') || m.includes('ngân hàng') || m.includes('luật')) {
-    return 'Toán - Văn - Anh hoặc Toán - Lý - Anh';
+    return 'tổ hợp có môn Toán nhân hệ số 2, hoặc kết hợp GDKT&PL/Tiếng Anh';
   }
   if (m.includes('ngôn ngữ') || m.includes('tiếng')) {
-    return 'Toán - Văn - Anh hoặc Văn - Sử - Anh';
+    return 'tổ hợp có môn Ngoại ngữ nhân hệ số 2 kèm chuẩn đầu vào';
   }
   if (m.includes('y') || m.includes('dược') || m.includes('sinh')) {
-    return 'Toán - Hóa - Sinh';
+    return 'tổ hợp Toán - Hóa - Sinh hoặc KHTN kèm chuẩn Ngoại ngữ';
   }
-  return 'Toán - Lý - Anh';
+  return 'tổ hợp môn tự chọn tối ưu theo đề án tuyển sinh';
 }
 
 export function sanitizeSocraticResponse(rawText, round, effectiveCareer, targetSchool, userText = '') {
@@ -314,8 +317,8 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
 
   if (round === 4) {
-    // NGUYÊN TẮC 4: Ở LƯỢT CUỐI CÙNG, RA LỆNH CHO HỌC SINH TỰ BƯỚC SANG BƯỚC 3 TRA CỨU
-    const standardDirective = `Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${school} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    // NGUYÊN TẮC 4 & GDPT 2018: Ở LƯỢT CUỐI CÙNG, RA LỆNH CHO HỌC SINH TỰ CHỌN TỔ HỢP TỐI ƯU ĐỂ ĐỐI CHỨNG TẠI BƯỚC 3
+    const standardDirective = `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${school} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu.`;
 
     // Cắt bỏ dấu ? ở cuối câu
     cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
@@ -332,13 +335,13 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
       intro = sentences.slice(0, 2).join(' ').trim();
     } else {
       if (isBalancedGrades) {
-        intro = `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng điểm chuẩn vào ngành ${major} tại ${school} thường đòi hỏi tổng điểm tổ hợp xét tuyển (${combo}) phải đủ sức bứt phá trước tỷ lệ chọi thực tế.`;
+        intro = `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng theo chương trình GDPT 2018, em cần chọn đúng tổ hợp có lợi thế và tính toán môn trọng số nhân hệ số 2 để vượt qua điểm chuẩn vào ngành ${major} tại ${school}.`;
       } else if (strongSubject && weakSubject) {
-        intro = `Có thế mạnh ở môn ${strongSubject} là một điểm tựa tốt, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${major} tại ${school}.`;
+        intro = `Có thế mạnh ở môn ${strongSubject} là một điểm tựa tốt khi xét tổ hợp tự chọn hoặc môn nhân đôi, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${major} tại ${school}.`;
       } else if (strongSubject) {
-        intro = `Thế mạnh ở môn ${strongSubject} là một lợi thế khách quan, tuy nhiên ngưỡng điểm chuẩn ngành ${major} tại ${school} đòi hỏi cả 3 môn trong tổ hợp ${combo} đều phải đạt mức an toàn cạnh tranh.`;
+        intro = `Thế mạnh ở môn ${strongSubject} là một lợi thế khách quan trong cơ chế tổ hợp mới, tuy nhiên ngưỡng điểm chuẩn ngành ${major} tại ${school} đòi hỏi toàn bộ tổ hợp xét tuyển phải đạt mức an toàn cạnh tranh.`;
       } else {
-        intro = `Ngành ${major} tại ${school} đòi hỏi điểm số cạnh tranh của các môn trong tổ hợp xét tuyển (${combo}), việc chỉ dựa vào một môn sở trường sẽ tiềm ẩn rủi ro nếu các môn còn lại chưa đủ vững.`;
+        intro = `Chương trình GDPT 2018 mở rộng nhiều tổ hợp tự chọn và môn nhân hệ số 2, việc chọn đúng tổ hợp có lợi thế từ học bạ sẽ quyết định tính an toàn trước điểm chuẩn ngành ${major} tại ${school}.`;
       }
     }
 
@@ -353,7 +356,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
       } else if (round === 2) {
         cleaned += ` Trong bối cảnh AI và tự động hóa cạnh tranh gay gắt, em dựa vào năng lực chuyên môn vượt trội nào để nhà tuyển dụng trả cho em mức thu nhập kỳ vọng đó ngay khi mới tốt nghiệp?`;
       } else if (round === 3) {
-        cleaned += ` Nhìn lại học bạ thực tế, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em đang thấy lo lắng, đuối sức nhất?`;
+        cleaned += ` Theo chương trình GDPT 2018 với đa dạng tổ hợp tự chọn (như Tin học, GDKT&PL) và cơ chế nhân hệ số 2 môn chính, nhìn lại học bạ thực tế, đâu là tổ hợp môn em thấy tạo lợi thế điểm số cao nhất cho mình và môn điều kiện nào khiến em lo lắng nhất?`;
       }
     }
 
@@ -610,15 +613,16 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
 
   // Chỉ thị thích ứng mục tiêu
   let adaptiveDirective = '';
-  if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị')) {
+  if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
     adaptiveDirective = `
-[CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
+[CHỈ DẪN TUYỂN SINH GDPT 2018 KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
 - Ngành học sinh đang hướng tới: "${effectiveCareer}".
-- Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}.
-- Tuân thủ Nguyên tắc phản tư cân bằng: Công nhận chừng mực thế mạnh học sinh vừa nêu (như KTPL, Văn, Sử...). Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
+- Tuyệt đối KHÔNG phỏng đoán cứng nhắc các khối thi cũ (A00, A01, D01 thuần túy).
+- Nhắc nhở về cơ chế tuyển sinh hiện đại: đa dạng tổ hợp môn tự chọn (Tin học, GDKT&PL như C19, C20, D84...), môn trọng số nhân hệ số 2 và điều kiện chuẩn Ngoại ngữ.
+- Tuân thủ Nguyên tắc phản tư cân bằng: Công nhận chừng mực thế mạnh học sinh vừa nêu (KTPL, Tin học, Tiếng Anh...). Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
 - TUYỆT ĐỐI KHÔNG khen ngợi quá đà hay xoa dịu. Không tự vạch ra các Tầng 1, Tầng 2, Tầng 3.
-- Ở Lượt 3: Đối chất mâu thuẫn giữa yêu cầu tổ hợp ${recommendedCombo} và học lực thực tế.
-- Ở Lượt 4: Nhận định rủi ro chênh lệch điểm chuẩn và RA LỆNH học sinh tự sang Bước 3 tra cứu tổ hợp ${recommendedCombo} của ${targetSchool}.
+- Ở Lượt 3: Đặt câu hỏi mở để học sinh tự chọn tổ hợp có lợi nhất từ học bạ của bản thân để đối chứng tại Bước 3.
+- Ở Lượt 4: Nhận định rủi ro điểm chuẩn cạnh tranh và RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi thế nhất từ học bạ để tra cứu đề án tuyển sinh của ${targetSchool}.
 `;
   }
 
@@ -647,7 +651,12 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
 
 5. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
    - Ở lượt cuối cùng (Lượt 4), TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi (không có dấu ?), không tự đọc số liệu điểm chuẩn, mà ra lệnh dứt khoát:
-     "Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp [Tổ hợp môn] của [Trường mục tiêu] 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
+     "Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của [Trường mục tiêu] 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu."
+
+6. QUY TẮC PHẢN BIỆN TUYỂN SINH MỚI (CHƯƠNG TRÌNH GDPT 2018 - BẮT BUỘC TUÂN THỦ):
+   - Tuyệt đối không phỏng đoán cứng nhắc các khối thi truyền thống cũ (như A00, A01, D01 thuần túy).
+   - Nhắc nhở học sinh về các cơ chế tuyển sinh hiện đại: đa dạng tổ hợp môn tự chọn (Tin học, GDKT&PL), môn trọng số nhân hệ số 2 (đặc biệt là môn Toán ở khối Kinh tế/Kỹ thuật, môn Ngoại ngữ ở khối Ngôn ngữ/Sư phạm) và điều kiện chuẩn đầu vào môn Ngoại ngữ.
+   - Luôn đặt câu hỏi mở để học sinh tự chọn tổ hợp có lợi nhất từ học bạ của bản thân để đối chứng tại Bước 3.
 `;
 
   // ● KHI currentStage === 1 (Lượt khởi đầu):
@@ -693,20 +702,21 @@ BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN THU NHẬP & KỶ NGUYÊN AI):
   // ● KHI currentStage === 3 (Lượt đối chất tổ hợp môn & học lực thực tế):
   if (stage === 3) {
     return `${CORE_PROMPT}${adaptiveDirective}
-BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN TỔ HỢP MÔN & HỌC LỰC THỰC TẾ):
+BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN TỔ HỢP MÔN & HỌC LỰC THỰC TẾ THEO GDPT 2018):
 - Ngành mong muốn hiện tại: ${effectiveCareer}
 - Trường đại học mục tiêu: ${targetSchool}
-- Tổ hợp môn tham chiếu: ${recommendedCombo}
+- Gợi ý tham chiếu mở: ${recommendedCombo}
 - Học sinh vừa phản hồi: "${userText}"
 
-[NHIỆM VỤ LƯỢT 3 - ÁP DỤNG NGUYÊN TẮC PHẢN TƯ CÂN BẰNG]:
-1. Nếu học sinh nêu thế mạnh (học đều, giỏi Tiếng Anh, giỏi KTPL...): Hãy công nhận nền tảng đó một cách chừng mực, khách quan. Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
-2. Chuyển hóa thách thức thành bài toán đo lường: Đặt câu hỏi đối chiếu với sự khắt khe của ngưỡng điểm tuyển sinh ${recommendedCombo} tại ${targetSchool}.
-3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
+[NHIỆM VỤ LƯỢT 3 - ÁP DỤNG QUY TẮC TUYỂN SINH GDPT 2018 & PHẢN TƯ CÂN BẰNG]:
+1. Nếu học sinh nêu thế mạnh (học đều, giỏi Tiếng Anh, giỏi KTPL, giỏi Tin...): Hãy công nhận nền tảng đó một cách chừng mực, khách quan. Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
+2. Áp dụng quy tắc tuyển sinh mới: Tuyệt đối không phỏng đoán cứng nhắc các khối thi truyền thống cũ (A00, A01, D01 thuần túy). Nhắc nhở học sinh về các cơ chế tuyển sinh hiện đại: đa dạng tổ hợp môn tự chọn (Tin học, GDKT&PL), môn trọng số nhân hệ số 2 (đặc biệt là môn Toán ở khối Kinh tế/Kỹ thuật, môn Ngoại ngữ ở khối Ngôn ngữ/Sư phạm) và điều kiện chuẩn đầu vào môn Ngoại ngữ.
+3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI MỞ để học sinh tự chọn tổ hợp có lợi nhất từ học bạ của bản thân:
+"Chương trình GDPT 2018 mở rộng nhiều tổ hợp tự chọn (như Tin học, GDKT&PL) và các trường có cơ chế nhân hệ số 2 môn chính cùng điều kiện chuẩn Ngoại ngữ. Soi lại học bạ thực tế, đâu là tổ hợp môn em thấy tạo lợi thế điểm số cao nhất cho mình và môn điều kiện nào khiến em lo lắng nhất?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG khen ngợi quá đà hay xoa dịu.
+- TUYỆT ĐỐI KHÔNG áp đặt một khối thi cố định (như chỉ ép Toán - Lý - Hóa).
 - TUYỆT ĐỐI KHÔNG đưa ra kết luận hay vạch sẵn chiến lược Tầng 1, 2, 3.
 - TUYỆT ĐỐI KHÔNG nhắc đến Bước 3.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
@@ -717,13 +727,13 @@ BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN TỔ HỢP MÔN & HỌC LỰC TH�
 BỐI CẢNH VÒNG 4 (BÓC TÁCH MÂU THUẪN TUYỂN SINH & ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 - Ngành mong muốn hiện tại: ${effectiveCareer}
 - Trường đại học mục tiêu: ${targetSchool}
-- Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}
+- Gợi ý tham chiếu mở: ${recommendedCombo}
 - Học sinh vừa trả lời về môn học: "${userText}"
 
-[NHIỆM VỤ LƯỢT 4 - BẮT BUỘC TUÂN THỦ NGUYÊN TẮC 4 & NGUYÊN TẮC CÂN BẰNG]:
-1. Đưa ra đúng 1-2 câu nhận định trung tính: Công nhận chừng mực thế mạnh học sinh vừa nêu (học đều, giỏi môn sở trường...), tránh phán xét tiêu cực, chỉ ra thách thức cạnh tranh điểm chuẩn tổ hợp ${recommendedCombo} tại ${targetSchool}.
-2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC:
-"Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${recommendedCombo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
+[NHIỆM VỤ LƯỢT 4 - TUÂN THỦ QUY TẮC GDPT 2018 & ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ]:
+1. Đưa ra đúng 1-2 câu nhận định trung tính: Công nhận chừng mực thế mạnh học sinh vừa nêu (học đều, giỏi KTPL, giỏi Toán, v.v.), không phán xét tiêu cực. Nhắc nhở rằng trong cơ chế GDPT 2018, cơ hội đỗ phụ thuộc vào việc chọn đúng tổ hợp có lợi nhất và cách tính môn trọng số nhân hệ số 2, nhưng điểm chuẩn cạnh tranh vào ngành ${effectiveCareer} tại ${targetSchool} vẫn đòi hỏi điểm số bứt phá của cả tổ hợp.
+2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC (TUYỆT ĐỐI KHÔNG CÓ DẤU ?):
+"Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${targetSchool} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu."
 
 [CẢNH BÁO TỐI CAO]:
 - TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
@@ -751,7 +761,7 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   }
 
   if (stage === 3) {
-    return `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?`;
+    return `Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Chương trình GDPT 2018 mở rộng nhiều tổ hợp tự chọn (như Tin học, GDKT&PL), có môn trọng số nhân hệ số 2 và điều kiện chuẩn Ngoại ngữ. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, nhìn lại học bạ thực tế, đâu là tổ hợp môn em thấy tối ưu điểm số nhất cho mình và môn điều kiện nào em thấy lo lắng nhất?`;
   }
 
   // Stage 4
@@ -760,16 +770,16 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
 
   if (isBalancedGrades) {
-    return `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool} thường đòi hỏi tổng điểm tổ hợp xét tuyển (${combo}) phải đủ sức bứt phá trước tỷ lệ chọi thực tế. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    return `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng trong cơ chế GDPT 2018, em cần chọn đúng tổ hợp có lợi thế và tính toán môn trọng số nhân hệ số 2 để vượt qua điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${targetSchool} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu.`;
   }
 
   if (strongSubject && weakSubject) {
-    return `Có thế mạnh ở môn ${strongSubject} là một điểm tựa tốt, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    return `Có thế mạnh ở môn ${strongSubject} là điểm tựa rất tốt để chọn tổ hợp có môn tự chọn hoặc môn trọng số này, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${targetSchool} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu.`;
   }
 
   if (strongSubject && !weakSubject) {
-    return `Thế mạnh ở môn ${strongSubject} là một lợi thế khách quan, tuy nhiên ngưỡng điểm chuẩn ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi cả 3 môn trong tổ hợp ${combo} đều phải đạt mức an toàn cạnh tranh. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    return `Thế mạnh ở môn ${strongSubject} là một lợi thế lớn trong các tổ hợp tự chọn theo GDPT 2018, tuy nhiên ngưỡng điểm chuẩn ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi cả tổ hợp xét tuyển phải đạt mức an toàn cạnh tranh. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${targetSchool} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu.`;
   }
 
-  return `Ngành ${effectiveCareer} tại ${targetSchool} thường có điểm chuẩn cạnh tranh và đòi hỏi điểm số đồng đều của các môn trong tổ hợp xét tuyển (${combo}). Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+  return `Chương trình GDPT 2018 mở ra nhiều cơ hội với tổ hợp môn tự chọn và môn nhân hệ số 2, nhưng điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi chiến lược lựa chọn tổ hợp tối ưu. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn và đề án tuyển sinh của ${targetSchool} 3 năm gần nhất xem độ chênh lệch thực tế là bao nhiêu.`;
 }
