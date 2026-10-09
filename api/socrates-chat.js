@@ -280,13 +280,23 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     .replace(/^#+.*?\n/gi, '')
     .trim();
 
-  // 2. BỘ NGUYÊN TẮC 1: TUYỆT ĐỐI CẤM KHEN NGỢI, XOA DỊU
+  // 2. BỘ NGUYÊN TẮC: TUYỆT ĐỐI CẤM KHEN NGỢI QUÁ ĐÀ, XOA DỊU
   const praisePatterns = [
-    /^(Thầy\s+(rất\s+)?(ghi nhận|thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng|chúc mừng em)[^.!?\n]*[.!?]\s*/i,
-    /(Thầy\s+(rất\s+)?(ghi nhận|thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng)[^.!?\n]*[.!?]\s*/gi
+    /^(Thầy\s+(rất\s+)?(thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng|chúc mừng em)[^.!?\n]*[.!?]\s*/i,
+    /(Thầy\s+(rất\s+)?(thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng)[^.!?\n]*[.!?]\s*/gi
   ];
   praisePatterns.forEach(rx => {
     cleaned = cleaned.replace(rx, '').trim();
+  });
+
+  // 3. NGUYÊN TẮC CÂN BẰNG: LOẠI BỎ NGÔN TỪ PHÁN XÉT TIÊU CỰC VÔ CĂN CỨ
+  const negativeJudgmentPatterns = [
+    /(?:bị\s+)?điểm liệt/gi,
+    /(?:năng lực\s+)?(?:yếu kém|kém cỏi|bất tài|thấp kém)/gi,
+    /(?:chắc chắn\s+)?(?:sẽ trượt|rớt đại học|thất bại)/gi
+  ];
+  negativeJudgmentPatterns.forEach(rx => {
+    cleaned = cleaned.replace(rx, 'cần bứt phá thêm').trim();
   });
 
   // Cắt bỏ các danh sách tự vạch chiến lược / tầng nấc thay học sinh
@@ -299,6 +309,9 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   const combo = getRecommendedComboForMajor(effectiveCareer, userText);
   const school = targetSchool || 'trường đại học mục tiêu';
   const major = effectiveCareer || 'ngành mục tiêu';
+  const lowerUser = (userText || '').toLowerCase();
+  const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
+  const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
 
   if (round === 4) {
     // NGUYÊN TẮC 4: Ở LƯỢT CUỐI CÙNG, RA LỆNH CHO HỌC SINH TỰ BƯỚC SANG BƯỚC 3 TRA CỨU
@@ -318,7 +331,15 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     if (sentences.length > 0) {
       intro = sentences.slice(0, 2).join(' ').trim();
     } else {
-      intro = `Ngành ${major} tại ${school} đòi hỏi điểm số đồng đều của các môn trong tổ hợp xét tuyển (${combo}), việc chỉ có thế mạnh ở một môn không bảo đảm an toàn nếu các môn còn lại bị đuối sức.`;
+      if (isBalancedGrades) {
+        intro = `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng điểm chuẩn vào ngành ${major} tại ${school} thường đòi hỏi tổng điểm tổ hợp xét tuyển (${combo}) phải đủ sức bứt phá trước tỷ lệ chọi thực tế.`;
+      } else if (strongSubject && weakSubject) {
+        intro = `Có thế mạnh ở môn ${strongSubject} là một điểm tựa tốt, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${major} tại ${school}.`;
+      } else if (strongSubject) {
+        intro = `Thế mạnh ở môn ${strongSubject} là một lợi thế khách quan, tuy nhiên ngưỡng điểm chuẩn ngành ${major} tại ${school} đòi hỏi cả 3 môn trong tổ hợp ${combo} đều phải đạt mức an toàn cạnh tranh.`;
+      } else {
+        intro = `Ngành ${major} tại ${school} đòi hỏi điểm số cạnh tranh của các môn trong tổ hợp xét tuyển (${combo}), việc chỉ dựa vào một môn sở trường sẽ tiềm ẩn rủi ro nếu các môn còn lại chưa đủ vững.`;
+      }
     }
 
     return `${intro} ${standardDirective}`.trim();
@@ -594,7 +615,8 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
 [CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
 - Ngành học sinh đang hướng tới: "${effectiveCareer}".
 - Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}.
-- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu. Không tự vạch ra các Tầng 1, Tầng 2, Tầng 3.
+- Tuân thủ Nguyên tắc phản tư cân bằng: Công nhận chừng mực thế mạnh học sinh vừa nêu (như KTPL, Văn, Sử...). Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà hay xoa dịu. Không tự vạch ra các Tầng 1, Tầng 2, Tầng 3.
 - Ở Lượt 3: Đối chất mâu thuẫn giữa yêu cầu tổ hợp ${recommendedCombo} và học lực thực tế.
 - Ở Lượt 4: Nhận định rủi ro chênh lệch điểm chuẩn và RA LỆNH học sinh tự sang Bước 3 tra cứu tổ hợp ${recommendedCombo} của ${targetSchool}.
 `;
@@ -605,16 +627,25 @@ BẠN LÀ THẦY SOCRATES - TRIẾT GIA PHẢN BIỆN HÀNH VI TRONG ĐỀ TÀI 
 Bạn đang thực hiện phiên đối thoại phản tư 1-1 với một học sinh THPT nhằm bóc tách thiên kiến nhận thức và mỏ neo nghề nghiệp.
 
 BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC TUÂN THỦ 100%):
-1. TUYỆT ĐỐI KHÔNG KHEN NGỢI, KHÔNG XOA DỊU:
-   - CẤM các mẫu câu: "Thầy rất thấu hiểu", "Thầy ghi nhận", "Góc nhìn rất tiến bộ", "Rất tuyệt vời", "Thầy hoan nghênh", "Thầy khen ngợi", "Thầy ủng hộ", "Rất đáng khích lệ", "vũ khí điểm số", "điểm sáng", "bước tiến bộ"...
-   - Giữ văn phong trung tính, điềm đạm, sắc sảo của một triết gia phản biện. Không khen ngợi, không vuốt ve cảm xúc.
-2. QUY TẮC "MỘT CÂU HỎI TRUY VẤN - KHÔNG ĐƯA ĐÁP ÁN":
+
+1. TUYỆT ĐỐI KHÔNG KHEN NGỢI QUÁ ĐÀ, KHÔNG XOA DỊU:
+   - CẤM các mẫu câu tâng bốc, xoa dịu: "Thầy rất thấu hiểu", "Rất tuyệt vời", "Góc nhìn rất tiến bộ", "Thầy khen ngợi", "Thầy ủng hộ", "Rất đáng khích lệ", "vũ khí điểm số", "điểm sáng"...
+   - Giữ văn phong trung tính, điềm đạm, sắc sảo của một triết gia phản biện. Không khen ngợi quá đà, không vuốt ve cảm xúc.
+
+2. NGUYÊN TẮC PHẢN TƯ CÂN BẰNG (SOCRATIC CONSTRUCTIVE REFRAMING - BẮT BUỘC TUÂN THỦ):
+   - Ghi nhận dữ kiện khách quan: Nếu học sinh đưa ra thế mạnh thực tế (ví dụ: học đều, giỏi Tiếng Anh, học tốt KTPL, tư duy logic...), hãy công nhận nền tảng đó một cách chừng mực, khách quan. Tuyệt đối không bác bỏ vô căn cứ, không chê bai dìm hàng.
+   - Tránh ngôn từ mang tính phán xét, tiêu cực: CẤM TỰ SUY DIỄN học sinh "bị điểm liệt", "năng lực yếu kém", "bất tài", "chắc chắn trượt" nếu học sinh chưa khai báo. Giữ thái độ khách quan, tôn trọng sự thật và dữ liệu.
+   - Chuyển hóa thách thức thành bài toán đo lường: Đặt câu hỏi hướng học sinh dùng chính thế mạnh của mình để đối chiếu với tiêu chuẩn khắt khe của ngành (điểm chuẩn 3 năm, tỉ lệ chọi tuyển sinh), tạo động lực để học sinh chủ động tra cứu ở Bước 3.
+
+3. QUY TẮC "MỘT CÂU HỎI TRUY VẤN - KHÔNG ĐƯA ĐÁP ÁN":
    - Mỗi lượt phản hồi chỉ được đưa ra TỐI ĐA 2-3 CÂU VĂN và KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN (ở Vòng 1, 2, 3).
    - Tuyệt đối không giải thích thay, KHÔNG vạch sẵn chiến lược thay học sinh (CẤM đưa ra các tầng nấc Tầng 1, Tầng 2, Tầng 3).
-3. KỸ THUẬT BÓC TÁCH MÂU THUẪN (ELENCHUS):
+
+4. KỸ THUẬT BÓC TÁCH MÂU THUẪN (ELENCHUS):
    - Nếu học sinh nói mông lung: Hỏi xoáy vào bằng chứng cụ thể.
    - Nếu học sinh tự tin ảo: Đem mâu thuẫn giữa kỳ vọng và thực tế để buộc học sinh tự đối diện.
-4. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
+
+5. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
    - Ở lượt cuối cùng (Lượt 4), TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi (không có dấu ?), không tự đọc số liệu điểm chuẩn, mà ra lệnh dứt khoát:
      "Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp [Tổ hợp môn] của [Trường mục tiêu] 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
 `;
@@ -635,7 +666,7 @@ BỐI CẢNH VÒNG 1 (ĐỐI CHIẾU MÃ HOLLAND & ĐỘNG CƠ CHỌN NGÀNH):
 "Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi, không xoa dịu.
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà, không xoa dịu.
 - TUYỆT ĐỐI KHÔNG nói về thu nhập, điểm chuẩn, tổ hợp môn hay Bước 3.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
   }
@@ -654,7 +685,7 @@ BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN THU NHẬP & KỶ NGUYÊN AI):
 "Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Trong bối cảnh AI và tự động hóa cạnh tranh gay gắt, em dựa vào năng lực chuyên môn vượt trội nào để nhà tuyển dụng trả cho em mức thu nhập đó ngay khi mới tốt nghiệp?"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu.
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà hay xoa dịu.
 - TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay Bước 3.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
   }
@@ -668,13 +699,14 @@ BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN TỔ HỢP MÔN & HỌC LỰC TH�
 - Tổ hợp môn tham chiếu: ${recommendedCombo}
 - Học sinh vừa phản hồi: "${userText}"
 
-[NHIỆM VỤ LƯỢT 3]:
-1. Phản hồi tối đa 2 câu văn trung tính về thực tế tuyển sinh.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+[NHIỆM VỤ LƯỢT 3 - ÁP DỤNG NGUYÊN TẮC PHẢN TƯ CÂN BẰNG]:
+1. Nếu học sinh nêu thế mạnh (học đều, giỏi Tiếng Anh, giỏi KTPL...): Hãy công nhận nền tảng đó một cách chừng mực, khách quan. Tuyệt đối không phán xét tiêu cực ("điểm liệt", "yếu kém").
+2. Chuyển hóa thách thức thành bài toán đo lường: Đặt câu hỏi đối chiếu với sự khắt khe của ngưỡng điểm tuyển sinh ${recommendedCombo} tại ${targetSchool}.
+3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
 "Dù kỳ vọng thế nào, chiếc chìa khóa đầu tiên là phải vượt qua ngưỡng cửa tuyển sinh. Để xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}, em đã nắm rõ tổ hợp môn xét tuyển gồm những môn nào chưa? Nhìn lại học bạ kỳ vừa rồi, đâu là môn sở trường tạo lợi thế điểm số cho em và môn nào em thấy lo lắng, đuối sức nhất?"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu.
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà hay xoa dịu.
 - TUYỆT ĐỐI KHÔNG đưa ra kết luận hay vạch sẵn chiến lược Tầng 1, 2, 3.
 - TUYỆT ĐỐI KHÔNG nhắc đến Bước 3.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
@@ -688,14 +720,15 @@ BỐI CẢNH VÒNG 4 (BÓC TÁCH MÂU THUẪN TUYỂN SINH & ĐIỀU HƯỚNG B�
 - Tổ hợp xét tuyển tham chiếu: ${recommendedCombo}
 - Học sinh vừa trả lời về môn học: "${userText}"
 
-[NHIỆM VỤ LƯỢT 4 - BẮT BUỘC TUÂN THỦ NGUYÊN TẮC 4]:
-1. Đưa ra đúng 1-2 câu nhận định trung tính, chỉ ra rủi ro chênh lệch điểm chuẩn nếu chỉ dựa vào một môn mà để các môn còn lại trong tổ hợp ${recommendedCombo} bị kéo tụt điểm.
+[NHIỆM VỤ LƯỢT 4 - BẮT BUỘC TUÂN THỦ NGUYÊN TẮC 4 & NGUYÊN TẮC CÂN BẰNG]:
+1. Đưa ra đúng 1-2 câu nhận định trung tính: Công nhận chừng mực thế mạnh học sinh vừa nêu (học đều, giỏi môn sở trường...), tránh phán xét tiêu cực, chỉ ra thách thức cạnh tranh điểm chuẩn tổ hợp ${recommendedCombo} tại ${targetSchool}.
 2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC:
 "Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${recommendedCombo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu."
 
 [CẢNH BÁO TỐI CAO]:
 - TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
-- TUYỆT ĐỐI KHÔNG khen ngợi hay xoa dịu ("Thầy ghi nhận...", "Rất tuyệt vời...").
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà ("Rất tuyệt vời...", "Thầy khen ngợi...").
+- TUYỆT ĐỐI KHÔNG dùng từ phán xét tiêu cực ("điểm liệt", "năng lực yếu kém").
 - TUYỆT ĐỐI KHÔNG vạch sẵn chiến lược thay học sinh (CẤM đưa ra Tầng 1, Tầng 2, Tầng 3).
 - Toàn bộ phản hồi chỉ gồm 2 đến 3 câu văn dứt khoát.${avoidRepetition}`;
 }
@@ -722,13 +755,20 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   }
 
   // Stage 4
+  const lowerUser = (trimmedMsg || '').toLowerCase();
+  const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
   const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
+
+  if (isBalancedGrades) {
+    return `Học đều các môn là một nền tảng học thuật thuận lợi, nhưng điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool} thường đòi hỏi tổng điểm tổ hợp xét tuyển (${combo}) phải đủ sức bứt phá trước tỷ lệ chọi thực tế. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+  }
+
   if (strongSubject && weakSubject) {
-    return `Có thế mạnh ở môn ${strongSubject} là một lợi thế, nhưng môn ${weakSubject} đuối sức sẽ kéo tụt tổng điểm xét tuyển vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    return `Có thế mạnh ở môn ${strongSubject} là một điểm tựa tốt, nhưng môn ${weakSubject} nếu còn khoảng cách sẽ tạo rủi ro kéo tụt điểm chuẩn vào ngành ${effectiveCareer} tại ${targetSchool}. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
   }
 
   if (strongSubject && !weakSubject) {
-    return `Ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi điểm số cạnh tranh của cả 3 môn trong tổ hợp xét tuyển, một môn sở trường ${strongSubject} không thể gánh trọn vẹn nếu hai môn còn lại thiếu an toàn. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
+    return `Thế mạnh ở môn ${strongSubject} là một lợi thế khách quan, tuy nhiên ngưỡng điểm chuẩn ngành ${effectiveCareer} tại ${targetSchool} đòi hỏi cả 3 môn trong tổ hợp ${combo} đều phải đạt mức an toàn cạnh tranh. Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
   }
 
   return `Ngành ${effectiveCareer} tại ${targetSchool} thường có điểm chuẩn cạnh tranh và đòi hỏi điểm số đồng đều của các môn trong tổ hợp xét tuyển (${combo}). Em hãy bước sang Bước 3, tự tay tra cứu điểm chuẩn tổ hợp ${combo} của ${targetSchool} 3 năm gần nhất và đối chiếu với học bạ của mình xem độ chênh lệch là bao nhiêu.`;
