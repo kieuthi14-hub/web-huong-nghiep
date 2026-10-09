@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import MajorExplorer from './MajorExplorer'
-import UniversityExplorer from './UniversityExplorer'
 import Step3VocationalVerification from './Step3VocationalVerification'
 import Step3DataVerification from './Step3DataVerification'
 import StepProgressHeader from '../../components/common/StepProgressHeader'
@@ -134,7 +132,6 @@ const FactCheckHub = () => {
     return ''
   })
 
-  const [activeTab, setActiveTab] = useState('hub') // 'hub' | 'majors_db' | 'unis_db'
   const [showGuide, setShowGuide] = useState(false)
 
   const isUniDetermined = Boolean(
@@ -279,159 +276,116 @@ const FactCheckHub = () => {
         />
       </div>
 
-      {/* THANH CHUYỂN TAB MỞ RỘNG */}
-      <div className="max-w-[850px] mx-auto mb-4 flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 bg-slate-200/80 p-1 rounded-lg text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => setActiveTab('hub')}
-            className={`px-3 py-1.5 rounded-md transition-all ${activeTab === 'hub' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            📋 Bàn Đối Chứng Dữ Liệu
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('majors_db')}
-            className={`px-3 py-1.5 rounded-md transition-all ${activeTab === 'majors_db' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            📚 Thư Viện Ngành Nghề
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('unis_db')}
-            className={`px-3 py-1.5 rounded-md transition-all ${activeTab === 'unis_db' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
-          >
-            🏫 Danh Sách Trường ĐH
-          </button>
+      {/* CÔNG CỤ HỖ TRỢ: XEM CỔNG TUYỂN SINH BỘ GD&ĐT */}
+      <div className="max-w-[850px] mx-auto mb-4 flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setShowGuide(!showGuide)}
+          className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>{showGuide ? 'Ẩn Cổng Tra Cứu Khác' : '🔗 Xem Cổng Tuyển Sinh Bộ GD&ĐT'}</span>
+          {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+      {/* CỔNG TRA CỨU KHÁC (KHI BẬT) */}
+      {showGuide && (
+        <div style={{ maxWidth: '850px', margin: '0 auto 20px auto', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <strong style={{ fontSize: '13px', color: '#1e293b' }}>🏛️ Cổng Tuyển sinh Chính thức & Đề án mẫu:</strong>
+            <a href="https://tuyensinh.moet.gov.vn/" target="_blank" rel="noopener noreferrer" 
+               style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
+              Cổng Bộ GD&ĐT ➜
+            </a>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {VERIFICATION_LINKS.map((item, idx) => (
+              <a
+                key={idx}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '11px', textDecoration: 'none', padding: '4px 10px', borderRadius: '4px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span>{item.badge}</span>
+                <ExternalLink style={{ width: '10px', height: '10px', color: '#64748b' }} />
+              </a>
+            ))}
+          </div>
         </div>
+      )}
 
-        {activeTab === 'hub' && (
-          <button
-            type="button"
-            onClick={() => setShowGuide(!showGuide)}
-            className="text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-md flex items-center gap-1 transition-colors"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>{showGuide ? 'Ẩn Cổng Tra Cứu Khác' : '🔗 Xem Cổng Tuyển Sinh Bộ GD&ĐT'}</span>
-            {showGuide ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-        )}
+      {/* THANH CHUYỂN PHÂN HỆ ĐÀO TẠO (ĐẠI HỌC vs HỌC NGHỀ THỰC CHIẾN) */}
+      <div style={{ maxWidth: '850px', margin: '0 auto 16px auto', display: 'flex', gap: '8px', padding: '6px', background: '#f1f5f9', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+        <button
+          type="button"
+          onClick={() => setPathwayMode('academic')}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            border: 'none',
+            background: pathwayMode === 'academic' ? '#2563eb' : 'transparent',
+            color: pathwayMode === 'academic' ? '#ffffff' : '#475569',
+            boxShadow: pathwayMode === 'academic' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <GraduationCap style={{ width: '18px', height: '18px' }} />
+          <span>Khối Đại Học / Cao Đẳng (Đề án 3 Công khai)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setPathwayMode('vocational')}
+          style={{
+            flex: 1,
+            padding: '10px 14px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            cursor: 'pointer',
+            border: 'none',
+            background: pathwayMode === 'vocational' ? '#d97706' : 'transparent',
+            color: pathwayMode === 'vocational' ? '#ffffff' : '#475569',
+            boxShadow: pathwayMode === 'vocational' ? '0 2px 4px rgba(217,119,6,0.2)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Scissors style={{ width: '18px', height: '18px' }} />
+          <span>Phân Hệ Học Nghề Thực Chiến (Bài Toán Kinh Tế)</span>
+        </button>
       </div>
 
-      {activeTab === 'majors_db' && (
-        <div className="max-w-[1100px] mx-auto">
-          <MajorExplorer />
+      {pathwayMode === 'vocational' ? (
+        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+          <Step3VocationalVerification 
+            profile={anchor} 
+            onComplete={handleVocationalComplete} 
+          />
         </div>
-      )}
-
-      {activeTab === 'unis_db' && (
-        <div className="max-w-[1100px] mx-auto">
-          <UniversityExplorer />
+      ) : (
+        <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+          <Step3DataVerification 
+            userProfile={{
+              targetMajor: targetCareerDisplay,
+              targetSchool: targetUniDisplay,
+              reason: anchor?.source_of_influence || anchor?.reason || '',
+              expectedIncome: anchor?.expected_income || ''
+            }}
+            onComplete={handleAcademicComplete}
+          />
         </div>
-      )}
-
-      {activeTab === 'hub' && (
-        <>
-          {/* CỔNG TRA CỨU KHÁC (KHI BẬT) */}
-          {showGuide && (
-            <div style={{ maxWidth: '850px', margin: '0 auto 20px auto', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <strong style={{ fontSize: '13px', color: '#1e293b' }}>🏛️ Cổng Tuyển sinh Chính thức & Đề án mẫu:</strong>
-                <a href="https://tuyensinh.moet.gov.vn/" target="_blank" rel="noopener noreferrer" 
-                   style={{ fontSize: '12px', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
-                  Cổng Bộ GD&ĐT ➜
-                </a>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {VERIFICATION_LINKS.map((item, idx) => (
-                  <a
-                    key={idx}
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '11px', textDecoration: 'none', padding: '4px 10px', borderRadius: '4px', background: '#f8fafc', color: '#0f172a', border: '1px solid #cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <span>{item.badge}</span>
-                    <ExternalLink style={{ width: '10px', height: '10px', color: '#64748b' }} />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* THANH CHUYỂN PHÂN HỆ ĐÀO TẠO (ĐẠI HỌC vs HỌC NGHỀ THỰC CHIẾN) */}
-          <div style={{ maxWidth: '850px', margin: '0 auto 16px auto', display: 'flex', gap: '8px', padding: '6px', background: '#f1f5f9', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <button
-              type="button"
-              onClick={() => setPathwayMode('academic')}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                border: 'none',
-                background: pathwayMode === 'academic' ? '#2563eb' : 'transparent',
-                color: pathwayMode === 'academic' ? '#ffffff' : '#475569',
-                boxShadow: pathwayMode === 'academic' ? '0 2px 4px rgba(37,99,235,0.2)' : 'none',
-                transition: 'all 0.2s'
-              }}
-            >
-              <GraduationCap style={{ width: '18px', height: '18px' }} />
-              <span>Khối Đại Học / Cao Đẳng (Đề án 3 Công khai)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPathwayMode('vocational')}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                border: 'none',
-                background: pathwayMode === 'vocational' ? '#d97706' : 'transparent',
-                color: pathwayMode === 'vocational' ? '#ffffff' : '#475569',
-                boxShadow: pathwayMode === 'vocational' ? '0 2px 4px rgba(217,119,6,0.2)' : 'none',
-                transition: 'all 0.2s'
-              }}
-            >
-              <Scissors style={{ width: '18px', height: '18px' }} />
-              <span>Phân Hệ Học Nghề Thực Chiến (Bài Toán Kinh Tế)</span>
-            </button>
-          </div>
-
-          {pathwayMode === 'vocational' ? (
-            <div style={{ maxWidth: '850px', margin: '0 auto' }}>
-              <Step3VocationalVerification 
-                profile={anchor} 
-                onComplete={handleVocationalComplete} 
-              />
-            </div>
-          ) : (
-            <div style={{ maxWidth: '850px', margin: '0 auto' }}>
-              <Step3DataVerification 
-                userProfile={{
-                  targetMajor: targetCareerDisplay,
-                  targetSchool: targetUniDisplay,
-                  reason: anchor?.source_of_influence || anchor?.reason || '',
-                  expectedIncome: anchor?.expected_income || ''
-                }}
-                onComplete={handleAcademicComplete}
-              />
-            </div>
-          )}
-        </>
       )}
     </div>
   )
