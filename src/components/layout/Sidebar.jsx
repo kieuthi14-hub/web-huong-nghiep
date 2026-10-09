@@ -27,11 +27,11 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const studentLinks = [
     { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
-    { to: '/student/holland', label: '1️⃣ Trắc nghiệm Thiên hướng', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
-    { to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
-    { to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
-    { to: '/student/booking', label: '4️⃣ Tư vấn 1-1 Thực tế', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
-    { to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động Tự chủ', icon: <Brain className="w-4 h-4 text-rose-400" /> },
+    { to: '/student/holland', label: '1️⃣ Trắc nghiệm Thiên hướng (RIASEC)', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
+    { to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư Socrates', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
+    { to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu Tuyển sinh', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
+    { to: '/student/booking', label: '4️⃣ Tham vấn 1-1 Thực tế (Mentor)', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
+    { to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động & Tam giác NV', icon: <Brain className="w-4 h-4 text-teal-400" /> },
   ]
 
   const counselorLinks = [
