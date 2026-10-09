@@ -544,6 +544,145 @@ const CounselingBooking = () => {
     }
   }
 
+  // --- THUẬT TOÁN PHÂN LUỒNG THÍCH ỨNG (ADAPTIVE TRIAGE) ---
+  const autoTriageDecision = useMemo(() => {
+    try {
+      const step3Raw = localStorage.getItem('cbas_step3_triage')
+      if (step3Raw) {
+        const parsed = JSON.parse(step3Raw)
+        if (parsed.triageDecision === 'Fast-Track') return 'PHAN_LUONG_2'
+        if (parsed.triageDecision === 'In-depth') return 'PHAN_LUONG_1'
+      }
+      const scoreGapRaw = localStorage.getItem('cbas_score_gap')
+      if (scoreGapRaw !== null && !isNaN(parseFloat(scoreGapRaw))) {
+        return parseFloat(scoreGapRaw) >= -1.0 ? 'PHAN_LUONG_2' : 'PHAN_LUONG_1'
+      }
+    } catch (e) {}
+    if (dossierData.scoreGap !== null && !isNaN(Number(dossierData.scoreGap))) {
+      return Number(dossierData.scoreGap) >= -1.0 ? 'PHAN_LUONG_2' : 'PHAN_LUONG_1'
+    }
+    return 'PHAN_LUONG_1'
+  }, [dossierData])
+
+  const [activeTriage, setActiveTriage] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cbas_step4_active_triage')
+      if (saved === 'PHAN_LUONG_1' || saved === 'PHAN_LUONG_2') return saved
+    } catch (e) {}
+    return autoTriageDecision
+  })
+
+  useEffect(() => {
+    if (!localStorage.getItem('cbas_step4_active_triage')) {
+      setActiveTriage(autoTriageDecision)
+    }
+  }, [autoTriageDecision])
+
+  const handleSelectTriage = (triageType) => {
+    setActiveTriage(triageType)
+    try {
+      localStorage.setItem('cbas_step4_active_triage', triageType)
+    } catch (e) {}
+  }
+
+  // --- STATE PHÂN LUỒNG 2: XÁC NHẬN THỰC CHỨNG TINH GỌN (FAST-TRACK VALIDATION) ---
+  const [fastTrackChecklist, setFastTrackChecklist] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cbas_step4_checklist')
+      if (saved) return JSON.parse(saved)
+    } catch (e) {}
+    return {
+      c1: true, // Nhận thức áp lực học thuật
+      c2: true, // Đánh giá chi phí cơ hội & Tài chính
+      c3: true, // Nhận diện rủi ro AI & Tự động hóa
+      c4: true, // Tính tự chủ ra quyết định
+      c5: true  // Phương án dự phòng an toàn
+    }
+  })
+
+  const [fastTrackReflection, setFastTrackReflection] = useState(() => {
+    try {
+      return localStorage.getItem('cbas_step4_fast_track_reflection') || ''
+    } catch (e) {
+      return ''
+    }
+  })
+
+  const [fastTrackCompleted, setFastTrackCompleted] = useState(() => {
+    try {
+      return localStorage.getItem('cbas_step4_fast_track') === 'true' || localStorage.getItem('cbas_step4_completed') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
+
+  const handleToggleChecklist = (key) => {
+    setFastTrackChecklist(prev => {
+      const updated = { ...prev, [key]: !prev[key] }
+      try {
+        localStorage.setItem('cbas_step4_checklist', JSON.stringify(updated))
+      } catch (e) {}
+      return updated
+    })
+  }
+
+  const handleCompleteFastTrack = async () => {
+    const allChecked = Object.values(fastTrackChecklist).every(Boolean)
+    if (!allChecked) {
+      setToast({
+        type: 'warning',
+        message: 'Em vui lòng rà soát và tích chọn đủ 5 tiêu chí phản tư góc khuất nghề nghiệp!'
+      })
+      return
+    }
+
+    const timestamp = new Date().toISOString()
+    const payload = {
+      triage: 'PHAN_LUONG_2_FAST_TRACK',
+      illusion: 'cleared',
+      readiness: 9,
+      notes: fastTrackReflection.trim() || 'Đã hoàn thành rà soát Case Dossier và bảng kiểm phản tư góc khuất nghề nghiệp đạt chuẩn.',
+      checklist: fastTrackChecklist,
+      savedAt: timestamp
+    }
+
+    try {
+      localStorage.setItem('mentor_feedback_record', JSON.stringify(payload))
+      localStorage.setItem('cbas_step4_feedback', JSON.stringify(payload))
+      localStorage.setItem('cbas_step4_fast_track', 'true')
+      localStorage.setItem('cbas_step4_completed', 'true')
+      if (fastTrackReflection.trim()) {
+        localStorage.setItem('cbas_step4_fast_track_reflection', fastTrackReflection.trim())
+      }
+    } catch (e) {}
+
+    // Đồng bộ Supabase nếu có user
+    try {
+      if (user?.id) {
+        await supabase.from('counseling_sessions').insert([{
+          student_id: user.id,
+          counselor_id: 'CV_01',
+          scheduled_at: timestamp,
+          status: 'completed',
+          student_notes: `[Phân luồng 2 - Fast-track Validation] Hoàn thành Case Dossier & Bảng kiểm phản tư góc khuất nghề nghiệp. Ghi chú: ${fastTrackReflection.trim() || 'Đạt chuẩn tinh gọn'}`,
+          counselor_notes: '[Hệ thống CBAS]: Xác nhận đạt trạng thái cân bằng nhận thức tinh gọn dưới sự giám sát gián tiếp của Mentor.'
+        }])
+      }
+    } catch (err) {
+      console.warn('Lỗi Supabase:', err)
+    }
+
+    setFastTrackCompleted(true)
+    setToast({
+      type: 'success',
+      message: '🎉 Xác nhận đạt chuẩn Thực chứng Tinh gọn thành công! Đang chuyển tiếp sang Bước 5...'
+    })
+
+    setTimeout(() => {
+      navigate('/student/reflection')
+    }, 1000)
+  }
+
   // Khởi tạo và đọc dữ liệu đã lưu
   useEffect(() => {
     try {
@@ -767,8 +906,8 @@ const CounselingBooking = () => {
       </div>
 
       {/* HEADER SECTION: BƯỚC 4 TIÊU ĐỀ & CHỈ SỐ TIẾN TRÌNH */}
-      <div className="no-print bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+      <div className="no-print bg-white rounded-2xl p-6 shadow-sm border border-slate-200 mb-6 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
             <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
               Bước 4 / Quy trình Can thiệp 5 Bước
@@ -776,51 +915,132 @@ const CounselingBooking = () => {
             <span className="text-xs text-slate-400">CBAS ViSEF 2026 Protocol</span>
           </div>
 
-          {/* CHỈ BÁO TIẾN TRÌNH 2 GIAI ĐOẠN 4A VÀ 4B */}
+          {/* CHỈ BÁO THUẬT TOÁN PHÂN LUỒNG THÍCH ỨNG HIỆN TẠI */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleBackTo4A}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                currentStage === '4A'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              <span>4A. Chuẩn Bị & Xuất Hồ Sơ</span>
-              {currentStage === '4A' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
-            </button>
-            <span className="text-slate-300">➔</span>
-            <button
-              type="button"
-              onClick={() => {
-                if (currentStage === '4A') handleComplete4A()
-              }}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
-                currentStage === '4B'
-                  ? 'bg-violet-600 text-white shadow-sm'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              <span>4B. Nhật Ký Thu Hoạch</span>
-              {feedbackSaved && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
-            </button>
+            <span className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+              activeTriage === 'PHAN_LUONG_2'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                : 'bg-amber-50 text-amber-800 border-amber-300'
+            }`}>
+              {activeTriage === 'PHAN_LUONG_2' ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Phân Luồng 2: Xác Nhận Tinh Gọn (Fast-track)</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Phân Luồng 1: Tham Vấn 1-1 Chuyên Sâu</span>
+                </>
+              )}
+            </span>
           </div>
         </div>
 
-        <h1 className="text-xl md:text-2xl font-black text-slate-900 mt-1">
-          BƯỚC 4: THAM VẤN LÂM SÀNG & ĐỐI CHẤT DỮ LIỆU
-        </h1>
-        <p className="text-xs md:text-sm text-slate-500 mt-1">
-          Đối chất số liệu khách quan em vừa kiểm chứng tại Bước 3 trực tiếp với Thầy/Cô hoặc Mentor chuyên môn để giải tỏa các góc khuất thực tế.
-        </p>
+        <div>
+          <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+            BƯỚC 4: THAM VẤN ĐỐI CHẤT CÓ PHÂN LUỒNG THÍCH ỨNG (ADAPTIVE TRIAGE)
+          </h1>
+          <p className="text-xs md:text-sm text-slate-500 mt-1 leading-relaxed">
+            Hệ thống tự động kích hoạt thuật toán phân luồng dựa trên mức độ lệch nhận thức (CRS) và đối chứng dữ liệu tại Bước 3 nhằm tối ưu hóa nguồn lực tư vấn học đường.
+          </p>
+        </div>
+
+        {/* CỤM TAB CHUYỂN ĐỔI 2 PHÂN LUỒNG */}
+        <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => handleSelectTriage('PHAN_LUONG_1')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                activeTriage === 'PHAN_LUONG_1'
+                  ? 'bg-white text-indigo-900 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>Phân Luồng 1: Tham Vấn 1-1 Chuyên Sâu (20 - 30 Phút)</span>
+              {autoTriageDecision === 'PHAN_LUONG_1' && (
+                <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-black rounded">Hệ thống đề xuất</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectTriage('PHAN_LUONG_2')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                activeTriage === 'PHAN_LUONG_2'
+                  ? 'bg-white text-emerald-900 shadow-sm border border-slate-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>Phân Luồng 2: Xác Nhận Tinh Gọn (5 - 10 Phút)</span>
+              {autoTriageDecision === 'PHAN_LUONG_2' && (
+                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded">Hệ thống đề xuất</span>
+              )}
+            </button>
+          </div>
+
+          {activeTriage === 'PHAN_LUONG_1' && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleBackTo4A}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                  currentStage === '4A'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <span>4A. Chuẩn Bị & Xuất Hồ Sơ</span>
+                {currentStage === '4A' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+              </button>
+              <span className="text-slate-300">➔</span>
+              <button
+                type="button"
+                onClick={() => {
+                  if (currentStage === '4A') handleComplete4A()
+                }}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                  currentStage === '4B'
+                    ? 'bg-violet-600 text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
+              >
+                <span>4B. Nhật Ký Thu Hoạch</span>
+                {feedbackSaved && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* GIAI ĐOẠN 4A: CHUẨN BỊ THAM VẤN & XUẤT HỒ SƠ ĐỐI CHẤT (TRƯỚC KHI GẶP)      */}
+      {/* PHÂN LUỒNG 1: THAM VẤN TRỰC TIẾP CHUYÊN SÂU (IN-DEPTH 1-ON-1)              */}
       {/* ========================================================================= */}
-      {currentStage === '4A' && (
+      {activeTriage === 'PHAN_LUONG_1' && (
         <div className="space-y-6">
+          
+          {/* BANNER GIẢI THÍCH PHÂN LUỒNG 1 */}
+          <div className="bg-amber-50/80 border-2 border-amber-300 rounded-2xl p-5 md:p-6 space-y-2">
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
+              <h3 className="font-extrabold text-slate-900 text-sm md:text-base">
+                Phân Luồng 1: Tham Vấn Trực Tiếp Chuyên Sâu (In-depth 1-on-1)
+              </h3>
+            </div>
+            <p className="text-xs md:text-sm text-slate-700 leading-relaxed font-medium">
+              Số liệu đối chứng cho thấy điểm học bạ của em đang có khoảng cách ({formattedScoreGap}) so với điểm chuẩn thực tế, 
+              hoặc em đang chịu áp lực định kiến/băn khoăn lớn (độ lệch nhận thức CRS lớn). 
+              Học sinh bắt buộc tham gia phiên đối chất 1-1 trực tiếp cùng Mentor (20 - 30 phút) để bóc tách các rào cản tâm lý, 
+              áp lực định kiến và tái cấu trúc mục tiêu an toàn.
+            </p>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* GIAI ĐOẠN 4A: CHUẨN BỊ THAM VẤN & XUẤT HỒ SƠ ĐỐI CHẤT (TRƯỚC KHI GẶP)      */}
+          {/* ========================================================================= */}
+          {currentStage === '4A' && (
+            <div className="space-y-6">
           
           {/* 1. THẺ TÓM TẮT HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (CLINICAL DOSSIER CARD) */}
           <div 
@@ -1325,6 +1545,245 @@ const CounselingBooking = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* PHÂN LUỒNG 2: XÁC NHẬN THỰC CHỨNG TINH GỌN (FAST-TRACK VALIDATION)        */}
+      {/* ========================================================================= */}
+      {activeTriage === 'PHAN_LUONG_2' && (
+        <div className="space-y-6">
+
+          {/* 1. THẺ GIẢI THÍCH PHÂN LUỒNG & TRẠNG THÁI CÂN BẰNG NHẬN THỨC */}
+          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-sm shrink-0">
+                  ✓
+                </div>
+                <div>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                    Thuật Toán Phân Luồng • Fast-Track Validation
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 mt-0.5">
+                    Trạng Thái Cân Bằng Nhận Thức (CRS Tiệm Cận 0)
+                  </h3>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-xs font-bold text-slate-500 block">Thời lượng đề xuất:</span>
+                <span className="text-sm font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-lg border border-emerald-300 inline-block mt-0.5">
+                  ⏱️ 5 - 10 Phút Tinh Gọn
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs md:text-sm text-slate-700 leading-relaxed font-medium">
+              Số liệu đối chứng tại Bước 3 cho thấy điểm học bạ ước tính của em (<strong className="text-emerald-900">{dossierData.totalStudentScore}đ</strong>) 
+              nằm trong vùng an toàn của đề án tuyển sinh (<strong className="text-slate-900">{dossierData.avgCutoff}đ</strong>, chênh lệch {formattedScoreGap}), 
+              và mức tự tin phản ánh sát với thực tế. Em không bắt buộc phải tham gia phiên đối chất 1-1 kéo dài 20 - 30 phút, mà thực hiện 
+              <strong> rà soát độc lập thông qua Hồ sơ kinh nghiệm thực tế (Case Dossier)</strong> và hoàn thành 
+              <strong> Bảng kiểm phản tư góc khuất nghề nghiệp</strong> dưới sự giám sát gián tiếp của Mentor trước khi bước vào lập kế hoạch hành động.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div className="bg-white p-3 rounded-xl border border-emerald-200">
+                <span className="text-slate-500 font-bold block mb-0.5">Mục tiêu ngành:</span>
+                <span className="font-extrabold text-indigo-700">{dossierData.targetMajor}</span>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-emerald-200">
+                <span className="text-slate-500 font-bold block mb-0.5">Trường mục tiêu:</span>
+                <span className="font-extrabold text-slate-800">{dossierData.targetSchool}</span>
+              </div>
+              <div className="bg-white p-3 rounded-xl border border-emerald-200">
+                <span className="text-slate-500 font-bold block mb-0.5">Độ lệch nhận thức CRS:</span>
+                <span className="font-extrabold text-emerald-700">Tiệm cận 0 (Vững vàng)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. HỒ SƠ KINH NGHIỆM THỰC TẾ (CASE DOSSIER) */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <FileText className="w-5 h-5 text-indigo-600" />
+              <div>
+                <h3 className="font-bold text-sm md:text-base text-slate-900 uppercase tracking-wide">
+                  1. HỒ SƠ KINH NGHIỆM THỰC TẾ (CASE DOSSIER - NGƯỜI ĐI TRƯỚC TRONG NGÀNH)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Đúc kết từ khảo sát thực tế và kinh nghiệm của các Cựu sinh viên & Mentor ngành {dossierData.targetMajor}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              {/* Case 1 */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-indigo-700 font-bold">
+                  <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-black">1</span>
+                  <span>Cường Độ & Áp Lực Học Tập</span>
+                </div>
+                <p className="text-slate-700 leading-relaxed font-medium">
+                  "Không có chuyện vào đại học là xả hơi. Các môn cơ sở và chuyên ngành đòi hỏi tự học gấp đôi trên lớp, làm việc nhóm cường độ cao và bảo vệ đồ án thực tế."
+                </p>
+                <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
+                  ➔ Góc khuất: Phải có thói quen tự học kỷ luật ngay từ năm nhất.
+                </p>
+              </div>
+
+              {/* Case 2 */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-amber-700 font-bold">
+                  <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center text-[10px] font-black">2</span>
+                  <span>Thực Tế Tuyển Dụng & Đãi Ngộ</span>
+                </div>
+                <p className="text-slate-700 leading-relaxed font-medium">
+                  "Mức lương khởi điểm thực tế của cử nhân mới tốt nghiệp không hào nhoáng như trên mạng. Nhà tuyển dụng đòi hỏi kỹ năng thực chiến và kinh nghiệm dự án thực tế."
+                </p>
+                <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
+                  ➔ Góc khuất: Cần sớm đi thực tập và tích lũy portfolio năng lực.
+                </p>
+              </div>
+
+              {/* Case 3 */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-cyan-700 font-bold">
+                  <span className="w-5 h-5 rounded-full bg-cyan-100 text-cyan-800 flex items-center justify-center text-[10px] font-black">3</span>
+                  <span>Làn Sóng AI & Đào Thải</span>
+                </div>
+                <p className="text-slate-700 leading-relaxed font-medium">
+                  "AI đang tự động hóa các tác vụ lặp lại cơ bản. Người làm nghề buộc phải nâng cao tư duy phản biện, kỹ năng giải quyết bài toán phức tạp và thành thạo ứng dụng AI."
+                </p>
+                <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
+                  ➔ Góc khuất: Không dừng lại ở kiến thức sách giáo khoa đại cương.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. BẢNG KIỂM PHẢN TƯ GÓC KHUẤT NGHỀ NGHIỆP */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              <div>
+                <h3 className="font-bold text-sm md:text-base text-slate-900 uppercase tracking-wide">
+                  2. BẢNG KIỂM PHẢN TƯ GÓC KHUẤT NGHỀ NGHIỆP (HIDDEN OCCUPATIONAL BIASES CHECKLIST)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Rà soát trung thực 5 tiêu chí để đảm bảo em không vướng phải bất kỳ thiên lệch tâm lý nào trước khi chốt kế hoạch:
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  key: 'c1',
+                  title: 'Tiêu chí 1: Nhận thức áp lực học thuật chuyên sâu',
+                  desc: 'Em đã tìm hiểu khung chương trình đào tạo 4 năm của ngành và chuẩn bị tâm lý đối mặt với các môn học khó nhất mà sinh viên hay nợ môn.'
+                },
+                {
+                  key: 'c2',
+                  title: 'Tiêu chí 2: Chi phí cơ hội & Năng lực tài chính thực tế',
+                  desc: 'Em đã nắm rõ mức học phí cả khóa cùng chi phí sinh hoạt hàng tháng; gia đình có khả năng trang trải hoặc em đã có phương án tài chính dự phòng an toàn.'
+                },
+                {
+                  key: 'c3',
+                  title: 'Tiêu chí 3: Rủi ro đào thải & Thách thức từ Trí tuệ Nhân tạo (AI)',
+                  desc: 'Em nhận thức rõ các tác vụ cơ bản trong ngành có nguy cơ bị AI thay thế và sẵn sàng chủ động rèn luyện kỹ năng công nghệ/kỹ năng mềm thích ứng.'
+                },
+                {
+                  key: 'c4',
+                  title: 'Tiêu chí 4: Sự kiên định & Tính tự chủ ra quyết định',
+                  desc: 'Lựa chọn ngành nghề này xuất phát từ năng lực thực chất và sở thích bền vững của bản thân, không chạy theo trào lưu ngắn hạn hay áp lực đám đông.'
+                },
+                {
+                  key: 'c5',
+                  title: 'Tiêu chí 5: Thiết lập phương án nguyện vọng dự phòng an toàn',
+                  desc: 'Em đã có sẵn ít nhất một nguyện vọng dự phòng vừa sức (NV2, NV3) trong cùng khối ngành để bảo đảm 100% cơ hội nếu điểm chuẩn biến động bất ngờ.'
+                }
+              ].map(item => (
+                <label
+                  key={item.key}
+                  className={`flex items-start gap-3.5 p-3.5 rounded-xl border cursor-pointer transition ${
+                    fastTrackChecklist[item.key]
+                      ? 'bg-emerald-50/60 border-emerald-300 text-slate-900 shadow-2xs'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={fastTrackChecklist[item.key]}
+                    onChange={() => handleToggleChecklist(item.key)}
+                    className="mt-1 w-4 h-4 accent-emerald-600 rounded cursor-pointer shrink-0"
+                  />
+                  <div>
+                    <span className="font-bold text-xs md:text-sm block text-slate-900">{item.title}</span>
+                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{item.desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {/* Ô phản tư thu hoạch ngắn */}
+            <div className="pt-2">
+              <label className="block text-xs font-bold text-slate-900 uppercase tracking-wide mb-1.5">
+                Ghi chú phản tư nhanh: Một góc khuất thực tế em nhận thức rõ nhất và cách em sẽ vượt qua:
+              </label>
+              <textarea
+                rows={2}
+                value={fastTrackReflection}
+                onChange={(e) => setFastTrackReflection(e.target.value)}
+                placeholder="VD: Em nhận thức rõ môn Toán cao cấp và Lập trình ở năm 1 rất khó, em sẽ dành 60 phút mỗi tối tự luyện bài tập và học nhóm cùng các bạn..."
+                className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:bg-white focus:outline-none leading-relaxed"
+              />
+            </div>
+          </div>
+
+          {/* 4. GIÁM SÁT GIÁN TIẾP CỦA MENTOR & NÚT HOÀN TẤT BƯỚC 4 */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-100 text-emerald-800 rounded-lg shrink-0">
+                  <UserCheck className="w-5 h-5 text-emerald-700" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-slate-500 block uppercase">Giám Sát Gián Tiếp:</span>
+                  <span className="font-bold text-slate-900 text-xs md:text-sm">
+                    Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường (CV_01)
+                  </span>
+                </div>
+              </div>
+
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full border border-emerald-300 shrink-0 text-center">
+                ✓ Đủ điều kiện tinh gọn
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => handleSelectTriage('PHAN_LUONG_1')}
+                className="text-xs text-indigo-700 hover:text-indigo-900 font-semibold underline cursor-pointer"
+              >
+                ← Nếu em vẫn còn áp lực tâm lý hoặc muốn đối chất trực tiếp 1-1, bấm vào đây
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCompleteFastTrack}
+                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-xs md:text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <span>XÁC NHẬN ĐẠT CHUẨN THỰC CHỨNG TINH GỌN & TIẾP TỤC BƯỚC 5</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
         </div>
       )}
 

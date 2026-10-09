@@ -50,11 +50,11 @@ export const STEPS = [
   {
     step: 4,
     to: '/student/booking',
-    label: 'Bước 4: Tư Vấn 1-1 Thực Tế',
-    shortLabel: '4. Tư vấn 1-1',
+    label: 'Bước 4: Tham Vấn Đối Chất (Phân Luồng Thích Ứng)',
+    shortLabel: '4. Tham vấn thích ứng',
     icon: CalendarDays,
     color: 'violet',
-    badge: 'Hồ sơ lâm sàng & 4B'
+    badge: 'Adaptive Triage'
   },
   {
     step: 5,

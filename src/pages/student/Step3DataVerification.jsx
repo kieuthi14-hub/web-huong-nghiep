@@ -631,7 +631,7 @@ export default function Step3DataVerification({
                 ✓
               </div>
               <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full uppercase">
-                Phân Luồng: Tự Chủ Vững Vàng (Fast-Track)
+                Phân Luồng 2: Xác Nhận Thực Chứng Tinh Gọn (Fast-track Validation)
               </span>
               <h2 className="text-2xl font-extrabold text-slate-900 mt-3 mb-2">
                 Năng Lực & Nhận Thức Của Em Rất Thực Tế!
@@ -639,14 +639,16 @@ export default function Step3DataVerification({
               <p className="text-sm text-slate-600 max-w-xl mx-auto mb-6 leading-relaxed">
                 Dữ liệu đối chứng cho thấy điểm tổ hợp ước tính của em (<span className="font-bold text-slate-900">{triageResult.totalStudentScore}đ</span>) 
                 hoàn toàn tương thích với ngưỡng điểm chuẩn an toàn (<span className="font-bold text-slate-900">{triageResult.avgCutoff}đ</span>), 
-                đồng thời em đã thấu hiểu các rủi ro việc làm. Em đủ điều kiện chuyển thẳng sang Bước 5 để lập Kế hoạch hành động mà không cần qua tham vấn 1-1.
+                đồng thời em đã đạt trạng thái cân bằng nhận thức (CRS tiệm cận 0). 
+                Hệ thống tự động kích hoạt <strong>Phân luồng 2 (Xác nhận thực chứng tinh gọn)</strong> tại Bước 4: 
+                rà soát độc lập Hồ sơ kinh nghiệm thực tế (Case Dossier) và hoàn thành bảng kiểm phản tư góc khuất nghề nghiệp dưới sự giám sát gián tiếp của Mentor.
               </p>
               <button
                 type="button"
-                onClick={() => handleCompleteAction('STEP_5')}
+                onClick={() => handleCompleteAction('STEP_4')}
                 className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer"
               >
-                TIẾP TỤC BƯỚC 5: THIẾT LẬP KẾ HOẠCH HÀNH ĐỘNG ĐA TUYẾN ➔
+                TIẾP TỤC BƯỚC 4: XÁC NHẬN THỰC CHỨNG TINH GỌN (FAST-TRACK) ➔
               </button>
               <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
@@ -674,15 +676,16 @@ export default function Step3DataVerification({
                 ⚠️
               </div>
               <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full uppercase">
-                Phân Luồng: Tham Vấn Chuyên Sâu (In-depth Mentorship)
+                Phân Luồng 1: Tham Vấn Trực Tiếp Chuyên Sâu (In-depth 1-on-1)
               </span>
               <h2 className="text-2xl font-extrabold text-slate-900 mt-3 mb-2">
                 Phát Hiện Khoảng Cách Nhận Thức Cần Tháo Gỡ!
               </h2>
               <p className="text-sm text-slate-600 max-w-xl mx-auto mb-6 leading-relaxed">
                 Số liệu đối chứng cho thấy điểm số hiện tại đang có khoảng cách (<span className="font-bold text-rose-600">{triageResult.scoreGap} điểm</span>) 
-                so với điểm chuẩn thực tế, hoặc có sự băn khoăn lớn về nguy cơ việc làm/áp lực chọn ngành. 
-                Hệ thống đề xuất em tham gia phiên tham vấn 1-1 cùng Thầy/Cô hoặc Cố vấn tại Bước 4 để được định hướng an toàn.
+                so với điểm chuẩn thực tế, hoặc có sự băn khoăn lớn về nguy cơ việc làm/áp lực chọn ngành (độ lệch nhận thức CRS lớn). 
+                Hệ thống kích hoạt <strong>Phân luồng 1</strong>: bắt buộc tham gia phiên đối chất 1-1 trực tiếp cùng Mentor (20 - 30 phút) 
+                để bóc tách các rào cản tâm lý, áp lực định kiến và tái cấu trúc mục tiêu an toàn.
               </p>
               
               <div className="bg-slate-50 p-4 rounded-xl max-w-md mx-auto mb-6 text-left text-xs text-slate-600 space-y-1.5 border border-slate-200">
@@ -700,7 +703,7 @@ export default function Step3DataVerification({
                 onClick={() => handleCompleteAction('STEP_4')}
                 className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer"
               >
-                TIẾP TỤC BƯỚC 4: XUẤT HỒ SƠ & ĐẶT LỊCH THAM VẤN 1-1 ➔
+                TIẾP TỤC BƯỚC 4: THAM VẤN ĐỐI CHẤT 1-1 CHUYÊN SÂU ➔
               </button>
               <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
