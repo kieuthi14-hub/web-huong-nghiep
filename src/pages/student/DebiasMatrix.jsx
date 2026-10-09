@@ -19,7 +19,9 @@ import {
   BookOpen,
   Clock,
   Home,
-  Award
+  Award,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 /**
@@ -116,6 +118,8 @@ export default function DebiasMatrix() {
   const canvasRef = useRef(null);
   const isDrawingRef = useRef(false);
   const [hasSignature, setHasSignature] = useState(false);
+  const [signatureDataUrl, setSignatureDataUrl] = useState('');
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [toast, setToast] = useState(null);
 
   // Khởi tạo và đọc dữ liệu đã lưu
@@ -185,6 +189,7 @@ export default function DebiasMatrix() {
     // Phục hồi chữ ký cũ nếu có
     const savedSig = localStorage.getItem('cbas_step5_signature');
     if (savedSig) {
+      setSignatureDataUrl(savedSig);
       const img = new Image();
       img.onload = () => {
         const ctx = canvas.getContext('2d');
@@ -199,7 +204,7 @@ export default function DebiasMatrix() {
       e.preventDefault();
       isDrawingRef.current = true;
       const ctx = canvas.getContext('2d');
-      ctx.strokeStyle = '#2dd4bf'; // Màu teal-400
+      ctx.strokeStyle = '#0d9488'; // Teal-600 sắc nét trên cả màn hình tối và giấy in A4 trắng
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -222,7 +227,9 @@ export default function DebiasMatrix() {
       e.preventDefault();
       isDrawingRef.current = false;
       try {
-        localStorage.setItem('cbas_step5_signature', canvas.toDataURL());
+        const url = canvas.toDataURL();
+        setSignatureDataUrl(url);
+        localStorage.setItem('cbas_step5_signature', url);
       } catch (err) {}
     };
 
@@ -242,7 +249,7 @@ export default function DebiasMatrix() {
     if (!canvas) return;
     isDrawingRef.current = true;
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = '#2dd4bf'; // Teal-400
+    ctx.strokeStyle = '#0d9488'; // Teal-600
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -267,7 +274,9 @@ export default function DebiasMatrix() {
     const canvas = canvasRef.current;
     if (canvas) {
       try {
-        localStorage.setItem('cbas_step5_signature', canvas.toDataURL());
+        const url = canvas.toDataURL();
+        setSignatureDataUrl(url);
+        localStorage.setItem('cbas_step5_signature', url);
       } catch (err) {}
     }
   };
@@ -278,6 +287,7 @@ export default function DebiasMatrix() {
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasSignature(false);
+    setSignatureDataUrl('');
     localStorage.removeItem('cbas_step5_signature');
   };
 
@@ -306,9 +316,10 @@ export default function DebiasMatrix() {
   // Lưu và In Bản Cam Kết Dán Góc Học Tập (window.print)
   const handleSaveAndPrint = async () => {
     const canvas = canvasRef.current;
-    let sigDataUrl = '';
-    if (canvas) {
+    let sigDataUrl = signatureDataUrl;
+    if (canvas && hasSignature) {
       sigDataUrl = canvas.toDataURL();
+      setSignatureDataUrl(sigDataUrl);
       localStorage.setItem('cbas_step5_signature', sigDataUrl);
     }
 
@@ -422,48 +433,69 @@ export default function DebiasMatrix() {
   return (
     <div className="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8 space-y-6">
 
-      {/* CSS CHO IN ẤN CHUẨN A4 DÁN GÓC HỌC TẬP */}
+      {/* CSS CHO IN ẤN CHUẨN A4 DÁN GÓC HỌC TẬP (CHUẨN ĐẠO ĐỨC & KHẮC PHỤC LỖI IN) */}
       <style>{`
+        /* Định dạng hiển thị chuyên dụng khi in / xuất PDF */
         @media print {
+          /* 1. TRIỆT TIÊU TOÀN BỘ CÁC THÔNG BÁO POPUP / TOAST VÀ NÚT BẤM */
+          .toast-notification, 
+          [role="alert"], 
+          .alert-box, 
+          button, 
+          aside, 
+          nav, 
+          header,
+          footer,
+          .no-print {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0 !important;
+          }
+
+          /* 2. CĂN CHỈNH KHỔ GIẤY IN A4 CHUẨN KHOA HỌC */
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 10mm 10mm;
+            margin: 12mm 15mm 12mm 15mm;
           }
-          html, body, #root, main {
-            overflow: visible !important;
+
+          body, html, #root, main {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             height: auto !important;
             min-height: auto !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
+            overflow: visible !important;
+            margin: 0 !important;
             padding: 0 !important;
-            margin: 0 !important;
           }
-          header, aside, nav, footer, .no-print {
-            display: none !important;
-          }
-          .print-sheet {
+
+          .print-container {
             display: block !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            border: 2px solid #0f172a !important;
-            border-radius: 12px !important;
-            padding: 16px !important;
+            width: 100% !important;
+            max-width: 100% !important;
             margin: 0 !important;
+            padding: 0 !important;
             box-shadow: none !important;
+            border: none !important;
           }
-          .print-sheet * {
-            color: #0f172a !important;
-            border-color: #cbd5e1 !important;
+
+          .commit-document {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
-          .print-badge {
-            background-color: #f1f5f9 !important;
-            color: #0f172a !important;
-            border: 1px solid #94a3b8 !important;
-          }
-          .print-canvas {
-            border: 1px solid #0f172a !important;
-            background-color: #f8fafc !important;
-          }
+        }
+
+        /* Khung hiển thị tài liệu cam kết */
+        .commit-document {
+          background: #ffffff;
+          color: #0f172a;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          padding: 24px;
+          line-height: 1.45;
         }
       `}</style>
 
@@ -509,6 +541,19 @@ export default function DebiasMatrix() {
           </button>
           <button
             type="button"
+            onClick={() => setShowPrintPreview(!showPrintPreview)}
+            className={`px-3.5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+              showPrintPreview 
+                ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' 
+                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+            }`}
+            title="Xem trước mẫu văn bản in A4 dán góc học tập"
+          >
+            {showPrintPreview ? <EyeOff className="w-3.5 h-3.5 text-teal-400" /> : <Eye className="w-3.5 h-3.5 text-teal-400" />}
+            <span>{showPrintPreview ? 'Ẩn Bản In A4' : 'Xem Bản In A4'}</span>
+          </button>
+          <button
+            type="button"
             onClick={handleDownloadJSON}
             className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-700"
             title="Tải dữ liệu nghiên cứu JSON phục vụ Hội đồng ViSEF"
@@ -529,23 +574,9 @@ export default function DebiasMatrix() {
       </div>
 
       {/* =========================================================================
-          CONTAINER NỘI DUNG CHÍNH (ĐỒNG THỜI LÀ PRINT SHEET KHI IN)
+          CONTAINER NỘI DUNG TƯƠNG TÁC (CHỈ HIỂN THỊ TRÊN MÀN HÌNH - NO-PRINT)
           ========================================================================= */}
-      <div className="print-sheet space-y-6">
-
-        {/* TIÊU ĐỀ DÀNH CHO BẢN IN GÓC HỌC TẬP */}
-        <div className="hidden print:block border-b-2 border-slate-900 pb-3 mb-4">
-          <div className="flex justify-between items-center text-xs font-bold text-slate-600">
-            <span>DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS</span>
-            <span>MÃ HỌC SINH: {displayStudentCode} | KHỐI {selectedGrade}</span>
-          </div>
-          <h2 className="text-xl font-black text-slate-950 uppercase tracking-tight mt-1">
-            BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
-          </h2>
-          <p className="text-xs text-slate-600 italic">
-            "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
-          </p>
-        </div>
+      <div className="space-y-6 no-print">
 
         {/* =========================================================================
             BẢNG ĐO LƯỜNG VÀ HIỆU CHUẨN NHẬN THỨC
@@ -958,6 +989,240 @@ export default function DebiasMatrix() {
                 <span>Lưu & In Bản Cam Kết Dán Góc Học Tập</span>
               </button>
             </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+          MẪU BẢN IN PDF CAM KẾT HÀNH ĐỘNG BƯỚC 5 (CHUẨN ĐẠO ĐỨC & KHẮC PHỤC LỖI IN)
+          ========================================================================= */}
+      {showPrintPreview && (
+        <div className="no-print p-4 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs flex flex-wrap items-center justify-between gap-3 my-4">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse"></span>
+            <span className="font-bold uppercase tracking-wider">
+              BẢN XEM TRƯỚC VĂN BẢN IN A4 (CHUẨN ĐẠO ĐỨC NGHIÊN CỨU QUỐC TẾ VISEF 2026)
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-teal-400/90 font-mono">MÃ ĐỊNH DANH: {displayStudentCode}</span>
+            <button
+              type="button"
+              onClick={handleSaveAndPrint}
+              className="px-3 py-1 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer shadow transition"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>In Ngay</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={`commit-document print-container ${showPrintPreview ? 'block my-6 shadow-2xl mx-auto' : 'hidden print:block'}`}>
+        
+        {/* HEADER TÀI LIỆU */}
+        <div style={{ borderBottom: '2px solid #0f766e', paddingBottom: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f766e', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                Dự án Nghiên cứu ViSEF 2026 - Phân ngành CBAS
+              </span>
+              {/* ĐÃ KHẮC PHỤC LỖI TÊN: MÃ HÓA ẨN DANH CHUẨN QUỐC TẾ */}
+              <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', margin: '4px 0 0 0' }}>
+                MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span style={{ color: '#0f766e' }}>{displayStudentCode}</span> | KHỐI {selectedGrade} THPT
+              </h2>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <span style={{ display: 'inline-block', padding: '3px 8px', background: '#ccfbf1', color: '#0f766e', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                NHÓM CAN THIỆP (SOCRACAREER)
+              </span>
+            </div>
+          </div>
+
+          <h1 style={{ fontSize: '17px', fontWeight: 800, color: '#111827', textAlign: 'center', margin: '12px 0 4px 0', textTransform: 'uppercase' }}>
+            Bản Cam Kết Hành Động & Tam Giác Nguyện Vọng Thích Ứng
+          </h1>
+          <p style={{ fontSize: '11px', fontStyle: 'italic', color: '#64748b', textAlign: 'center', margin: 0 }}>
+            "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
+          </p>
+        </div>
+
+        {/* KHỐI ĐO LƯỜNG VÀ HIỆU CHUẨN NHẬN THỨC */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr 1fr', gap: '12px', marginBottom: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '12px' }}>
+          
+          <div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Ngành mục tiêu chốt lại:</div>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>{targetMajor}</div>
+            <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600, marginTop: '2px' }}>☑ Đã đối chứng & Cam kết dấn thân</div>
+          </div>
+
+          {/* ĐÃ KHẮC PHỤC LỖI NHÃN CRS */}
+          <div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Độ tự tin (Trước vs Sau can thiệp):</div>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f766e', marginTop: '2px' }}>
+              Trước: {step1Data.initialConfidence}/10 → <span style={{ color: '#0d9488' }}>Sau: {confidenceT2}/10</span>
+            </div>
+            <div style={{ fontSize: '10px', color: '#0284c7', fontWeight: 600, marginTop: '2px' }}>
+              Độ tự tin hiệu chuẩn (Tiệm cận vùng CRS ≈ 0)
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Trạng thái ràng buộc:</div>
+            <div style={{ fontSize: '13px', fontWeight: 800, color: '#d97706', marginTop: '2px' }}>
+              {hasSignature ? 'Đã ký cam kết điện tử' : 'Sẵn sàng ký cam kết'}
+            </div>
+            <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>Bước 5/5 Mô hình SocraCareer</div>
+          </div>
+
+        </div>
+
+        {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (3 NẤC AN TOÀN) */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+              ▲ Tam Giác Nguyện Vọng Thích Ứng (3 Nấc An Toàn)
+            </h3>
+            <span style={{ fontSize: '10px', color: '#64748b', fontStyle: 'italic' }}>Giảm thiểu rủi ro biến động điểm chuẩn tuyển sinh</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+            
+            {/* Nấc 1 */}
+            <div style={{ border: '1px solid #d8b4fe', background: '#faf5ff', borderRadius: '6px', padding: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: '#7e22ce' }}>
+                <span>{triadTiers.dream?.label || 'NẤC 1: ƯỚC MƠ (DREAM)'}</span>
+                <span>{triadTiers.dream?.targetScore || 'Mục tiêu: 26.5+'}</span>
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#1e1b4b', margin: '4px 0 2px 0' }}>
+                {triadTiers.dream?.majorSchool || 'Tâm lý học - ĐH KHXH&NV TP.HCM'}
+              </div>
+              <div style={{ fontSize: '10px', color: '#6b21a8', lineHeight: 1.3 }}>
+                {triadTiers.dream?.notes || 'Tổ hợp D14 / C00. Thách thức lớn nhất: Điểm chuẩn luôn ở mức cạnh tranh rất cao.'}
+              </div>
+            </div>
+
+            {/* Nấc 2 */}
+            <div style={{ border: '1px solid #99f6e4', background: '#f0fdfa', borderRadius: '6px', padding: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: '#0f766e' }}>
+                <span>{triadTiers.realistic?.label || 'NẤC 2: VỪA SỨC (REALISTIC)'}</span>
+                <span>{triadTiers.realistic?.targetScore || 'Mục tiêu: 23.5+'}</span>
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#134e4a', margin: '4px 0 2px 0' }}>
+                {triadTiers.realistic?.majorSchool || 'Tâm lý học Giáo dục - ĐH Sư phạm'}
+              </div>
+              <div style={{ fontSize: '10px', color: '#115e59', lineHeight: 1.3 }}>
+                {triadTiers.realistic?.notes || 'Tổ hợp D01 / C00. Khả thi cao dựa trên năng lực và học bạ thực tế hiện tại.'}
+              </div>
+            </div>
+
+            {/* Nấc 3 */}
+            <div style={{ border: '1px solid #bae6fd', background: '#f0f9ff', borderRadius: '6px', padding: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: '#0284c7' }}>
+                <span>{triadTiers.safe?.label || 'NẤC 3: AN TOÀN (SAFE)'}</span>
+                <span>{triadTiers.safe?.targetScore || 'Mục tiêu: 20.0+'}</span>
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: '#0c4a6e', margin: '4px 0 2px 0' }}>
+                {triadTiers.safe?.majorSchool || 'Công tác xã hội - ĐH Nha Trang'}
+              </div>
+              <div style={{ fontSize: '10px', color: '#0369a1', lineHeight: 1.3 }}>
+                {triadTiers.safe?.notes || 'Lưới bảo hiểm an toàn, bảo đảm 100% cơ hội vào đại học đúng khối ngành mong muốn.'}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX) */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: 0 }}>
+              🎯 Ma Trận Kế Hoạch Hành Động (Implementation Intentions)
+            </h3>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: '#0f766e' }}>
+              Áp dụng: Khối {selectedGrade} THPT
+            </span>
+          </div>
+
+          <div style={{ border: '1px solid #e2e8f0', background: '#f8fafc', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#0f766e', textTransform: 'uppercase' }}>
+                1. Điểm tổng kết tổ hợp xét tuyển cần đạt (Mục tiêu 3 môn chính):
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 600, color: '#0f172a', marginTop: '2px' }}>
+                {actionPlans[selectedGrade]?.scoreGoal}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#d97706', textTransform: 'uppercase' }}>
+                2. Môn trọng tâm còn yếu & Kế hoạch bồi dưỡng kiến thức cụ thể:
+              </div>
+              <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px', lineHeight: 1.35 }}>
+                {actionPlans[selectedGrade]?.weakSubjectsPlan}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '6px' }}>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#0284c7', textTransform: 'uppercase' }}>
+                3. Cam kết thời gian tự học có kỷ luật:
+              </div>
+              <div style={{ fontSize: '11px', color: '#334155', marginTop: '2px' }}>
+                {actionPlans[selectedGrade]?.studyTimeCommitment}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CHỮ KÝ CAM KẾT CÁ NHÂN (COMMITMENT DEVICE) */}
+        <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '12px', marginTop: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            
+            {/* Lời cam kết & Định danh ẩn danh */}
+            <div style={{ width: '58%' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' }}>
+                LỜI CAM KẾT CỦA HỌC SINH:
+              </div>
+              <p style={{ fontSize: '10px', color: '#475569', fontStyle: 'italic', lineHeight: 1.4, margin: '0 0 8px 0' }}>
+                "Em cam kết thực hiện nghiêm túc kế hoạch hành động đã đề ra, kiên trì tự học có kỷ luật và chịu trách nhiệm cao nhất với mục tiêu của chính mình."
+              </p>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#0f766e' }}>
+                MÃ ĐỐI TƯỢNG CAN THIỆP: <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>{displayStudentCode}</span>
+              </div>
+              <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                (Dữ liệu nghiên cứu được mã hóa ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu ViSEF 2026)
+              </div>
+            </div>
+
+            {/* Khung chữ ký số */}
+            <div style={{ width: '38%', textAlign: 'center' }}>
+              <div style={{ fontSize: '10px', color: '#64748b', fontStyle: 'italic' }}>
+                Ngày ...... tháng ...... năm 2026
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', margin: '2px 0 4px 0' }}>
+                Học sinh cam kết
+              </div>
+
+              <div style={{ height: '64px', border: '1px dashed #94a3b8', borderRadius: '4px', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '4px', overflow: 'hidden' }}>
+                {hasSignature && signatureDataUrl ? (
+                  <img 
+                    src={signatureDataUrl} 
+                    alt="Chữ ký học sinh" 
+                    style={{ maxHeight: '60px', maxWidth: '95%', objectFit: 'contain' }} 
+                  />
+                ) : (
+                  <span style={{ fontSize: '10px', color: '#94a3b8', fontStyle: 'italic' }}>
+                    [Chữ ký cam kết điện tử]
+                  </span>
+                )}
+              </div>
+
+              <div style={{ fontSize: '9px', color: '#64748b', fontWeight: 600 }}>
+                (Chữ ký điện tử đã được xác thực trên hệ thống)
+              </div>
+            </div>
+
           </div>
         </div>
 

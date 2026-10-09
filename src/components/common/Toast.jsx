@@ -25,7 +25,11 @@ const Toast = ({ message, type = 'success', onClose }) => {
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 flex items-center p-4 border rounded-sm shadow-sm max-w-sm animate-reveal ${styles[type]}`}>
+    <div 
+      role="alert" 
+      aria-live="assertive"
+      className={`toast-notification alert-box no-print fixed bottom-4 right-4 z-50 flex items-center p-4 border rounded-sm shadow-sm max-w-sm animate-reveal ${styles[type]}`}
+    >
       <div className="flex-shrink-0 mr-3">
         {icons[type]}
       </div>
