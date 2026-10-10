@@ -133,19 +133,28 @@ const Sidebar = ({ isOpen, onClose }) => {
           ))}
         </nav>
 
-        {/* Nút chuyển đổi giao diện dành cho Thầy Cô - CHỈ HIỂN THỊ KHI ĐANG Ở GIAO DIỆN ADMIN */}
-        {isTeacherAdmin && isInAdminView && (
-          <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+        {/* Nút chuyển đổi giao diện linh hoạt giữa Cổng Học Sinh và Bảng Quản Trị Admin */}
+        <div className="p-3 border-t border-slate-800 bg-slate-950/60">
+          {isInAdminView ? (
             <Link
               to="/student/dashboard"
               onClick={onClose}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-sm text-xs font-bold transition-all shadow-md bg-sky-600 hover:bg-sky-500 text-white border border-sky-400 text-left group"
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-md bg-teal-500 hover:bg-teal-400 text-slate-950 text-center"
             >
-              <GraduationCap className="w-4 h-4 text-white flex-shrink-0" />
-              <span className="truncate">🎓 Xem Cổng Học Sinh</span>
+              <GraduationCap className="w-4 h-4 flex-shrink-0" />
+              <span>🎓 Xem Cổng Học Sinh</span>
             </Link>
-          </div>
-        )}
+          ) : (
+            <Link
+              to="/admin/dashboard"
+              onClick={onClose}
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-md bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 hover:border-teal-500/50 text-center"
+            >
+              <Settings className="w-4 h-4 text-teal-400 flex-shrink-0" />
+              <span>⚙️ Bảng Quản Trị CBAS (Admin)</span>
+            </Link>
+          )}
+        </div>
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">

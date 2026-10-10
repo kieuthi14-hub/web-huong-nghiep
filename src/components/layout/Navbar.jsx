@@ -55,14 +55,22 @@ const Navbar = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-3">
         {profile && (
           <div className="flex items-center gap-3">
-            {/* Nút chuyển đổi giao diện linh hoạt: CHỈ HIỂN THỊ KHI ĐANG Ở BẢNG ADMIN */}
-            {isTeacherAdmin && isInAdminView && (
+            {/* Nút chuyển đổi giao diện linh hoạt giữa Admin và Học sinh */}
+            {isInAdminView ? (
               <Link
                 to="/student/dashboard"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm transition-all border border-sky-400 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
                 title="Chuyển sang xem giao diện học sinh"
               >
                 <span>🎓 Xem Cổng Học Sinh</span>
+              </Link>
+            ) : (
+              <Link
+                to="/admin/dashboard"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-teal-300 font-bold text-xs shadow-sm transition-all border border-slate-700 hover:border-teal-500/50 cursor-pointer"
+                title="Mở Bảng Quản Trị Thực Nghiệm CBAS 2026"
+              >
+                <span>⚙️ Bảng Quản Trị (Admin)</span>
               </Link>
             )}
             <div className="hidden sm:block text-right">

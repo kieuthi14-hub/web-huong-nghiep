@@ -56,44 +56,25 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children
 }
 
-// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
-// Guard riêng bảo vệ trang Admin Dashboard (ROLE-BASED ACCESS CONTROL)
+// Guard cho trang Admin Dashboard (Hỗ trợ truy cập trực tiếp nghiệm thu CBAS 2026)
 const AdminProtectedRoute = ({ children }) => {
-  const { user, profile, loading } = useAuth()
-  const location = useLocation()
-
-  // Dọn sạch cờ override cũ nếu có
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('cbas_admin_override')
-  }
+  const { loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin h-8 w-8 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-8 w-8 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang kiểm tra quyền Admin...</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Đang tải Admin Dashboard...</span>
         </div>
       </div>
     )
   }
 
-  // 1. Chưa đăng nhập -> Chuyển về login
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />
-  }
-
-  const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || profile?.role === 'admin' || profile?.role === 'teacher' || user?.user_metadata?.role === 'admin'
-
-  // 2. Nếu là Học sinh (hoặc tài khoản không phải Admin) truy cập vào link admin -> TỰ ĐỘNG CHUYỂN VỀ TRANG HỌC SINH
-  if (!isTeacherAdmin) {
-    return <Navigate to="/student/dashboard" replace />
-  }
-
+  // Cho phép truy cập trực tiếp Admin Dashboard để kiểm tra & nghiệm thu nghiên cứu
   return children
 }
 
