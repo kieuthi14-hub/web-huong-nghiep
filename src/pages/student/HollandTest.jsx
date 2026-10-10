@@ -24,7 +24,11 @@ import {
   AlertCircle,
   Bot,
   Pencil,
-  RotateCcw
+  RotateCcw,
+  Scale,
+  Target,
+  Search,
+  Check
 } from 'lucide-react'
 
 // BỘ 30 CÂU HỎI RIASEC CHUẨN KHOA HỌC HÀNH VI (5 CÂU / NHÓM)
@@ -82,113 +86,389 @@ export const hollandDescriptions = {
   'C': 'Nghiệp vụ / Văn phòng (Thích sự ngăn nắp, quy trình rõ ràng, xử lý giấy tờ, con số chính xác)'
 };
 
-// Hàm phân tích mức độ tương thích giữa Ngành mong muốn và Kết quả Holland
-export function analyzeHollandCompatibility(targetCareer, userHollandCodes) {
-  // userHollandCodes là mảng 3 chữ cái RIASEC của học sinh, ví dụ: ['R', 'I', 'A']
-  const codes = Array.isArray(userHollandCodes)
-    ? userHollandCodes
-    : (typeof userHollandCodes === 'string' ? userHollandCodes.replace(/[^RIASEC]/gi, '').split('') : ['A', 'S', 'E']);
+// Danh mục hồ sơ RIASEC các nhóm ngành đại học toàn diện (Chuẩn GDPT & Khung phân ngành quốc tế)
+export const CAREER_HOLLAND_PROFILES = [
+  {
+    id: 'it_ai',
+    categoryName: 'Công nghệ thông tin & Trí tuệ nhân tạo (AI)',
+    keywords: [
+      'công nghệ', 'it', 'phần mềm', 'lập trình', 'ai', 'trí tuệ nhân tạo', 'khoa học máy tính',
+      'khoa học dữ liệu', 'an ninh mạng', 'an toàn thông tin', 'mạng máy tính', 'hệ thống thông tin',
+      'tin học', 'data', 'software', 'developer', 'game', 'vi mạch', 'iot', 'robot'
+    ],
+    expectedCodes: ['I', 'R', 'C'],
+    expectedDesc: 'Nghiên cứu & Kỹ thuật (Tư duy giải thuật logic, phân tích hệ thống, kiên trì gỡ lỗi)',
+    workEnvironment: 'Ngồi làm việc với máy tính độc lập nhiều giờ, liên tục cập nhật công nghệ và mã nguồn mới, tư duy giải quyết vấn đề trừu tượng.',
+    coreSkills: 'Tư duy logic thuật toán, tự học bền bỉ, gỡ lỗi (debugging), chịu được tính chất làm việc tĩnh lặng chuyên sâu.',
+    commonBlindSpots: 'Bẫy hào quang mức lương "nghìn đô" của ngành IT; nhầm lẫn việc "thích chơi game, lướt mạng" với năng lực ngồi viết và sửa lỗi hàng ngàn dòng code bền bỉ.',
+    socraticQuestions: [
+      'Em có sẵn sàng dành 6 - 8 tiếng mỗi ngày chỉ để ngồi đơn độc tìm 1 lỗi nhỏ (bug) trong hàng ngàn dòng mã lệnh mà không nản lòng không?',
+      'Em chọn ngành IT vì thực sự đam mê cấu trúc thuật toán hay vì nghe nói ngành này lương cao, dễ kiếm việc?'
+    ]
+  },
+  {
+    id: 'engineering',
+    categoryName: 'Kỹ thuật, Cơ khí & Công nghệ bán dẫn',
+    keywords: [
+      'kỹ thuật', 'cơ khí', 'điện', 'điện tử', 'tự động hóa', 'cơ điện tử', 'ô tô', 'chế tạo máy',
+      'xây dựng', 'kiến trúc công trình', 'vật liệu', 'bán dẫn', 'năng lượng', 'hàng hải', 'hàng không',
+      'cầu đường', 'thủy lợi', 'địa chất', 'trắc địa', 'môi trường đô thị'
+    ],
+    expectedCodes: ['R', 'I', 'C'],
+    expectedDesc: 'Thực tế & Nghiên cứu (Làm việc với máy móc thiết bị, bản vẽ kỹ thuật, an toàn công trình)',
+    workEnvironment: 'Thao tác thực địa, nhà máy, công trường xưởng cơ khí, yêu cầu tính an toàn lao động và độ chính xác vật lý cao.',
+    coreSkills: 'Đọc bản vẽ kỹ thuật, tư duy không gian và động lực học, tính cẩn trọng tỉ mỉ, thao tác thiết bị chuẩn xác.',
+    commonBlindSpots: 'Tưởng làm kỹ sư chỉ là ngồi phòng lạnh thiết kế mô hình 3D; chưa lường trước điều kiện làm việc thực địa, tiếng ồn máy móc và bụi bặm công xưởng.',
+    socraticQuestions: [
+      'Em có chịu được môi trường làm việc thực địa tại công trường, xưởng chế tạo với tiếng ồn và dầu mỡ không?',
+      'Khi một bản vẽ thi công bị sai số dẫn đến thiệt hại kinh tế, em sẽ đối diện với áp lực kỷ luật và trách nhiệm kỹ thuật ra sao?'
+    ]
+  },
+  {
+    id: 'business_marketing',
+    categoryName: 'Kinh tế, Quản trị kinh doanh & Marketing',
+    keywords: [
+      'kinh tế', 'quản trị', 'kinh doanh', 'marketing', 'tiếp thị', 'thương mại', 'thương mại điện tử',
+      'logistics', 'chuỗi cung ứng', 'xuất nhập khẩu', 'bất động sản', 'ngoại thương', 'quản trị nhân lực',
+      'kinh doanh quốc tế', 'pr', 'bán hàng', 'sales', 'quản lý'
+    ],
+    expectedCodes: ['E', 'S', 'C'],
+    expectedDesc: 'Quản lý & Xã hội (Giao tiếp thuyết phục, nhạy bén thị trường, đàm phán và chịu áp lực KPI)',
+    workEnvironment: 'Môi trường cạnh tranh thương trường khốc liệt, tiếp xúc khách hàng liên tục, làm việc theo nhóm và chịu chỉ tiêu doanh số hàng tháng.',
+    coreSkills: 'Kỹ năng thuyết trình, đàm phán thương lượng, nhạy cảm xu hướng tiêu dùng, chịu áp lực số liệu kinh doanh.',
+    commonBlindSpots: 'Bẫy danh xưng hào nhoáng "Giám đốc / Nhà quản trị"; chưa chuẩn bị tâm lý phải bắt đầu từ vị trí nhân viên bán hàng thực chiến chạy chỉ tiêu gắt gao.',
+    socraticQuestions: [
+      'Nếu trong 3 tháng liên tiếp em không đạt chỉ tiêu doanh số (KPI) và đối mặt với nguy cơ bị cắt thưởng hoặc khiển trách, em sẽ vượt qua thế nào?',
+      'Em chọn Quản trị kinh doanh vì có tầm nhìn chiến lược thương mại cụ thể hay vì chưa biết chọn ngành nào nên chọn một ngành có vẻ "rộng"?'
+    ]
+  },
+  {
+    id: 'finance_accounting',
+    categoryName: 'Tài chính, Kế toán & Kiểm toán',
+    keywords: [
+      'tài chính', 'kế toán', 'kiểm toán', 'ngân hàng', 'thuế', 'chứng khoán', 'đầu tư',
+      'bảo hiểm', 'phân tích tài chính', 'thẩm định giá', 'tiền tệ', 'ngân khố'
+    ],
+    expectedCodes: ['C', 'E', 'I'],
+    expectedDesc: 'Nghiệp vụ & Quản lý (Kỷ luật với số liệu, quy chuẩn pháp lý tài chính, phân tích rủi ro tiền tệ)',
+    workEnvironment: 'Văn phòng chuyên nghiệp, làm việc liên tục với bảng biểu, hóa đơn chứng từ, chịu áp lực khủng khiếp vào mùa quyết toán cuối năm.',
+    coreSkills: 'Độ cẩn trọng chi tiết tuyệt đối, tính trung thực đạo đức nghề nghiệp, phân tích báo cáo tài chính, thành thạo công cụ bảng tính.',
+    commonBlindSpots: 'Nghĩ làm kế toán/ngân hàng là "nhàn nhã, đếm tiền trong máy lạnh"; chưa lường trước mùa quyết toán thức trắng đêm và trách nhiệm pháp lý khi sai sót 1 con số.',
+    socraticQuestions: [
+      'Em có đủ kiên nhẫn để ngồi rà soát hàng ngàn dòng chứng từ hóa đơn để tìm ra khoản chênh lệch chỉ vài chục ngàn đồng không?',
+      'Trước những áp lực từ cấp trên yêu cầu "làm đẹp" số liệu sổ sách, em có bản lĩnh đạo đức để từ chối và bảo vệ sự thật không?'
+    ]
+  },
+  {
+    id: 'pedagogy_education',
+    categoryName: 'Sư phạm & Khoa học Giáo dục',
+    keywords: [
+      'sư phạm', 'giáo dục', 'giảng dạy', 'giáo viên', 'thầy cô', 'đào tạo', 'mầm non',
+      'tiểu học', 'trung học', 'giáo dục đặc biệt', 'quản lý giáo dục'
+    ],
+    expectedCodes: ['S', 'A', 'I'],
+    expectedDesc: 'Xã hội & Nghệ thuật (Thấu cảm người học, kiên nhẫn giảng dạy, truyền cảm hứng và chuẩn mực đạo đức)',
+    workEnvironment: 'Trường học, lớp học, tương tác liên tục với học sinh, phụ huynh và đồng nghiệp; chuẩn mực hành vi mô phạm nghiêm ngặt.',
+    coreSkills: 'Kỹ năng sư phạm, kiên nhẫn thấu cảm, soạn thảo giáo án sáng tạo, quản lý lớp học và xử lý tình huống tâm lý học sinh.',
+    commonBlindSpots: 'Nghĩ nghề giáo "ổn định, nhàn hạ, có 3 tháng nghỉ hè"; chưa thấy áp lực đổi mới phương pháp GDPT 2018, hồ sơ sổ sách và áp lực kỳ vọng từ phụ huynh.',
+    socraticQuestions: [
+      'Khi gặp một học sinh cá biệt không chịu lắng nghe, thậm chí phản ứng tiêu cực, em có giữ được sự bình tĩnh sư phạm để tìm hiểu nguyên nhân không?',
+      'Em yêu nghề dạy học vì muốn cống hiến nâng đỡ thế hệ trẻ, hay chỉ xem đây là chỗ trú chân ổn định và đỡ áp lực xin việc?'
+    ]
+  },
+  {
+    id: 'medicine_healthcare',
+    categoryName: 'Y khoa, Dược học & Chăm sóc sức khỏe',
+    keywords: [
+      'y khoa', 'y tế', 'bác sĩ', 'dược', 'dược sĩ', 'điều dưỡng', 'răng hàm mặt', 'y học cổ truyền',
+      'xét nghiệm', 'chẩn đoán hình ảnh', 'y tế công cộng', 'thú y', 'phục hồi chức năng'
+    ],
+    expectedCodes: ['I', 'S', 'R'],
+    expectedDesc: 'Nghiên cứu & Xã hội (Trách nhiệm sinh mệnh con người, học tập suốt đời, áp lực trực đêm)',
+    workEnvironment: 'Bệnh viện, phòng khám, nhà thuốc; đối diện với nỗi đau thể xác, bệnh tật và áp lực cấp cứu khẩn trương mọi thời điểm.',
+    coreSkills: 'Trí nhớ học thuật khổng lồ, kỹ năng lâm sàng chính xác, tinh thần thép trước cảnh máu me, lòng trắc ẩn cứu người.',
+    commonBlindSpots: 'Chọn Y Dược theo định hướng gia đình "nhất Y nhì Dược" để lấy danh tiếng; chưa chuẩn bị cho 6 - 9 năm học tập gian khổ và các ca trực thâu đêm.',
+    socraticQuestions: [
+      'Em có đủ bản lĩnh để thức trắng đêm trực cấp cứu, liên tục đối diện với ranh giới sinh tử của bệnh nhân mà vẫn giữ sự tỉnh táo tuyệt đối không?',
+      'Em chọn Y vì thực sự muốn xoa dịu nỗi đau của người bệnh, hay vì ánh hào quang chiếc áo blouse trắng trong mắt họ hàng?'
+    ]
+  },
+  {
+    id: 'social_humanities',
+    categoryName: 'Tâm lý học, Công tác xã hội & Nhân văn',
+    keywords: [
+      'tâm lý', 'xã hội học', 'công tác xã hội', 'nhân học', 'triết học', 'lịch sử', 'địa lý',
+      'việt nam học', 'đông phương học', 'quốc tế học', 'tôn giáo', 'văn học'
+    ],
+    expectedCodes: ['S', 'I', 'A'],
+    expectedDesc: 'Xã hội & Nghiên cứu (Lắng nghe thân chủ, thấu hiểu đa dạng văn hóa, giải mã hành vi con người)',
+    workEnvironment: 'Trung tâm tư vấn tâm lý, tổ chức phi chính phủ (NGO), trường học, viện nghiên cứu; tiếp nhận câu chuyện phức tạp của con người.',
+    coreSkills: 'Lắng nghe không phán xét, thấu cảm sâu sắc, tư duy phân tích nguyên nhân tâm lý, khả năng thiết lập ranh giới cảm xúc an toàn.',
+    commonBlindSpots: 'Ảo tưởng học tâm lý là có "siêu năng lực đọc suy nghĩ người khác"; nguy cơ bị kiệt quệ cảm xúc (burnout) do gánh chịu năng lượng tiêu cực từ thân chủ.',
+    socraticQuestions: [
+      'Em có kỹ năng bảo vệ tâm lý của chính mình khi hàng ngày phải lắng nghe những bi kịch, trầm cảm và bế tắc từ người khác không?',
+      'Em muốn học Tâm lý để trị liệu cho xã hội, hay vô thức tìm kiếm giải pháp chữa lành cho chính những tổn thương chưa giải quyết của bản thân?'
+    ]
+  },
+  {
+    id: 'languages_translation',
+    categoryName: 'Ngôn ngữ học & Biên phiên dịch quốc tế',
+    keywords: [
+      'ngôn ngữ', 'tiếng anh', 'tiếng trung', 'tiếng hàn', 'tiếng nhật', 'tiếng pháp', 'tiếng đức',
+      'biên dịch', 'phiên dịch', 'ngoại ngữ', 'ngôn ngữ học', 'dịch thuật'
+    ],
+    expectedCodes: ['A', 'S', 'C'],
+    expectedDesc: 'Nghệ thuật & Xã hội (Cảm thụ ngôn từ, giao lưu văn hóa đa quốc gia, tính chuẩn xác dịch thuật)',
+    workEnvironment: 'Doanh nghiệp đa quốc gia, cơ quan ngoại giao, dịch thuật cabin tại hội nghị quốc tế, giảng dạy hoặc biên tập nội dung toàn cầu.',
+    coreSkills: 'Phản xạ ngoại ngữ tức thì, vốn từ vựng học thuật sâu, hiểu biết tinh tế văn hóa bản địa, khả năng sử dụng công cụ AI hỗ trợ dịch thuật.',
+    commonBlindSpots: 'Nghĩ biết giao tiếp ngoại ngữ là đủ làm ngành ngôn ngữ; chưa thấy thách thức từ văn phạm học thuật và sự thay thế mạnh mẽ của công cụ AI dịch thuật.',
+    socraticQuestions: [
+      'Trong thời đại AI có thể dịch chuẩn xác theo thời gian thực, giá trị độc bản nào của em sẽ khiến doanh nghiệp trả lương cao cho em?',
+      'Em yêu thích ngôn ngữ đó vì thích văn hóa giải trí (âm nhạc, phim ảnh), hay thực sự sẵn sàng nghiên cứu cấu trúc ngữ pháp và ngữ nghĩa học thuật?'
+    ]
+  },
+  {
+    id: 'media_communication',
+    categoryName: 'Truyền thông, Báo chí & Quan hệ công chúng (PR)',
+    keywords: [
+      'truyền thông', 'báo chí', 'pr', 'quan hệ công chúng', 'tổ chức sự kiện', 'nội dung',
+      'content', 'copywriter', 'biên tập', 'phát thanh', 'truyền hình', 'quảng cáo'
+    ],
+    expectedCodes: ['A', 'E', 'S'],
+    expectedDesc: 'Nghệ thuật & Quản lý (Sáng tạo nội dung xu hướng, kết nối công chúng, xử lý khủng hoảng thông tin)',
+    workEnvironment: 'Cơ quan báo chí, agency truyền thông, bộ phận marketing; môi trường năng động, chạy đua với xu hướng và deadline từng phút.',
+    coreSkills: 'Viết lách sáng tạo, nhạy bén tin tức thời sự, biên tập đa phương tiện, kỹ năng ứng biến khủng hoảng truyền thông.',
+    commonBlindSpots: 'Bị hào nhoáng bởi việc được gặp người nổi tiếng, tham gia sự kiện sang chảnh; chưa lường trước áp lực cạn kiệt ý tưởng sáng tạo và chỉ tiêu lượt xem (view, KPI).',
+    socraticQuestions: [
+      'Em có sẵn sàng thức dậy lúc 2h sáng để xử lý một khủng hoảng truyền thông mạng xã hội cho nhãn hàng mà không một lời than vãn không?',
+      'Em muốn làm truyền thông để lan tỏa sự thật và giá trị tích cực, hay chỉ vì thích cảm giác bắt trend và được đám đông chú ý?'
+    ]
+  },
+  {
+    id: 'design_architecture',
+    categoryName: 'Thiết kế đồ họa, Kiến trúc & Mỹ thuật sáng tạo',
+    keywords: [
+      'thiết kế', 'đồ họa', 'kiến trúc', 'mỹ thuật', 'nội thất', 'thời trang', 'nhiếp ảnh',
+      'quay phim', 'đạo diễn', 'hoạt hình', 'ui/ux', 'multimedia', 'tạo dáng công nghiệp'
+    ],
+    expectedCodes: ['A', 'R', 'I'],
+    expectedDesc: 'Nghệ thuật & Thực tế (Tư duy không gian thị giác, biến ý tưởng thành sản phẩm, làm chủ công cụ thiết kế)',
+    workEnvironment: 'Studio sáng tạo, văn phòng kiến trúc; làm việc tập trung cao độ với các phần mềm thiết kế đồ họa 2D/3D chuyên nghiệp.',
+    coreSkills: 'Gu thẩm mỹ bố cục & màu sắc, sử dụng thành thạo phần mềm thiết kế, tư duy trực quan hóa ý tưởng, tiếp nhận phản hồi đóng góp.',
+    commonBlindSpots: 'Muốn vẽ tự do theo cảm hứng cá nhân; khi vào nghề bị sốc vì phải sửa thiết kế theo ý khách hàng cả chục lần dù thiết kế đó đi ngược lại quan điểm thẩm mỹ của mình.',
+    socraticQuestions: [
+      'Khi khách hàng yêu cầu em sửa lại toàn bộ bản vẽ thiết kế tâm huyết theo một phong cách em thấy rất xấu, em sẽ xử lý cảm xúc ra sao?',
+      'Em chọn thiết kế vì thực sự đam mê giải quyết bài toán thị giác thương mại, hay chỉ vì thích vẽ tranh những lúc rảnh rỗi?'
+    ]
+  },
+  {
+    id: 'law_security',
+    categoryName: 'Luật học, An ninh & Hành chính công',
+    keywords: [
+      'luật', 'pháp luật', 'luật kinh tế', 'luật quốc tế', 'tòa án', 'công an', 'an ninh',
+      'quân sự', 'quản lý nhà nước', 'công chức', 'công chứng', 'tư pháp'
+    ],
+    expectedCodes: ['E', 'C', 'I'],
+    expectedDesc: 'Quản lý & Nghiệp vụ (Tư duy logic phản biện, nghiêm cẩn quy chuẩn pháp lý, nguyên tắc kỷ luật)',
+    workEnvironment: 'Văn phòng luật, tòa án, cơ quan nhà nước; làm việc với hệ thống văn bản pháp quy đồ sộ, yêu cầu chuẩn mực ngôn từ và tính bảo mật.',
+    coreSkills: 'Tư duy logic lập luận sắc bén, trí nhớ văn bản quy phạm pháp luật, năng lực tranh tụng bảo vệ quan điểm, kỷ luật hành chính.',
+    commonBlindSpots: 'Nghĩ làm luật sư là đứng trước tòa tranh luận hùng hồn như phim truyền hình; thực tế 90% thời gian là ngồi nghiền ngẫm hàng nghìn trang tài liệu khô khan.',
+    socraticQuestions: [
+      'Em có đủ kiên trì để đọc kỹ từng câu chữ của hàng trăm bộ luật và nghị định sửa đổi để tìm ra một kẽ hở pháp lý có lợi cho thân chủ không?',
+      'Khi nguyên tắc pháp luật xung đột với tình cảm cá nhân hoặc áp lực từ người thân, em có đủ dũng khí để giữ vững sự thượng tôn pháp luật không?'
+    ]
+  },
+  {
+    id: 'tourism_hospitality',
+    categoryName: 'Du lịch, Khách sạn & Dịch vụ hàng không',
+    keywords: [
+      'du lịch', 'khách sạn', 'nhà hàng', 'lữ hành', 'hàng không', 'tiếp viên', 'hướng dẫn viên',
+      'ẩm thực', 'pha chế', 'resort', 'dịch vụ khách hàng'
+    ],
+    expectedCodes: ['E', 'S', 'R'],
+    expectedDesc: 'Quản lý & Xã hội (Chăm sóc khách hàng đa văn hóa, linh hoạt xử lý biến cố, dẻo dai thể lực)',
+    workEnvironment: 'Khách sạn cao cấp, sân bay, khu nghỉ dưỡng, địa điểm tham quan; làm việc theo ca kíp, thường xuyên vào các dịp lễ tết và cuối tuần.',
+    coreSkills: 'Giao tiếp ứng xử thanh lịch, xử lý tình huống khẩn cấp, sức bền thể lực, khả năng giữ nụ cười và năng lượng tích cực trước khách hàng khó tính.',
+    commonBlindSpots: 'Tưởng làm du lịch lữ hành là "được đi chơi miễn phí khắp nơi"; thực tế là người phục vụ người khác trong lúc họ nghỉ ngơi và chịu trách nhiệm an toàn cho toàn đoàn.',
+    socraticQuestions: [
+      'Em có chấp nhận việc toàn bộ các dịp lễ Tết, ngày nghỉ của gia đình em đều phải đi làm để phục vụ người khác đang đi nghỉ dưỡng không?',
+      'Khi một khách hàng nổi giận vô cớ và có lời lẽ khó nghe giữa sảnh khách sạn, em sẽ kiểm soát bản thân như thế nào để vừa giữ uy tín thương hiệu vừa bảo vệ chính mình?'
+    ]
+  },
+  {
+    id: 'agriculture_nature',
+    categoryName: 'Nông nghiệp công nghệ cao, Lâm nghiệp & Thú y',
+    keywords: [
+      'nông nghiệp', 'lâm nghiệp', 'thủy sản', 'chăn nuôi', 'thú y', 'cây trồng', 'sinh học ứng dụng',
+      'công nghệ sinh học', 'môi trường sinh thái', 'đất đai', 'bảo tồn'
+    ],
+    expectedCodes: ['R', 'I', 'S'],
+    expectedDesc: 'Thực tế & Nghiên cứu (Gắn bó thiên nhiên sinh thái, thí nghiệm giống loài, kiên trì chu kỳ phát triển)',
+    workEnvironment: 'Trang trại công nghệ cao, trung tâm bảo tồn, viện nghiên cứu sinh học; thường xuyên tiếp xúc với đất đai, cây trồng và vật nuôi ngoài trời.',
+    coreSkills: 'Kỹ năng quan sát thực địa, kiên trì theo dõi chu kỳ sinh trưởng, áp dụng công nghệ vi sinh & tự động hóa vào nông nghiệp.',
+    commonBlindSpots: 'Thích ý niệm "sống xanh, yêu thiên nhiên" nhưng ngại bẩn, sợ côn trùng, sợ mùi hôi chuồng trại và thời tiết khắc nghiệt ngoài trời.',
+    socraticQuestions: [
+      'Em có sẵn sàng lội bùn, làm việc dưới trời nắng gắt hoặc kiểm tra mầm bệnh vật nuôi trong chuồng trại nhiều giờ không?',
+      'Khi một vụ mùa thử nghiệm công nghệ cao bị thất bại do dịch bệnh bất thường, em có đủ kiên nhẫn để bắt đầu lại từ đầu một chu kỳ kéo dài nhiều tháng không?'
+    ]
+  }
+];
 
-  const c1 = codes[0] || 'A';
-  const c2 = codes[1] || 'S';
-
-  let analysisResult = `
-    📊 KẾT QUẢ GIẢI MÃ THIÊN HƯỚNG HOLLAND CỦA EM:
-    - 3 nhóm tính cách nổi trội nhất: ${codes.join(', ')}
-    - Ý nghĩa thực tế: 
-      + Nhóm chủ đạo (${c1}): ${hollandDescriptions[c1] || c1}
-      + Nhóm hỗ trợ (${c2}): ${hollandDescriptions[c2] || c2}
-  `;
-
-  if (targetCareer && targetCareer.trim() && targetCareer !== 'chưa xác định') {
-    const careerLower = targetCareer.toLowerCase();
-    const techKeywords = ['công nghệ', 'phần mềm', 'it', 'kỹ thuật', 'lập trình', 'vi mạch', 'an ninh mạng', 'khoa học máy tính', 'ai', 'robot'];
-    const bizKeywords = ['kinh tế', 'quản trị', 'kinh doanh', 'marketing', 'tài chính', 'ngân hàng', 'thương mại', 'logistics', 'kế toán'];
-    const artKeywords = ['nghệ thuật', 'thiết kế', 'đồ họa', 'truyền thông', 'báo chí', 'kiến trúc', 'nhiếp ảnh', 'quay phim', 'nội dung'];
-    const socialKeywords = ['sư phạm', 'tâm lý', 'xã hội', 'giáo dục', 'y khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'y tế', 'luật'];
-
-    let expectedGroup = '';
-    let expectedCodes = [];
-    if (techKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'I/R (Nghiên cứu & Kỹ thuật)'; expectedCodes = ['I', 'R']; }
-    else if (bizKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'E/C (Quản lý & Nghiệp vụ)'; expectedCodes = ['E', 'C']; }
-    else if (artKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'A/S (Nghệ thuật & Xã hội)'; expectedCodes = ['A', 'S']; }
-    else if (socialKeywords.some(k => careerLower.includes(k))) { expectedGroup = 'S/I (Xã hội & Nghiên cứu)'; expectedCodes = ['S', 'I']; }
-
-    if (expectedGroup) {
-      const isOverlap = expectedCodes.some(c => codes.includes(c));
-      const matchStatus = isOverlap ? '✅ Độ tương thích khá tốt' : '⚠️ Có độ lệch pha nhận thức (Cần phản tư)';
-      analysisResult += `
-    - Đối chiếu ngành "${targetCareer}":
-      + Môi trường ngành này thường đòi hỏi: ${expectedGroup}
-      + Đánh giá sơ bộ: ${matchStatus}. Em hãy cùng AI Socrates chất vấn sâu các điểm mù này ở Bước 2!`;
-    }
+// Hàm tra cứu hồ sơ RIASEC của ngành nghề bất kỳ với Fallback thông minh
+export function getCareerHollandProfile(careerName) {
+  if (!careerName || typeof careerName !== 'string' || !careerName.trim()) {
+    return {
+      id: 'default',
+      categoryName: 'Chưa xác định rõ ngành',
+      expectedCodes: ['S', 'E', 'C'],
+      expectedDesc: 'Cần xác định ngành nghề cụ thể để đối chiếu môi trường làm việc',
+      workEnvironment: 'Môi trường làm việc phụ thuộc vào ngành nghề em lựa chọn.',
+      coreSkills: 'Kỹ năng chuyên môn và khả năng thích ứng linh hoạt.',
+      commonBlindSpots: 'Chưa có mục tiêu nghề nghiệp rõ ràng dẫn đến thiếu định hướng hành động và chuẩn bị năng lực.',
+      socraticQuestions: [
+        'Em đang gặp khó khăn gì trong việc gọi tên ngành nghề mình thực sự muốn theo đuổi?',
+        'Điều gì ngăn cản em đưa ra một lựa chọn cụ thể lúc này?'
+      ]
+    };
   }
 
-  return analysisResult;
+  const nameLower = careerName.toLowerCase().trim();
+  
+  // 1. Tìm kiếm khớp trong danh mục chuẩn theo keywords
+  const matched = CAREER_HOLLAND_PROFILES.find(p => 
+    p.keywords.some(k => nameLower.includes(k)) || nameLower.includes(p.categoryName.toLowerCase())
+  );
+
+  if (matched) return matched;
+
+  // 2. Dự đoán thông minh dựa trên từ khóa hàn lâm / khoa học
+  if (nameLower.includes('học') || nameLower.includes('nghiên cứu') || nameLower.includes('khoa')) {
+    return {
+      id: 'custom_science',
+      categoryName: `Khoa học & Nghiên cứu chuyên sâu (${careerName})`,
+      expectedCodes: ['I', 'R', 'C'],
+      expectedDesc: 'Nghiên cứu & Khám phá (Tư duy lý thuyết, thực nghiệm khoa học, đào sâu bản chất)',
+      workEnvironment: 'Phòng thí nghiệm, viện nghiên cứu hoặc môi trường học thuật chuyên sâu.',
+      coreSkills: 'Tư duy phản biện, phương pháp luận nghiên cứu, kiên trì thử nghiệm khoa học.',
+      commonBlindSpots: 'Dễ xa rời thực tế ứng dụng thương mại nếu chỉ tập trung nghiên cứu lý thuyết thuần túy.',
+      socraticQuestions: [
+        `Em có thực sự hứng thú với việc đào sâu kiến thức hàn lâm của ngành ${careerName} không?`,
+        `Em hình dung công việc hằng ngày của một người làm ngành ${careerName} sẽ diễn ra như thế nào?`
+      ]
+    };
+  }
+
+  // 3. Fallback an toàn, khoa học, bao quát toàn diện
+  return {
+    id: 'custom_general',
+    categoryName: `Khối ngành Chuyên môn (${careerName})`,
+    expectedCodes: ['E', 'S', 'C'],
+    expectedDesc: 'Đòi hỏi sự kết hợp giữa năng lực chuyên môn, kỹ năng giao tiếp và tính kỷ luật quy trình',
+    workEnvironment: `Môi trường tổ chức doanh nghiệp hoặc cơ quan chuyên trách lĩnh vực ${careerName}.`,
+    coreSkills: 'Năng lực chuyên môn đặc thù, kỹ năng giải quyết vấn đề và làm việc nhóm.',
+    commonBlindSpots: `Chưa tìm hiểu kỹ mô tả công việc (Job Description) và áp lực thực tế của ngành ${careerName}.`,
+    socraticQuestions: [
+      `Em đã từng nói chuyện với một người đang làm nghề ${careerName} từ 3 năm trở lên chưa?`,
+      `Đâu là rào cản lớn nhất mà em nghĩ mình sẽ gặp phải khi theo đuổi ngành ${careerName}?`
+    ]
+  };
+}
+
+// Hàm đánh giá mức độ tương thích RIASEC chuẩn hóa (Trả về Object giàu dữ liệu)
+export function evaluateHollandCompatibility(careerName, userHollandCodes) {
+  const codes = Array.isArray(userHollandCodes)
+    ? userHollandCodes.filter(c => ['R','I','A','S','E','C'].includes(String(c).toUpperCase())).map(c => String(c).toUpperCase())
+    : (typeof userHollandCodes === 'string' ? userHollandCodes.toUpperCase().replace(/[^RIASEC]/g, '').split('') : ['A', 'S', 'E']);
+
+  const cleanCodes = codes.length > 0 ? codes.slice(0, 3) : ['A', 'S', 'E'];
+  const userPrimary = cleanCodes[0] || 'A';
+  const userSecondary = cleanCodes[1] || 'S';
+  const userTertiary = cleanCodes[2] || 'E';
+
+  const profile = getCareerHollandProfile(careerName);
+  const targetCodes = profile.expectedCodes;
+
+  // Tính điểm tương thích theo trọng số vị trí (Tối đa 100 điểm)
+  let score = 15; // Điểm nền tảng thích ứng con người
+  if (targetCodes.includes(userPrimary)) {
+    score += (userPrimary === targetCodes[0]) ? 40 : 30;
+  }
+  if (targetCodes.includes(userSecondary)) {
+    score += (userSecondary === targetCodes[1]) ? 25 : 20;
+  }
+  if (targetCodes.includes(userTertiary)) {
+    score += 15;
+  }
+  // Giới hạn trong khoảng 25 - 96%
+  score = Math.min(Math.max(score, 25), 96);
+
+  const matchedCodes = cleanCodes.filter(c => targetCodes.includes(c));
+  const gapCodes = targetCodes.filter(c => !cleanCodes.includes(c));
+
+  let level = 'medium';
+  let levelLabel = 'Tương thích một phần';
+  let levelColor = 'amber';
+  let levelSummary = 'Em sở hữu một số tố chất phù hợp nhưng cần chủ động thích ứng với các đòi hỏi khắt khe của nghề.';
+
+  if (score >= 65) {
+    level = 'high';
+    levelLabel = 'Tương thích cao';
+    levelColor = 'emerald';
+    levelSummary = 'Thiên hướng tính cách tự nhiên của em rất đồng điệu với môi trường và đòi hỏi cốt lõi của ngành nghề này!';
+  } else if (score < 45) {
+    level = 'low';
+    levelLabel = 'Cảnh báo lệch pha nhận thức';
+    levelColor = 'rose';
+    levelSummary = 'Có độ vênh lớn giữa thiên hướng tự nhiên đo được và môi trường công việc thực tế hằng ngày của ngành.';
+  }
+
+  return {
+    targetCareer: (careerName && careerName.trim()) ? careerName.trim() : 'Ngành mục tiêu',
+    profile,
+    userCodes: cleanCodes,
+    targetCodes,
+    compatibilityScore: score,
+    level,
+    levelLabel,
+    levelColor,
+    levelSummary,
+    matchedCodes,
+    gapCodes,
+    userPrimary,
+    userSecondary,
+    userTertiary
+  };
+}
+
+// Hàm phân tích mức độ tương thích giữa Ngành mong muốn và Kết quả Holland (Bảo toàn tương thích ngược)
+export function analyzeHollandCompatibility(targetCareer, userHollandCodes) {
+  const evalResult = evaluateHollandCompatibility(targetCareer, userHollandCodes);
+  const { targetCareer: career, profile, userCodes, targetCodes, compatibilityScore, levelLabel, levelSummary, matchedCodes, gapCodes } = evalResult;
+
+  const matchedDesc = matchedCodes.length > 0
+    ? matchedCodes.map(c => `${c} (${hollandDescriptions[c]?.split(' ')[0] || c})`).join(', ')
+    : 'Chưa có nhóm nào trùng khớp trực tiếp';
+
+  const gapDesc = gapCodes.length > 0
+    ? gapCodes.map(c => `${c} (${hollandDescriptions[c]?.split(' ')[0] || c})`).join(', ')
+    : 'Không có độ lệch đáng kể';
+
+  return `📊 ĐỐI CHIẾU THIÊN HƯỚNG RIASEC VÀ NGÀNH MỤC TIÊU:
+• Ngành đối chiếu: "${career}" (${profile.categoryName})
+• Thiên hướng của em: [${userCodes.join(', ')}]
+• Đòi hỏi môi trường nghề: [${targetCodes.join(', ')}] (${profile.expectedDesc})
+• Mức độ tương thích: ${compatibilityScore}% - ${levelLabel}
+• Đánh giá cốt lõi: ${levelSummary}
+• Tố chất sẵn có hỗ trợ nghề: ${matchedDesc}
+• Thách thức môi trường cần lưu ý: Nghề đòi hỏi cao nhóm [${gapDesc}], nơi em có thể cảm thấy áp lực nếu thiếu sự rèn luyện bền bỉ.
+• Điểm mù nhận thức cần phản tư: ${profile.commonBlindSpots}`;
 }
 
 // Hàm tóm tắt ngắn gọn mức độ tương thích giữa Ngành mong muốn và Kết quả Holland
 export function getCompatibilitySummary(targetCareer, userHollandCodes) {
-  const codes = Array.isArray(userHollandCodes)
-    ? userHollandCodes
-    : (typeof userHollandCodes === 'string' ? userHollandCodes.replace(/[^RIASEC]/gi, '').split('') : ['A', 'S', 'E']);
-
-  if (!targetCareer || targetCareer === 'chưa xác định') {
-    return 'Chưa xác định ngành học để đối chiếu với nhóm tính cách.';
-  }
-
-  const c1 = codes[0] || 'A';
-  const c2 = codes[1] || 'S';
-
-  const careerLower = targetCareer.toLowerCase();
-  const techKeywords = ['công nghệ', 'phần mềm', 'it', 'kỹ thuật', 'lập trình', 'vi mạch', 'an ninh mạng', 'khoa học máy tính', 'ai', 'robot', 'khoa học dữ liệu', 'điện tử', 'cơ khí'];
-  const bizKeywords = ['kinh tế', 'quản trị', 'kinh doanh', 'marketing', 'tài chính', 'ngân hàng', 'thương mại', 'logistics', 'kế toán', 'ngoại thương', 'bất động sản'];
-  const artKeywords = ['nghệ thuật', 'thiết kế', 'đồ họa', 'truyền thông', 'báo chí', 'kiến trúc', 'nhiếp ảnh', 'quay phim', 'nội dung', 'âm nhạc', 'mỹ thuật', 'điện ảnh'];
-  const socialKeywords = ['sư phạm', 'tâm lý', 'xã hội', 'giáo dục', 'y khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'y tế', 'luật', 'công tác xã hội', 'ngôn ngữ'];
-
-  let expectedGroup = '';
-  let expectedCodes = [];
-  let expectedDesc = '';
-
-  if (techKeywords.some(k => careerLower.includes(k))) {
-    expectedGroup = 'I/R';
-    expectedCodes = ['I', 'R'];
-    expectedDesc = 'Nghiên cứu & Kỹ thuật (tư duy logic, giải quyết bài toán phức tạp, làm việc máy móc/hệ thống)';
-  } else if (bizKeywords.some(k => careerLower.includes(k))) {
-    expectedGroup = 'E/C';
-    expectedCodes = ['E', 'C'];
-    expectedDesc = 'Quản lý & Doanh nhân (giao tiếp thuyết phục, chịu áp lực số liệu, cạnh tranh thị trường)';
-  } else if (artKeywords.some(k => careerLower.includes(k))) {
-    expectedGroup = 'A/S';
-    expectedCodes = ['A', 'S'];
-    expectedDesc = 'Nghệ thuật & Xã hội (tự do sáng tạo, ý tưởng thẩm mỹ, thấu cảm người nghe/xem)';
-  } else if (socialKeywords.some(k => careerLower.includes(k))) {
-    expectedGroup = 'S/I';
-    expectedCodes = ['S', 'I'];
-    expectedDesc = 'Xã hội & Nghiên cứu (giảng dạy, đồng hành, tư vấn, chăm sóc con người)';
-  }
-
-  const codeNames = {
-    R: 'Thực tế/Kỹ thuật',
-    I: 'Nghiên cứu/Phân tích',
-    A: 'Nghệ thuật/Sáng tạo',
-    S: 'Xã hội/Giao tiếp',
-    E: 'Quản lý/Kinh doanh',
-    C: 'Nghiệp vụ/Quy củ'
-  };
-
-  const userGroupStr = `${codeNames[c1] || c1}${c2 ? ' & ' + (codeNames[c2] || c2) : ''}`;
-
-  if (!expectedGroup) {
-    return `Học sinh có thiên hướng [${codes.join(', ')}] (${userGroupStr}). Cần đối chiếu xem thói quen học tập có tương thích với đặc thù thực tế của ngành ${targetCareer} hay không.`;
-  }
-
-  const isOverlap = expectedCodes.some(c => codes.includes(c));
-  if (isOverlap) {
-    return `Độ tương thích tương đối tốt: Tính cách nổi trội [${codes.join(', ')}] (${userGroupStr}) có nét tương đồng với đặc tính nhóm ${expectedGroup} của ngành ${targetCareer}. Cần đối chất xem học sinh có ngộ nhận giữa sở thích bề nổi và năng lực bền bỉ thực tế.`;
-  } else {
-    return `Lệch pha nhận thức: Tính cách đo được nổi trội là [${codes.join(', ')}] (${userGroupStr}), trong khi ngành ${targetCareer} lại đòi hỏi đặc tính môi trường nhóm ${expectedGroup} (${expectedDesc}). Nguy cơ chọn ngành theo trào lưu, mạng xã hội hoặc cảm xúc nhất thời.`;
-  }
+  const evalResult = evaluateHollandCompatibility(targetCareer, userHollandCodes);
+  const { targetCareer: career, profile, userCodes, targetCodes, compatibilityScore, levelLabel } = evalResult;
+  return `[${career}] Độ tương thích ${compatibilityScore}% (${levelLabel}). Thiên hướng học sinh [${userCodes.join('')}] so với chuẩn ngành [${targetCodes.join('')} - ${profile.categoryName}]. Điểm mù nhận thức: ${profile.commonBlindSpots}`;
 }
 
 const HollandTest = () => {
@@ -221,6 +501,8 @@ const HollandTest = () => {
   const [result, setResult] = useState(null)
   const [recommendedMajors, setRecommendedMajors] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [activeCompareMajor, setActiveCompareMajor] = useState('')
+  const [customCompareInput, setCustomCompareInput] = useState('')
 
   const questionsPerPage = 5
   const totalQuestionPages = Math.ceil(questions.length / questionsPerPage) // 6 pages for 30 questions
@@ -1325,19 +1607,285 @@ const HollandTest = () => {
               </div>
             </div>
 
-            {/* Đánh giá độ tương thích & Cảnh báo độ vênh nhận thức */}
-            <div className="bg-white p-4 rounded border-2 border-sky-300 text-xs space-y-2.5">
-              <div className="flex items-center gap-2 font-bold text-slate-900">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>Đánh giá sơ bộ độ tương thích & Điểm mù nhận thức:</span>
-              </div>
-              <p className="text-slate-700 leading-relaxed font-medium">
-                {analyzeHollandCompatibility(result?.anchorData?.target_major || targetMajor, (result?.primaryCode || calculatedRiasecCode || 'AEI').split(''))}
-              </p>
-              <div className="p-3 bg-amber-50 rounded border border-amber-200 text-amber-950 text-[11.5px] leading-relaxed">
-                📌 <strong>Cơ sở dữ liệu xung đột cho Bước 2:</strong> Dữ liệu đối chiếu chéo này sẽ được nạp trực tiếp vào <strong>AI Phản Tư Socrates (Bước 2)</strong>. Thầy Socrates sẽ trực tiếp chất vấn các điểm mù thực tế này để kiểm chứng xem quyết định của em có vững chắc hay không!
-              </div>
-            </div>
+            {/* Đánh giá độ tương thích & Cảnh báo độ vênh nhận thức (Hệ thống Khoa học Hành vi ViSEF CBAS 2026) */}
+            {(() => {
+              const initialAnchorMajor = result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Sư phạm';
+              const effectiveMajor = activeCompareMajor || initialAnchorMajor;
+              const userRiasecArray = (result?.primaryCode || calculatedRiasecCode || 'AEI').split('').filter(c => ['R','I','A','S','E','C'].includes(c));
+              const evalData = evaluateHollandCompatibility(effectiveMajor, userRiasecArray);
+              const isCustomComparing = activeCompareMajor && activeCompareMajor.trim().toLowerCase() !== initialAnchorMajor.trim().toLowerCase();
+
+              const sampleMajors = [
+                'Công nghệ thông tin',
+                'Quản trị kinh doanh',
+                'Kế toán - Kiểm toán',
+                'Sư phạm',
+                'Y đa khoa',
+                'Thiết kế đồ họa',
+                'Ngôn ngữ Anh',
+                'Luật kinh tế'
+              ];
+
+              return (
+                <div className="bg-white rounded-lg border-2 border-sky-300 text-xs shadow-xs overflow-hidden space-y-4 p-4 sm:p-5">
+                  {/* HEADER KHỐI ĐÁNH GIÁ */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-sky-100 text-sky-800">
+                        <Scale className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                          Đánh Giá Độ Tương Thích RIASEC & Điểm Mù Nhận Thức
+                        </h4>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Đối chiếu thiên hướng tính cách tự nhiên với đòi hỏi môi trường thực tế của nghề
+                        </p>
+                      </div>
+                    </div>
+
+                    {isCustomComparing && (
+                      <button 
+                        type="button"
+                        onClick={() => { setActiveCompareMajor(''); setCustomCompareInput(''); }}
+                        className="self-start sm:self-auto text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded border border-slate-300 transition-colors flex items-center gap-1.5"
+                      >
+                        <RotateCcw className="w-3 h-3 text-slate-500" />
+                        Khôi phục ngành gốc ({initialAnchorMajor})
+                      </button>
+                    )}
+                  </div>
+
+                  {/* THẺ ĐIỂM SỐ & TRẠNG THÁI TƯƠNG THÍCH CHÍNH */}
+                  <div className={`p-4 rounded-lg border transition-all ${
+                    evalData.level === 'high' 
+                      ? 'bg-emerald-50/60 border-emerald-300' 
+                      : evalData.level === 'low' 
+                        ? 'bg-rose-50/60 border-rose-300' 
+                        : 'bg-amber-50/60 border-amber-300'
+                  }`}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[11px] uppercase tracking-wider font-extrabold text-slate-600">
+                            Ngành đang đối chiếu:
+                          </span>
+                          <span className="font-black text-slate-900 text-base">
+                            "{effectiveMajor}"
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-white border border-slate-200 text-slate-700 shadow-2xs">
+                            {evalData.profile.categoryName}
+                          </span>
+                          {isCustomComparing && (
+                            <span className="text-[10px] px-2 py-0.5 rounded font-black bg-sky-100 text-sky-800 border border-sky-200">
+                              CHẾ ĐỘ THỬ NGHIỆM
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-700 leading-relaxed font-medium">
+                          {evalData.levelSummary}
+                        </p>
+                      </div>
+
+                      {/* Badge Điểm số lớn */}
+                      <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                        <div className="text-right">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 block">Độ phù hợp</span>
+                          <div className={`text-2xl sm:text-3xl font-black ${
+                            evalData.level === 'high' ? 'text-emerald-700' : evalData.level === 'low' ? 'text-rose-700' : 'text-amber-700'
+                          }`}>
+                            {evalData.compatibilityScore}%
+                          </div>
+                        </div>
+                        <div className={`px-3 py-1.5 rounded-lg border text-xs font-black flex items-center gap-1.5 shadow-2xs ${
+                          evalData.level === 'high' 
+                            ? 'bg-emerald-600 text-white border-emerald-700' 
+                            : evalData.level === 'low' 
+                              ? 'bg-rose-600 text-white border-rose-700' 
+                              : 'bg-amber-500 text-white border-amber-600'
+                        }`}>
+                          {evalData.level === 'high' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                          <span>{evalData.levelLabel.toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Thanh tiến trình phần trăm */}
+                    <div className="mt-3 w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          evalData.level === 'high' ? 'bg-emerald-600' : evalData.level === 'low' ? 'bg-rose-600' : 'bg-amber-500'
+                        }`}
+                        style={{ width: `${evalData.compatibilityScore}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* BẢNG ĐỐI CHIẾU CHÉO 2 CỘT SONG SONG */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    {/* Cột 1: Học sinh */}
+                    <div className="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                          🧭 Thiên hướng của em:
+                        </span>
+                        <span className="font-black text-emerald-700 text-sm tracking-widest bg-emerald-100/70 px-2 py-0.5 rounded border border-emerald-200">
+                          {evalData.userCodes.join(' - ')}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-[11.5px] text-slate-600 leading-relaxed">
+                        <p>• <strong>Chủ đạo ({evalData.userCodes[0]}):</strong> {hollandDescriptions[evalData.userCodes[0]]}</p>
+                        {evalData.userCodes[1] && (
+                          <p>• <strong>Bổ trợ ({evalData.userCodes[1]}):</strong> {hollandDescriptions[evalData.userCodes[1]]}</p>
+                        )}
+                        {evalData.userCodes[2] && (
+                          <p>• <strong>Hỗ trợ ({evalData.userCodes[2]}):</strong> {hollandDescriptions[evalData.userCodes[2]]}</p>
+                        )}
+                      </div>
+                      <div className="pt-2 border-t border-slate-200/70">
+                        {evalData.matchedCodes.length > 0 ? (
+                          <div className="text-[11.5px] text-emerald-900 bg-emerald-100/60 p-2 rounded border border-emerald-200 font-medium">
+                            ✓ <strong>Tố chất tự nhiên phù hợp nghề:</strong> [{evalData.matchedCodes.join(', ')}] ({evalData.matchedCodes.map(c => hollandDescriptions[c]?.split(' ')[0] || c).join(', ')})
+                          </div>
+                        ) : (
+                          <div className="text-[11.5px] text-slate-500 italic bg-white p-2 rounded border border-slate-200">
+                            Không có mã trùng khớp trực tiếp với nhóm chủ lực của nghề.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Cột 2: Đòi hỏi của nghề */}
+                    <div className="bg-slate-50/80 p-3.5 rounded-lg border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                          💼 Đòi hỏi môi trường nghề:
+                        </span>
+                        <span className="font-black text-sky-800 text-sm tracking-widest bg-sky-100 px-2 py-0.5 rounded border border-sky-200">
+                          {evalData.targetCodes.join(' - ')}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-[11.5px] text-slate-600 leading-relaxed">
+                        <p>• <strong>Môi trường hàng ngày:</strong> {evalData.profile.workEnvironment}</p>
+                        <p>• <strong>Năng lực cốt lõi:</strong> {evalData.profile.coreSkills}</p>
+                      </div>
+                      <div className="pt-2 border-t border-slate-200/70">
+                        {evalData.gapCodes.length > 0 ? (
+                          <div className="text-[11.5px] text-amber-950 bg-amber-100/70 p-2 rounded border border-amber-300 font-medium">
+                            ⚠️ <strong>Thách thức thích ứng:</strong> Nghề đòi hỏi cao nhóm [{evalData.gapCodes.join(', ')}] - tính cách mà em chưa thể hiện rõ ở bài trắc nghiệm.
+                          </div>
+                        ) : (
+                          <div className="text-[11.5px] text-emerald-900 bg-emerald-100/60 p-2 rounded border border-emerald-200 font-medium">
+                            ✓ Ngành này không đòi hỏi nhóm tính cách nào xung đột lớn với em.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* KHỐI BÓC TÁCH ĐIỂM MÙ NHẬN THỨC */}
+                  <div className="bg-rose-50/70 border border-rose-200 rounded-lg p-3.5 space-y-1.5 text-slate-800">
+                    <div className="flex items-center gap-1.5 text-rose-900 font-bold text-xs">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>CẢNH BÁO ĐIỂM MÙ NHẬN THỨC & BẪY TÂM LÝ THƯỜNG GẶP:</span>
+                    </div>
+                    <p className="text-slate-700 text-[11.5px] leading-relaxed font-medium pl-5">
+                      {evalData.profile.commonBlindSpots}
+                    </p>
+                  </div>
+
+                  {/* KHỐI HẠT GIỐNG ĐỐI CHẤT CHO BƯỚC 2 (AI SOCRATES) */}
+                  <div className="bg-slate-900 text-white rounded-lg p-3.5 space-y-2 border border-slate-800 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded bg-amber-500/20 text-amber-400">
+                        <Bot className="w-4 h-4" />
+                      </div>
+                      <span className="font-black text-amber-300 text-xs uppercase tracking-wide">
+                        CƠ SỞ DỮ LIỆU ĐỐI CHẤT CHO BƯỚC 2 (AI SOCRATES):
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Dữ liệu vênh nhận thức này được nạp tự động sang <strong>AI Phản Tư Socrates</strong>. Ở Bước 2, AI sẽ đặt cho em những câu hỏi chất vấn sâu sắc sau:
+                    </p>
+                    <div className="space-y-1.5 pl-2 border-l-2 border-amber-400/60 my-1">
+                      {evalData.profile.socraticQuestions.map((q, qIdx) => (
+                        <p key={qIdx} className="text-[11.5px] text-slate-200 italic font-medium">
+                          ❓ "{q}"
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* BỘ CÔNG CỤ TƯƠNG TÁC: ĐỐI CHIẾU THỬ NGHIỆM NGÀNH KHÁC */}
+                  <div className="bg-sky-50/60 border border-sky-200 rounded-lg p-3.5 space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-extrabold text-sky-950 text-xs flex items-center gap-1.5">
+                        <Search className="w-3.5 h-3.5 text-sky-700" />
+                        Thử nghiệm đối chiếu mã Holland [{evalData.userCodes.join('')}] với các ngành nghề khác:
+                      </span>
+                      {isCustomComparing && (
+                        <button
+                          type="button"
+                          onClick={() => { setActiveCompareMajor(''); setCustomCompareInput(''); }}
+                          className="text-[11px] text-sky-800 hover:text-sky-950 font-bold underline flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Trở về ngành ban đầu
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Chips ngành nghề mẫu */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {sampleMajors.map((m, mIdx) => {
+                        const isCurrent = effectiveMajor.toLowerCase() === m.toLowerCase();
+                        return (
+                          <button
+                            key={mIdx}
+                            type="button"
+                            onClick={() => { setActiveCompareMajor(m); setCustomCompareInput(''); }}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${
+                              isCurrent
+                                ? 'bg-sky-600 text-white border-sky-700 shadow-xs'
+                                : 'bg-white hover:bg-sky-100 text-slate-700 border-slate-300'
+                            }`}
+                          >
+                            {m}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Ô nhập ngành tùy ý */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="text"
+                        placeholder="Hoặc gõ tên ngành bất kỳ (VD: Khoa học dữ liệu, Dược, Luật quốc tế, Vi mạch...)"
+                        value={customCompareInput}
+                        onChange={(e) => setCustomCompareInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && customCompareInput.trim()) {
+                            setActiveCompareMajor(customCompareInput.trim());
+                          }
+                        }}
+                        className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (customCompareInput.trim()) {
+                            setActiveCompareMajor(customCompareInput.trim());
+                          }
+                        }}
+                        className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 text-white font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 shadow-2xs"
+                      >
+                        <Search className="w-3.5 h-3.5" />
+                        Đối chiếu ngay
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* NÚT HÀNH ĐỘNG TIẾP THEO: SANG BƯỚC 2 */}
