@@ -436,16 +436,17 @@ export default function DebiasMatrix() {
       {/* CSS CHO IN ẤN CHUẨN A4 DÁN GÓC HỌC TẬP (CHUẨN ĐẠO ĐỨC & KHẮC PHỤC LỖI IN) */}
       <style>{`
         /* =========================================================================
-           BỘ THÔNG SỐ CANH LỀ IN ẤN CHUẨN A4 KHOA HỌC (VISEF CBAS)
+           BỘ THÔNG SỐ CANH LỀ IN ẤN CHUẨN A4 KHOA HỌC (VISEF CBAS) - KHÔNG MẤT CHỮ
            ========================================================================= */
         @page {
           size: A4 portrait;
-          /* Canh lề chuẩn: Trái 20mm (chừa lề kẹp ghim), Phải 15mm, Trên/Dưới 15mm */
-          margin: 15mm 15mm 15mm 20mm;
+          /* Đặt margin: 0 ở cấp độ trang in để tránh trình duyệt tự ý cộng dồn lề hay gây lệch mép */
+          margin: 0;
         }
 
         @media print {
-          /* 1. TRIỆT TIÊU TOÀN BỘ CÁC THÔNG BÁO POPUP / TOAST VÀ NÚT BẤM */
+          /* 1. TRIỆT TIÊU TOÀN BỘ CÁC THÀNH PHẦN KHÔNG IN */
+          .no-print,
           .toast-notification, 
           [role="alert"], 
           .alert-box, 
@@ -453,15 +454,19 @@ export default function DebiasMatrix() {
           aside, 
           nav, 
           header,
-          footer,
-          .no-print {
+          footer {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
             height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
 
-          body, html, #root, main {
+          /* 2. LOẠI BỎ HOÀN TOÀN MÀU NỀN TỐI VÀ PADDING CỦA CÁC THẺ CHA (NGĂN DÍNH VIỀN ĐEN & TRÀN LỀ) */
+          html, body, #root, #root > div, main, main > div, .bg-slate-900, .bg-slate-950, .bg-slate-50 {
+            background: #ffffff !important;
             background-color: #ffffff !important;
             color: #0f172a !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
@@ -469,18 +474,35 @@ export default function DebiasMatrix() {
             print-color-adjust: exact !important;
             height: auto !important;
             min-height: auto !important;
-            overflow: visible !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-
-          .a4-container {
+            max-height: none !important;
             width: 100% !important;
             max-width: 100% !important;
+            overflow: visible !important;
             margin: 0 !important;
             padding: 0 !important;
             border: none !important;
             box-shadow: none !important;
+          }
+
+          /* 3. KHUNG TRANG IN A4 CHUẨN XÁC VỚI LỀ AN TOÀN VISEF (CHỐNG MẤT CHỮ 100%) */
+          .a4-container {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            width: 210mm !important;
+            max-width: 210mm !important;
+            min-height: 297mm !important;
+            height: auto !important;
+            margin: 0 auto !important;
+            /* LỀ AN TOÀN BẢO VỆ CHỮ: Trên 14mm, Phải 16mm, Dưới 14mm, Trái 22mm (chừa kẹp ghim báo cáo) */
+            padding: 14mm 16mm 14mm 22mm !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            border: none !important;
+            box-shadow: none !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
 
           /* Chống ngắt trang đột ngột giữa chừng */
@@ -494,10 +516,10 @@ export default function DebiasMatrix() {
         .a4-container {
           width: 210mm;
           min-height: 297mm;
-          padding: 15mm 15mm 15mm 20mm;
+          padding: 14mm 16mm 14mm 22mm;
           margin: 20px auto;
           background: #ffffff;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
           box-sizing: border-box;
         }
       `}</style>
