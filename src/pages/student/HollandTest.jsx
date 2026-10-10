@@ -76,6 +76,138 @@ export const DEFAULT_HOLLAND_QUESTIONS = [
   { id: 30, category: 'C', text: 'Thích công việc có kế hoạch làm việc cố định, rõ ràng và ổn định lâu dài.' }
 ]
 
+// =========================================================================
+// BẢNG ÁNH XẠ MÃ RIASEC CHUẨN CỦA CÁC NHÓM NGHỀ (CAREER BENCHMARKS)
+// =========================================================================
+export const CAREER_BENCHMARKS = {
+  // Nghề làm tóc / Spa thẩm mỹ thuộc nhóm Nghệ thuật (A) & Thực hành (R)
+  "Nghề tạo mẫu tóc (Spa nổi tiếng)": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật & Thực tế (A-R)"
+  },
+  "Tạo mẫu tóc": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật & Thực tế (A-R)"
+  },
+  "Spa thẩm mỹ": {
+    code: ["A", "R", "S"],
+    name: "Nghệ thuật & Thực tế (A-R)"
+  },
+  "Tâm Lý": {
+    code: ["S", "I", "A"],
+    name: "Xã hội & Nghiên cứu (S-I)"
+  },
+  "Tâm lý học": {
+    code: ["S", "I", "A"],
+    name: "Xã hội & Nghiên cứu (S-I)"
+  },
+  "Công nghệ thông tin": {
+    code: ["I", "R", "C"],
+    name: "Nghiên cứu & Kỹ thuật (I-R)"
+  },
+  "Kỹ thuật phần mềm": {
+    code: ["I", "R", "C"],
+    name: "Nghiên cứu & Kỹ thuật (I-R)"
+  },
+  "Quản trị kinh doanh": {
+    code: ["E", "C", "S"],
+    name: "Quản lý & Nghiệp vụ (E-C)"
+  },
+  "Marketing": {
+    code: ["E", "A", "S"],
+    name: "Quản lý & Sáng tạo (E-A)"
+  },
+  "Kế toán - Kiểm toán": {
+    code: ["C", "E", "S"],
+    name: "Nghiệp vụ & Quy chuẩn (C-E)"
+  },
+  "Sư phạm": {
+    code: ["S", "A", "E"],
+    name: "Xã hội & Giáo dục (S-A)"
+  },
+  "Sư phạm Tiếng Anh": {
+    code: ["S", "A", "E"],
+    name: "Xã hội & Ngôn ngữ (S-A)"
+  },
+  "Y đa khoa": {
+    code: ["I", "S", "R"],
+    name: "Nghiên cứu & Y tế (I-S)"
+  },
+  "Dược học": {
+    code: ["S", "I", "R"],
+    name: "Y tế & Nghiên cứu (S-I)"
+  },
+  "Thiết kế đồ họa": {
+    code: ["A", "E", "S"],
+    name: "Nghệ thuật & Sáng tạo (A-E)"
+  },
+  "Cơ điện tử": {
+    code: ["R", "I", "E"],
+    name: "Thực hành & Kỹ thuật (R-I)"
+  },
+  "Luật kinh tế": {
+    code: ["E", "A", "S"],
+    name: "Quản lý & Pháp lý (E-A)"
+  },
+  "Logistics": {
+    code: ["E", "C", "R"],
+    name: "Quản lý & Vận hành (E-C)"
+  },
+  "Báo chí & Truyền thông": {
+    code: ["A", "S", "E"],
+    name: "Truyền thông & Sáng tạo (A-S)"
+  },
+  "Quan hệ quốc tế": {
+    code: ["S", "E", "A"],
+    name: "Ngoại giao & Xã hội (S-E)"
+  },
+  "Ngôn ngữ Anh": {
+    code: ["A", "S", "C"],
+    name: "Nghệ thuật & Xã hội (A-S)"
+  }
+};
+
+// Hàm tìm kiếm chuẩn Benchmark linh hoạt theo tên ngành
+export function findCareerBenchmark(targetCareer) {
+  if (!targetCareer || typeof targetCareer !== 'string') return null;
+  const cleanTarget = targetCareer.trim().toLowerCase();
+
+  // 1. So khớp chính xác
+  for (const [key, value] of Object.entries(CAREER_BENCHMARKS)) {
+    if (key.toLowerCase() === cleanTarget) return value;
+  }
+
+  // 2. So khớp từ khóa con (fuzzy)
+  for (const [key, value] of Object.entries(CAREER_BENCHMARKS)) {
+    const cleanKey = key.toLowerCase();
+    if (cleanTarget.includes(cleanKey) || cleanKey.includes(cleanTarget)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+// Hàm tạo thông điệp cảnh báo thích ứng chính xác chuẩn ViSEF CBAS
+export function getConflictMessage(studentHollandCode, targetCareer) {
+  const benchmark = CAREER_BENCHMARKS[targetCareer] || findCareerBenchmark(targetCareer);
+  if (!benchmark) return "";
+
+  const studentCodes = Array.isArray(studentHollandCode)
+    ? studentHollandCode.map(c => String(c).toUpperCase())
+    : String(studentHollandCode || '').toUpperCase().split('');
+
+  const codeStr = Array.isArray(studentHollandCode) ? studentHollandCode.join('') : String(studentHollandCode || '');
+
+  // Tìm các nhóm cốt lõi của nghề mà học sinh KHÔNG có trong mã trắc nghiệm
+  const missingTraits = benchmark.code.filter(trait => !studentCodes.includes(trait));
+
+  if (missingTraits.length > 0) {
+    return `Thách thức thích ứng: Nghề đòi hỏi cao nhóm [${missingTraits.join(', ')}] – những năng lực thực tế chưa xuất hiện trong bài trắc nghiệm [${codeStr}] của em.`;
+  }
+  return "Hồ sơ năng lực có độ tương thích cao với ngành nghề mục tiêu.";
+}
+
 // Hệ thống ánh xạ mã Holland sang đặc tính môi trường làm việc thực tế:
 export const hollandDescriptions = {
   'R': 'Thực tế / Kỹ thuật (Thích làm việc với máy móc, công cụ, không gian vật lý)',
@@ -88,6 +220,22 @@ export const hollandDescriptions = {
 
 // Danh mục hồ sơ RIASEC các nhóm ngành đại học toàn diện (Chuẩn GDPT & Khung phân ngành quốc tế)
 export const CAREER_HOLLAND_PROFILES = [
+  {
+    id: 'hair_spa',
+    categoryName: 'Nghệ thuật & Thực tế (A-R)',
+    keywords: [
+      'tóc', 'tạo mẫu tóc', 'spa', 'thẩm mỹ', 'làm đẹp', 'salon', 'chăm sóc da', 'trang điểm', 'makeup'
+    ],
+    expectedCodes: ['A', 'R', 'E'],
+    expectedDesc: 'Nghệ thuật & Thực tế (A-R-E: Thẩm mỹ thị giác, kỹ năng khéo tay thực chiến, giao tiếp dịch vụ)',
+    workEnvironment: 'Salon, viện thẩm mỹ, spa cao cấp; đứng liên tục nhiều giờ, tiếp xúc với mỹ phẩm/hóa chất làm tóc và áp lực làm hài lòng khách hàng.',
+    coreSkills: 'Đôi tay khéo léo tỉ mỉ, mắt thẩm mỹ phối màu và phom dáng, tư vấn tâm lý khách hàng, chịu áp lực phục vụ giờ cao điểm.',
+    commonBlindSpots: 'Thấy nghề này kiếm tiền nhanh, hào nhoáng trên mạng; chưa lường trước đau lưng do đứng 8-10 tiếng và rủi ro hít phải hóa chất uốn/nhuộm liên tục.',
+    socraticQuestions: [
+      'Em có sẵn sàng đứng liên tục 8-10 tiếng mỗi ngày, thao tác kéo cắt tỉ mỉ và kiên nhẫn phục vụ những vị khách khó tính không?',
+      'Em chọn làm tóc/spa vì thực sự đam mê nghệ thuật tạo hình thẩm mỹ, hay chỉ vì nghĩ nghề này học nhanh kiếm tiền dễ hơn đại học?'
+    ]
+  },
   {
     id: 'it_ai',
     categoryName: 'Công nghệ thông tin & Trí tuệ nhân tạo (AI)',
@@ -333,15 +481,42 @@ export function getCareerHollandProfile(careerName) {
   }
 
   const nameLower = careerName.toLowerCase().trim();
+  const benchmark = findCareerBenchmark(careerName);
   
   // 1. Tìm kiếm khớp trong danh mục chuẩn theo keywords
   const matched = CAREER_HOLLAND_PROFILES.find(p => 
     p.keywords.some(k => nameLower.includes(k)) || nameLower.includes(p.categoryName.toLowerCase())
   );
 
-  if (matched) return matched;
+  if (matched) {
+    if (benchmark && benchmark.code) {
+      return {
+        ...matched,
+        expectedCodes: benchmark.code,
+        categoryName: benchmark.name ? `${matched.categoryName} (${benchmark.name})` : matched.categoryName
+      };
+    }
+    return matched;
+  }
 
-  // 2. Dự đoán thông minh dựa trên từ khóa hàn lâm / khoa học
+  // 2. Nếu có trong CAREER_BENCHMARKS
+  if (benchmark && benchmark.code) {
+    return {
+      id: 'benchmark_' + benchmark.code.join(''),
+      categoryName: benchmark.name || `Khối ngành ${careerName}`,
+      expectedCodes: benchmark.code,
+      expectedDesc: `${benchmark.name || careerName} (Đòi hỏi nhóm ${benchmark.code.join('-')})`,
+      workEnvironment: `Môi trường làm việc chuyên sâu lĩnh vực ${careerName}, đòi hỏi sự tương thích nhóm năng lực [${benchmark.code.join(', ')}].`,
+      coreSkills: `Kỹ năng nghề nghiệp cốt lõi theo chuẩn [${benchmark.code.join(', ')}], khả năng chịu áp lực và giải quyết vấn đề.`,
+      commonBlindSpots: `Chưa cọ xát thực tế môi trường làm việc đặc thù của ${careerName}; dễ bị ngộ nhận giữa hào quang bên ngoài và đòi hỏi chuyên môn hàng ngày.`,
+      socraticQuestions: [
+        `Em đã tìm hiểu kỹ về một ngày làm việc điển hình của người làm nghề ${careerName} chưa?`,
+        `Khi gặp áp lực lớn từ các đòi hỏi nhóm [${benchmark.code.join(', ')}], em sẽ thích ứng bằng phương pháp cụ thể nào?`
+      ]
+    };
+  }
+
+  // 3. Dự đoán thông minh dựa trên từ khóa hàn lâm / khoa học
   if (nameLower.includes('học') || nameLower.includes('nghiên cứu') || nameLower.includes('khoa')) {
     return {
       id: 'custom_science',
@@ -358,7 +533,7 @@ export function getCareerHollandProfile(careerName) {
     };
   }
 
-  // 3. Fallback an toàn, khoa học, bao quát toàn diện
+  // 4. Fallback an toàn, khoa học, bao quát toàn diện
   return {
     id: 'custom_general',
     categoryName: `Khối ngành Chuyên môn (${careerName})`,
@@ -386,7 +561,8 @@ export function evaluateHollandCompatibility(careerName, userHollandCodes) {
   const userTertiary = cleanCodes[2] || 'E';
 
   const profile = getCareerHollandProfile(careerName);
-  const targetCodes = profile.expectedCodes;
+  const benchmark = findCareerBenchmark(careerName);
+  const targetCodes = (benchmark && benchmark.code) ? benchmark.code : profile.expectedCodes;
 
   // Tính điểm tương thích theo trọng số vị trí (Tối đa 100 điểm)
   let score = 15; // Điểm nền tảng thích ứng con người
@@ -405,21 +581,24 @@ export function evaluateHollandCompatibility(careerName, userHollandCodes) {
   const matchedCodes = cleanCodes.filter(c => targetCodes.includes(c));
   const gapCodes = targetCodes.filter(c => !cleanCodes.includes(c));
 
+  // TẠO THÔNG ĐIỆP CẢNH BÁO THÍCH ỨNG CHÍNH XÁC THEO CHUẨN VISEF CBAS
+  const conflictMessage = getConflictMessage(cleanCodes, careerName);
+
   let level = 'medium';
   let levelLabel = 'Tương thích một phần';
   let levelColor = 'amber';
-  let levelSummary = 'Em sở hữu một số tố chất phù hợp nhưng cần chủ động thích ứng với các đòi hỏi khắt khe của nghề.';
+  let levelSummary = conflictMessage || 'Em sở hữu một số tố chất phù hợp nhưng cần chủ động thích ứng với các đòi hỏi khắt khe của nghề.';
 
   if (score >= 65) {
     level = 'high';
     levelLabel = 'Tương thích cao';
     levelColor = 'emerald';
-    levelSummary = 'Thiên hướng tính cách tự nhiên của em rất đồng điệu với môi trường và đòi hỏi cốt lõi của ngành nghề này!';
+    levelSummary = conflictMessage || 'Thiên hướng tính cách tự nhiên của em rất đồng điệu với môi trường và đòi hỏi cốt lõi của ngành nghề này!';
   } else if (score < 45) {
     level = 'low';
     levelLabel = 'Cảnh báo lệch pha nhận thức';
     levelColor = 'rose';
-    levelSummary = 'Có độ vênh lớn giữa thiên hướng tự nhiên đo được và môi trường công việc thực tế hằng ngày của ngành.';
+    levelSummary = conflictMessage || 'Có độ vênh lớn giữa thiên hướng tự nhiên đo được và môi trường công việc thực tế hằng ngày của ngành.';
   }
 
   return {
@@ -432,6 +611,7 @@ export function evaluateHollandCompatibility(careerName, userHollandCodes) {
     levelLabel,
     levelColor,
     levelSummary,
+    conflictMessage,
     matchedCodes,
     gapCodes,
     userPrimary,
@@ -1652,6 +1832,8 @@ const HollandTest = () => {
               const isCustomComparing = activeCompareMajor && activeCompareMajor.trim().toLowerCase() !== initialAnchorMajor.trim().toLowerCase();
 
               const sampleMajors = [
+                'Nghề tạo mẫu tóc (Spa nổi tiếng)',
+                'Tâm Lý',
                 'Công nghệ thông tin',
                 'Quản trị kinh doanh',
                 'Kế toán - Kiểm toán',
@@ -1755,6 +1937,27 @@ const HollandTest = () => {
                         style={{ width: `${evalData.compatibilityScore}%` }}
                       />
                     </div>
+
+                    {/* THÔNG ĐIỆP ĐÁNH GIÁ THÍCH ỨNG CHUẨN VISEF CBAS 2026 */}
+                    {evalData.conflictMessage && (
+                      <div className={`mt-3 p-3 rounded-lg border text-xs font-semibold flex items-start gap-2.5 shadow-2xs ${
+                        evalData.gapCodes.length > 0
+                          ? 'bg-amber-100/90 text-amber-950 border-amber-300'
+                          : 'bg-emerald-100/90 text-emerald-950 border-emerald-300'
+                      }`}>
+                        <span className="text-base shrink-0 mt-0.5">
+                          {evalData.gapCodes.length > 0 ? '⚠️' : '✓'}
+                        </span>
+                        <div className="space-y-0.5">
+                          <span className="text-[10px] uppercase font-black tracking-wider block opacity-75">
+                            {evalData.gapCodes.length > 0 ? 'Đánh Giá Thách Thức Thích Ứng (CBAS ViSEF)' : 'Mức Độ Tương Thích Tự Nhiên (CBAS ViSEF)'}
+                          </span>
+                          <p className="leading-relaxed">
+                            {evalData.conflictMessage}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* BẢNG ĐỐI CHIẾU CHÉO 2 CỘT SONG SONG */}
@@ -1807,12 +2010,12 @@ const HollandTest = () => {
                       </div>
                       <div className="pt-2 border-t border-slate-200/70">
                         {evalData.gapCodes.length > 0 ? (
-                          <div className="text-[11.5px] text-amber-950 bg-amber-100/70 p-2 rounded border border-amber-300 font-medium">
-                            ⚠️ <strong>Thách thức thích ứng:</strong> Nghề đòi hỏi cao nhóm [{evalData.gapCodes.join(', ')}] - tính cách mà em chưa thể hiện rõ ở bài trắc nghiệm.
+                          <div className="text-[11.5px] text-amber-950 bg-amber-100/70 p-2 rounded border border-amber-300 font-medium leading-relaxed">
+                            ⚠️ <strong>Thách thức thích ứng:</strong> {evalData.conflictMessage || `Nghề đòi hỏi cao nhóm [${evalData.gapCodes.join(', ')}] - tính cách mà em chưa thể hiện rõ ở bài trắc nghiệm.`}
                           </div>
                         ) : (
                           <div className="text-[11.5px] text-emerald-900 bg-emerald-100/60 p-2 rounded border border-emerald-200 font-medium">
-                            ✓ Ngành này không đòi hỏi nhóm tính cách nào xung đột lớn với em.
+                            ✓ {evalData.conflictMessage || 'Ngành này không đòi hỏi nhóm tính cách nào xung đột lớn với em.'}
                           </div>
                         )}
                       </div>
@@ -1895,12 +2098,18 @@ const HollandTest = () => {
                     <div className="flex items-center gap-2 pt-1">
                       <input
                         type="text"
-                        placeholder="Hoặc gõ tên ngành bất kỳ (VD: Khoa học dữ liệu, Dược, Luật quốc tế, Vi mạch...)"
+                        placeholder="Hoặc gõ tên ngành bất kỳ (VD: Nghề tạo mẫu tóc (Spa nổi tiếng), Tâm Lý, Dược, CNTT...)"
                         value={customCompareInput}
                         onChange={(e) => setCustomCompareInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            handleSelectCompareMajor(customCompareInput.trim() || effectiveMajor);
+                            e.preventDefault();
+                            const val = (customCompareInput || '').trim();
+                            if (val) {
+                              handleSelectCompareMajor(val);
+                            } else {
+                              setToast({ type: 'warning', message: 'Vui lòng nhập tên ngành nghề muốn đối chiếu!' });
+                            }
                           }
                         }}
                         className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
@@ -1908,9 +2117,14 @@ const HollandTest = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          handleSelectCompareMajor(customCompareInput.trim() || effectiveMajor);
+                          const val = (customCompareInput || '').trim();
+                          if (val) {
+                            handleSelectCompareMajor(val);
+                          } else {
+                            setToast({ type: 'warning', message: 'Vui lòng nhập tên ngành nghề muốn đối chiếu (hoặc bấm chọn các nút ngành mẫu ở trên)!' });
+                          }
                         }}
-                        className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 shadow-2xs cursor-pointer"
+                        className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1.5 shadow-2xs cursor-pointer"
                       >
                         <Search className="w-3.5 h-3.5" />
                         Đối chiếu ngay
