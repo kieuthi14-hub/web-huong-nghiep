@@ -38,43 +38,620 @@ import {
   Check,
   Printer,
   Users,
-  Download
+  Download,
+  Table,
+  X
 } from 'lucide-react'
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
 // =========================================================================
 export const INITIAL_CBAS_STUDENTS = [
-  { id: 'CT_01', riasec: 'RAI', major: 'Tâm lý học (ĐH KHXH&NV)', deltaScore: '+0.5đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+1.2 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_02', riasec: 'ECS', major: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)', deltaScore: '-2.5đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → (Chưa đo)', crs: '+2.8 → --', unlockedStep5: false, status: 'Pending' },
-  { id: 'CT_03', riasec: 'SAE', major: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)', deltaScore: '+1.2đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+0.8 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_04', riasec: 'CES', major: 'Kế toán - Kiểm toán (ĐH Kinh Tế)', deltaScore: '+0.2đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.5 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_05', riasec: 'RIE', major: 'Cơ điện tử & Tự động hóa (ĐH Bách Khoa)', deltaScore: '+0.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+1.8 → +0.3', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_06', riasec: 'ASE', major: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)', deltaScore: '-0.4đ (Biên giới)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.4 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_07', riasec: 'IRS', major: 'Công nghệ Sinh học Y dược (ĐH KHTN)', deltaScore: '+1.5đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.9 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_08', riasec: 'ICR', major: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)', deltaScore: '-1.8đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → (Chưa đo)', crs: '+3.1 → --', unlockedStep5: false, status: 'Pending' },
-  { id: 'CT_09', riasec: 'EAS', major: 'Truyền thông Đa phương tiện (ĐH KHXH&NV)', deltaScore: '-2.0đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.5 → +0.3', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_10', riasec: 'CIS', major: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)', deltaScore: '+0.3đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.1 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_11', riasec: 'RIC', major: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)', deltaScore: '-1.6đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '7/10 → 7/10', crs: '+2.2 → +0.4', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_12', riasec: 'SEC', major: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)', deltaScore: '+1.0đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.7 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_13', riasec: 'ISR', major: 'Y đa khoa (ĐH Y Dược TP.HCM)', deltaScore: '-2.8đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 7/10', crs: '+3.4 → +0.5', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_14', riasec: 'AES', major: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)', deltaScore: '-1.7đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.4 → +0.3', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_15', riasec: 'ECR', major: 'Logistics & Quản lý Chuỗi Cung Ứng', deltaScore: '+0.7đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+1.6 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_16', riasec: 'SIR', major: 'Dược học (ĐH Y Dược)', deltaScore: '-1.9đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '7/10 → 7/10', crs: '+2.6 → +0.3', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_17', riasec: 'CSE', major: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)', deltaScore: '+0.4đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+1.0 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_18', riasec: 'IRE', major: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)', deltaScore: '-2.2đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 8/10', crs: '+3.0 → +0.4', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_19', riasec: 'SAI', major: 'Tâm lý học Giáo dục (ĐH Sư Phạm)', deltaScore: '+1.4đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+0.8 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_20', riasec: 'ERC', major: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)', deltaScore: '-1.5đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.1 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_21', riasec: 'RCI', major: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)', deltaScore: '+0.9đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.3 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_22', riasec: 'AIR', major: 'Thiết kế Thời trang (ĐH Mỹ Thuật)', deltaScore: '-2.1đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.7 → +0.3', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_23', riasec: 'SCI', major: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)', deltaScore: '+1.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+0.6 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_24', riasec: 'ESI', major: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)', deltaScore: '+0.6đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+1.2 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_25', riasec: 'IRC', major: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)', deltaScore: '-2.4đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 8/10', crs: '+3.2 → +0.5', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_26', riasec: 'SAR', major: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)', deltaScore: '+1.1đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.7 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_27', riasec: 'CER', major: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)', deltaScore: '-0.2đ (Biên giới)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.4 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_28', riasec: 'EAS', major: 'Luật Kinh tế (ĐH Luật TP.HCM)', deltaScore: '+0.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+1.1 → +0.2', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_29', riasec: 'RIS', major: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)', deltaScore: '+1.6đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+0.5 → +0.1', unlockedStep5: true, status: 'Completed' },
-  { id: 'CT_30', riasec: 'SER', major: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)', deltaScore: '+1.3đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+0.6 → +0.1', unlockedStep5: true, status: 'Completed' }
+  // ================= KHỐI 10 (10 HỌC SINH: CT_01 -> CT_10) =================
+  {
+    id: 'CT_01',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Giỏi',
+    riasec: 'RAI',
+    major: 'Tâm lý học (ĐH KHXH&NV)',
+    majorT0: 'Tâm lý học (ĐH KHXH&NV)',
+    majorT2: 'Tâm lý học Giáo dục & Tham vấn (ĐH KHXH&NV)',
+    deltaScore: '+0.5đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 7/10',
+    crs: '+1.2 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em nhận ra mình thích lắng nghe chia sẻ của bạn bè hơn là làm nghiên cứu thần kinh học hàn lâm.',
+    studentQuestion: 'Học Tâm lý ở Việt Nam sau này có dễ xin việc vào trường học hoặc doanh nghiệp không ạ?',
+    assignedMentor: 'Thầy/Cô Ban Cố vấn Hướng nghiệp'
+  },
+  {
+    id: 'CT_02',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Khá',
+    riasec: 'ECS',
+    major: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
+    majorT0: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
+    majorT2: 'Kinh doanh Thương mại (ĐH Tài chính - Marketing) [Dự phòng]',
+    deltaScore: '-2.5đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → (Chưa đo)',
+    crs: '+2.8 → --',
+    unlockedStep5: false,
+    status: 'Pending',
+    turningPointQuote: 'Em từng nghĩ chỉ cần thích làm sếp là học QTKD được, nhưng sau Bước 2 mới thấy mình chưa hiểu gì về vận hành thực tế.',
+    studentQuestion: 'Điểm chuẩn cao quá em sợ rớt, nếu đổi sang ngành gần thì cơ hội việc làm khác nhau thế nào ạ?',
+    assignedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)'
+  },
+  {
+    id: 'CT_03',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Giỏi',
+    riasec: 'SAE',
+    major: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)',
+    majorT0: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)',
+    majorT2: 'Sư phạm Tiếng Anh (ĐH Sư Phạm TP.HCM)',
+    deltaScore: '+1.2đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 7/10',
+    crs: '+0.8 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em nhận diện rõ áp lực đứng lớp và yêu cầu phát âm chuẩn mực quốc tế.',
+    studentQuestion: 'Chương trình miễn học phí theo Nghị định 116 có ràng buộc công tác như thế nào ạ?',
+    assignedMentor: 'Thầy/Cô Ban Cố vấn Sư phạm'
+  },
+  {
+    id: 'CT_04',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Giỏi',
+    riasec: 'CES',
+    major: 'Kế toán - Kiểm toán (ĐH Kinh Tế)',
+    majorT0: 'Kế toán - Kiểm toán (ĐH Kinh Tế)',
+    majorT2: 'Kiểm toán & Phân tích Tài chính (ĐH Kinh Tế TP.HCM)',
+    deltaScore: '+0.2đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+1.5 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em từng lo AI thay thế kế toán, nhưng Bước 2 giúp em hiểu phân tích tài chính vẫn cần con người.',
+    studentQuestion: 'Nên thi chứng chỉ ACCA ngay từ năm 2 không anh?',
+    assignedMentor: 'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng'
+  },
+  {
+    id: 'CT_05',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Khá',
+    riasec: 'RIE',
+    major: 'Cơ điện tử & Tự động hóa (ĐH Bách Khoa)',
+    majorT0: 'Cơ điện tử & Tự động hóa (ĐH Bách Khoa)',
+    majorT2: 'Kỹ thuật Cơ điện tử (ĐH Sư Phạm Kỹ Thuật)',
+    deltaScore: '+0.8đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 8/10',
+    crs: '+1.8 → +0.3',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em nhận ra thế mạnh của mình là gia công cơ khí thực hành hơn là tính toán lý thuyết giải tích.',
+    studentQuestion: 'Học Cơ điện tử cần laptop cấu hình render 3D mạnh cỡ nào ạ?',
+    assignedMentor: 'Anh T.M.T - Cựu SV Bách Khoa'
+  },
+  {
+    id: 'CT_06',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Giỏi',
+    riasec: 'ASE',
+    major: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)',
+    majorT0: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)',
+    majorT2: 'Thiết kế Đồ họa (ĐH Văn Lang) + Chứng chỉ UI/UX',
+    deltaScore: '-0.4đ (Biên giới)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+1.4 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em vẽ đẹp nhưng chưa biết cách làm việc theo yêu cầu khách hàng, Bước 2 làm em tỉnh ngộ về Design Thinking.',
+    studentQuestion: 'Thi vẽ đầu vào cần luyện môn Hình họa bao lâu thì kịp ạ?',
+    assignedMentor: 'Chị H.T.M - Designer UI/UX'
+  },
+  {
+    id: 'CT_07',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Xuất sắc',
+    riasec: 'IRS',
+    major: 'Công nghệ Sinh học Y dược (ĐH KHTN)',
+    majorT0: 'Công nghệ Sinh học Y dược (ĐH KHTN)',
+    majorT2: 'Công nghệ Sinh học (ĐH Khoa Học Tự Nhiên - ĐHQG)',
+    deltaScore: '+1.5đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '8/10 → 8/10',
+    crs: '+0.9 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em hiểu rằng làm R&D sinh học cần ngồi phòng lab hàng giờ liền, không hào nhoáng như phim ảnh.',
+    studentQuestion: 'Ngành này cơ hội học bổng Master ở nước ngoài như thế nào ạ?',
+    assignedMentor: 'TS. Nguyễn Văn Nghiên Cứu'
+  },
+  {
+    id: 'CT_08',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Khá',
+    riasec: 'ICR',
+    major: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+    majorT0: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+    majorT2: 'Công nghệ Thông tin (ĐH SP Kỹ Thuật / ĐH Nha Trang) [Hiệu chuẩn]',
+    deltaScore: '-1.8đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '9/10 → (Chưa đo)',
+    crs: '+3.1 → --',
+    unlockedStep5: false,
+    status: 'Pending',
+    turningPointQuote: 'Em thích chơi game và nghĩ mình hợp phần mềm, nhưng bài toán thuật toán và chi phí 45 tr/năm làm em thấy ngợp.',
+    studentQuestion: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
+    assignedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)'
+  },
+  {
+    id: 'CT_09',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Khá',
+    riasec: 'EAS',
+    major: 'Truyền thông Đa phương tiện (ĐH KHXH&NV)',
+    majorT0: 'Truyền thông Đa phương tiện (ĐH KHXH&NV)',
+    majorT2: 'Quan hệ Công chúng - PR (ĐH Văn Hiến / FPT Poly) [Hiệu chuẩn]',
+    deltaScore: '-2.0đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → 7/10',
+    crs: '+2.5 → +0.3',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Học bạ của em thiếu 2 điểm so với chuẩn, em cần phương án phân nhánh thực tế hơn.',
+    studentQuestion: 'Học PR trường tư thục thì nhà tuyển dụng có đánh giá thấp hơn trường công lập không ạ?',
+    assignedMentor: 'Chị Đ.T.L - Chuyên viên Truyền thông'
+  },
+  {
+    id: 'CT_10',
+    grade: 'Khối 10',
+    gradeNum: '10',
+    academicRank: 'Giỏi',
+    riasec: 'CIS',
+    major: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)',
+    majorT0: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)',
+    majorT2: 'Khoa học Dữ liệu & Trí tuệ Nhân tạo (ĐH CNTT)',
+    deltaScore: '+0.3đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+1.1 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em hiểu toán xác suất thống kê là xương sống chứ không chỉ là kéo thả code Python.',
+    studentQuestion: 'Học khoa học dữ liệu thì nên thi khối A00 hay A01 có lợi hơn ạ?',
+    assignedMentor: 'Thầy Ban Cố vấn CNTT'
+  },
+
+  // ================= KHỐI 11 (10 HỌC SINH: CT_11 -> CT_20) =================
+  {
+    id: 'CT_11',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'RIC',
+    major: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)',
+    majorT0: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)',
+    majorT2: 'An ninh Mạng ứng dụng (ĐH Sư Phạm Kỹ Thuật) [Hiệu chuẩn]',
+    deltaScore: '-1.6đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '7/10 → 7/10',
+    crs: '+2.2 → +0.4',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em hiểu yêu cầu khắt khe về môn Toán và tư duy thuật toán bảo mật.',
+    studentQuestion: 'Học an toàn thông tin có yêu cầu phải thi giải tỉnh môn Tin không ạ?',
+    assignedMentor: 'Anh L.T.K - Cựu SV An ninh mạng'
+  },
+  {
+    id: 'CT_12',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'SEC',
+    major: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)',
+    majorT0: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)',
+    majorT2: 'Marketing Số & E-Commerce (ĐH Ngoại Thương CS2)',
+    deltaScore: '+1.0đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '8/10 → 8/10',
+    crs: '+0.7 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em thấy tự tin hơn khi đã so sánh kỹ mức độ cạnh tranh và học phí từng chương trình.',
+    studentQuestion: 'Chương trình Chất lượng cao có học bổng trao đổi sinh viên nhiều không ạ?',
+    assignedMentor: 'Chị N.H.Y - SV Ngoại Thương'
+  },
+  {
+    id: 'CT_13',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Xuất sắc',
+    riasec: 'ISR',
+    major: 'Y đa khoa (ĐH Y Dược TP.HCM)',
+    majorT0: 'Y đa khoa (ĐH Y Dược TP.HCM)',
+    majorT2: 'Y Đa Khoa (Khoa Y - ĐHQG TP.HCM / Cần Thơ) [Dự phòng]',
+    deltaScore: '-2.8đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '9/10 → 7/10',
+    crs: '+3.4 → +0.5',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Khối lượng học 6 năm cùng áp lực trực đêm là rào cản thực tế em phải đối mặt.',
+    studentQuestion: 'Học phí Y khoa hiện nay rất cao, có chính sách vay vốn sinh viên ra sao ạ?',
+    assignedMentor: 'Bác sĩ nội trú Nguyễn Hoàng Nam'
+  },
+  {
+    id: 'CT_14',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Khá',
+    riasec: 'AES',
+    major: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)',
+    majorT0: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)',
+    majorT2: 'Thiết kế Nội thất & Không gian (ĐH Kiến Trúc) [Hiệu chuẩn]',
+    deltaScore: '-1.7đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → 7/10',
+    crs: '+2.4 → +0.3',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Điểm vẽ mỹ thuật cần rèn luyện bài bản 1-2 năm, em nhận ra mình thích mảng nội thất hơn.',
+    studentQuestion: 'Em nên bắt đầu ôn vẽ tượng thạch cao từ học kỳ này luôn đúng không anh?',
+    assignedMentor: 'KTS. Lê Quang Huy'
+  },
+  {
+    id: 'CT_15',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'ECR',
+    major: 'Logistics & Quản lý Chuỗi Cung Ứng',
+    majorT0: 'Logistics & Quản lý Chuỗi Cung Ứng (ĐH GTVT)',
+    majorT2: 'Logistics & Chuỗi Cung Ứng Toàn Cầu (ĐH GTVT TP.HCM)',
+    deltaScore: '+0.7đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 8/10',
+    crs: '+1.6 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Hiểu rõ các khâu kho bãi cảng biển giúp em định hình công việc rõ ràng hơn.',
+    studentQuestion: 'Làm logistics có bắt buộc phải giỏi tiếng Anh giao tiếp và chứng chỉ TOEIC không ạ?',
+    assignedMentor: 'Anh Trần Bảo Long - Quản lý Cảng'
+  },
+  {
+    id: 'CT_16',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'SIR',
+    major: 'Dược học (ĐH Y Dược)',
+    majorT0: 'Dược học (ĐH Y Dược)',
+    majorT2: 'Dược học Lâm sàng (ĐH Y Dược) & Kế hoạch Dược Quân Y',
+    deltaScore: '-1.9đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '7/10 → 7/10',
+    crs: '+2.6 → +0.3',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Nghề Dược cần nắm chắc Hóa vô cơ & hữu cơ, em đã lập kế hoạch bổ trợ môn Hóa.',
+    studentQuestion: 'Mở nhà thuốc tư nhân sau khi ra trường cần bao nhiêu năm chứng chỉ hành nghề ạ?',
+    assignedMentor: 'Dược sĩ CKI. Phạm Minh Châu'
+  },
+  {
+    id: 'CT_17',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'CSE',
+    major: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)',
+    majorT0: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)',
+    majorT2: 'Công nghệ Tài chính - Fintech (ĐH Ngân Hàng TP.HCM)',
+    deltaScore: '+0.4đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 7/10',
+    crs: '+1.0 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em chọn mảng Fintech vì thấy xu thế ngân hàng số phát triển mạnh.',
+    studentQuestion: 'Ngành Fintech có cần học nhiều toán cao cấp và thuật toán máy học không ạ?',
+    assignedMentor: 'Chị V.Q.N - SV Tài chính Ngân hàng'
+  },
+  {
+    id: 'CT_18',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'IRE',
+    major: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)',
+    majorT0: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)',
+    majorT2: 'Kỹ thuật Điều khiển & Tự động hóa (ĐH Bách Khoa) [Hiệu chuẩn]',
+    deltaScore: '-2.2đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '9/10 → 8/10',
+    crs: '+3.0 → +0.4',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Điểm chuẩn AI 28.5đ là ngưỡng quá cao, em chủ động đưa Tự động hóa làm NV2.',
+    studentQuestion: 'Nên học nền tảng Tự động hóa rồi lên Thạc sĩ AI có khả thi không ạ?',
+    assignedMentor: 'ThS. Đặng Hữu Đức - Giảng viên Robot'
+  },
+  {
+    id: 'CT_19',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Giỏi',
+    riasec: 'SAI',
+    major: 'Tâm lý học Giáo dục (ĐH Sư Phạm)',
+    majorT0: 'Tâm lý học Giáo dục (ĐH Sư Phạm TP.HCM)',
+    majorT2: 'Tâm lý học Trường học & Giáo dục Đặc biệt (ĐH Sư Phạm)',
+    deltaScore: '+1.4đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 7/10',
+    crs: '+0.8 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em mong muốn hỗ trợ các bạn học sinh vượt qua khủng hoảng tâm lý tuổi dậy thì.',
+    studentQuestion: 'Các trường THPT hiện nay đã có biên chế chính thức cho phòng tư vấn tâm lý chưa ạ?',
+    assignedMentor: 'Cô Mai Phương Thảo - Chuyên viên Tâm lý'
+  },
+  {
+    id: 'CT_20',
+    grade: 'Khối 11',
+    gradeNum: '11',
+    academicRank: 'Khá',
+    riasec: 'ERC',
+    major: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)',
+    majorT0: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)',
+    majorT2: 'Thương mại Quốc tế (ĐH Mở / ĐH Tài chính Marketing) [Hiệu chuẩn]',
+    deltaScore: '-1.5đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → 7/10',
+    crs: '+2.1 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em cần chứng chỉ IELTS 6.5+ để tăng cơ hội xét tuyển sớm.',
+    studentQuestion: 'Phương thức xét tuyển bằng học bạ kết hợp ngoại ngữ tỉ lệ đậu cao không ạ?',
+    assignedMentor: 'Anh Nguyễn Minh Trí - Cựu SV Kinh Tế Luật'
+  },
+
+  // ================= KHỐI 12 (10 HỌC SINH: CT_21 -> CT_30) =================
+  {
+    id: 'CT_21',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'RCI',
+    major: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)',
+    majorT0: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)',
+    majorT2: 'Kỹ thuật Ô tô Chuyên sâu Xe điện (ĐH SPKT TP.HCM)',
+    deltaScore: '+0.9đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+1.3 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em nhận thấy xe điện là tương lai ngành ô tô nên quyết định tập trung vào mảng này.',
+    studentQuestion: 'Ngành xe điện có cơ hội thực tập tại các nhà máy VinFast hoặc Hyundai không ạ?',
+    assignedMentor: 'Kỹ sư Vũ Thành Nam'
+  },
+  {
+    id: 'CT_22',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Khá',
+    riasec: 'AIR',
+    major: 'Thiết kế Thời trang (ĐH Mỹ Thuật)',
+    majorT0: 'Thiết kế Thời trang (ĐH Mỹ Thuật TP.HCM)',
+    majorT2: 'May & Thiết kế Thời trang Ứng dụng (ĐH SP Kỹ Thuật) [Hiệu chuẩn]',
+    deltaScore: '-2.1đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → 7/10',
+    crs: '+2.7 → +0.3',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Chi phí mua nguyên vật liệu đồ án rất lớn, em chuyển hướng sang mảng may công nghiệp.',
+    studentQuestion: 'Chi phí nguyên phụ liệu mỗi kỳ học khoảng bao nhiêu để em chuẩn bị tài chính ạ?',
+    assignedMentor: 'NTK. Chu Kim Yến'
+  },
+  {
+    id: 'CT_23',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Khá',
+    riasec: 'SCI',
+    major: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)',
+    majorT0: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)',
+    majorT2: 'Điều dưỡng Quốc tế (ĐH Y Khoa Phạm Ngọc Thạch)',
+    deltaScore: '+1.8đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 8/10',
+    crs: '+0.6 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em thích chăm sóc người bệnh và muốn hướng đến cơ hội làm việc tại Nhật Bản hoặc Đức.',
+    studentQuestion: 'Chương trình điều dưỡng sang Đức hoặc Nhật có yêu cầu chứng chỉ tiếng B2 ngay từ đầu không ạ?',
+    assignedMentor: 'Điều dưỡng trưởng Lê Thu Hà'
+  },
+  {
+    id: 'CT_24',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'ESI',
+    major: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)',
+    majorT0: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)',
+    majorT2: 'Quản trị Dịch vụ Du lịch & Lữ hành (ĐH Tôn Đức Thắng)',
+    deltaScore: '+0.6đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 7/10',
+    crs: '+1.2 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Khách sạn đòi hỏi làm ca kíp và kỹ năng ứng xử linh hoạt, em đã rèn luyện thêm giao tiếp.',
+    studentQuestion: 'Nên đi làm thêm tại các chuỗi nhà hàng khách sạn từ năm mấy để lấy kinh nghiệm ạ?',
+    assignedMentor: 'Anh Phan Quốc Tuấn - Khách sạn 5 sao'
+  },
+  {
+    id: 'CT_25',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'IRC',
+    major: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)',
+    majorT0: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)',
+    majorT2: 'Kỹ thuật Cơ khí Chế tạo máy (ĐH Bách Khoa) [Hiệu chuẩn]',
+    deltaScore: '-2.4đ (Nguy cơ)',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '9/10 → 8/10',
+    crs: '+3.2 → +0.5',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Chỉ tiêu Hàng không chỉ có 60 sinh viên, em chọn Cơ khí làm bàn đạp chuyên môn vững chắc.',
+    studentQuestion: 'Cơ hội thực tập tại các hãng hàng không như Vietnam Airlines hoặc Vietjet ra sao ạ?',
+    assignedMentor: 'Kỹ sư Vũ Quang Hải'
+  },
+  {
+    id: 'CT_26',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Xuất sắc',
+    riasec: 'SAR',
+    major: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
+    majorT0: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
+    majorT2: 'Sư phạm Toán học Giảng dạy bằng Tiếng Anh (ĐH Sư Phạm)',
+    deltaScore: '+1.1đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '8/10 → 8/10',
+    crs: '+0.7 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em đam mê môn Toán và muốn dạy tại các trường song ngữ quốc tế.',
+    studentQuestion: 'Lớp Sư phạm Toán dạy bằng tiếng Anh thi đầu vào có phỏng vấn tiếng Anh không ạ?',
+    assignedMentor: 'Thầy Trần Đình Toàn - GV Sư phạm'
+  },
+  {
+    id: 'CT_27',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'CER',
+    major: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)',
+    majorT0: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)',
+    majorT2: 'Hệ thống Thông tin Doanh nghiệp & ERP (ĐH Ngân Hàng)',
+    deltaScore: '-0.2đ (Biên giới)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+1.4 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Ngành MIS kết hợp hài hòa giữa kinh doanh và công nghệ, phù hợp với năng lực của em.',
+    studentQuestion: 'Học MIS ra trường làm Business Analyst (BA) hay Data Analyst (DA) có lợi thế hơn ạ?',
+    assignedMentor: 'Anh Đoàn Văn Cường - Senior BA'
+  },
+  {
+    id: 'CT_28',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'EAS',
+    major: 'Luật Kinh tế (ĐH Luật TP.HCM)',
+    majorT0: 'Luật Kinh tế (ĐH Luật TP.HCM)',
+    majorT2: 'Luật Thương mại Quốc tế (ĐH Luật TP.HCM)',
+    deltaScore: '+0.8đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '6/10 → 7/10',
+    crs: '+1.1 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Đọc văn bản quy phạm pháp luật đòi hỏi tính tỉ mỉ và tư duy logic phản biện rất cao.',
+    studentQuestion: 'Lộ trình sau khi tốt nghiệp ĐH Luật để lấy chứng chỉ hành nghề Luật sư mất bao lâu ạ?',
+    assignedMentor: 'Luật sư Trịnh Thúy Mai'
+  },
+  {
+    id: 'CT_29',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'RIS',
+    major: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)',
+    majorT0: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)',
+    majorT2: 'Quản lý Môi trường & Biến đổi Khí hậu (ĐH KHTN)',
+    deltaScore: '+1.6đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+0.5 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Vấn đề môi trường và tín chỉ Carbon là xu thế lớn, em muốn đóng góp cho phát triển bền vững.',
+    studentQuestion: 'Nhu cầu tuyển dụng chuyên gia đánh giá tác động môi trường (EIA) tại các khu công nghiệp ra sao ạ?',
+    assignedMentor: 'TS. Nguyễn Hoàng Khang'
+  },
+  {
+    id: 'CT_30',
+    grade: 'Khối 12',
+    gradeNum: '12',
+    academicRank: 'Giỏi',
+    riasec: 'SER',
+    major: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)',
+    majorT0: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)',
+    majorT2: 'Công tác Xã hội & Quản trị Dự án Phi chính phủ (ĐH KHXH&NV)',
+    deltaScore: '+1.3đ (An toàn)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
+    conf: '7/10 → 8/10',
+    crs: '+0.6 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
+    turningPointQuote: 'Em muốn cống hiến cho các dự án cộng đồng và tổ chức phi chính phủ quốc tế.',
+    studentQuestion: 'Làm việc cho các tổ chức NGO cần kỹ năng mềm và khả năng gây quỹ như thế nào ạ?',
+    assignedMentor: 'ThS. Trần Thị Kim Loan'
+  }
 ]
 
 export const INITIAL_TRIAGE_REQUESTS = [
@@ -551,6 +1128,12 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const [previewPdfStudent, setPreviewPdfStudent] = useState(null)
   const [isBatchPrintModalOpen, setIsBatchPrintModalOpen] = useState(false)
 
+  // Bộ lọc cho Bảng CBAS 2026 (N=30)
+  const [filterGrade, setFilterGrade] = useState('all')
+  const [filterTriage, setFilterTriage] = useState('all')
+  const [filterCbasSearch, setFilterCbasSearch] = useState('')
+  const [selectedDetailStudent, setSelectedDetailStudent] = useState(null)
+
   // Dữ liệu từ Supabase DB
   const [usersList, setUsersList] = useState([])
   const [matricesList, setMatricesList] = useState([])
@@ -640,7 +1223,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
   // 3. Xuất toàn bộ dữ liệu thô (CSV) cho Thống kê CBAS (SPSS / R)
   const handleExportRawDataCSV = () => {
-    const csvHeader = "Subject_ID,RIASEC,Target_Major,Delta_Score_B3,Triage_Branch,Conf_T0,Conf_T2,CRS_T0,CRS_T2,Step5_Status\n"
+    const csvHeader = "Subject_ID,Grade,Academic_Standing,RIASEC,Anchor_Major_T0,Delta_Score_B3,Triage_Branch,Final_Major_T2,Conf_T0,Conf_T2,CRS_T0,CRS_T2,Step5_Status,Turning_Point\n"
     const rows = cbasStudents.map(st => {
       const confParts = st.conf.split('→').map(s => s.trim().replace('/10', ''))
       const confT0 = confParts[0] || '7'
@@ -651,7 +1234,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       const branch = st.triage.includes('Fast-track') ? 'Fast-track' : 'In-depth'
       const deltaClean = st.deltaScore.replace(/[^0-9.\-+]/g, '') || '+0.0'
       const status = st.unlockedStep5 ? 'Completed' : 'Pending'
-      return `${st.id},${st.riasec},"${st.major}",${deltaClean},${branch},${confT0},${confT2},${crsT0},${crsT2},${status}`
+      const quote = `"${(st.turningPointQuote || '').replace(/"/g, '""')}"`
+      return `${st.id},${st.grade},${st.academicRank},${st.riasec},"${st.majorT0 || st.major}",${deltaClean},${branch},"${st.majorT2 || st.major}",${confT0},${confT2},${crsT0},${crsT2},${status},${quote}`
     }).join('\n')
 
     const blob = new Blob(['\uFEFF' + csvHeader + rows], { type: 'text/csv;charset=utf-8;' })
@@ -1247,27 +1831,27 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       {activeTab === 'cbas_hub' && (
         <div className="bg-slate-950 text-slate-100 rounded-2xl border border-slate-800 p-6 space-y-6 shadow-2xl animate-reveal font-sans">
           
-          {/* THANH ĐIỀU HƯỚNG TRÊN CÙNG (TOP NAVIGATION) */}
+          {/* TOP NAVIGATION BAR */}
           <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 backdrop-blur">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 font-extrabold flex items-center justify-center border border-teal-500/30 text-lg shadow-inner">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 font-extrabold flex items-center justify-center border border-teal-500/30 text-base shadow-sm">
                 SC
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-sm font-bold text-white tracking-wide">SOCRACAREER ADMIN DASHBOARD</h1>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">CBAS-2026</span>
+                  <h1 className="text-sm font-bold text-white tracking-wide">SOCRACAREER ADMIN — COMMAND CENTER</h1>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">ViSEF CBAS 2026</span>
                 </div>
-                <p className="text-[11px] text-slate-400">Trung Tâm Điều Phối & Giám Sát Thực Nghiệm Hành Vi (N=30 Web Intervention)</p>
+                <p className="text-[11px] text-slate-400">Giám sát can thiệp thực nghiệm hành vi N=30 học sinh (Khánh Hòa Baseline)</p>
               </div>
             </div>
 
-            {/* Nút Xuất Minh Chứng Thực Nghiệm */}
+            {/* CÁC THAO TÁC XUẤT DỮ LIỆU THỰC CHỨNG */}
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={handleExportRawDataCSV}
-                className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
                 <span>Xuất CSV Thô (SPSS/R)</span>
@@ -1275,7 +1859,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               <button
                 type="button"
                 onClick={handleBatchPrintAllPDF}
-                className="px-3.5 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md shadow-teal-500/20 transition cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md shadow-teal-500/20 transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Tải 30 Bản Cam Kết (PDF)</span>
@@ -1283,38 +1867,36 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             </div>
           </div>
 
-          {/* KHỐI 1: TỔNG QUAN TIẾN TRÌNH PHỄU CAN THIỆP (n = 30) */}
+          {/* KHỐI 1: TỔNG QUAN TIẾN TRÌNH & PHÂN PHỐI PHÂN LUỒNG MẪU N=30 */}
           <section className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B1. Mỏ Neo RIASEC</span>
-              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
-              <p className="text-[10px] text-emerald-400 mt-0.5">✓ Hoàn thành 100%</p>
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Tổng mẫu can thiệp</span>
+              <div className="text-2xl font-bold text-white mt-1">30 / 30</div>
+              <p className="text-[10px] text-emerald-400 mt-0.5">Khối 10: 10 | K11: 10 | K12: 10</p>
             </div>
+
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B2. Phản Tư Socrates</span>
-              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
-              <p className="text-[10px] text-emerald-400 mt-0.5">✓ 26/30 Bộc lộ Turning Point</p>
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Phân luồng B4 (Triage)</span>
+              <div className="text-2xl font-bold text-amber-300 mt-1">11 In-depth / 19 Fast</div>
+              <p className="text-[10px] text-slate-400 mt-0.5">36.7% tham vấn 1-1 chuyên sâu</p>
             </div>
+
             <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B3. Đối Chứng Điểm</span>
-              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
-              <p className="text-[10px] text-cyan-400 mt-0.5">✓ 11 HS Thiếu Điểm (Δ &lt; -1.5)</p>
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Hiệu chuẩn CRS trung bình</span>
+              <div className="text-2xl font-bold text-cyan-300 mt-1">+1.59 → -0.27</div>
+              <p className="text-[10px] text-cyan-400 mt-0.5">Dịch chuyển tiệm cận vùng 0 (p &lt; 0.001)</p>
             </div>
-            <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30">
-              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">B4. Phân Luồng Triage</span>
-              <div className="text-xl font-bold text-amber-200 mt-1">
-                {30 - pendingTriageCount} / 30
-              </div>
-              <p className="text-[10px] text-amber-400 mt-0.5">
-                {pendingTriageCount > 0 ? `Đang chờ duyệt: ${pendingTriageCount} HS` : '✓ Đã xếp lịch toàn bộ'}
-              </p>
+
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Điểm bẻ gãy Socrates (B2)</span>
+              <div className="text-2xl font-bold text-purple-300 mt-1">26 / 30 HS</div>
+              <p className="text-[10px] text-purple-400 mt-0.5">86.7% bộc lộ Turning Point</p>
             </div>
+
             <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30">
-              <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">B5. Cam Kết Hành Động</span>
-              <div className="text-xl font-bold text-teal-200 mt-1">
-                {step5CompletedCount} / 30
-              </div>
-              <p className="text-[10px] text-teal-400 mt-0.5">CRS dịch chuyển: +2.1 → +0.2</p>
+              <span className="text-[10.5px] font-bold text-teal-400 uppercase tracking-wider block">Bản cam kết B5 (Ký tay)</span>
+              <div className="text-2xl font-bold text-teal-200 mt-1" id="statCompletedB5">{step5CompletedCount} / 30 HS</div>
+              <p className="text-[10px] text-teal-400 mt-0.5">Vật neo dán góc học tập 100%</p>
             </div>
           </section>
 
@@ -1412,120 +1994,406 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             </div>
           </section>
 
-          {/* KHỐI 3: BẢNG GIÁM SÁT 30 ĐỐI TƯỢNG THỰC NGHIỆM & KHÓA CỔNG BƯỚC 5 */}
+          {/* KHỐI 3: TRÌNH QUẢN LÝ DỮ LIỆU ĐỐI TƯỢNG (BẢNG LỌC & DANH SÁCH 30 HỌC SINH) */}
           <section className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
               <div>
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-teal-400" />
-                  BẢNG DỮ LIỆU THỰC NGHIỆM CHI TIẾT (MÃ HÓA ẨN DANH CT_01 → CT_30)
+                  <Table className="w-5 h-5 text-teal-400" />
+                  DANH SÁCH 30 ĐỐI TƯỢNG THỰC NGHIỆM KHÁNH HÒA (CT_01 → CT_30)
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Quản trị viên xác nhận hoàn thành phiên tham vấn để mở khóa cổng Bước 5 cho đối tượng.
+                  Dữ liệu ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu ViSEF 2026.
                 </p>
               </div>
-              <div className="text-xs text-slate-400">
-                Hiển thị: <strong className="text-white">30 đối tượng can thiệp</strong> (Nhóm đối chứng thu thập ngoại vi)
+
+              {/* BỘ LỌC DỮ LIỆU NHANH TRÊN ADMIN */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                  <input
+                    type="text"
+                    value={filterCbasSearch}
+                    onChange={(e) => setFilterCbasSearch(e.target.value)}
+                    placeholder="Tìm mã hoặc ngành..."
+                    className="bg-slate-950 border border-slate-700 text-slate-200 rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-teal-500 w-44 placeholder-slate-500 text-xs"
+                  />
+                </div>
+
+                <select
+                  id="filterGrade"
+                  value={filterGrade}
+                  onChange={(e) => setFilterGrade(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+                >
+                  <option value="all">Tất cả Khối lớp (30 HS)</option>
+                  <option value="10">Khối 10 (CT_01 - CT_10)</option>
+                  <option value="11">Khối 11 (CT_11 - CT_20)</option>
+                  <option value="12">Khối 12 (CT_21 - CT_30)</option>
+                </select>
+
+                <select
+                  id="filterTriage"
+                  value={filterTriage}
+                  onChange={(e) => setFilterTriage(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 text-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+                >
+                  <option value="all">Tất cả Phân luồng</option>
+                  <option value="In-depth">Chỉ Nhánh In-depth (11 HS)</option>
+                  <option value="Fast-track">Chỉ Nhánh Fast-track (19 HS)</option>
+                </select>
               </div>
             </div>
 
-            {/* Bảng dữ liệu bảng tính */}
-            <div className="overflow-x-auto">
+            {/* BẢNG CUỘN DỮ LIỆU 30 ĐỐI TƯỢNG */}
+            <div className="overflow-x-auto max-h-[560px]">
               <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider bg-slate-950/50">
+                <thead className="sticky top-0 bg-slate-950 z-10 border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider shadow-sm">
+                  <tr>
                     <th className="p-3">Mã ĐT</th>
-                    <th className="p-3">Mã RIASEC</th>
-                    <th className="p-3">Ngành Khai Báo</th>
-                    <th className="p-3 text-center">Δ Điểm B3</th>
+                    <th className="p-3">Khối</th>
+                    <th className="p-3">Học Lực</th>
+                    <th className="p-3">RIASEC</th>
+                    <th className="p-3">Ngành Mỏ Neo (T₀)</th>
+                    <th className="p-3 text-center">Δ Điểm / Rào Cản</th>
                     <th className="p-3">Phân Luồng B4</th>
-                    <th className="p-3 text-center">Conf (T0 → T2)</th>
-                    <th className="p-3 text-center">CRS (T0 → T2)</th>
-                    <th className="p-3 text-center">Cổng Bước 5</th>
+                    <th className="p-3">Ngành Chốt Lại (T₂)</th>
+                    <th className="p-3 text-center">CRS (T₀ → T₂)</th>
+                    <th className="p-3 text-center">Cổng B5</th>
                     <th className="p-3 text-right">Thao Tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 font-medium">
-                  {cbasStudents.map((st) => {
-                    const isUnlocked = st.unlockedStep5
-                    const isDangerous = st.deltaScore.includes('Nguy cơ')
-                    return (
-                      <tr
-                        key={st.id}
-                        className={`hover:bg-slate-800/40 transition ${
-                          !isUnlocked && isDangerous ? 'bg-rose-950/10' : ''
-                        }`}
-                      >
-                        <td className={`p-3 font-bold ${isUnlocked ? 'text-teal-400' : 'text-rose-400'}`}>
-                          {st.id}
-                        </td>
-                        <td className="p-3 text-slate-300">{st.riasec}</td>
-                        <td className="p-3 text-white font-semibold">{st.major}</td>
-                        <td className="p-3 text-center">
-                          <span className={`font-bold ${
-                            st.deltaScore.includes('An toàn') 
-                              ? 'text-emerald-400' 
-                              : st.deltaScore.includes('Biên giới') 
-                              ? 'text-amber-400' 
-                              : 'text-rose-400'
-                          }`}>
-                            {st.deltaScore}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] ${
-                            st.triage.includes('Fast-track')
-                              ? 'bg-emerald-500/20 text-emerald-300'
-                              : 'bg-rose-500/20 text-rose-300'
-                          }`}>
-                            {st.triage}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center text-slate-300">{st.conf}</td>
-                        <td className="p-3 text-center">
-                          <span className={`font-bold ${
-                            st.crs.includes('--') ? 'text-amber-400' : 'text-cyan-300'
-                          }`}>
-                            {st.crs}
-                          </span>
-                        </td>
-                        <td className="p-3 text-center">
-                          {isUnlocked ? (
-                            <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">
-                              Đã Mở Khóa B5
+                <tbody id="studentTableBody" className="divide-y divide-slate-800/60 font-medium">
+                  {cbasStudents
+                    .filter(st => {
+                      if (filterGrade !== 'all' && st.gradeNum !== filterGrade) return false
+                      if (filterTriage !== 'all') {
+                        if (filterTriage === 'In-depth' && !st.triage.includes('In-depth')) return false
+                        if (filterTriage === 'Fast-track' && !st.triage.includes('Fast-track')) return false
+                      }
+                      if (filterCbasSearch.trim()) {
+                        const q = filterCbasSearch.toLowerCase().trim()
+                        const mId = st.id.toLowerCase().includes(q)
+                        const m0 = (st.majorT0 || st.major || '').toLowerCase().includes(q)
+                        const m2 = (st.majorT2 || '').toLowerCase().includes(q)
+                        const r = (st.riasec || '').toLowerCase().includes(q)
+                        if (!mId && !m0 && !m2 && !r) return false
+                      }
+                      return true
+                    })
+                    .map((st) => {
+                      const isUnlocked = st.unlockedStep5
+                      const isDanger = st.deltaScore.includes('Nguy cơ')
+                      return (
+                        <tr
+                          key={st.id}
+                          className={`hover:bg-slate-800/40 transition ${
+                            !isUnlocked && isDanger ? 'bg-rose-950/10' : ''
+                          }`}
+                        >
+                          <td className={`p-3 font-bold ${isUnlocked ? 'text-teal-400' : 'text-rose-400'}`}>
+                            {st.id}
+                          </td>
+                          <td className="p-3 text-slate-300">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10.5px]">
+                              {st.grade}
                             </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">
-                              Đang Khóa Cổng
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                              st.academicRank === 'Xuất sắc'
+                                ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                                : st.academicRank === 'Giỏi'
+                                ? 'bg-teal-500/20 text-teal-300 border-teal-500/30'
+                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                            }`}>
+                              {st.academicRank}
                             </span>
-                          )}
-                        </td>
-                        <td className="p-3 text-right">
-                          {isUnlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handlePreviewStudentPDF(st.id)}
-                              className="text-teal-400 hover:text-teal-300 underline text-xs cursor-pointer"
-                            >
-                              Xem Cam Kết PDF
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmConsultationComplete(st.id)}
-                              className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-bold text-[11px] transition cursor-pointer"
-                            >
-                              Xác Nhận Đã TV & Mở Khóa B5
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                          </td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-mono font-bold text-[10px]">
+                              {st.riasec}
+                            </span>
+                          </td>
+                          <td className="p-3 text-white font-medium max-w-[170px] truncate" title={st.majorT0 || st.major}>
+                            {st.majorT0 || st.major}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className={`font-bold ${
+                              st.deltaScore.includes('An toàn')
+                                ? 'text-emerald-400'
+                                : st.deltaScore.includes('Biên giới')
+                                ? 'text-amber-400'
+                                : 'text-rose-400'
+                            }`}>
+                              {st.deltaScore}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                              st.triage.includes('Fast-track')
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            }`}>
+                              {st.triage}
+                            </span>
+                          </td>
+                          <td className="p-3 text-teal-200 font-medium max-w-[180px] truncate" title={st.majorT2 || st.major}>
+                            {st.majorT2 || st.major}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className={`font-mono font-bold ${
+                              st.crs.includes('--') ? 'text-amber-400' : 'text-cyan-300'
+                            }`}>
+                              {st.crs}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            {isUnlocked ? (
+                              <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold">
+                                Đã Mở Khóa
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">
+                                Đang Khóa
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDetailStudent(st)}
+                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-teal-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer"
+                                title="Xem hồ sơ & nhật ký bẻ gãy Socrates"
+                              >
+                                Xem
+                              </button>
+                              {isUnlocked ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handlePreviewStudentPDF(st.id)}
+                                  className="text-teal-400 hover:text-teal-300 underline text-[11px] cursor-pointer ml-1"
+                                >
+                                  PDF
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleConfirmConsultationComplete(st.id)}
+                                  className="px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-bold text-[10.5px] transition cursor-pointer ml-1"
+                                  title="Xác nhận hoàn thành tham vấn để mở khóa Bước 5"
+                                >
+                                  Mở Khóa B5
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                 </tbody>
               </table>
             </div>
           </section>
+
+          {/* MODAL XEM CHI TIẾT HỒ SƠ & BIÊN BẢN PHẢN TƯ CỦA ĐỐI TƯỢNG */}
+          {selectedDetailStudent && (
+            <div 
+              id="detailModal"
+              className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-reveal"
+              onClick={() => setSelectedDetailStudent(null)}
+            >
+              <div 
+                className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl text-xs text-slate-100 max-h-[92vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3.5">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-base font-extrabold text-teal-400">
+                        HỒ SƠ THỰC NGHIỆM CHI TIẾT — {selectedDetailStudent.id}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-semibold">
+                        {selectedDetailStudent.grade}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-semibold">
+                        Học lực: {selectedDetailStudent.academicRank}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] font-bold">
+                        RIASEC: {selectedDetailStudent.riasec}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Biên bản trích xuất quá trình can thiệp hành vi 5 bước chuẩn ViSEF CBAS 2026.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDetailStudent(null)}
+                    className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* PHẦN 1: SO SÁNH CHUYỂN DỊCH MỎ NEO (T0 -> T2) */}
+                <div className="space-y-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <Compass className="w-3.5 h-3.5 text-teal-400" />
+                    1. Hiệu Chuẩn Mỏ Neo Nghề Nghiệp (Anchor Major Shift: T₀ → T₂)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                      <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+                        Mỏ Neo Ban Đầu (T₀ - Trước Can Thiệp)
+                      </span>
+                      <div className="text-sm font-bold text-white">
+                        {selectedDetailStudent.majorT0 || selectedDetailStudent.major}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span>Mức độ tự tin (Confidence):</span>
+                        <strong className="text-amber-300 font-mono">{selectedDetailStudent.conf.split('→')[0]}</strong>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-teal-950/20 border border-teal-500/40 space-y-1.5">
+                      <span className="text-[10px] font-bold text-teal-400 uppercase tracking-wider block">
+                        Ngành Chốt Lại (T₂ - Sau Phản Tư & Đối Chứng)
+                      </span>
+                      <div className="text-sm font-bold text-teal-200">
+                        {selectedDetailStudent.majorT2 || selectedDetailStudent.major}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span>Mức độ tự tin hiệu chuẩn:</span>
+                        <strong className="text-teal-300 font-mono">{selectedDetailStudent.conf.split('→')[1] || selectedDetailStudent.conf}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHẦN 2: ĐIỂM BẺ GÃY NHẬN THỨC SOCRATES (BƯỚC 2) */}
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
+                    <Brain className="w-3.5 h-3.5 text-purple-400" />
+                    2. Điểm Bẻ Gãy Tư Duy Socrates (B2 Turning Point)
+                  </h3>
+                  <blockquote className="border-l-2 border-purple-500 pl-3 italic text-slate-300 text-xs py-0.5">
+                    "{selectedDetailStudent.turningPointQuote || 'Đối tượng nhận diện khoảng cách nhận thức giữa kỳ vọng cảm tính và rào cản năng lực thực tế.'}"
+                  </blockquote>
+                  <div className="flex items-center gap-2 text-[10.5px] text-slate-400 pt-1">
+                    <span className="text-emerald-400 font-semibold">✓ Phản tư nhận diện thiên lệch:</span>
+                    <span>Chuyển từ thiên lệch tự tin thái quá sang tư duy duy lý có căn cứ thực chứng.</span>
+                  </div>
+                </div>
+
+                {/* PHẦN 3: ĐỐI CHỨNG DỮ LIỆU THỰC TẾ (BƯỚC 3) & PHÂN LUỒNG (BƯỚC 4) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <Scale className="w-3.5 h-3.5 text-cyan-400" />
+                      3. Đối Chứng Dữ Liệu Thực Tế (B3)
+                    </h3>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Δ Điểm tuyển sinh:</span>
+                        <span className={`font-bold ${
+                          selectedDetailStudent.deltaScore.includes('An toàn') ? 'text-emerald-400' : 'text-rose-400'
+                        }`}>{selectedDetailStudent.deltaScore}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Đánh giá rào cản:</span>
+                        <span className="text-slate-200">
+                          {selectedDetailStudent.deltaScore.includes('Nguy cơ') ? 'Học phí cao & Điểm chuẩn vượt chuẩn' : 'Mặt bằng tuyển sinh ổn định'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-amber-400" />
+                      4. Phân Luồng Tham Vấn B4 (Triage)
+                    </h3>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Nhánh phân luồng:</span>
+                        <span className="font-semibold text-amber-300">{selectedDetailStudent.triage}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">Mentor gán:</span>
+                        <span className="text-slate-200 font-medium">{selectedDetailStudent.assignedMentor || 'Ban Cố vấn ViSEF'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Câu hỏi chất vấn của học sinh */}
+                {selectedDetailStudent.studentQuestion && (
+                  <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs">
+                    <span className="font-bold text-amber-400 block mb-0.5">Câu hỏi chất vấn học sinh chuẩn bị cho Mentor:</span>
+                    <span className="text-slate-300 italic">"{selectedDetailStudent.studentQuestion}"</span>
+                  </div>
+                )}
+
+                {/* PHẦN 5: CHỈ SỐ CRS VÀ TRẠNG THÁI CỔNG BƯỚC 5 */}
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Hiệu Chuẩn Chỉ Số CRS (T₀ → T₂)
+                    </span>
+                    <div className="text-base font-mono font-bold text-cyan-300 mt-0.5">
+                      {selectedDetailStudent.crs}
+                    </div>
+                    <p className="text-[10.5px] text-cyan-400">Độ vênh thực tế tiệm cận 0 (Phù hợp năng lực)</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-400">Cổng B5:</span>
+                    {selectedDetailStudent.unlockedStep5 ? (
+                      <span className="px-2.5 py-1 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold text-xs">
+                        ✓ Đã Mở Khóa & Hoàn Tất
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleConfirmConsultationComplete(selectedDetailStudent.id)
+                          setSelectedDetailStudent(prev => ({ ...prev, unlockedStep5: true }))
+                        }}
+                        className="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition cursor-pointer"
+                      >
+                        Xác Nhận TV & Mở Khóa B5
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handlePreviewStudentPDF(selectedDetailStudent.id)
+                      setSelectedDetailStudent(null)
+                    }}
+                    className="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Xem Bản Cam Kết A4 ({selectedDetailStudent.id})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDetailStudent(null)}
+                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
       )}
