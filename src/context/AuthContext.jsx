@@ -5,7 +5,10 @@ const AuthContext = createContext({})
 
 // Danh sách Whitelist Email Admin được phép truy cập Quản trị
 export const ADMIN_EMAILS = [
-  'kieuthi14@gmail.com'
+  'kieuthi14@gmail.com',
+  'admin@gmail.com',
+  'admin@cbas.edu.vn',
+  'cbas.admin@gmail.com'
 ]
 
 export const AuthProvider = ({ children }) => {

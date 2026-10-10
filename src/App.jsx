@@ -87,7 +87,7 @@ const AdminProtectedRoute = ({ children }) => {
   }
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
-  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail))
+  const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || profile?.role === 'admin' || profile?.role === 'teacher' || user?.user_metadata?.role === 'admin'
 
   // 2. Nếu là Học sinh (hoặc tài khoản không phải Admin) truy cập vào link admin -> TỰ ĐỘNG CHUYỂN VỀ TRANG HỌC SINH
   if (!isTeacherAdmin) {
