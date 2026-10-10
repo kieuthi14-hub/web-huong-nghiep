@@ -64,11 +64,27 @@ export const parseMeetingInfo = (notes) => {
   return { meetingUrl, locationText, cleanMessage }
 }
 
-// Hàm trích xuất thông tin liên hệ của học sinh (SĐT/Zalo, Lớp/Trường, Câu hỏi) từ student_notes
+// Hàm trích xuất thông tin liên hệ và hồ sơ đối chất của học sinh từ student_notes
 export const parseStudentContact = (notes) => {
-  if (!notes || typeof notes !== 'string') return { phone: null, schoolClass: null, question: '' }
+  if (!notes || typeof notes !== 'string') return { phone: null, schoolClass: null, question: '', studentCode: null, targetMajor: null, scoreGap: null, meetType: null }
   
-  // 1. Số điện thoại từ tag [Liên hệ SĐT/Zalo: ...]
+  // 1. Mã HS định danh chuẩn ViSEF
+  const codeMatch = notes.match(/\[(?:Mã HS|Mã đối tượng|Mã định danh):\s*([^\]]+)\]/i)
+  const studentCode = codeMatch ? codeMatch[1].trim() : null
+
+  // 2. Ngành chọn mục tiêu
+  const majorMatch = notes.match(/\[(?:Ngành chọn|Ngành|Ngành mục tiêu):\s*([^\]]+)\]/i)
+  const targetMajor = majorMatch ? majorMatch[1].trim() : null
+
+  // 3. Điểm lệch Bước 3
+  const gapMatch = notes.match(/\[(?:Điểm lệch Bước 3|Điểm lệch B3|Độ lệch B3|Score Gap):\s*([^\]]+)\]/i)
+  const scoreGap = gapMatch ? gapMatch[1].trim() : null
+
+  // 4. Hình thức hẹn
+  const typeMatch = notes.match(/\[(?:Hình thức|Phương thức):\s*([^\]]+)\]/i)
+  const meetType = typeMatch ? typeMatch[1].trim() : null
+
+  // 5. Số điện thoại từ tag [Liên hệ SĐT/Zalo: ...]
   const phoneMatch = notes.match(/\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):\s*([^\]]+)\]/i)
   let phone = phoneMatch ? phoneMatch[1].trim() : null
   if (!phone) {
@@ -76,23 +92,21 @@ export const parseStudentContact = (notes) => {
     if (phoneRegexMatch) phone = phoneRegexMatch[0].trim()
   }
 
-  // 2. Lớp/Trường từ tag [Lớp/Trường: ...]
+  // 6. Lớp/Trường từ tag [Lớp/Trường: ...]
   const classMatch = notes.match(/\[(?:Lớp\/Trường|Lớp|Trường):\s*([^\]]+)\]/i)
   const schoolClass = classMatch ? classMatch[1].trim() : null
 
-  // 3. Câu hỏi băn khoăn thực tế của học sinh
+  // 7. Câu hỏi chất vấn băn khoăn thực tế của học sinh (loại bỏ các thẻ tag metadata)
   const lines = notes.split('\n')
   const questionLines = lines.filter(line => {
     const trimmed = line.trim()
     if (!trimmed) return false
-    if (trimmed.startsWith('[Chuyên gia/Mentor:')) return false
-    if (/^\[(?:Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại):/i.test(trimmed)) return false
-    if (/^\[(?:Lớp\/Trường|Lớp|Trường):/i.test(trimmed)) return false
+    if (/^\[(?:Mã HS|Mã đối tượng|Mã định danh|Ngành chọn|Ngành|Ngành mục tiêu|Điểm lệch Bước 3|Điểm lệch B3|Độ lệch B3|Score Gap|Chuyên gia\/Mentor|Hình thức|Phương thức|Liên hệ SĐT\/Zalo|SĐT\/Zalo|SĐT|Zalo|Số điện thoại|Lớp\/Trường|Lớp|Trường):/i.test(trimmed)) return false
     return true
   })
   const question = questionLines.join('\n').trim()
 
-  return { phone, schoolClass, question }
+  return { phone, schoolClass, question, studentCode, targetMajor, scoreGap, meetType }
 }
 
 // Bản đồ Ánh xạ Mã Mentor sang Tên hiển thị thực tế
@@ -105,6 +119,8 @@ export const mentorMap = {
   'MT_BA01': 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
   'MT_FI01': 'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng (ĐH Ngoại Thương)',
   'MT_MK01': 'Chị L.T.H - Chuyên viên Marketing (Cựu SV ĐH Nha Trang)',
+  'MT_MC01': 'Chị H.T.T - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+  'MT_ED01': 'Chị N.H.P - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
   
   // UUIDs & Legacy Mappings
   '11111111-1111-1111-1111-111111111111': 'Thầy Nguyễn Văn A (Cố vấn Hướng nghiệp)',
@@ -213,6 +229,33 @@ export const COUNSELOR_GROUPS = [
         groupKey: 'economics_finance',
         badgeLabel: '💼 Cựu SV',
         badgeClass: 'bg-amber-100 text-amber-800 border-amber-300'
+      }
+    ]
+  },
+  {
+    groupKey: 'education_social',
+    groupName: '🎨 MENTOR NHÓM SƯ PHẠM, TRUYỀN THÔNG & XÃ HỘI',
+    badgeLabel: '🎨 Xã hội & Sư phạm',
+    badgeClass: 'bg-purple-100 text-purple-800 border-purple-300',
+    icon: GraduationCap,
+    counselors: [
+      {
+        id: 'MT_MC01',
+        name: 'Chị H.T.T',
+        title: 'SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+        fullName: 'Chị H.T.T - SV Năm 3 Báo chí & Truyền thông (ĐH KHXH&NV)',
+        groupKey: 'education_social',
+        badgeLabel: '🚀 Mentor SV',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      },
+      {
+        id: 'MT_ED01',
+        name: 'Chị N.H.P',
+        title: 'SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+        fullName: 'Chị N.H.P - SV Năm 3 Sư phạm Tiếng Anh (ĐH Sư Phạm Quy Nhơn)',
+        groupKey: 'education_social',
+        badgeLabel: '🚀 Mentor SV',
+        badgeClass: 'bg-indigo-100 text-indigo-800 border-indigo-300'
       }
     ]
   }
@@ -490,12 +533,13 @@ const CounselingBooking = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Form states cho đặt lịch online (phụ trợ)
+  // Form states cho đặt lịch online đối chất 1-1
   const [selectedMentor, setSelectedMentor] = useState('')
   const [meetType, setMeetType] = useState('Google Meet')
   const [appointmentTime, setAppointmentTime] = useState('')
   const [studentQuestions, setStudentQuestions] = useState('')
   const [booking, setBooking] = useState(null)
+  const [isEditingBooking, setIsEditingBooking] = useState(false)
   const [nextStepVisible, setNextStepVisible] = useState(false)
   
   // Feedback Form State (Biên bản sau buổi gặp 4B)
@@ -683,7 +727,7 @@ const CounselingBooking = () => {
     }, 1000)
   }
 
-  // Khởi tạo và đọc dữ liệu đã lưu
+  // Khởi tạo và đọc dữ liệu đã lưu + Đăng ký Realtime & Polling
   useEffect(() => {
     try {
       const stored = localStorage.getItem("cbas_step4_booking")
@@ -700,13 +744,54 @@ const CounselingBooking = () => {
       console.warn("Lỗi đọc cbas_step4_booking:", e)
     }
 
+    const studentId = user?.id || profile?.id || '738d7200-cf50-444d-94e3-6afb1352e0f0'
     fetchMySessions()
+
+    // 1. Lắng nghe thay đổi Realtime từ Supabase DB
+    let channel = null
+    try {
+      if (supabase && typeof supabase.channel === 'function') {
+        channel = supabase
+          .channel(`public:counseling_sessions_student_${studentId}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'counseling_sessions' },
+            (payload) => {
+              console.log('⚡ [Student Realtime] Nhận thay đổi lịch hẹn:', payload)
+              fetchMySessions()
+            }
+          )
+          .subscribe()
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối Supabase channel realtime:', e)
+    }
+
+    // 2. Lắng nghe storage event (cho phép đồng bộ tức thì trên cùng trình duyệt khác tab giữa Admin & Học sinh)
+    const handleStorageChange = (e) => {
+      if (!e || !e.key || e.key.includes('counseling') || e.key.includes('step4')) {
+        fetchMySessions()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
+    // 3. Polling dự phòng mỗi 4 giây
+    const pollInterval = setInterval(() => {
+      fetchMySessions()
+    }, 4000)
+
+    return () => {
+      if (channel && typeof channel.unsubscribe === 'function') {
+        channel.unsubscribe()
+      }
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(pollInterval)
+    }
   }, [user])
 
-  // Tải danh sách lịch hẹn từ Supabase / Local
+  // Tải danh sách lịch hẹn từ Supabase / Local và cập nhật Stepper
   const fetchMySessions = async () => {
     const studentId = user?.id || profile?.id || '738d7200-cf50-444d-94e3-6afb1352e0f0'
-    setIsLoading(true)
     const localItems = getLocalSessions(studentId)
     try {
       const { data, error } = await supabase
@@ -715,33 +800,77 @@ const CounselingBooking = () => {
         .eq('student_id', studentId)
         .order('created_at', { ascending: false })
 
+      let targetSession = null
       if (!error && Array.isArray(data) && data.length > 0) {
         setMySessions(data)
-        const latest = data[0]
-        const meetInfo = parseMeetingInfo(latest.counselor_notes)
-        const mentorName = latest.student_notes?.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)?.[1] || mentorMap[latest.counselor_id] || 'Cố vấn Hướng nghiệp'
-        const meetTypeVal = latest.student_notes?.match(/\[Hình thức:\s*([^\]]+)\]/)?.[1] || 'Google Meet'
-
-        setBooking({
-          id: latest.id,
-          mentor_id: latest.counselor_id,
-          mentor_name: mentorName,
-          meeting_time: latest.scheduled_at,
-          meeting_type: meetTypeVal,
-          status: latest.status || 'pending',
-          meet_url: meetInfo.meetingUrl,
-          location: meetInfo.locationText,
-          counselor_notes: latest.counselor_notes
-        })
-        setNextStepVisible(true)
+        targetSession = data[0]
       } else if (localItems.length > 0) {
         setMySessions(localItems)
+        targetSession = localItems[0]
+      }
+
+      if (targetSession) {
+        const meetInfo = parseMeetingInfo(targetSession.counselor_notes)
+        const contactInfo = parseStudentContact(targetSession.student_notes)
+        const mentorName = targetSession.student_notes?.match(/\[Chuyên gia\/Mentor:\s*([^\]]+)\]/)?.[1] || mentorMap[targetSession.counselor_id] || 'Ban Cố vấn Hướng nghiệp'
+        const meetTypeVal = contactInfo.meetType || targetSession.student_notes?.match(/\[Hình thức:\s*([^\]]+)\]/)?.[1] || 'Google Meet'
+
+        const updatedBooking = {
+          id: targetSession.id,
+          student_code: contactInfo.studentCode || displayStudentCode,
+          target_major: contactInfo.targetMajor || dossierData.targetMajor,
+          score_gap: contactInfo.scoreGap || formattedScoreGap,
+          mentor_id: targetSession.counselor_id,
+          mentor_name: mentorName,
+          meeting_time: targetSession.scheduled_at,
+          meeting_type: meetTypeVal,
+          questions: contactInfo.question,
+          status: targetSession.status || 'pending',
+          meet_url: meetInfo.meetingUrl,
+          location: meetInfo.locationText,
+          counselor_notes: targetSession.counselor_notes
+        }
+
+        // Tự động mở khóa Bước 5 nếu đã hoàn thành (completed)
+        if (targetSession.status === 'completed') {
+          localStorage.setItem('cbas_step4_completed', 'true')
+          localStorage.setItem('cbas_step4_consultation_completed', 'true')
+        }
+
+        setBooking(prev => {
+          // Thông báo Toast chuyển trạng thái
+          if (prev && prev.status === 'pending' && (targetSession.status === 'confirmed' || targetSession.status === 'approved')) {
+            setToast({ type: 'success', message: '🎉 Tuyệt vời! Admin & Mentor đã DUYỆT và xếp lịch hẹn thành công cho em!' })
+          } else if (prev && prev.status !== 'completed' && targetSession.status === 'completed') {
+            setToast({ type: 'success', message: '🏆 Ban Quản trị / Mentor đã xác nhận hoàn thành Bước 4! Đã mở khóa Bước 5.' })
+          }
+          return updatedBooking
+        })
+        setNextStepVisible(true)
+
+        // Cập nhật lại cache booking
+        try {
+          localStorage.setItem('cbas_step4_booking', JSON.stringify(updatedBooking))
+        } catch (e) {}
+      } else {
+        // Kiểm tra xem trong localStorage có booking lưu sẵn không
+        try {
+          const s = localStorage.getItem('cbas_step4_booking')
+          if (s) {
+            const pb = JSON.parse(s)
+            setBooking(pb)
+            if (pb.status === 'completed') {
+              localStorage.setItem('cbas_step4_completed', 'true')
+              localStorage.setItem('cbas_step4_consultation_completed', 'true')
+            }
+          }
+        } catch (e) {}
       }
     } catch (error) {
       console.warn('Lỗi fetch lịch hẹn:', error)
-      setMySessions(localItems)
-    } finally {
-      setIsLoading(false)
+      if (localItems.length > 0) {
+        setMySessions(localItems)
+      }
     }
   }
 
@@ -749,13 +878,13 @@ const CounselingBooking = () => {
   const handleBookingStep4 = async (e) => {
     if (e && e.preventDefault) e.preventDefault()
 
-    const mentor = document.getElementById("mentorSelect")?.value || selectedMentor
-    const time = document.getElementById("appointmentTime")?.value || appointmentTime
-    const questions = (document.getElementById("studentQuestions")?.value || studentQuestions).trim()
-    const currentMeetType = document.querySelector('input[name="meetType"]:checked')?.value || meetType || "Google Meet"
+    const mentor = selectedMentor || document.getElementById("mentorSelect")?.value
+    const time = appointmentTime || document.getElementById("appointmentTime")?.value
+    const questions = (studentQuestions || document.getElementById("studentQuestions")?.value || '').trim()
+    const currentMeetType = meetType || document.querySelector('input[name="meetType"]:checked')?.value || "Google Meet"
 
     if (!mentor || !time || !questions) {
-      alert("Vui lòng điền đầy đủ thông tin và câu hỏi chất vấn!")
+      setToast({ type: 'warning', message: 'Vui lòng chọn Mentor, khung giờ rảnh và điền câu hỏi chất vấn chuẩn bị trước!' })
       return
     }
 
@@ -770,13 +899,22 @@ const CounselingBooking = () => {
       }
     } catch (e) {}
 
-    // Payload chuẩn CSDL Supabase
+    // Payload chuẩn CSDL Supabase chứa đầy đủ tag mã HS, ngành chọn, điểm lệch B3
+    const studentNotesPayload = [
+      `[Mã HS: ${displayStudentCode}]`,
+      `[Ngành chọn: ${dossierData.targetMajor}]`,
+      `[Điểm lệch Bước 3: ${formattedScoreGap}]`,
+      `[Chuyên gia/Mentor: ${counselorFullName}]`,
+      `[Hình thức: ${currentMeetType}]`,
+      `Câu hỏi chất vấn: ${questions}`
+    ].join('\n')
+
     const syncPayload = {
       student_id: studentId,
-      counselor_id: '11111111-1111-1111-1111-111111111111',
+      counselor_id: mentor && mentor.length === 36 ? mentor : '11111111-1111-1111-1111-111111111111',
       scheduled_at: scheduledTimestamp,
       status: 'pending',
-      student_notes: `[Chuyên gia/Mentor: ${counselorFullName}]\n[Hình thức: ${currentMeetType}]\n${questions}`
+      student_notes: studentNotesPayload
     }
 
     let createdSession = null
@@ -809,26 +947,39 @@ const CounselingBooking = () => {
 
     const bookingData = {
       id: createdSession.id,
+      student_code: displayStudentCode,
+      target_major: dossierData.targetMajor,
+      score_gap: formattedScoreGap,
       mentor_id: mentor,
       mentor_name: counselorFullName,
       meeting_time: time,
       meeting_type: currentMeetType,
       questions: questions,
       status: "pending",
-      meet_url: null
+      meet_url: null,
+      location: null,
+      created_at: new Date().toISOString()
     }
 
     localStorage.setItem("cbas_step4_booking", JSON.stringify(bookingData))
     setBooking(bookingData)
+    setIsEditingBooking(false)
     setNextStepVisible(true)
 
     fetchMySessions()
-    setToast({ type: 'success', message: '🎉 Đã gửi lịch hẹn sang Cố vấn/Admin thành công!' })
+    setToast({ type: 'success', message: '🎉 Đã gửi lịch hẹn sang Ban Quản trị & Mentor! Đang chờ duyệt...' })
+    try {
+      window.dispatchEvent(new Event('storage'))
+    } catch (e) {}
   }
 
-  // Điều hướng sang Bước 5
+  // Điều hướng sang Bước 5 (Mở khóa Bước 5)
   const goToStep5 = () => {
-    navigate("/nhat-ky-ra-quyet-dinh")
+    try {
+      localStorage.setItem('cbas_step4_completed', 'true')
+      localStorage.setItem('cbas_step4_consultation_completed', 'true')
+    } catch (e) {}
+    navigate("/student/reflection")
   }
 
   // Đăng ký các hàm ra global window để hỗ trợ cả code vanilla inline
@@ -843,6 +994,12 @@ const CounselingBooking = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
+      case 'completed':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 bg-purple-100 text-purple-800 border border-purple-300 rounded-sm">
+            <CheckCircle2 className="w-3 h-3 text-purple-600" /> 🏆 Đã hoàn thành (Mở khóa Bước 5)
+          </span>
+        )
       case 'confirmed':
       case 'approved':
         return (
@@ -1220,83 +1377,473 @@ const CounselingBooking = () => {
             </div>
           </div>
 
-          {/* (TÙY CHỌN PHỤ TRỢ): FORM ĐẶT LỊCH TRỰC TUYẾN / KIỂM TRA LỊCH HẸN */}
-          <div className="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-            <button
-              type="button"
-              onClick={() => setShowOnlineBooking(!showOnlineBooking)}
-              className="w-full flex items-center justify-between text-left text-xs font-bold text-slate-700 hover:text-indigo-600 transition p-2 cursor-pointer"
-            >
-              <span className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-indigo-600" />
-                📅 Đặt Lịch Hẹn Trực Tuyến / Tra Cứu Phòng Họp (Nếu Chưa Gặp Trực Tiếp)
-              </span>
-              <span>{showOnlineBooking ? '▲ Thu gọn' : '▼ Mở rộng để xem'}</span>
-            </button>
+          {/* ========================================================================= */}
+          {/* QUY TRÌNH TƯƠNG TÁC ĐẶT LỊCH VÀ XẾP LỊCH 1-1 PHÂN LUỒNG 1 (ADAPTIVE TRIAGE) */}
+          {/* ========================================================================= */}
+          <div className="no-print bg-white rounded-2xl border-2 border-indigo-200 shadow-sm p-6 space-y-6">
+            
+            {/* THANH TIẾN TRÌNH STEPPER 3 NẤC */}
+            <div className="border-b border-slate-100 pb-5">
+              <div className="flex items-center justify-between max-w-2xl mx-auto px-2">
+                {/* Nấc 1 */}
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs transition-colors ${
+                    booking ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white ring-4 ring-indigo-100'
+                  }`}>
+                    {booking ? '✓' : '1'}
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-800 mt-1.5 text-center">1. Đăng ký đối chất</span>
+                  <span className={`text-[10px] font-semibold ${booking ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                    {booking ? 'Đã gửi' : 'Đang thực hiện'}
+                  </span>
+                </div>
 
-            {showOnlineBooking && (
-              <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-                {/* Form đặt lịch */}
-                <form id="step4BookingForm" onSubmit={handleBookingStep4} className="space-y-3">
+                <div className={`h-0.5 flex-1 transition-colors ${
+                  booking?.status === 'confirmed' || booking?.status === 'approved' || booking?.status === 'completed'
+                    ? 'bg-emerald-500'
+                    : booking ? 'bg-amber-400' : 'bg-slate-200'
+                }`} />
+
+                {/* Nấc 2 */}
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs transition-colors ${
+                    booking?.status === 'completed'
+                      ? 'bg-emerald-600 text-white'
+                      : booking?.status === 'confirmed' || booking?.status === 'approved'
+                      ? 'bg-emerald-600 text-white ring-4 ring-emerald-100'
+                      : booking?.status === 'pending'
+                      ? 'bg-amber-500 text-white ring-4 ring-amber-100 animate-pulse'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {booking?.status === 'confirmed' || booking?.status === 'approved' || booking?.status === 'completed' ? '✓' : '2'}
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-800 mt-1.5 text-center">2. Admin & Mentor xếp lịch</span>
+                  <span className={`text-[10px] font-semibold ${
+                    booking?.status === 'confirmed' || booking?.status === 'approved' || booking?.status === 'completed'
+                      ? 'text-emerald-600'
+                      : booking?.status === 'pending'
+                      ? 'text-amber-600'
+                      : 'text-slate-400'
+                  }`}>
+                    {booking?.status === 'confirmed' || booking?.status === 'approved' || booking?.status === 'completed'
+                      ? 'Đã xác nhận'
+                      : booking?.status === 'pending'
+                      ? 'Chờ duyệt'
+                      : 'Chưa xếp'}
+                  </span>
+                </div>
+
+                <div className={`h-0.5 flex-1 transition-colors ${
+                  booking?.status === 'completed' ? 'bg-purple-500' : 'bg-slate-200'
+                }`} />
+
+                {/* Nấc 3 */}
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shadow-xs transition-colors ${
+                    booking?.status === 'completed'
+                      ? 'bg-purple-600 text-white ring-4 ring-purple-100'
+                      : 'bg-slate-200 text-slate-500'
+                  }`}>
+                    {booking?.status === 'completed' ? '✓' : '3'}
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-800 mt-1.5 text-center">3. Mở khóa Bước 5</span>
+                  <span className={`text-[10px] font-semibold ${
+                    booking?.status === 'completed' ? 'text-purple-600 font-bold' : 'text-slate-400'
+                  }`}>
+                    {booking?.status === 'completed' ? 'Đã mở khóa' : 'Chờ hoàn thành'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* TRƯỜNG HỢP 1: ĐÃ CÓ LỊCH HẸN VÀ KHÔNG Ở CHẾ ĐỘ CHỈNH SỬA -> HIỂN THỊ THẺ TRẠNG THÁI */}
+            {booking && !isEditingBooking ? (
+              <div className="space-y-4">
+                
+                {/* 1.1 TRẠNG THÁI: CHỜ PHÊ DUYỆT (PENDING) */}
+                {(!booking.status || booking.status === 'pending') && (
+                  <div className="bg-amber-50/90 border-2 border-amber-300 rounded-xl p-5 md:p-6 space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                          <Clock className="w-4 h-4 animate-spin" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-300">
+                            TRẠNG THÁI: CHỜ PHÊ DUYỆT
+                          </span>
+                          <h4 className="text-sm md:text-base font-extrabold text-slate-900 mt-0.5">
+                            Yêu Cầu Đã Gửi — Đang Chờ Admin & Mentor Phê Duyệt
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            fetchMySessions()
+                            setToast({ type: 'info', message: 'Đang kiểm tra và đồng bộ trạng thái mới nhất từ hệ thống...' })
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Kiểm tra lại</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingBooking(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                        >
+                          <span>Sửa thông tin</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tóm tắt hồ sơ đối chất đã gửi */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 bg-white rounded-lg border border-amber-200 space-y-1">
+                        <span className="text-slate-500 font-semibold">Mã định danh HS:</span>
+                        <p className="font-extrabold text-indigo-700 text-sm">{booking.student_code || displayStudentCode}</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-lg border border-amber-200 space-y-1">
+                        <span className="text-slate-500 font-semibold">Ngành chọn & Độ lệch B3:</span>
+                        <p className="font-bold text-slate-800">
+                          {booking.target_major || dossierData.targetMajor} 
+                          <span className="ml-1.5 font-extrabold text-rose-600">({booking.score_gap || formattedScoreGap})</span>
+                        </p>
+                      </div>
+                      <div className="p-3 bg-white rounded-lg border border-amber-200 space-y-1">
+                        <span className="text-slate-500 font-semibold">Chuyên gia / Mentor mong muốn:</span>
+                        <p className="font-bold text-slate-900">{booking.mentor_name}</p>
+                      </div>
+                      <div className="p-3 bg-white rounded-lg border border-amber-200 space-y-1">
+                        <span className="text-slate-500 font-semibold">Khung giờ & Hình thức:</span>
+                        <p className="font-bold text-slate-900">
+                          {formatDateTimeFormatted(booking.meeting_time)} • <span className="text-indigo-600">{booking.meeting_type}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Câu hỏi đã chuẩn bị */}
+                    {booking.questions && (
+                      <div className="p-3 bg-white/90 rounded-lg border border-amber-200 text-xs space-y-1">
+                        <span className="font-bold text-amber-900">Câu hỏi chất vấn đã chuẩn bị:</span>
+                        <p className="text-slate-700 italic whitespace-pre-line leading-relaxed">{booking.questions}</p>
+                      </div>
+                    )}
+
+                    <div className="p-3 bg-amber-100/70 rounded-lg border border-amber-300 text-xs text-amber-900 font-medium leading-relaxed flex items-start gap-2">
+                      <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                      <span>
+                        Ban Quản trị đang đối chiếu lịch trống của Mentor. Ngay khi Admin chấp thuận & xếp lịch, 
+                        đường link Google Meet hoặc phòng gặp trực tiếp sẽ <strong>tự động xuất hiện tại đây mà không cần tải lại trang</strong>!
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 1.2 TRẠNG THÁI: ĐÃ XÁC NHẬN (CONFIRMED) */}
+                {(booking.status === 'confirmed' || booking.status === 'approved') && (
+                  <div className="bg-emerald-50/90 border-2 border-emerald-400 rounded-xl p-5 md:p-6 space-y-4 shadow-sm animate-reveal">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-200 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
+                            TRẠNG THÁI: ĐÃ XÁC NHẬN & XẾP LỊCH
+                          </span>
+                          <h4 className="text-base font-extrabold text-slate-900 mt-0.5">
+                            🎉 Lịch Hẹn Đã Được Admin Duyệt & Xếp Lịch Thành Công!
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded font-bold text-xs">
+                          {formatDateTimeFormatted(booking.meeting_time)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Thông tin phòng họp / gặp gỡ trực tiếp */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-white rounded-xl border border-emerald-200 space-y-2">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+                          Chuyên Gia / Mentor Phụ Trách:
+                        </span>
+                        <div className="font-extrabold text-slate-900 text-sm md:text-base">
+                          {booking.mentor_name}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                          Thời gian: <strong className="text-emerald-700">{formatDateTimeFormatted(booking.meeting_time)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-white rounded-xl border border-emerald-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                            Hình thức & Phòng Gặp:
+                          </span>
+                          {booking.meeting_type?.includes('Trực tiếp') || booking.location ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-sky-800 bg-sky-50 p-2.5 rounded-lg border border-sky-200">
+                              <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
+                              <span>{booking.location || 'Phòng Tham vấn Tâm lý & Hướng nghiệp - Tầng 2'}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">
+                              <Video className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Google Meet (Trực tuyến 1-1)</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* NÚT VÀO PHÒNG GOOGLE MEET NẾU CÓ URL */}
+                        {booking.meet_url && (
+                          <div className="mt-3">
+                            <a
+                              href={booking.meet_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-xs md:text-sm rounded-lg shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>🌐 VÀO PHÒNG GOOGLE MEET NGAY</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Lời dặn từ Mentor / Admin */}
+                    {booking.counselor_notes && (
+                      <div className="p-3.5 bg-white rounded-xl border border-emerald-200 text-xs space-y-1">
+                        <span className="font-bold text-emerald-950 flex items-center gap-1.5">
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Lời dặn chuẩn bị từ Chuyên viên / Mentor:</span>
+                        </span>
+                        <p className="text-slate-700 leading-relaxed italic pl-5">
+                          "{parseMeetingInfo(booking.counselor_notes).cleanMessage || booking.counselor_notes}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Hướng dẫn hoàn thành */}
+                    <div className="p-4 bg-emerald-100/60 rounded-xl border border-emerald-300 text-xs text-emerald-950 space-y-2">
+                      <p className="font-semibold leading-relaxed">
+                        📌 <strong>Hướng dẫn:</strong> Em hãy tham gia đúng giờ và cầm theo Hồ sơ đối chất phía trên để trao đổi trong 20 - 30 phút. 
+                        Sau khi kết thúc phiên đối chất, Mentor hoặc Admin sẽ xác nhận hoàn thành để mở khóa Bước 5 cho em!
+                      </p>
+                      <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[11px] text-emerald-800 italic">
+                          (Nếu em và Mentor đã trao đổi trực tiếp xong, em cũng có thể chủ động chuyển sang viết Nhật ký thu hoạch)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleComplete4A}
+                          className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer"
+                        >
+                          Tôi đã trao đổi xong ➔ Viết nhật ký thu hoạch (4B)
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 1.3 TRẠNG THÁI: ĐÃ HOÀN THÀNH B4 (COMPLETED) -> MỞ KHÓA BƯỚC 5 */}
+                {booking.status === 'completed' && (
+                  <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border-2 border-emerald-400 rounded-xl p-6 md:p-8 space-y-5 text-center shadow-md animate-reveal">
+                    <div className="w-14 h-14 bg-gradient-to-tr from-emerald-600 to-indigo-600 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                      <Sparkles className="w-7 h-7" />
+                    </div>
+                    
+                    <div className="max-w-xl mx-auto space-y-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+                        BƯỚC 4 HOÀN TẤT • ĐÃ MỞ KHÓA BƯỚC 5
+                      </span>
+                      <h3 className="text-lg md:text-xl font-black text-slate-900">
+                        🏆 Chúc Mừng Em! Đã Hoàn Thành Phiên Tham Vấn Đối Chất 1-1
+                      </h3>
+                      <p className="text-xs md:text-sm text-slate-700 font-medium leading-relaxed">
+                        Mentor và Ban Quản trị đã xác nhận hoàn thành phiên đối chất dữ liệu thực tế. 
+                        Toàn bộ rào cản và khoảng cách nhận thức đã được bóc tách rõ ràng. 
+                        Em đã sẵn sàng bước vào lập <strong>Bản Cam Kết Hành Động & Tam Giác Nguyện Vọng tại Bước 5</strong>!
+                      </p>
+                    </div>
+
+                    {/* NÚT TO NỔI BẬT CHUYỂN SANG BƯỚC 5 */}
+                    <div className="max-w-md mx-auto pt-2">
+                      <button
+                        type="button"
+                        onClick={goToStep5}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-700 hover:to-indigo-700 active:scale-98 text-white font-black text-sm md:text-base rounded-xl shadow-xl hover:shadow-2xl transition transform flex items-center justify-center gap-3 cursor-pointer animate-pulse"
+                      >
+                        <span>🚀 TIẾP TỤC SANG BƯỚC 5: CAM KẾT HÀNH ĐỘNG ➔</span>
+                      </button>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleComplete4A}
+                        className="text-xs text-indigo-700 hover:underline font-bold"
+                      >
+                        Xem lại hoặc ghi chép thêm vào Nhật ký thu hoạch (Giai đoạn 4B)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 1.4 TRẠNG THÁI: TỪ CHỐI / ĐỔI LỊCH (REJECTED) */}
+                {booking.status === 'rejected' && (
+                  <div className="bg-rose-50 border-2 border-rose-300 rounded-xl p-5 space-y-3">
+                    <div className="flex items-center gap-2 text-rose-800 font-bold text-sm">
+                      <XCircle className="w-5 h-5 text-rose-600" />
+                      <span>Lịch Hẹn Cần Điều Chỉnh Lại Khung Giờ Hoặc Mentor Khác</span>
+                    </div>
+                    <p className="text-xs text-slate-700">
+                      Do Mentor bị trùng lịch công tác hoặc khung giờ chưa phù hợp, em vui lòng bấm nút bên dưới để chọn lại một khung giờ khác nhé!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingBooking(true)}
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow-xs transition"
+                    >
+                      ✏️ Chọn lại khung giờ & Mentor khác
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            ) : (
+              /* TRƯỜNG HỢP 2: CHƯA ĐẶT LỊCH HOẶC ĐANG Ở CHẾ ĐỘ CHỈNH SỬA -> HIỂN THỊ FORM ĐẶT LỊCH TRỰC TIẾP */
+              <div className="space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      1. Chọn Cố vấn / Mentor phù hợp ngành nhắm tới: <span className="text-red-500">*</span>
+                    <h3 className="text-sm md:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                      <CalendarDays className="w-5 h-5 text-indigo-600" />
+                      <span>📅 ĐĂNG KÝ PHIÊN ĐỐI CHẤT 1-1 CÙNG CHUYÊN GIA / MENTOR</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Điền thông tin bên dưới để Admin tiếp nhận hồ sơ và kết nối Mentor phù hợp nhất với ngành mục tiêu của em.
+                    </p>
+                  </div>
+                  {isEditingBooking && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingBooking(false)}
+                      className="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 rounded-lg font-bold"
+                    >
+                      ✕ Hủy chỉnh sửa
+                    </button>
+                  )}
+                </div>
+
+                {/* Thẻ tóm tắt dữ liệu Bước 3 đã tích hợp tự động */}
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Mã đối tượng:</span>
+                    <strong className="text-indigo-700 text-sm">{displayStudentCode}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Ngành mục tiêu:</span>
+                    <strong className="text-slate-900 text-sm">{dossierData.targetMajor}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Khoảng cách điểm B3:</span>
+                    <strong className={`text-sm ${isPositiveGap ? 'text-emerald-700' : 'text-rose-700'}`}>
+                      {formattedScoreGap}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Form đặt lịch 4 mục trực quan */}
+                <form id="step4BookingForm" onSubmit={handleBookingStep4} className="space-y-4 text-xs">
+                  
+                  {/* Mục 1: Chọn Mentor */}
+                  <div>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      1. Chọn lĩnh vực / nguyện vọng Mentor mong muốn: <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="mentorSelect"
                       required
                       value={selectedMentor}
                       onChange={(e) => setSelectedMentor(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 font-medium focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                     >
-                      <option value="">-- Chọn Cố vấn hoặc Mentor --</option>
-                      <optgroup label="CỐ VẤN HỌC ĐƯỜNG">
-                        <option value="CV_01">Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường</option>
-                      </optgroup>
-                      <optgroup label="MENTOR NHÓM KỸ THUẬT & CÔNG NGHỆ">
-                        <option value="MT_IT01">Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)</option>
-                        <option value="MT_IT02">Anh L.T.K - Cựu SV An ninh mạng (ĐH CNTT - ĐHQG TP.HCM)</option>
-                        <option value="MT_EE01">Anh H.M.Đ - SV Năm 3 Điện tử Vi mạch (ĐH Bách Khoa)</option>
-                      </optgroup>
-                      <optgroup label="MENTOR NHÓM KINH TẾ, TÀI CHÍNH & QUẢN TRỊ">
-                        <option value="MT_BA01">Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)</option>
-                        <option value="MT_FI01">Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng (ĐH Ngoại Thương)</option>
-                        <option value="MT_MK01">Chị L.T.H - Chuyên viên Marketing (Cựu SV ĐH Nha Trang)</option>
-                      </optgroup>
+                      <option value="">-- Chọn Cố vấn hoặc Mentor phù hợp ngành --</option>
+                      {COUNSELOR_GROUPS.map(group => (
+                        <optgroup key={group.groupKey} label={group.groupName}>
+                          {group.counselors.map(c => (
+                            <option key={c.id} value={c.id}>
+                              {c.fullName}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
 
+                  {/* Mục 2: Chọn hình thức */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      2. Hình thức trao đổi:
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      2. Chọn hình thức trao đổi: <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-1.5 cursor-pointer">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className={`p-3 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition ${
+                        meetType === 'Google Meet' 
+                          ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-bold' 
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}>
                         <input
                           type="radio"
                           name="meetType"
                           value="Google Meet"
                           checked={meetType === 'Google Meet'}
                           onChange={(e) => setMeetType(e.target.value)}
+                          className="w-4 h-4 text-indigo-600"
                         />
-                        <span>💻 Google Meet</span>
+                        <div className="flex items-center gap-2">
+                          <Video className="w-4 h-4 text-indigo-600 shrink-0" />
+                          <div>
+                            <span className="block font-bold text-xs">Google Meet (Trực tuyến 1-1)</span>
+                            <span className="text-[10px] text-slate-500 font-normal">Hệ thống tự động cấp link phòng họp</span>
+                          </div>
+                        </div>
                       </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
+
+                      <label className={`p-3 rounded-xl border-2 cursor-pointer flex items-center gap-3 transition ${
+                        meetType === 'Trực tiếp' 
+                          ? 'border-indigo-600 bg-indigo-50/50 text-indigo-900 font-bold' 
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}>
                         <input
                           type="radio"
                           name="meetType"
                           value="Trực tiếp"
                           checked={meetType === 'Trực tiếp'}
                           onChange={(e) => setMeetType(e.target.value)}
+                          className="w-4 h-4 text-indigo-600"
                         />
-                        <span>🏫 Trực tiếp</span>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-sky-600 shrink-0" />
+                          <div>
+                            <span className="block font-bold text-xs">Trực tiếp tại trường</span>
+                            <span className="text-[10px] text-slate-500 font-normal">Phòng Tham vấn Tâm lý & Hướng nghiệp</span>
+                          </div>
+                        </div>
                       </label>
                     </div>
                   </div>
 
+                  {/* Mục 3: Đề xuất khung giờ rảnh */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      3. Khung thời gian mong muốn: <span className="text-red-500">*</span>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      3. Đề xuất khung giờ rảnh mong muốn: <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="datetime-local"
@@ -1304,83 +1851,70 @@ const CounselingBooking = () => {
                       required
                       value={appointmentTime}
                       onChange={(e) => setAppointmentTime(e.target.value)}
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                     />
+                    <div className="flex items-center gap-2 mt-1.5 text-[11px] text-slate-500">
+                      <span>💡 Gợi ý ca hẹn phổ biến:</span>
+                      <span className="font-semibold text-slate-700">08:30 - 09:15</span> | 
+                      <span className="font-semibold text-slate-700">14:30 - 15:15</span> | 
+                      <span className="font-semibold text-slate-700">19:30 - 20:15</span>
+                    </div>
                   </div>
 
+                  {/* Mục 4: Câu hỏi chất vấn chuẩn bị trước */}
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      4. Câu hỏi chất vấn chuẩn bị trước: <span className="text-red-500">*</span>
+                    <label className="block font-bold text-slate-800 mb-1.5">
+                      4. Điền câu hỏi chất vấn chuẩn bị trước (băn khoăn về ngành, rủi ro...): <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       id="studentQuestions"
                       required
-                      rows={2}
+                      rows={3}
                       value={studentQuestions}
                       onChange={(e) => setStudentQuestions(e.target.value)}
-                      placeholder="Ví dụ: Em muốn hỏi về rủi ro điểm chuẩn và các phương án dự phòng..."
-                      className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                      placeholder="Ví dụ: Em muốn hỏi về áp lực học, tỷ lệ rớt môn và cơ hội việc làm thực tế..."
+                      className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 leading-relaxed"
                     />
+
+                    {/* Chips gợi ý câu hỏi then chốt */}
+                    <div className="mt-2 space-y-1">
+                      <span className="text-[11px] font-bold text-slate-600 block">💡 Bấm để thêm nhanh câu hỏi then chốt vào nội dung:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          'Áp lực học tập, tỷ lệ rớt môn và đào thải thực tế của ngành',
+                          'Chiến lược kéo điểm môn sở trường để bù cho môn đang đuối sức',
+                          'Các trường Đại học nguyện vọng dự phòng vừa sức (NV2, NV3) cùng ngành',
+                          'Cách thuyết phục cha mẹ đồng thuận với năng lực thực tế'
+                        ].map((chip, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setStudentQuestions(prev => prev ? `${prev}\n• ${chip}` : `• ${chip}`)
+                            }}
+                            className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-2.5 py-1 rounded-lg cursor-pointer transition font-medium text-left"
+                          >
+                            + {chip}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition"
-                  >
-                    Xác Nhận Đặt Lịch Hẹn Online
-                  </button>
+                  {/* Nút bấm xác nhận đặt lịch */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <CalendarDays className="w-4.5 h-4.5" />
+                      <span>XÁC NHẬN ĐẶT LỊCH HẸN ONLINE</span>
+                    </button>
+                  </div>
                 </form>
-
-                {/* Trạng thái lịch hẹn */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <h4 className="font-bold text-slate-800 mb-2">📌 Trạng Thái Đăng Ký</h4>
-                  {booking ? (
-                    <div className="text-xs space-y-1.5">
-                      <p><strong>Cố vấn:</strong> {booking.mentor_name}</p>
-                      <p><strong>Thời gian:</strong> {booking.meeting_time}</p>
-                      <p><strong>Hình thức:</strong> {booking.meeting_type}</p>
-                      <div className="mt-2">{getStatusBadge(booking.status)}</div>
-                      {booking.meet_url && (
-                        <a
-                          href={booking.meet_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block mt-2 text-indigo-600 font-bold underline"
-                        >
-                          🌐 Bấm vào đây để vào Google Meet
-                        </a>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-xs">Chưa có lịch hẹn online nào được gửi.</p>
-                  )}
-                </div>
               </div>
             )}
-          </div>
 
-          {/* 3. NÚT KÍCH HOẠT HOÀN THÀNH BUỔI GẶP */}
-          <div className="no-print bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 rounded-2xl border-2 border-emerald-300 p-6 text-center shadow-sm">
-            <div className="max-w-xl mx-auto">
-              <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-              <h4 className="text-base font-bold text-emerald-950 mb-1.5">
-                Xác Nhận Đã Trao Đổi Cùng Cố Vấn / Mentor
-              </h4>
-              <p className="text-xs md:text-sm text-emerald-800 mb-5 font-medium leading-relaxed">
-                Sau khi em đã gặp trực tiếp Thầy/Cô hoặc Anh/Chị Cố vấn để trao đổi xong, hãy bấm nút bên dưới để ghi nhận biên bản.
-              </p>
-
-              <button
-                type="button"
-                onClick={handleComplete4A}
-                className="inline-flex items-center justify-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm md:text-base rounded-xl shadow-lg hover:shadow-xl transition transform cursor-pointer w-full sm:w-auto"
-              >
-                <span>TÔI ĐÃ HOÀN THÀNH BUỔI THAM VẤN TRỰC TIẾP</span>
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </div>
           </div>
 
         </div>
