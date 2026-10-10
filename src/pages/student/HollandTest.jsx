@@ -504,6 +504,42 @@ const HollandTest = () => {
   const [activeCompareMajor, setActiveCompareMajor] = useState('')
   const [customCompareInput, setCustomCompareInput] = useState('')
 
+  // Xử lý đối chiếu ngành nghề tùy chọn / ngành mẫu
+  const handleSelectCompareMajor = (majorName) => {
+    const cleanMajor = (majorName || '').trim() || activeCompareMajor || result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Quản trị kinh doanh'
+    setActiveCompareMajor(cleanMajor)
+    setCustomCompareInput(cleanMajor)
+    setToast({ 
+      type: 'success', 
+      message: `✓ Đã đối chiếu thành công ngành: "${cleanMajor}"! Xem phân tích chi tiết bên trên.` 
+    })
+    
+    // Tự động cuộn mượt mà lên bảng phân tích kết quả đối chiếu
+    setTimeout(() => {
+      const el = document.getElementById('compatibility-result-card')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+
+  // Khôi phục về ngành mục tiêu mỏ neo T0 ban đầu
+  const handleResetToInitialMajor = (initialMajor) => {
+    const original = initialMajor || result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Sư phạm'
+    setActiveCompareMajor('')
+    setCustomCompareInput('')
+    setToast({ 
+      type: 'success', 
+      message: `✓ Đã khôi phục về ngành mục tiêu ban đầu: "${original}"` 
+    })
+    setTimeout(() => {
+      const el = document.getElementById('compatibility-result-card')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+
   const questionsPerPage = 5
   const totalQuestionPages = Math.ceil(questions.length / questionsPerPage) // 6 pages for 30 questions
 
@@ -1627,7 +1663,7 @@ const HollandTest = () => {
               ];
 
               return (
-                <div className="bg-white rounded-lg border-2 border-sky-300 text-xs shadow-xs overflow-hidden space-y-4 p-4 sm:p-5">
+                <div id="compatibility-result-card" className="bg-white rounded-lg border-2 border-sky-300 text-xs shadow-xs overflow-hidden space-y-4 p-4 sm:p-5 scroll-mt-6">
                   {/* HEADER KHỐI ĐÁNH GIÁ */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-2">
@@ -1647,8 +1683,8 @@ const HollandTest = () => {
                     {isCustomComparing && (
                       <button 
                         type="button"
-                        onClick={() => { setActiveCompareMajor(''); setCustomCompareInput(''); }}
-                        className="self-start sm:self-auto text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded border border-slate-300 transition-colors flex items-center gap-1.5"
+                        onClick={() => handleResetToInitialMajor(initialAnchorMajor)}
+                        className="self-start sm:self-auto text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded border border-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer"
                       >
                         <RotateCcw className="w-3 h-3 text-slate-500" />
                         Khôi phục ngành gốc ({initialAnchorMajor})
@@ -1826,8 +1862,8 @@ const HollandTest = () => {
                       {isCustomComparing && (
                         <button
                           type="button"
-                          onClick={() => { setActiveCompareMajor(''); setCustomCompareInput(''); }}
-                          className="text-[11px] text-sky-800 hover:text-sky-950 font-bold underline flex items-center gap-1"
+                          onClick={() => handleResetToInitialMajor(initialAnchorMajor)}
+                          className="text-[11px] text-sky-800 hover:text-sky-950 font-bold underline flex items-center gap-1 cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" /> Trở về ngành ban đầu
                         </button>
@@ -1842,10 +1878,10 @@ const HollandTest = () => {
                           <button
                             key={mIdx}
                             type="button"
-                            onClick={() => { setActiveCompareMajor(m); setCustomCompareInput(''); }}
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border ${
+                            onClick={() => handleSelectCompareMajor(m)}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all border cursor-pointer ${
                               isCurrent
-                                ? 'bg-sky-600 text-white border-sky-700 shadow-xs'
+                                ? 'bg-sky-600 text-white border-sky-700 shadow-xs ring-2 ring-sky-300'
                                 : 'bg-white hover:bg-sky-100 text-slate-700 border-slate-300'
                             }`}
                           >
@@ -1855,7 +1891,7 @@ const HollandTest = () => {
                       })}
                     </div>
 
-                    {/* Ô nhập ngành tùy ý */}
+                    {/* Ô nhập ngành tùy ý & Nút đối chiếu ngay */}
                     <div className="flex items-center gap-2 pt-1">
                       <input
                         type="text"
@@ -1863,23 +1899,48 @@ const HollandTest = () => {
                         value={customCompareInput}
                         onChange={(e) => setCustomCompareInput(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' && customCompareInput.trim()) {
-                            setActiveCompareMajor(customCompareInput.trim());
+                          if (e.key === 'Enter') {
+                            handleSelectCompareMajor(customCompareInput.trim() || effectiveMajor);
                           }
                         }}
-                        className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                        className="flex-1 bg-white border border-slate-300 rounded px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 font-medium"
                       />
                       <button
                         type="button"
                         onClick={() => {
-                          if (customCompareInput.trim()) {
-                            setActiveCompareMajor(customCompareInput.trim());
-                          }
+                          handleSelectCompareMajor(customCompareInput.trim() || effectiveMajor);
                         }}
-                        className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 text-white font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 shadow-2xs"
+                        className="px-3.5 py-1.5 bg-sky-700 hover:bg-sky-800 active:bg-sky-900 text-white font-bold rounded text-xs transition-colors shrink-0 flex items-center gap-1 shadow-2xs cursor-pointer"
                       >
                         <Search className="w-3.5 h-3.5" />
                         Đối chiếu ngay
+                      </button>
+                    </div>
+
+                    {/* THANH TRẠNG THÁI HIỂN THỊ TỨC THÌ (INSTANT STATUS BANNER) */}
+                    <div className="mt-2 p-2.5 rounded-lg border bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+                      <div className="flex items-center gap-2 flex-wrap text-xs">
+                        <span className="font-semibold text-slate-500">Đang đối chiếu:</span>
+                        <span className="font-black text-slate-900 text-xs sm:text-sm">"{effectiveMajor}"</span>
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
+                          evalData.level === 'high' 
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                            : evalData.level === 'low' 
+                              ? 'bg-rose-100 text-rose-800 border-rose-300' 
+                              : 'bg-amber-100 text-amber-900 border-amber-300'
+                        }`}>
+                          {evalData.compatibilityScore}% • {evalData.levelLabel}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const el = document.getElementById('compatibility-result-card');
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }}
+                        className="text-xs text-sky-700 hover:text-sky-900 font-bold flex items-center gap-1 underline cursor-pointer self-start sm:self-auto"
+                      >
+                        <span>Xem bảng đối chiếu chi tiết ⬆</span>
                       </button>
                     </div>
                   </div>
