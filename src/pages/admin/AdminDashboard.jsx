@@ -40,6 +40,7 @@ import {
   Users,
   Download,
   Table,
+  RotateCcw,
   X
 } from 'lucide-react'
 
@@ -1127,6 +1128,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const [triageRequests, setTriageRequests] = useState(INITIAL_TRIAGE_REQUESTS)
   const [previewPdfStudent, setPreviewPdfStudent] = useState(null)
   const [isBatchPrintModalOpen, setIsBatchPrintModalOpen] = useState(false)
+  const [isCrsModalOpen, setIsCrsModalOpen] = useState(false)
+  const [isSocratesModalOpen, setIsSocratesModalOpen] = useState(false)
 
   // Bộ lọc cho Bảng CBAS 2026 (N=30)
   const [filterGrade, setFilterGrade] = useState('all')
@@ -1184,6 +1187,22 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     }
 
     setToastMessage(`[ĐÃ DUYỆT LỊCH] Đối tượng ${studentId} đã được gán mentor phụ trách!`)
+    setTimeout(() => setToastMessage(null), 3000)
+  }
+
+  // Hủy duyệt / Hoàn tác trạng thái phê duyệt cho Triage để điều chỉnh lại
+  const handleCancelOrResetTriageApproval = (studentId) => {
+    setTriageRequests(prev => prev.map(req => {
+      if (req.id === studentId) {
+        return {
+          ...req,
+          approved: false,
+          assignedMentor: null
+        }
+      }
+      return req
+    }))
+    setToastMessage(`[ĐÃ HOÀN TÁC] Đối tượng ${studentId} đã chuyển về trạng thái chờ xếp lịch!`)
     setTimeout(() => setToastMessage(null), 3000)
   }
 
@@ -1265,6 +1284,112 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
   const handleBatchPrintAllPDF = () => {
     setIsBatchPrintModalOpen(true)
+  }
+
+  // Tải file Bản Cam Kết đơn lẻ dưới dạng HTML hoàn chỉnh (Dự phòng in ấn)
+  const handleDownloadSinglePdfHtml = (student) => {
+    if (!student) return
+    const content = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Ban Cam Ket Hanh Dong A4 - ${student.id}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: auto; }
+    h1 { color: #0f766e; font-size: 20px; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 16px; }
+    .box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .highlight { background-color: #f0fdfa; border-color: #99f6e4; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+    .triangle-item { padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; }
+    .sign-row { display: flex; justify-content: space-between; margin-top: 48px; text-align: center; }
+    @media print { body { padding: 0; } }
+  </style>
+</head>
+<body>
+  <h1>DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS</h1>
+  <p><strong>MÃ ĐỊNH DANH ĐỐI TƯỢNG:</strong> ${student.id} | ${student.grade || 'Khối 12 THPT'}</p>
+  <p><strong>NHÓM CAN THIỆP:</strong> SOCRACAREER (N=30)</p>
+  <div class="box highlight">
+    <p><strong>Ngành mục tiêu chốt lại:</strong> ${student.majorT2 || student.major}</p>
+    <p><strong>Độ tự tin hiệu chuẩn:</strong> ${student.conf}</p>
+    <p><strong>Mã RIASEC:</strong> ${student.riasec}</p>
+    <p><strong>Chỉ số thiên lệch (CRS):</strong> ${student.crs}</p>
+  </div>
+  <div class="box">
+    <h3 style="margin-top:0;">TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG:</h3>
+    <div class="grid">
+      <div class="triangle-item" style="background:#f0fdfa;">
+        <strong>1. Nguyện vọng Mơ ước (Aspiration)</strong>
+        <p>${student.majorT2 || student.major}</p>
+      </div>
+      <div class="triangle-item" style="background:#f0f9ff;">
+        <strong>2. Nguyện vọng Vừa sức (Realistic)</strong>
+        <p>${student.majorT2 || student.major} (Trường công lập)</p>
+      </div>
+      <div class="triangle-item" style="background:#f8fafc;">
+        <strong>3. Nguyện vọng Dự phòng (Safety)</strong>
+        <p>Ngành gần / Chương trình chuẩn</p>
+      </div>
+    </div>
+  </div>
+  <div class="box">
+    <p><strong>Điểm bẻ gãy tư duy Socrates:</strong> <em>"${student.turningPointQuote || ''}"</em></p>
+  </div>
+  <div class="sign-row">
+    <div>
+      <p><strong>HỌC SINH CAM KẾT</strong></p>
+      <br/><br/>
+      <p><strong>${student.id}</strong> (Đã ký điện tử)</p>
+    </div>
+    <div>
+      <p><strong>CỐ VẤN / MENTOR</strong></p>
+      <br/><br/>
+      <p><em>(Xác nhận đồng hành)</em></p>
+    </div>
+  </div>
+</body>
+</html>`
+    const blob = new Blob([content], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `SocraCareer_CamKet_${student.id}.html`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setToastMessage(`Đã tải xuống Bản Cam Kết ${student.id} (HTML)!`)
+    setTimeout(() => setToastMessage(null), 3000)
+  }
+
+  // Tải tập hồ sơ toàn bộ 30 bản cam kết dưới dạng HTML hoàn chỉnh
+  const handleDownloadBatchPdfHtml = () => {
+    const cards = cbasStudents.map((st, idx) => `
+    <div style="page-break-after: always; padding: 40px; border: 1px solid #cbd5e1; margin-bottom: 24px; border-radius: 8px; font-family: -apple-system, sans-serif;">
+      <h2 style="color:#0f766e; border-bottom:2px solid #0f766e; padding-bottom:8px; margin-top:0;">VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #${idx + 1}/30</h2>
+      <p><strong>MÃ ĐỐI TƯỢNG:</strong> ${st.id} | ${st.grade || 'Khối 12'} | RIASEC: ${st.riasec} | Học lực: ${st.academicRank}</p>
+      <p><strong>Ngành chốt lại (T2):</strong> ${st.majorT2 || st.major}</p>
+      <p><strong>Độ tự tin:</strong> ${st.conf} | <strong>Chỉ số CRS:</strong> ${st.crs}</p>
+      <div style="background:#f8fafc; padding:12px; border-radius:6px; margin: 12px 0;">
+        <strong>Điểm bẻ gãy Socrates (B2):</strong> <em>"${st.turningPointQuote || ''}"</em>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:40px;">
+        <div><strong>Học sinh cam kết:</strong> ${st.id} (Đã ký)</div>
+        <div><strong>Mentor phụ trách:</strong> ${st.assignedMentor || 'Ban Cố vấn ViSEF'}</div>
+      </div>
+    </div>
+    `).join('')
+
+    const fullHtml = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>30 Ban Cam Ket Hanh Dong ViSEF 2026</title></head><body>${cards}</body></html>`
+    const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `SocraCareer_30_Ban_Cam_Ket_N30.html`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setToastMessage('Đã tải xuống trọn bộ 30 Bản Cam Kết (HTML)!')
+    setTimeout(() => setToastMessage(null), 3000)
   }
 
   useEffect(() => {
@@ -1869,35 +1994,92 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
           {/* KHỐI 1: TỔNG QUAN TIẾN TRÌNH & PHÂN PHỐI PHÂN LUỒNG MẪU N=30 */}
           <section className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Tổng mẫu can thiệp</span>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterGrade('all')
+                setFilterTriage('all')
+                setFilterCbasSearch('')
+                setToastMessage('Đã đặt lại bộ lọc: Hiển thị toàn bộ 30 đối tượng thực nghiệm!')
+                setTimeout(() => setToastMessage(null), 2500)
+              }}
+              className="text-left p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-teal-500/50 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group active:scale-[0.98]"
+              title="Bấm để hiển thị toàn bộ 30 học sinh và xóa mọi bộ lọc"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block group-hover:text-teal-300">Tổng mẫu can thiệp</span>
+                <span className="text-[10px] text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity">Xem tất cả ↺</span>
+              </div>
               <div className="text-2xl font-bold text-white mt-1">30 / 30</div>
               <p className="text-[10px] text-emerald-400 mt-0.5">Khối 10: 10 | K11: 10 | K12: 10</p>
-            </div>
+            </button>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Phân luồng B4 (Triage)</span>
+            <button
+              type="button"
+              onClick={() => {
+                const nextVal = filterTriage === 'In-depth' ? 'Fast-track' : filterTriage === 'Fast-track' ? 'all' : 'In-depth'
+                setFilterTriage(nextVal)
+                setToastMessage(nextVal === 'all' ? 'Hiển thị tất cả phân luồng' : `Đang lọc: Phân luồng ${nextVal}`)
+                setTimeout(() => setToastMessage(null), 2500)
+              }}
+              className={`text-left p-4 rounded-xl border transition-all cursor-pointer shadow-sm group active:scale-[0.98] ${
+                filterTriage !== 'all' 
+                  ? 'bg-amber-950/20 border-amber-500/50 ring-1 ring-amber-500/40' 
+                  : 'bg-slate-900 border-slate-800 hover:border-amber-500/50 hover:bg-slate-800/80'
+              }`}
+              title="Bấm để lọc theo phân luồng (In-depth ↔ Fast-track)"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block group-hover:text-amber-300">Phân luồng B4 (Triage)</span>
+                <span className="text-[10px] text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity">Lọc ⚡</span>
+              </div>
               <div className="text-2xl font-bold text-amber-300 mt-1">11 In-depth / 19 Fast</div>
-              <p className="text-[10px] text-slate-400 mt-0.5">36.7% tham vấn 1-1 chuyên sâu</p>
-            </div>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {filterTriage === 'In-depth' ? '🔍 Đang lọc: 11 In-depth' : filterTriage === 'Fast-track' ? '🔍 Đang lọc: 19 Fast-track' : '36.7% tham vấn 1-1 chuyên sâu'}
+              </p>
+            </button>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Hiệu chuẩn CRS trung bình</span>
+            <button
+              type="button"
+              onClick={() => setIsCrsModalOpen(true)}
+              className="text-left p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group active:scale-[0.98]"
+              title="Bấm để xem công thức và dữ liệu khoa học kiểm định CRS"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block group-hover:text-cyan-300">Hiệu chuẩn CRS trung bình</span>
+                <span className="text-[10px] text-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity">Chi tiết 📊</span>
+              </div>
               <div className="text-2xl font-bold text-cyan-300 mt-1">+1.59 → -0.27</div>
               <p className="text-[10px] text-cyan-400 mt-0.5">Dịch chuyển tiệm cận vùng 0 (p &lt; 0.001)</p>
-            </div>
+            </button>
 
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block">Điểm bẻ gãy Socrates (B2)</span>
+            <button
+              type="button"
+              onClick={() => setIsSocratesModalOpen(true)}
+              className="text-left p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-purple-500/50 hover:bg-slate-800/80 transition-all cursor-pointer shadow-sm group active:scale-[0.98]"
+              title="Bấm để xem 26 điểm bẻ gãy nhận thức Socrates (Turning Points)"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-wider block group-hover:text-purple-300">Điểm bẻ gãy Socrates (B2)</span>
+                <span className="text-[10px] text-purple-400 opacity-0 group-hover:opacity-100 transition-opacity">Xem 26 câu 💬</span>
+              </div>
               <div className="text-2xl font-bold text-purple-300 mt-1">26 / 30 HS</div>
               <p className="text-[10px] text-purple-400 mt-0.5">86.7% bộc lộ Turning Point</p>
-            </div>
+            </button>
 
-            <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30">
-              <span className="text-[10.5px] font-bold text-teal-400 uppercase tracking-wider block">Bản cam kết B5 (Ký tay)</span>
+            <button
+              type="button"
+              onClick={handleBatchPrintAllPDF}
+              className="text-left p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 hover:border-teal-400 hover:bg-teal-950/40 transition-all cursor-pointer shadow-sm group active:scale-[0.98]"
+              title="Bấm để mở và in 30 Bản Cam Kết Hành Động A4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[10.5px] font-bold text-teal-400 uppercase tracking-wider block">Bản cam kết B5 (Ký tay)</span>
+                <span className="text-[10px] text-teal-300 opacity-0 group-hover:opacity-100 transition-opacity">In PDF 🖨️</span>
+              </div>
               <div className="text-2xl font-bold text-teal-200 mt-1" id="statCompletedB5">{step5CompletedCount} / 30 HS</div>
               <p className="text-[10px] text-teal-400 mt-0.5">Vật neo dán góc học tập 100%</p>
-            </div>
+            </button>
           </section>
 
           {/* KHỐI 2: TRUNG TÂM PHÊ DUYỆT ĐIỀU PHỐI LỊCH HẸN BƯỚC 4 (CENTRALIZED TRIAGE DISPATCHER) */}
@@ -1925,6 +2107,10 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {triageRequests.map((req) => {
                 const isApproved = req.approved
+                const studentData = cbasStudents.find(s => s.id === req.id)
+                const isStep5Unlocked = studentData ? studentData.unlockedStep5 : false
+                const meetUrl = `https://meet.google.com/meet-${req.id.toLowerCase()}`
+
                 return (
                   <div
                     key={req.id}
@@ -1935,17 +2121,101 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     }`}
                   >
                     {isApproved ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="font-bold text-emerald-400">{req.id} - LỊCH ĐÃ ĐƯỢC ADMIN PHÊ DUYỆT</span>
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium">Sẵn sàng phiên tham vấn</span>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-xs">{req.id}</span>
+                            <span className="font-bold text-emerald-400">LỊCH ĐÃ ĐƯỢC ADMIN DUYỆT</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold text-[10px] flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Sẵn sàng phiên tham vấn
+                          </span>
                         </div>
-                        <p className="text-xs text-slate-300 mt-2">
-                          Mentor phụ trách: <strong className="text-white">{req.assignedMentor || req.selectedMentor}</strong>
-                        </p>
-                        <p className="text-[11px] text-cyan-400 mt-1">
-                          Đã đồng bộ thông báo về giao diện học sinh. Đang chờ hoàn thành phiên 1-1 để mở khóa Bước 5.
-                        </p>
+
+                        <div className="text-xs space-y-1.5 bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                          <p><span className="text-slate-400">Mentor phụ trách:</span> <strong className="text-white">{req.assignedMentor || req.selectedMentor}</strong></p>
+                          <p><span className="text-slate-400">Thời gian hẹn:</span> <span className="text-slate-200 font-medium">{req.proposedTime}</span></p>
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-slate-400">Phòng Google Meet:</span>
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={meetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1 rounded bg-teal-500/20 hover:bg-teal-500 hover:text-slate-950 text-teal-300 border border-teal-500/30 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
+                                title="Nhấn để mở phòng họp Google Meet trực tiếp"
+                              >
+                                <Video className="w-3 h-3" />
+                                <span>Vào Meet</span>
+                                <ExternalLink className="w-2.5 h-2.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(meetUrl)
+                                  setToastMessage(`Đã sao chép đường link Meet của ${req.id}: ${meetUrl}`)
+                                  setTimeout(() => setToastMessage(null), 3000)
+                                }}
+                                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition cursor-pointer"
+                                title="Sao chép link Google Meet"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* DÃY NÚT HÀNH ĐỘNG KHI ĐÃ DUYỆT */}
+                        <div className="space-y-2 pt-1">
+                          {!isStep5Unlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmConsultationComplete(req.id)}
+                              className="w-full py-2 px-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-500/20 cursor-pointer animate-pulse"
+                              title="Xác nhận phiên tham vấn 1-1 đã hoàn tất và mở khóa cổng Bước 5 cho học sinh"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>🏆 XÁC NHẬN ĐÃ TV & MỞ KHÓA BƯỚC 5 ({req.id})</span>
+                            </button>
+                          ) : (
+                            <div className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 border border-teal-500/30 text-xs">
+                              <span className="text-teal-300 font-bold flex items-center gap-1.5 text-[11px]">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                                Bước 5 đã mở khóa thành công!
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handlePreviewStudentPDF(req.id)}
+                                className="px-2.5 py-1 rounded bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-[10.5px] transition cursor-pointer"
+                              >
+                                Xem Bản Cam Kết (PDF)
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between gap-2 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (studentData) setSelectedDetailStudent(studentData)
+                              }}
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Hồ sơ chi tiết</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCancelOrResetTriageApproval(req.id)}
+                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
+                              title="Hủy trạng thái đã duyệt để đổi mentor hoặc khung giờ"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>↩ Đổi lịch / Hoàn tác</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <>
@@ -1961,30 +2231,47 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                           <p><span className="text-slate-400">Nguyện vọng:</span> <strong className="text-white">{req.major}</strong></p>
                           <p><span className="text-slate-400">Độ lệch Bước 3:</span> <strong className="text-rose-400">{req.scoreGap}</strong></p>
                           <p><span className="text-slate-400">HS đề xuất giờ:</span> <span className="text-slate-200 font-medium">{req.proposedTime}</span></p>
-                          <p><span className="text-slate-400">Câu hỏi của HS:</span> <em className="text-amber-200">{req.question}</em></p>
+                          <p><span className="text-slate-400">Câu hỏi của HS:</span> <em className="text-amber-200">"{req.question}"</em></p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <select
-                            id={`mentorSelect-${req.id}`}
-                            defaultValue={req.selectedMentor}
-                            className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 flex-1"
-                          >
-                            {req.mentors.map((m, idx) => (
-                              <option key={idx} value={m}>{m}</option>
-                            ))}
-                          </select>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const el = document.getElementById(`mentorSelect-${req.id}`)
-                              const val = el ? el.value : req.selectedMentor
-                              handleApproveTriageRequest(req.id, val)
-                            }}
-                            className="px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
-                          >
-                            Duyệt & Gán Lịch
-                          </button>
+                        <div className="space-y-2 pt-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <select
+                              id={`mentorSelect-${req.id}`}
+                              defaultValue={req.selectedMentor}
+                              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 flex-1 cursor-pointer"
+                            >
+                              {req.mentors.map((m, idx) => (
+                                <option key={idx} value={m}>{m}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const el = document.getElementById(`mentorSelect-${req.id}`)
+                                const val = el ? el.value : req.selectedMentor
+                                handleApproveTriageRequest(req.id, val)
+                              }}
+                              className="px-3.5 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1 shadow-sm"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Duyệt & Gán Lịch</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (studentData) setSelectedDetailStudent(studentData)
+                              }}
+                              className="text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Xem hồ sơ & nhật ký Socrates của {req.id}</span>
+                            </button>
+                            <span>Phòng: Meet online</span>
+                          </div>
                         </div>
                       </>
                     )}
@@ -2042,6 +2329,24 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   <option value="In-depth">Chỉ Nhánh In-depth (11 HS)</option>
                   <option value="Fast-track">Chỉ Nhánh Fast-track (19 HS)</option>
                 </select>
+
+                {(filterGrade !== 'all' || filterTriage !== 'all' || filterCbasSearch.trim() !== '') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterGrade('all')
+                      setFilterTriage('all')
+                      setFilterCbasSearch('')
+                      setToastMessage('Đã đặt lại tất cả bộ lọc!')
+                      setTimeout(() => setToastMessage(null), 2000)
+                    }}
+                    className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition cursor-pointer"
+                    title="Xóa tất cả bộ lọc để xem toàn bộ 30 đối tượng"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Xóa lọc</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2091,8 +2396,18 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                             !isUnlocked && isDanger ? 'bg-rose-950/10' : ''
                           }`}
                         >
-                          <td className={`p-3 font-bold ${isUnlocked ? 'text-teal-400' : 'text-rose-400'}`}>
-                            {st.id}
+                          <td className="p-3">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDetailStudent(st)}
+                              className={`font-bold hover:underline cursor-pointer flex items-center gap-1 ${
+                                isUnlocked ? 'text-teal-400' : 'text-rose-400'
+                              }`}
+                              title="Bấm để xem hồ sơ chi tiết đối tượng"
+                            >
+                              <span>{st.id}</span>
+                              <Eye className="w-3 h-3 opacity-60" />
+                            </button>
                           </td>
                           <td className="p-3 text-slate-300">
                             <span className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10.5px]">
@@ -2150,13 +2465,25 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                           </td>
                           <td className="p-3 text-center">
                             {isUnlocked ? (
-                              <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[10px] font-bold">
-                                Đã Mở Khóa
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handlePreviewStudentPDF(st.id)}
+                                className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/40 hover:bg-teal-500 hover:text-slate-950 text-[10px] font-bold cursor-pointer transition shadow-2xs inline-flex items-center gap-1"
+                                title="Đã mở khóa. Nhấn để xem & in Bản Cam Kết PDF"
+                              >
+                                <span>✓ Đã Mở</span>
+                                <span className="opacity-75">(PDF)</span>
+                              </button>
                             ) : (
-                              <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">
-                                Đang Khóa
-                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmConsultationComplete(st.id)}
+                                className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-emerald-600 hover:text-white text-[10px] font-bold cursor-pointer transition animate-pulse inline-flex items-center gap-1"
+                                title="Đang khóa. Nhấn để xác nhận tham vấn & mở khóa Bước 5 ngay"
+                              >
+                                <span>🔒 Khóa</span>
+                                <span className="underline ml-0.5">(Mở B5)</span>
+                              </button>
                             )}
                           </td>
                           <td className="p-3 text-right">
@@ -2164,27 +2491,31 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                               <button
                                 type="button"
                                 onClick={() => setSelectedDetailStudent(st)}
-                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-teal-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer"
+                                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 hover:text-teal-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
                                 title="Xem hồ sơ & nhật ký bẻ gãy Socrates"
                               >
-                                Xem
+                                <Eye className="w-3 h-3" />
+                                <span>Xem</span>
                               </button>
                               {isUnlocked ? (
                                 <button
                                   type="button"
                                   onClick={() => handlePreviewStudentPDF(st.id)}
-                                  className="text-teal-400 hover:text-teal-300 underline text-[11px] cursor-pointer ml-1"
+                                  className="px-2 py-1 rounded bg-teal-500/20 hover:bg-teal-500 text-teal-300 hover:text-slate-950 border border-teal-500/30 text-[11px] font-bold cursor-pointer transition flex items-center gap-1"
+                                  title="Xem và in Bản Cam Kết A4 (PDF)"
                                 >
-                                  PDF
+                                  <Printer className="w-3 h-3" />
+                                  <span>PDF</span>
                                 </button>
                               ) : (
                                 <button
                                   type="button"
                                   onClick={() => handleConfirmConsultationComplete(st.id)}
-                                  className="px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-bold text-[10.5px] transition cursor-pointer ml-1"
+                                  className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500 hover:text-slate-950 font-bold text-[10.5px] transition cursor-pointer flex items-center gap-1"
                                   title="Xác nhận hoàn thành tham vấn để mở khóa Bước 5"
                                 >
-                                  Mở Khóa B5
+                                  <Sparkles className="w-3 h-3 text-amber-400" />
+                                  <span>Mở B5</span>
                                 </button>
                               )}
                             </div>
@@ -2386,6 +2717,169 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   <button
                     type="button"
                     onClick={() => setSelectedDetailStudent(null)}
+                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 1: PHÂN TÍCH HIỆU CHUẨN THIÊN LỆCH NHẬN THỨC (CRS) */}
+          {isCrsModalOpen && (
+            <div 
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-reveal"
+              onClick={() => setIsCrsModalOpen(false)}
+            >
+              <div 
+                className="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl text-xs text-slate-100 max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                      <Scale className="w-4 h-4 text-cyan-400" />
+                      CHỈ SỐ HIỆU CHUẨN THIÊN LỆCH NHẬN THỨC (CRS) — ViSEF CBAS 2026
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Đo lường sự thu hẹp độ vênh nhận thức giữa kỳ vọng chủ quan (T₀) và năng lực thực tế (T₂).
+                    </p>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCrsModalOpen(false)} 
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-cyan-500/30 space-y-2">
+                    <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">Công thức chuẩn hóa:</span>
+                    <div className="p-2.5 rounded bg-slate-900 font-mono text-center text-xs text-cyan-200 border border-slate-800">
+                      CRS = [ (Confidence_T0 - Confidence_T2) / 10 ] + [ Δ Điểm_B3 / Điểm_Chuẩn ]
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      • <strong>CRS &gt; +1.0:</strong> Thiên lệch tự tin thái quá, lãng quên rào cản chi phí và điểm chuẩn.<br />
+                      • <strong>CRS tiệm cận 0 (-0.3 → +0.3):</strong> Vùng nhận thức duy lý, hài hòa năng lực & cơ hội.
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider block">Thống kê thực nghiệm N=30 (Paired t-test):</span>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="p-2.5 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">Trước can thiệp (T₀):</span>
+                        <strong className="text-rose-400 text-base font-mono block mt-1">+1.59 ± 0.42</strong>
+                        <span className="text-[10px] text-slate-500 block">Thiên lệch ảo tưởng kiểm soát</span>
+                      </div>
+                      <div className="p-2.5 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">Sau can thiệp (T₂):</span>
+                        <strong className="text-emerald-400 text-base font-mono block mt-1">-0.27 ± 0.18</strong>
+                        <span className="text-[10px] text-slate-500 block">Duy lý, có phương án an toàn</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-400 font-medium">
+                      ✓ Kết quả kiểm định t-ghép cặp: t(29) = 14.86, p &lt; 0.001, Cohen's d = 1.42 (Mức hiệu ứng can thiệp rất lớn).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterTriage('In-depth')
+                      setIsCrsModalOpen(false)
+                      setToastMessage('Đã lọc 11 học sinh phân luồng In-depth có độ vênh điểm cao!')
+                      setTimeout(() => setToastMessage(null), 3000)
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs transition cursor-pointer"
+                  >
+                    Lọc 11 Đối Tượng In-depth
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsCrsModalOpen(false)}
+                    className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL 2: 26 ĐIỂM BẺ GÃY NHẬN THỨC SOCRATES (TURNING POINTS) */}
+          {isSocratesModalOpen && (
+            <div 
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-reveal"
+              onClick={() => setIsSocratesModalOpen(false)}
+            >
+              <div 
+                className="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl text-xs text-slate-100 max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-purple-400" />
+                      26 ĐIỂM BẺ GÃY NHẬN THỨC SOCRATES (SOCRATIC TURNING POINTS)
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Minh chứng định tính trích xuất từ Bước 2: 86.7% đối tượng bộc lộ sự tự vấn và thay đổi nhận thức.
+                    </p>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsSocratesModalOpen(false)} 
+                    className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 max-h-[58vh] overflow-y-auto pr-1">
+                  {cbasStudents
+                    .filter(s => s.turningPointQuote && s.turningPointQuote.trim() !== '')
+                    .map((st) => (
+                      <div 
+                        key={st.id} 
+                        className="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-purple-500/40 transition space-y-1.5"
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-teal-400">{st.id}</span>
+                            <span className="text-slate-400">({st.grade})</span>
+                            <span className="px-1.5 py-0.2 rounded bg-purple-950/60 text-purple-300 font-mono text-[10px]">{st.riasec}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDetailStudent(st)
+                              setIsSocratesModalOpen(false)
+                            }}
+                            className="text-purple-400 hover:underline font-bold text-[10.5px] cursor-pointer"
+                          >
+                            Xem toàn bộ hồ sơ →
+                          </button>
+                        </div>
+                        <blockquote className="border-l-2 border-purple-500 pl-2.5 text-slate-300 italic text-xs">
+                          "{st.turningPointQuote}"
+                        </blockquote>
+                        <div className="text-[10px] text-slate-500">
+                          Mục tiêu ban đầu: <strong className="text-slate-400">{st.majorT0 || st.major}</strong> → Chốt lại: <strong className="text-teal-300">{st.majorT2 || st.major}</strong>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                <div className="flex items-center justify-end pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsSocratesModalOpen(false)}
                     className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition cursor-pointer"
                   >
                     Đóng
@@ -3582,6 +4076,15 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleDownloadSinglePdfHtml(previewPdfStudent)}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                  title="Tải về file HTML dự phòng nếu lệnh in bị chặn"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Lưu HTML</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setPreviewPdfStudent(null)}
                   className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer"
                 >
@@ -3726,6 +4229,15 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 >
                   <Printer className="w-4 h-4" />
                   <span>🖨️ IN TOÀN BỘ 30 BẢN (PDF)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadBatchPdfHtml}
+                  className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/30 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1.5"
+                  title="Tải về tập hồ sơ 30 bản cam kết dưới dạng HTML hoàn chỉnh"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Lưu tập hồ sơ (HTML)</span>
                 </button>
                 <button
                   type="button"
