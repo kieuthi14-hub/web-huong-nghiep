@@ -121,6 +121,7 @@ const App = () => {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/step1" element={<Navigate to="/student/holland" replace />} />
 
           {/* Home Redirect */}
           <Route 

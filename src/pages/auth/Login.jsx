@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
-import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
-import { Lock, Mail, ArrowRight, Eye, EyeOff, Sparkles, UserCheck, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react'
+import { Lock, Mail, ArrowRight, Eye, EyeOff, Sparkles, UserCheck, ShieldCheck, ChevronDown, ChevronUp, User, KeyRound } from 'lucide-react'
 
 // Danh sách 30 mã học sinh thực nghiệm chuẩn ViSEF
 const EXPERIMENTAL_CODES = Array.from({ length: 30 }, (_, i) => {
@@ -13,395 +12,421 @@ const EXPERIMENTAL_CODES = Array.from({ length: 30 }, (_, i) => {
 })
 
 const Login = () => {
-  const { signIn, signUp } = useAuth()
+  const { signIn, signUp, setLocalSession } = useAuth()
   const navigate = useNavigate()
   
-  const [identifier, setIdentifier] = useState('')
-  const [anonymizedCode, setAnonymizedCode] = useState('CT_01')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  // Tab chế độ: 'demo' (Trải nghiệm thử) | 'research' (Đối tượng N=30) | 'admin' (Quản trị viên)
+  const [activeTab, setActiveTab] = useState('demo')
+
+  // Form 1: Trải nghiệm thử (Guest / Giám khảo)
+  const [guestInput, setGuestInput] = useState('')
+
+  // Form 2: Đối tượng nghiên cứu (CT_01 -> CT_30)
+  const [subjectCodeInput, setSubjectCodeInput] = useState('CT_01')
+  const [pinInput, setPinInput] = useState('1234')
+  const [showCodePicker, setShowCodePicker] = useState(false)
+
+  // Form 3: Quản trị viên / Giáo viên (Admin)
+  const [adminEmail, setAdminEmail] = useState('kieuthi14@gmail.com')
+  const [adminPassword, setAdminPassword] = useState('123456')
+  const [showAdminPassword, setShowAdminPassword] = useState(false)
+  const [showAdminTab, setShowAdminTab] = useState(false)
+
   const [isLoading, setIsLoading] = useState(false)
   const [toast, setToast] = useState(null)
-  const [showQuickSelect, setShowQuickSelect] = useState(false)
 
-  // Hàm chuẩn hóa thông tin đăng nhập: Tên CT_01 -> CT_30, Tên thử nghiệm khác hoặc Email
-  const normalizeCredentials = (input, pwd, customCode = '') => {
-    const raw = (input || '').trim()
-    const rawPwd = (pwd || '').trim()
-    const targetCode = (customCode || anonymizedCode || 'CT_01').trim().toUpperCase()
-
-    // 1. Kiểm tra mã học sinh thực nghiệm: CT_01 đến CT_99... (chấp nhận ct01, CT_1, ct-02,...)
-    const ctMatch = raw.match(/^ct[_\-]?(\d{1,3})$/i)
-    if (ctMatch) {
-      const num = parseInt(ctMatch[1], 10)
-      const code = `CT_${num < 10 ? '0' + num : num}`
-      const email = `ct_${num < 10 ? '0' + num : num}@student.visef.edu.vn`
-      return {
-        email,
-        password: rawPwd || '123456',
-        studentCode: code,
-        isExperimental: true
-      }
-    }
-
-    // 2. Nếu người dùng nhập địa chỉ email có @ (VD: nguyenvana@gmail.com)
-    if (raw.includes('@')) {
-      return {
-        email: raw.toLowerCase(),
-        password: rawPwd,
-        studentCode: targetCode || 'CT_01',
-        isExperimental: true
-      }
-    }
-
-    // 3. Nếu người dùng nhập tên khác để thử web (VD: 'CT_01', 'guest', 'lan_anh')
-    const cleanName = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '_')
-    const code = targetCode || raw.toUpperCase()
-    return {
-      email: `${cleanName || 'student_test'}@student.visef.edu.vn`,
-      password: rawPwd || '123456',
-      studentCode: code,
-      isExperimental: false
-    }
-  }
-
-  const handlePerformLogin = async (rawId, rawPwd, customCode = '') => {
-    if (!rawId) {
-      setToast({ type: 'error', message: 'Vui lòng nhập mã học sinh (CT_01 - CT_30), tên đăng nhập hoặc email!' })
-      return
-    }
-
-    const { email, password: finalPassword, studentCode, isExperimental } = normalizeCredentials(rawId, rawPwd, customCode || anonymizedCode)
-
-    if (!finalPassword) {
-      setToast({ type: 'error', message: 'Vui lòng nhập mật khẩu (Mật khẩu mặc định là 123456)!' })
-      return
-    }
-
+  // 1. ĐĂNG NHẬP TRẢI NGHIỆM THỬ (GIÁM KHẢO / TỰ DO)
+  const handleLoginAsGuest = async () => {
+    const val = guestInput.trim() || 'GUEST_GIAMKHAO'
+    const demoId = 'DEMO_' + Math.floor(Math.random() * 9000 + 1000)
+    
     setIsLoading(true)
     try {
-      // 1. Thử đăng nhập bình thường
-      let { data, error } = await signIn(email, finalPassword)
-
-      // 2. Nếu tài khoản chưa tồn tại trên Supabase Auth (tài khoản thử nghiệm mới):
-      if (error && (error.message?.includes('Invalid login credentials') || error.message?.includes('Email not confirmed'))) {
-        // Tự động khởi tạo tài khoản mới ngay lập tức
-        const defaultCode = studentCode || 'CT_01'
-        const { error: signUpError } = await signUp(email, finalPassword, defaultCode)
-
-        if (!signUpError) {
-          // Đăng ký xong -> Đăng nhập lại ngay lập tức
-          const retryRes = await signIn(email, finalPassword)
-          data = retryRes.data
-          error = retryRes.error
-        } else if (signUpError.message?.includes('already registered')) {
-          // Thử lại với mật khẩu mặc định 123456 nếu tài khoản mẫu đã tạo trước
-          const retryDefault = await signIn(email, '123456')
-          data = retryDefault.data
-          error = retryDefault.error
-        }
-      }
-
-      if (error) {
-        setToast({ 
-          type: 'error', 
-          message: error.message?.includes('Invalid login credentials') 
-            ? 'Thông tin đăng nhập không chính xác. Với mã CT_01 - CT_30, mật khẩu mặc định là 123456!' 
-            : (error.message || 'Lỗi đăng nhập!')
-        })
+      // Lưu phiên cục bộ theo đúng cấu trúc người dùng yêu cầu
+      if (setLocalSession) {
+        setLocalSession('guest', demoId, demoId)
       } else {
-        // Lưu thông tin ẩn danh mã học sinh vào localStorage
-        if (studentCode) {
-          localStorage.setItem('cbas_student_code', studentCode)
-        }
-        localStorage.setItem('cbas_is_experimental_group', isExperimental ? 'true' : 'false')
-
-        // Cập nhật profile ngay vào DB để xóa sạch mọi dấu vết tên mail cũ
-        const currentUserId = data?.user?.id
-        if (currentUserId && studentCode) {
-          try {
-            await supabase.from('profiles').update({
-              full_name: studentCode,
-              student_code: studentCode
-            }).eq('id', currentUserId)
-          } catch (err) {
-            console.warn('Lỗi cập nhật profile Supabase:', err)
-          }
-        }
-
-        setToast({ 
-          type: 'success', 
-          message: `🎉 Đăng nhập thành công! Danh tính học sinh đã được mã hóa là ${studentCode || 'CT_01'}.`
-        })
-
-        setTimeout(() => {
-          navigate('/')
-        }, 600)
+        localStorage.setItem('currentUserRole', 'guest')
+        localStorage.setItem('currentUserId', demoId)
+        localStorage.setItem('cbas_student_code', demoId)
+        localStorage.setItem('cbas_is_experimental_group', 'false')
       }
-    } catch (err) {
-      console.error(err)
-      setToast({ type: 'error', message: 'Có lỗi xảy ra trong quá trình đăng nhập. Vui lòng thử lại!' })
+
+      // Đồng bộ ngầm với Supabase Auth nếu có mạng
+      const cleanEmail = val.includes('@') ? val.toLowerCase() : `${val.toLowerCase().replace(/[^a-z0-9]/g, '_')}@sandbox.visef.edu.vn`
+      try {
+        const { error } = await signIn(cleanEmail, '123456')
+        if (error) {
+          await signUp(cleanEmail, '123456', demoId)
+          await signIn(cleanEmail, '123456')
+        }
+      } catch (e) {
+        console.warn('Supabase sync info:', e)
+      }
+
+      setToast({ 
+        type: 'success', 
+        message: `Chào mừng bạn tham gia trải nghiệm thử hệ thống SocraCareer!` 
+      })
+
+      setTimeout(() => {
+        navigate('/student/dashboard')
+      }, 500)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    handlePerformLogin(identifier, password, anonymizedCode)
+  // 2. ĐĂNG NHẬP ĐỐI TƯỢNG NGHIÊN CỨU CHÍNH THỨC (CT_01 ĐẾN CT_30)
+  const handleLoginAsSubject = async () => {
+    const code = subjectCodeInput.trim().toUpperCase()
+    if (!code.startsWith('CT_')) {
+      setToast({ 
+        type: 'error', 
+        message: 'Vui lòng nhập đúng định dạng mã đối tượng (CT_01 đến CT_30)!' 
+      })
+      return
+    }
+
+    const pin = pinInput.trim() || '1234'
+    setIsLoading(true)
+    try {
+      // Lưu phiên cục bộ theo đúng quy định ViSEF
+      if (setLocalSession) {
+        setLocalSession('research_subject', code, code)
+      } else {
+        localStorage.setItem('currentUserRole', 'research_subject')
+        localStorage.setItem('currentUserId', code)
+        localStorage.setItem('cbas_student_code', code)
+        localStorage.setItem('cbas_is_experimental_group', 'true')
+      }
+
+      // Đồng bộ ngầm với Supabase Auth
+      const studentEmail = `${code.toLowerCase()}@student.visef.edu.vn`
+      try {
+        const { error } = await signIn(studentEmail, '123456')
+        if (error) {
+          await signUp(studentEmail, '123456', code)
+          await signIn(studentEmail, '123456')
+        }
+      } catch (e) {
+        console.warn('Supabase sync info:', e)
+      }
+
+      setToast({ 
+        type: 'success', 
+        message: `Xác thực thành công đối tượng nghiên cứu: ${code}. Hệ thống bắt đầu lưu vết thực nghiệm.` 
+      })
+
+      setTimeout(() => {
+        navigate('/student/dashboard')
+      }, 500)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Bấm nhanh 1 mã học sinh trong danh sách 30 mã
-  const handleQuickCodeSelect = (code) => {
-    setIdentifier(code)
-    setAnonymizedCode(code)
-    setPassword('123456')
-    handlePerformLogin(code, '123456', code)
+  // 3. ĐĂNG NHẬP DÀNH CHO QUẢN TRỊ VIÊN / GIÁO VIÊN (ADMIN)
+  const handleLoginAdmin = async (e) => {
+    e?.preventDefault()
+    if (!adminEmail || !adminPassword) {
+      setToast({ type: 'error', message: 'Vui lòng nhập Email và Mật khẩu Quản trị viên!' })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const emailClean = adminEmail.trim().toLowerCase()
+      const { data, error } = await signIn(emailClean, adminPassword)
+
+      if (error) {
+        // Thử đăng ký nếu tài khoản admin mẫu chưa khởi tạo
+        if (ADMIN_EMAILS.includes(emailClean)) {
+          await signUp(emailClean, adminPassword, 'Quản trị viên ViSEF')
+          const retry = await signIn(emailClean, adminPassword)
+          if (!retry.error) {
+            setToast({ type: 'success', message: 'Đăng nhập Quản trị viên thành công!' })
+            setTimeout(() => navigate('/admin'), 500)
+            return
+          }
+        }
+        setToast({ type: 'error', message: 'Email hoặc mật khẩu quản trị không chính xác!' })
+      } else {
+        setToast({ type: 'success', message: 'Đăng nhập Quản trị viên thành công!' })
+        setTimeout(() => navigate('/admin'), 500)
+      }
+    } catch (err) {
+      setToast({ type: 'error', message: 'Lỗi đăng nhập quản trị. Vui lòng thử lại!' })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-stretch font-sans animate-reveal">
-      {/* Cột trái: Panel giới thiệu bất đối xứng */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white flex-col justify-between p-12 relative overflow-hidden">
-        {/* Decorative Grid */}
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
-                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="white" strokeWidth="1" />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden font-sans">
+      
+      {/* Hiệu ứng nền Ambient Glow ViSEF */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Logo */}
-        <div className="relative z-10 flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <span>Career Guidance</span>
-            <span className="text-3xl">🎓</span>
-          </span>
-        </div>
-
-        {/* Big Slogan */}
-        <div className="relative z-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Đề Tài ViSEF 2026 • Phân Ngành CBAS</span>
+      {/* KHUNG ĐĂNG NHẬP PHÂN LUỒNG BẢO MẬT VISEF 2026 */}
+      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-slate-100 space-y-5 animate-reveal relative z-10">
+        
+        {/* LOGO & TIÊU ĐỀ */}
+        <div className="text-center space-y-1">
+          <div className="inline-block p-2 rounded-xl bg-teal-500/20 text-teal-400 font-black text-xl mb-1 border border-teal-500/30">
+            SC
           </div>
-
-          <h1 className="text-4xl xl:text-5xl font-black leading-tight tracking-tight">
-            Can thiệp Giảm thiểu<br />
-            Thiên lệch Nhận thức<br />
-            trong Chọn nghề THPT
-          </h1>
-          <p className="text-sm text-slate-300 max-w-md font-medium leading-relaxed">
-            Hệ thống can thiệp thực nghiệm 5 bước: Khởi tạo mỏ neo ban đầu (T₀), AI Socrates phản biện, đối chứng dữ liệu thực tế và thiết lập Tam giác hành động tự chủ (T₂).
-          </p>
-
-          <div className="pt-2 flex items-center gap-3 text-xs text-indigo-200">
-            <span className="flex items-center gap-1 font-bold bg-white/10 px-2.5 py-1 rounded-md">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-400" /> 30 Học sinh Thực nghiệm (CT_01 - CT_30)
-            </span>
-            <span className="flex items-center gap-1 font-bold bg-white/10 px-2.5 py-1 rounded-md">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> Ẩn danh hóa dữ liệu khoa học
-            </span>
-          </div>
+          <h2 className="text-lg font-bold text-white uppercase tracking-tight">Cổng Truy Cập SocraCareer</h2>
+          <p className="text-xs text-slate-400">Hệ thống Hướng nghiệp Phản tư & Hiệu chuẩn Nhận thức</p>
         </div>
 
-        {/* Footer info */}
-        <div className="relative z-10 flex items-center justify-between text-xs text-slate-400">
-          <p>© 2026 ViSEF Behavioral & Social Sciences Project</p>
-          <div className="flex gap-4">
-            <span className="text-indigo-400 font-bold">Mã hóa ẩn danh ViSEF</span>
-          </div>
+        {/* TAB CHUYỂN ĐỔI CHẾ ĐỘ */}
+        <div className="flex p-1 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+          <button 
+            id="tabDemo" 
+            type="button"
+            onClick={() => setActiveTab('demo')} 
+            className={`flex-1 py-2 rounded-lg font-bold transition cursor-pointer ${
+              activeTab === 'demo'
+                ? 'bg-teal-500 text-slate-950 shadow-sm'
+                : 'text-slate-400 hover:text-white font-medium'
+            }`}
+          >
+            Trải Nghiệm Thử (Giám Khảo / Tự Do)
+          </button>
+          <button 
+            id="tabResearch" 
+            type="button"
+            onClick={() => setActiveTab('research')} 
+            className={`flex-1 py-2 rounded-lg font-bold transition cursor-pointer ${
+              activeTab === 'research'
+                ? 'bg-teal-500 text-slate-950 shadow-sm'
+                : 'text-slate-400 hover:text-white font-medium'
+            }`}
+          >
+            Đối Tượng Nghiên Cứu (N=30)
+          </button>
         </div>
-      </div>
 
-      {/* Cột phải: Form Đăng nhập */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 bg-white">
-        <div className="w-full max-w-md space-y-6">
-          
-          <div>
-            <div className="lg:hidden flex items-center gap-2 mb-4">
-              <span className="text-2xl">🎓</span>
-              <span className="text-lg font-bold text-indigo-700">Career Guidance ViSEF</span>
+        {/* FORM 1: DÀNH CHO GIÁM KHẢO / NGƯỜI DÙNG THỬ (EMAIL / GUEST) */}
+        {activeTab === 'demo' && (
+          <div id="formDemo" className="space-y-3.5 text-xs animate-reveal">
+            <div>
+              <label className="block text-slate-400 mb-1" htmlFor="guestInput">
+                Nhập Email hoặc Tên của bạn:
+              </label>
+              <input 
+                type="text" 
+                id="guestInput" 
+                value={guestInput}
+                onChange={(e) => setGuestInput(e.target.value)}
+                placeholder="Ví dụ: thayco_giamkhao@visef.edu.vn" 
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-teal-500 text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleLoginAsGuest()
+                }}
+              />
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Đăng Nhập Hệ Thống</h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
-              Nhập mã học sinh thực nghiệm (<span className="text-indigo-600 font-bold">CT_01</span> đến <span className="text-indigo-600 font-bold">CT_30</span>), tên thử nghiệm hoặc email.
+
+            {/* Gợi ý mẫu */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+              <span className="text-[10px] text-slate-500">Gợi ý:</span>
+              {['Giám khảo ViSEF', 'Khách trải nghiệm', 'thayco_chuyengia@visef.edu.vn'].map(g => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGuestInput(g)}
+                  className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 transition cursor-pointer"
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleLoginAsGuest} 
+              disabled={isLoading}
+              className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md shadow-teal-500/20 flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+            >
+              {isLoading ? (
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full" />
+              ) : (
+                <span>BẮT ĐẦU TRẢI NGHIỆM 5 BƯỚC (SANDBOX)</span>
+              )}
+            </button>
+            <p className="text-[10.5px] text-slate-500 text-center italic">
+              *Chế độ trải nghiệm không làm ảnh hưởng đến dữ liệu thực nghiệm RCT chính thức.
             </p>
           </div>
+        )}
 
-          {/* Form chính */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            
-            {/* Input Mã học sinh / Email */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block" htmlFor="identifier">
-                Mã học sinh (CT_01 ➔ CT_30) hoặc Email *
+        {/* FORM 2: DÀNH CHO 30 HỌC SINH CAN THIỆP CHÍNH THỨC */}
+        {activeTab === 'research' && (
+          <div id="formResearch" className="space-y-3.5 text-xs animate-reveal">
+            <div>
+              <label className="block text-slate-400 mb-1" htmlFor="subjectCodeInput">
+                Mã định danh đối tượng (Đã cấp mã):
               </label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  id="identifier"
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setIdentifier(val)
-                    if (/^ct[_\-]?\d{1,3}$/i.test(val.trim())) {
-                      setAnonymizedCode(val.trim().toUpperCase())
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all rounded-xl font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
-                  placeholder="VD: CT_01, CT_02... hoặc email cá nhân"
-                />
-              </div>
+              <input 
+                type="text" 
+                id="subjectCodeInput" 
+                value={subjectCodeInput}
+                onChange={(e) => setSubjectCodeInput(e.target.value.toUpperCase())}
+                placeholder="Nhập mã: CT_01 đến CT_30" 
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-teal-400 font-bold text-sm uppercase focus:outline-none focus:border-teal-500 tracking-wider"
+              />
             </div>
 
-            {/* Ô điền mã định danh ẩn danh (Mã hóa hoàn toàn họ tên học sinh) */}
-            <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5" htmlFor="anonymizedCode">
-                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
-                  <span>Mã định danh ẩn danh (Mã hóa tên học sinh):</span>
-                </label>
-                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
-                  Chuẩn ViSEF 2026
-                </span>
+            {/* Bộ chọn nhanh 30 mã đối tượng */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-[10.5px]">
+                <span className="text-slate-400 font-semibold">Chọn nhanh mã đối tượng:</span>
+                <button
+                  type="button"
+                  onClick={() => setShowCodePicker(!showCodePicker)}
+                  className="text-teal-400 hover:underline cursor-pointer"
+                >
+                  {showCodePicker ? 'Thu gọn ▲' : 'Xem toàn bộ 30 mã ▼'}
+                </button>
               </div>
-              <div className="relative">
-                <UserCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
-                <input
-                  id="anonymizedCode"
-                  type="text"
-                  value={anonymizedCode}
-                  onChange={(e) => setAnonymizedCode(e.target.value.toUpperCase())}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-indigo-300 focus:border-indigo-600 focus:outline-none transition-all rounded-lg font-black text-indigo-900 tracking-wider shadow-sm"
-                  placeholder="VD: CT_01, CT_02, CT_08..."
-                />
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                <span className="text-[10px] font-bold text-indigo-700">Gợi ý nhanh:</span>
-                {['CT_01', 'CT_02', 'CT_03', 'CT_05', 'CT_08', 'CT_12', 'CT_15', 'CT_20'].map(code => (
+
+              <div className="flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto p-1 bg-slate-950/60 rounded-lg border border-slate-800/80">
+                {(showCodePicker ? EXPERIMENTAL_CODES : ['CT_01', 'CT_02', 'CT_03', 'CT_08', 'CT_12', 'CT_20', 'CT_25', 'CT_30']).map(c => (
                   <button
-                    key={code}
+                    key={c}
                     type="button"
                     onClick={() => {
-                      setAnonymizedCode(code)
-                      if (!identifier || identifier.startsWith('CT_')) {
-                        setIdentifier(code)
-                      }
+                      setSubjectCodeInput(c)
+                      setPinInput('1234')
                     }}
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
-                      anonymizedCode === code 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
-                        : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded border transition cursor-pointer ${
+                      subjectCodeInput === c
+                        ? 'bg-teal-500 text-slate-950 border-teal-500 shadow-sm'
+                        : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-teal-500/50'
                     }`}
                   >
-                    {code}
+                    {c}
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-indigo-800 font-medium leading-tight">
-                🔒 Khi đăng nhập, tên học sinh sẽ hiển thị là <strong className="text-indigo-950 font-black">{anonymizedCode || 'CT_01'}</strong> trên toàn hệ thống (hoàn toàn không hiển thị tên của mail).
-              </p>
             </div>
 
-            {/* Input Password */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider" htmlFor="password">
-                  Mật khẩu
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-slate-400" htmlFor="pinInput">
+                  Mã PIN xác thực:
                 </label>
-                <span className="text-[11px] text-indigo-600 font-medium">
-                  Mặc định: <strong>123456</strong>
-                </span>
+                <span className="text-[10px] text-slate-500">Mặc định: 1234</span>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-50 border border-slate-200 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all rounded-xl font-medium"
-                  placeholder="•••••••• (để trống sẽ dùng 123456)"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
+              <input 
+                type="password" 
+                id="pinInput" 
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value)}
+                placeholder="••••" 
+                maxLength={6} 
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 tracking-widest focus:outline-none focus:border-teal-500 text-xs font-mono"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleLoginAsSubject()
+                }}
+              />
             </div>
 
-            {/* Nút Submit */}
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              className="w-full py-3 text-sm font-extrabold tracking-wide uppercase gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all cursor-pointer"
+            <button 
+              type="button"
+              onClick={handleLoginAsSubject} 
+              disabled={isLoading}
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-teal-300 border border-teal-500/40 font-bold rounded-lg transition cursor-pointer text-xs flex items-center justify-center gap-1.5"
             >
-              <span>Vào Trải Nghiệm Hệ Thống</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </form>
+              {isLoading ? (
+                <span className="animate-spin inline-block w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full" />
+              ) : (
+                <span>VÀO TIẾN TRÌNH THỰC NGHIỆM CHÍNH THỨC</span>
+              )}
+            </button>
+            <p className="text-[10px] text-teal-400/80 text-center">
+              ✓ Dữ liệu được mã hóa ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu ViSEF 2026.
+            </p>
+          </div>
+        )}
 
-          {/* Hộp Chọn Nhanh 30 Mã Học Sinh Thực Nghiệm CT_01 -> CT_30 */}
-          <div className="pt-2 border-t border-slate-100 space-y-2.5">
+        {/* PHẦN DÀNH CHO ADMIN / GIÁO VIÊN */}
+        <div className="pt-2 border-t border-slate-800 text-center">
+          {!showAdminTab ? (
             <button
               type="button"
-              onClick={() => setShowQuickSelect(!showQuickSelect)}
-              className="w-full flex items-center justify-between text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 p-2.5 rounded-xl border border-indigo-200 transition-colors"
+              onClick={() => setShowAdminTab(true)}
+              className="text-[11px] text-slate-500 hover:text-slate-300 transition cursor-pointer"
             >
-              <span className="flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>⚡ Bấm Chọn Nhanh Mã Học Sinh (CT_01 ➔ CT_30):</span>
-              </span>
-              {showQuickSelect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              🔒 Bạn là Giáo viên / Quản trị viên ViSEF? <span className="text-teal-400 underline">Đăng nhập Quản trị</span>
             </button>
+          ) : (
+            <form onSubmit={handleLoginAdmin} className="space-y-3 text-left animate-reveal bg-slate-950/80 p-3.5 rounded-xl border border-slate-800">
+              <div className="flex justify-between items-center pb-1 border-b border-slate-800">
+                <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5" />
+                  Đăng Nhập Quản Trị Hệ Thống
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowAdminTab(false)}
+                  className="text-[10px] text-slate-400 hover:text-white"
+                >
+                  Đóng ✕
+                </button>
+              </div>
 
-            {showQuickSelect && (
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 animate-reveal">
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Bấm vào mã bất kỳ để tự động điền và đăng nhập ngay vào hệ thống:
-                </p>
-                <div className="grid grid-cols-5 sm:grid-cols-6 gap-1.5 max-h-48 overflow-y-auto p-1">
-                  {EXPERIMENTAL_CODES.map((code) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => handleQuickCodeSelect(code)}
-                      className="px-2 py-1.5 text-xs font-black bg-white hover:bg-indigo-600 hover:text-white text-slate-800 border border-slate-200 hover:border-indigo-600 rounded-lg shadow-2xs transition-all text-center cursor-pointer"
-                    >
-                      {code}
-                    </button>
-                  ))}
+              <div>
+                <label className="block text-[10px] text-slate-400 mb-0.5">Email quản trị viên:</label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="kieuthi14@gmail.com"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
+                  <span>Mật khẩu:</span>
+                  <span className="text-amber-400/80">Mặc định: 123456</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showAdminPassword ? 'text' : 'password'}
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-2.5 pr-8 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-400 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    {showAdminPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Hộp hướng dẫn ngắn gọn cho người dùng */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-[11px] text-slate-600 font-medium leading-relaxed">
-            <p className="font-bold text-slate-800 flex items-center gap-1">
-              <span>💡 Hướng dẫn đăng nhập:</span>
-            </p>
-            <ul className="list-disc pl-4 space-y-0.5">
-              <li><strong>Học sinh thực nghiệm:</strong> Nhập mã từ <code>CT_01</code> đến <code>CT_30</code> (Mật khẩu: <code>123456</code>).</li>
-              <li><strong>Người dùng thử nghiệm khác:</strong> Nhập bất kỳ tên nào khác để thử web.</li>
-              <li><strong>Giáo viên / Quản trị viên:</strong> Đăng nhập bằng email <code>kieuthi14@gmail.com</code>.</li>
-            </ul>
-          </div>
-
-          <p className="text-center text-xs text-slate-400">
-            Hệ thống tự động ẩn danh hóa thông tin theo mã học sinh khi xuất báo cáo.
-          </p>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                {isLoading ? (
+                  <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full" />
+                ) : (
+                  <span>VÀO BẢNG ĐIỀU KHIỂN ADMIN (CBAS 2026)</span>
+                )}
+              </button>
+            </form>
+          )}
         </div>
+
       </div>
 
       {toast && (

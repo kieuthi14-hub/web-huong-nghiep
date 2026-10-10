@@ -24,6 +24,29 @@ export const AuthProvider = ({ children }) => {
         if (session) {
           setUser(session.user)
           await fetchProfile(session.user.id, session.user)
+        } else {
+          // Kiểm tra phiên đăng nhập cục bộ cho Giám khảo (Guest) hoặc Đối tượng (CT_01 -> CT_30)
+          const localRole = typeof window !== 'undefined' ? localStorage.getItem('currentUserRole') : null
+          const localId = typeof window !== 'undefined' ? localStorage.getItem('currentUserId') : null
+          if (localRole && localId) {
+            const isGuest = localRole === 'guest'
+            const mockUser = {
+              id: localId,
+              email: isGuest ? `${localId.toLowerCase()}@sandbox.visef.edu.vn` : `${localId.toLowerCase()}@student.visef.edu.vn`,
+              user_metadata: {
+                role: isGuest ? 'guest' : 'student',
+                student_code: localId
+              }
+            }
+            setUser(mockUser)
+            setProfile({
+              id: localId,
+              email: mockUser.email,
+              full_name: localId,
+              role: isGuest ? 'guest' : 'student',
+              student_code: localId
+            })
+          }
         }
       } catch (error) {
         console.error('Lỗi khi lấy session ban đầu:', error)
@@ -166,8 +189,43 @@ export const AuthProvider = ({ children }) => {
 
   // Đăng xuất
   const signOut = async () => {
+    try {
+      localStorage.removeItem('currentUserRole')
+      localStorage.removeItem('currentUserId')
+    } catch (e) {}
+    setUser(null)
+    setProfile(null)
     const { error } = await supabase.auth.signOut()
     return { error }
+  }
+
+  // Thiết lập phiên đăng nhập cục bộ cho Giám khảo / Đối tượng thực nghiệm
+  const setLocalSession = (role, userId, code) => {
+    const isGuest = role === 'guest'
+    const targetCode = (code || userId || 'CT_01').toUpperCase()
+    try {
+      localStorage.setItem('currentUserRole', role)
+      localStorage.setItem('currentUserId', userId)
+      localStorage.setItem('cbas_student_code', targetCode)
+      localStorage.setItem('cbas_is_experimental_group', isGuest ? 'false' : 'true')
+    } catch (e) {}
+
+    const mockUser = {
+      id: userId,
+      email: isGuest ? `${userId.toLowerCase()}@sandbox.visef.edu.vn` : `${userId.toLowerCase()}@student.visef.edu.vn`,
+      user_metadata: {
+        role: isGuest ? 'guest' : 'student',
+        student_code: targetCode
+      }
+    }
+    setUser(mockUser)
+    setProfile({
+      id: userId,
+      email: mockUser.email,
+      full_name: targetCode,
+      role: isGuest ? 'guest' : 'student',
+      student_code: targetCode
+    })
   }
 
   // Cập nhật profile vào Supabase DB
@@ -251,6 +309,7 @@ export const AuthProvider = ({ children }) => {
       studentCode,
       displayName,
       updateStudentCode,
+      setLocalSession,
       loading, 
       signIn, 
       signUp, 

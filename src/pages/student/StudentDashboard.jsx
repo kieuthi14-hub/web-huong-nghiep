@@ -458,6 +458,7 @@ const StudentDashboard = () => {
               return (
                 <Link
                   key={s.step}
+                  id={`step${s.step}`}
                   to={s.to}
                   className={`
                     flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl border transition-all duration-300 relative group
