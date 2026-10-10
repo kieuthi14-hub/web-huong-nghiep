@@ -81,10 +81,10 @@ export const INITIAL_CBAS_STUDENTS = [
     deltaScore: '-2.5đ (Nguy cơ)',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
-    conf: '8/10 → (Chưa đo)',
-    crs: '+2.8 → --',
-    unlockedStep5: false,
-    status: 'Pending',
+    conf: '8/10 → 8/10',
+    crs: '+2.8 → +0.1',
+    unlockedStep5: true,
+    status: 'Completed',
     turningPointQuote: 'Em từng nghĩ chỉ cần thích làm sếp là học QTKD được, nhưng sau Bước 2 mới thấy mình chưa hiểu gì về vận hành thực tế.',
     studentQuestion: 'Điểm chuẩn cao quá em sợ rớt, nếu đổi sang ngành gần thì cơ hội việc làm khác nhau thế nào ạ?',
     assignedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)'
@@ -201,10 +201,10 @@ export const INITIAL_CBAS_STUDENTS = [
     deltaScore: '-1.8đ (Nguy cơ)',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
-    conf: '9/10 → (Chưa đo)',
-    crs: '+3.1 → --',
-    unlockedStep5: false,
-    status: 'Pending',
+    conf: '9/10 → 8/10',
+    crs: '+3.1 → +0.2',
+    unlockedStep5: true,
+    status: 'Completed',
     turningPointQuote: 'Em thích chơi game và nghĩ mình hợp phần mềm, nhưng bài toán thuật toán và chi phí 45 tr/năm làm em thấy ngợp.',
     studentQuestion: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
     assignedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)'
@@ -669,7 +669,7 @@ export const INITIAL_TRIAGE_REQUESTS = [
       'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng (ĐH Ngoại Thương)'
     ],
     selectedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
-    approved: false
+    approved: true
   },
   {
     id: 'CT_08',
@@ -684,7 +684,7 @@ export const INITIAL_TRIAGE_REQUESTS = [
       'Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường'
     ],
     selectedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-    approved: false
+    approved: true
   }
 ]
 
@@ -2074,11 +2074,17 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               title="Bấm để mở và in 30 Bản Cam Kết Hành Động A4"
             >
               <div className="flex items-center justify-between">
-                <span className="text-[10.5px] font-bold text-teal-400 uppercase tracking-wider block">Bản cam kết B5 (Ký tay)</span>
+                <span className="text-[10.5px] font-bold text-teal-400 uppercase tracking-wider block">
+                  BẢN CAM KẾT B5 (KÝ TAY)
+                </span>
                 <span className="text-[10px] text-teal-300 opacity-0 group-hover:opacity-100 transition-opacity">In PDF 🖨️</span>
               </div>
-              <div className="text-2xl font-bold text-teal-200 mt-1" id="statCompletedB5">{step5CompletedCount} / 30 HS</div>
-              <p className="text-[10px] text-teal-400 mt-0.5">Vật neo dán góc học tập 100%</p>
+              <div className="text-2xl font-bold text-teal-200 mt-1" id="statCompletedB5">
+                {step5CompletedCount} / 30 HS
+              </div>
+              <p className="text-[10px] text-teal-400 mt-0.5">
+                Vật neo dán góc học tập 100%
+              </p>
             </button>
           </section>
 
