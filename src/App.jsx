@@ -479,7 +479,7 @@ const App = () => {
             element={
               <AdminProtectedRoute>
                 <MainLayout>
-                  <AdminDashboard activeTabDefault="counseling" />
+                  <AdminDashboard activeTabDefault="cbas_hub" />
                 </MainLayout>
               </AdminProtectedRoute>
             } 

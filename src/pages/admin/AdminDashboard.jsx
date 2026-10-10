@@ -35,8 +35,80 @@ import {
   Phone,
   Mail,
   Copy,
-  Check
+  Check,
+  Printer,
+  Users,
+  Download
 } from 'lucide-react'
+
+// =========================================================================
+// 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
+// =========================================================================
+export const INITIAL_CBAS_STUDENTS = [
+  { id: 'CT_01', riasec: 'RAI', major: 'Tâm lý học (ĐH KHXH&NV)', deltaScore: '+0.5đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+1.2 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_02', riasec: 'ECS', major: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)', deltaScore: '-2.5đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → (Chưa đo)', crs: '+2.8 → --', unlockedStep5: false, status: 'Pending' },
+  { id: 'CT_03', riasec: 'SAE', major: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)', deltaScore: '+1.2đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+0.8 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_04', riasec: 'CES', major: 'Kế toán - Kiểm toán (ĐH Kinh Tế)', deltaScore: '+0.2đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.5 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_05', riasec: 'RIE', major: 'Cơ điện tử & Tự động hóa (ĐH Bách Khoa)', deltaScore: '+0.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+1.8 → +0.3', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_06', riasec: 'ASE', major: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)', deltaScore: '-0.4đ (Biên giới)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.4 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_07', riasec: 'IRS', major: 'Công nghệ Sinh học Y dược (ĐH KHTN)', deltaScore: '+1.5đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.9 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_08', riasec: 'ICR', major: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)', deltaScore: '-1.8đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → (Chưa đo)', crs: '+3.1 → --', unlockedStep5: false, status: 'Pending' },
+  { id: 'CT_09', riasec: 'EAS', major: 'Truyền thông Đa phương tiện (ĐH KHXH&NV)', deltaScore: '-2.0đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.5 → +0.3', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_10', riasec: 'CIS', major: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)', deltaScore: '+0.3đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.1 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_11', riasec: 'RIC', major: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)', deltaScore: '-1.6đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '7/10 → 7/10', crs: '+2.2 → +0.4', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_12', riasec: 'SEC', major: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)', deltaScore: '+1.0đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.7 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_13', riasec: 'ISR', major: 'Y đa khoa (ĐH Y Dược TP.HCM)', deltaScore: '-2.8đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 7/10', crs: '+3.4 → +0.5', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_14', riasec: 'AES', major: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)', deltaScore: '-1.7đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.4 → +0.3', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_15', riasec: 'ECR', major: 'Logistics & Quản lý Chuỗi Cung Ứng', deltaScore: '+0.7đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+1.6 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_16', riasec: 'SIR', major: 'Dược học (ĐH Y Dược)', deltaScore: '-1.9đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '7/10 → 7/10', crs: '+2.6 → +0.3', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_17', riasec: 'CSE', major: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)', deltaScore: '+0.4đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+1.0 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_18', riasec: 'IRE', major: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)', deltaScore: '-2.2đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 8/10', crs: '+3.0 → +0.4', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_19', riasec: 'SAI', major: 'Tâm lý học Giáo dục (ĐH Sư Phạm)', deltaScore: '+1.4đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+0.8 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_20', riasec: 'ERC', major: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)', deltaScore: '-1.5đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.1 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_21', riasec: 'RCI', major: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)', deltaScore: '+0.9đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.3 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_22', riasec: 'AIR', major: 'Thiết kế Thời trang (ĐH Mỹ Thuật)', deltaScore: '-2.1đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '8/10 → 7/10', crs: '+2.7 → +0.3', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_23', riasec: 'SCI', major: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)', deltaScore: '+1.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 8/10', crs: '+0.6 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_24', riasec: 'ESI', major: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)', deltaScore: '+0.6đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 7/10', crs: '+1.2 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_25', riasec: 'IRC', major: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)', deltaScore: '-2.4đ (Nguy cơ)', triage: 'In-depth (20p)', conf: '9/10 → 8/10', crs: '+3.2 → +0.5', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_26', riasec: 'SAR', major: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)', deltaScore: '+1.1đ (An toàn)', triage: 'Fast-track (5p)', conf: '8/10 → 8/10', crs: '+0.7 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_27', riasec: 'CER', major: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)', deltaScore: '-0.2đ (Biên giới)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+1.4 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_28', riasec: 'EAS', major: 'Luật Kinh tế (ĐH Luật TP.HCM)', deltaScore: '+0.8đ (An toàn)', triage: 'Fast-track (5p)', conf: '6/10 → 7/10', crs: '+1.1 → +0.2', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_29', riasec: 'RIS', major: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)', deltaScore: '+1.6đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+0.5 → +0.1', unlockedStep5: true, status: 'Completed' },
+  { id: 'CT_30', riasec: 'SER', major: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)', deltaScore: '+1.3đ (An toàn)', triage: 'Fast-track (5p)', conf: '7/10 → 8/10', crs: '+0.6 → +0.1', unlockedStep5: true, status: 'Completed' }
+]
+
+export const INITIAL_TRIAGE_REQUESTS = [
+  {
+    id: 'CT_02',
+    grade: 'Khối 12 | Mã RIASEC: ECS',
+    major: 'QTKD - ĐH Kinh Tế TP.HCM',
+    scoreGap: 'Thiếu 2.5 điểm (Học bạ: 23.5 | Chuẩn: 26.0)',
+    proposedTime: '10/24/2026 - 14:00 (Trực tiếp)',
+    question: 'Điểm chuẩn cao quá em sợ rớt, có nên đổi sang ngành gần không ạ?',
+    mentors: [
+      'Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường',
+      'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
+      'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng (ĐH Ngoại Thương)'
+    ],
+    selectedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
+    approved: false
+  },
+  {
+    id: 'CT_08',
+    grade: 'Khối 12 | Mã RIASEC: ICR',
+    major: 'Kỹ thuật Phần mềm - ĐH Bách Khoa',
+    scoreGap: 'Thiếu 1.8 điểm | Rào cản học phí 45 tr/năm',
+    proposedTime: '10/24/2026 - 19:30 (Google Meet)',
+    question: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
+    mentors: [
+      'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+      'Anh L.T.K - Cựu SV An ninh mạng (ĐH CNTT - ĐHQG TP.HCM)',
+      'Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường'
+    ],
+    selectedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+    approved: false
+  }
+]
 
 // =========================================================================
 // 1. DỮ LIỆU MẪU KHOA HỌC THỰC NGHIỆM CHUẨN ViSEF (N=90)
@@ -452,11 +524,32 @@ export const getMentorBadge = (displayName) => {
 // =========================================================================
 // 3. MAIN COMPONENT: ADMIN DASHBOARD VISEF
 // =========================================================================
-const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
+const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const { user } = useAuth()
   
-  // 3 Tabs: 'experiment' | 'reflections' | 'counseling'
+  // 4 Tabs: 'cbas_hub' | 'experiment' | 'reflections' | 'counseling'
   const [activeTab, setActiveTab] = useState(activeTabDefault)
+
+  // Dữ liệu Thực nghiệm CBAS 2026 (N=30 Đối tượng Can thiệp)
+  const [cbasStudents, setCbasStudents] = useState(() => {
+    return INITIAL_CBAS_STUDENTS.map(st => {
+      const isUnlockedLocal = typeof window !== 'undefined' && localStorage.getItem(`gate_step5_unlocked_${st.id}`) === 'true'
+      if (isUnlockedLocal) {
+        return {
+          ...st,
+          unlockedStep5: true,
+          conf: st.conf.replace('Chờ TV', '7/10').replace('(Chưa đo)', '7/10'),
+          crs: st.crs.replace('--', '+0.3'),
+          status: 'Completed'
+        }
+      }
+      return st
+    })
+  })
+
+  const [triageRequests, setTriageRequests] = useState(INITIAL_TRIAGE_REQUESTS)
+  const [previewPdfStudent, setPreviewPdfStudent] = useState(null)
+  const [isBatchPrintModalOpen, setIsBatchPrintModalOpen] = useState(false)
 
   // Dữ liệu từ Supabase DB
   const [usersList, setUsersList] = useState([])
@@ -481,6 +574,114 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   const [meetingMessage, setMeetingMessage] = useState('Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!')
   const [modalMentor, setModalMentor] = useState('')
   const [modalScheduledAt, setModalScheduledAt] = useState('')
+
+  // 1. Phê duyệt Lịch hẹn và Gán Mentor từ Admin (Khối 2)
+  const handleApproveTriageRequest = (studentId, mentorValue) => {
+    setTriageRequests(prev => prev.map(req => {
+      if (req.id === studentId) {
+        return {
+          ...req,
+          approved: true,
+          assignedMentor: mentorValue || req.selectedMentor
+        }
+      }
+      return req
+    }))
+
+    // Đồng bộ sang live counselingSessions nếu có học sinh tương ứng
+    const matched = counselingSessions.find(s => {
+      const c = parseStudentContact(s.student_notes)
+      return c.studentCode === studentId || s.student?.full_name?.includes(studentId)
+    })
+    if (matched) {
+      handleUpdateCounselingStatus(matched.id, 'confirmed', {
+        counselor_name: mentorValue,
+        counselor_notes: `[Phòng gặp: https://meet.google.com/meet-${studentId.toLowerCase()}]\nMentor phụ trách: ${mentorValue}. Em chuẩn bị sẵn câu hỏi chất vấn để đối thoại nhé!`
+      })
+    }
+
+    setToastMessage(`[ĐÃ DUYỆT LỊCH] Đối tượng ${studentId} đã được gán mentor phụ trách!`)
+    setTimeout(() => setToastMessage(null), 3000)
+  }
+
+  // 2. Xác nhận Hoàn thành Tham vấn & Mở Khóa Cổng Bước 5 (Khối 3)
+  const handleConfirmConsultationComplete = (studentId) => {
+    setCbasStudents(prev => prev.map(st => {
+      if (st.id === studentId) {
+        return {
+          ...st,
+          unlockedStep5: true,
+          conf: st.conf.replace('Chờ TV', '7/10').replace('(Chưa đo)', '7/10'),
+          crs: st.crs.replace('--', '+0.3'),
+          status: 'Completed'
+        }
+      }
+      return st
+    }))
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`gate_step5_unlocked_${studentId}`, 'true')
+      localStorage.setItem('cbas_step4_completed', 'true')
+      localStorage.setItem('cbas_step4_consultation_completed', 'true')
+      window.dispatchEvent(new Event('storage'))
+    }
+
+    const matched = counselingSessions.find(s => {
+      const c = parseStudentContact(s.student_notes)
+      return c.studentCode === studentId || s.student?.full_name?.includes(studentId)
+    })
+    if (matched) {
+      handleMarkSessionCompleted(matched)
+    }
+
+    setToastMessage(`[XÁC NHẬN THÀNH CÔNG] Đã mở khóa Bước 5 cho đối tượng ${studentId}. Học sinh có thể lập Tam giác nguyện vọng và ký cam kết!`)
+    setTimeout(() => setToastMessage(null), 4000)
+  }
+
+  // 3. Xuất toàn bộ dữ liệu thô (CSV) cho Thống kê CBAS (SPSS / R)
+  const handleExportRawDataCSV = () => {
+    const csvHeader = "Subject_ID,RIASEC,Target_Major,Delta_Score_B3,Triage_Branch,Conf_T0,Conf_T2,CRS_T0,CRS_T2,Step5_Status\n"
+    const rows = cbasStudents.map(st => {
+      const confParts = st.conf.split('→').map(s => s.trim().replace('/10', ''))
+      const confT0 = confParts[0] || '7'
+      const confT2 = confParts[1] === '(Chưa đo)' || confParts[1] === '(Chờ TV)' ? 'NA' : (confParts[1] || '7')
+      const crsParts = st.crs.split('→').map(s => s.trim())
+      const crsT0 = crsParts[0] || '+1.0'
+      const crsT2 = crsParts[1] === '--' ? 'NA' : (crsParts[1] || '+0.2')
+      const branch = st.triage.includes('Fast-track') ? 'Fast-track' : 'In-depth'
+      const deltaClean = st.deltaScore.replace(/[^0-9.\-+]/g, '') || '+0.0'
+      const status = st.unlockedStep5 ? 'Completed' : 'Pending'
+      return `${st.id},${st.riasec},"${st.major}",${deltaClean},${branch},${confT0},${confT2},${crsT0},${crsT2},${status}`
+    }).join('\n')
+
+    const blob = new Blob(['\uFEFF' + csvHeader + rows], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = "SocraCareer_Raw_Data_N30.csv"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setToastMessage('Đã tải xuống file CSV Thô SPSS/R (SocraCareer_Raw_Data_N30.csv)!')
+    setTimeout(() => setToastMessage(null), 3000)
+  }
+
+  const handlePreviewStudentPDF = (studentId) => {
+    const student = cbasStudents.find(s => s.id === studentId) || {
+      id: studentId,
+      riasec: 'RAI',
+      major: 'Tâm lý học (ĐH KHXH&NV)',
+      conf: '6/10 → 7/10',
+      crs: '+1.2 → +0.1',
+      deltaScore: '+0.5đ (An toàn)'
+    }
+    setPreviewPdfStudent(student)
+  }
+
+  const handleBatchPrintAllPDF = () => {
+    setIsBatchPrintModalOpen(true)
+  }
 
   useEffect(() => {
     fetchRealSupabaseData('initial')
@@ -908,6 +1109,10 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
   const completedCount = counselingSessions.filter(c => c.status === 'completed').length
   const rejectedCount = counselingSessions.filter(c => c.status === 'rejected').length
 
+  // Thống kê phân luồng CBAS 2026
+  const pendingTriageCount = triageRequests.filter(r => !r.approved).length
+  const step5CompletedCount = cbasStudents.filter(s => s.unlockedStep5).length
+
   // Chỉ hiển thị loading che toàn màn hình nếu chưa có bất kỳ dữ liệu nào được nạp
   if (isLoading && usersList.length === 0 && counselingSessions.length === 0) {
     return (
@@ -970,8 +1175,26 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
           </div>
         </div>
 
-        {/* Thanh 3 Tabs chuẩn hóa */}
+        {/* Thanh 4 Tabs chuẩn hóa */}
         <div className="flex border-b border-slate-200 gap-6 pt-2 overflow-x-auto">
+          {/* TAB CBAS 2026 */}
+          <button
+            onClick={() => setActiveTab('cbas_hub')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
+              activeTab === 'cbas_hub' 
+                ? 'border-teal-600 text-teal-800 bg-teal-50/80 px-3 py-1.5 rounded-t-sm shadow-2xs' 
+                : 'border-transparent text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-teal-600" />
+            <span>⚡ 1. Điều Phối CBAS 2026 (N=30)</span>
+            {pendingTriageCount > 0 && (
+              <span className="px-1.5 py-0.5 text-[10px] bg-rose-500 text-white rounded-full font-black">
+                {pendingTriageCount} chờ duyệt
+              </span>
+            )}
+          </button>
+
           {/* TAB 1 */}
           <button
             onClick={() => setActiveTab('experiment')}
@@ -982,7 +1205,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             }`}
           >
             <BarChart3 className="w-4 h-4 text-indigo-600" />
-            <span>📊 1. Báo Cáo Khoa Học Thực Nghiệm (N=90)</span>
+            <span>📊 2. Báo Cáo Khoa Học Thực Nghiệm (N=90)</span>
           </button>
 
           {/* TAB 2 */}
@@ -995,7 +1218,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             }`}
           >
             <Brain className="w-4 h-4 text-amber-500" />
-            <span>📝 2. Nhật Ký Phản Tư & Tác Vụ Tình Huống ({matricesList.length})</span>
+            <span>📝 3. Nhật Ký Phản Tư & Tác Vụ Tình Huống ({matricesList.length})</span>
           </button>
 
           {/* TAB 3 */}
@@ -1008,7 +1231,7 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
             }`}
           >
             <CalendarDays className="w-4 h-4 text-violet-600" />
-            <span>📅 3. Quản Lý Lịch Hẹn Tư Vấn 1-1 ({counselingSessions.length})</span>
+            <span>📅 4. Quản Lý Lịch Hẹn Tư Vấn 1-1 ({counselingSessions.length})</span>
             {pendingCount > 0 && (
               <span className="px-1.5 py-0.5 text-[10px] bg-amber-500 text-slate-950 rounded-full font-black">
                 {pendingCount} chờ duyệt
@@ -1017,6 +1240,295 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
           </button>
         </div>
       </div>
+
+      {/* =========================================================================
+          TAB CBAS 2026: TRUNG TÂM ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30)
+          ========================================================================= */}
+      {activeTab === 'cbas_hub' && (
+        <div className="bg-slate-950 text-slate-100 rounded-2xl border border-slate-800 p-6 space-y-6 shadow-2xl animate-reveal font-sans">
+          
+          {/* THANH ĐIỀU HƯỚNG TRÊN CÙNG (TOP NAVIGATION) */}
+          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-xl flex flex-wrap items-center justify-between gap-4 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 font-extrabold flex items-center justify-center border border-teal-500/30 text-lg shadow-inner">
+                SC
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm font-bold text-white tracking-wide">SOCRACAREER ADMIN DASHBOARD</h1>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">CBAS-2026</span>
+                </div>
+                <p className="text-[11px] text-slate-400">Trung Tâm Điều Phối & Giám Sát Thực Nghiệm Hành Vi (N=30 Web Intervention)</p>
+              </div>
+            </div>
+
+            {/* Nút Xuất Minh Chứng Thực Nghiệm */}
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleExportRawDataCSV}
+                className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <span>Xuất CSV Thô (SPSS/R)</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleBatchPrintAllPDF}
+                className="px-3.5 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 shadow-md shadow-teal-500/20 transition cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Tải 30 Bản Cam Kết (PDF)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* KHỐI 1: TỔNG QUAN TIẾN TRÌNH PHỄU CAN THIỆP (n = 30) */}
+          <section className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B1. Mỏ Neo RIASEC</span>
+              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
+              <p className="text-[10px] text-emerald-400 mt-0.5">✓ Hoàn thành 100%</p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B2. Phản Tư Socrates</span>
+              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
+              <p className="text-[10px] text-emerald-400 mt-0.5">✓ 26/30 Bộc lộ Turning Point</p>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">B3. Đối Chứng Điểm</span>
+              <div className="text-xl font-bold text-white mt-1">30 / 30</div>
+              <p className="text-[10px] text-cyan-400 mt-0.5">✓ 11 HS Thiếu Điểm (Δ &lt; -1.5)</p>
+            </div>
+            <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30">
+              <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">B4. Phân Luồng Triage</span>
+              <div className="text-xl font-bold text-amber-200 mt-1">
+                {30 - pendingTriageCount} / 30
+              </div>
+              <p className="text-[10px] text-amber-400 mt-0.5">
+                {pendingTriageCount > 0 ? `Đang chờ duyệt: ${pendingTriageCount} HS` : '✓ Đã xếp lịch toàn bộ'}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30">
+              <span className="text-[11px] font-bold text-teal-400 uppercase tracking-wider block">B5. Cam Kết Hành Động</span>
+              <div className="text-xl font-bold text-teal-200 mt-1">
+                {step5CompletedCount} / 30
+              </div>
+              <p className="text-[10px] text-teal-400 mt-0.5">CRS dịch chuyển: +2.1 → +0.2</p>
+            </div>
+          </section>
+
+          {/* KHỐI 2: TRUNG TÂM PHÊ DUYỆT ĐIỀU PHỐI LỊCH HẸN BƯỚC 4 (CENTRALIZED TRIAGE DISPATCHER) */}
+          <section className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
+                  HÀNG ĐỢI PHÊ DUYỆT THAM VẤN 1-1 (IN-DEPTH TRIAGE APPROVAL)
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Học sinh đề xuất lịch hẹn sau Bước 3. Admin kiểm tra hồ sơ lệch điểm và gán Mentor phù hợp trước khi mở khóa Bước 5.
+                </p>
+              </div>
+              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
+                pendingTriageCount > 0 
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+              }`}>
+                {pendingTriageCount > 0 ? `Có ${pendingTriageCount} yêu cầu cần xếp lịch` : '✓ Đã điều phối toàn bộ'}
+              </span>
+            </div>
+
+            {/* Danh sách thẻ phê duyệt */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {triageRequests.map((req) => {
+                const isApproved = req.approved
+                return (
+                  <div
+                    key={req.id}
+                    className={`p-4 rounded-xl bg-slate-950 border space-y-3 transition-all ${
+                      isApproved 
+                        ? 'border-emerald-500/40 bg-emerald-950/10' 
+                        : 'border-rose-500/30'
+                    }`}
+                  >
+                    {isApproved ? (
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="font-bold text-emerald-400">{req.id} - LỊCH ĐÃ ĐƯỢC ADMIN PHÊ DUYỆT</span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-medium">Sẵn sàng phiên tham vấn</span>
+                        </div>
+                        <p className="text-xs text-slate-300 mt-2">
+                          Mentor phụ trách: <strong className="text-white">{req.assignedMentor || req.selectedMentor}</strong>
+                        </p>
+                        <p className="text-[11px] text-cyan-400 mt-1">
+                          Đã đồng bộ thông báo về giao diện học sinh. Đang chờ hoàn thành phiên 1-1 để mở khóa Bước 5.
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-xs">{req.id}</span>
+                            <span className="text-xs font-semibold text-slate-300">{req.grade}</span>
+                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium">Chờ Admin phê duyệt</span>
+                        </div>
+
+                        <div className="text-xs space-y-1 bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                          <p><span className="text-slate-400">Nguyện vọng:</span> <strong className="text-white">{req.major}</strong></p>
+                          <p><span className="text-slate-400">Độ lệch Bước 3:</span> <strong className="text-rose-400">{req.scoreGap}</strong></p>
+                          <p><span className="text-slate-400">HS đề xuất giờ:</span> <span className="text-slate-200 font-medium">{req.proposedTime}</span></p>
+                          <p><span className="text-slate-400">Câu hỏi của HS:</span> <em className="text-amber-200">{req.question}</em></p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <select
+                            id={`mentorSelect-${req.id}`}
+                            defaultValue={req.selectedMentor}
+                            className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 flex-1"
+                          >
+                            {req.mentors.map((m, idx) => (
+                              <option key={idx} value={m}>{m}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const el = document.getElementById(`mentorSelect-${req.id}`)
+                              const val = el ? el.value : req.selectedMentor
+                              handleApproveTriageRequest(req.id, val)
+                            }}
+                            className="px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer"
+                          >
+                            Duyệt & Gán Lịch
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* KHỐI 3: BẢNG GIÁM SÁT 30 ĐỐI TƯỢNG THỰC NGHIỆM & KHÓA CỔNG BƯỚC 5 */}
+          <section className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+              <div>
+                <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-teal-400" />
+                  BẢNG DỮ LIỆU THỰC NGHIỆM CHI TIẾT (MÃ HÓA ẨN DANH CT_01 → CT_30)
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Quản trị viên xác nhận hoàn thành phiên tham vấn để mở khóa cổng Bước 5 cho đối tượng.
+                </p>
+              </div>
+              <div className="text-xs text-slate-400">
+                Hiển thị: <strong className="text-white">30 đối tượng can thiệp</strong> (Nhóm đối chứng thu thập ngoại vi)
+              </div>
+            </div>
+
+            {/* Bảng dữ liệu bảng tính */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider bg-slate-950/50">
+                    <th className="p-3">Mã ĐT</th>
+                    <th className="p-3">Mã RIASEC</th>
+                    <th className="p-3">Ngành Khai Báo</th>
+                    <th className="p-3 text-center">Δ Điểm B3</th>
+                    <th className="p-3">Phân Luồng B4</th>
+                    <th className="p-3 text-center">Conf (T0 → T2)</th>
+                    <th className="p-3 text-center">CRS (T0 → T2)</th>
+                    <th className="p-3 text-center">Cổng Bước 5</th>
+                    <th className="p-3 text-right">Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-medium">
+                  {cbasStudents.map((st) => {
+                    const isUnlocked = st.unlockedStep5
+                    const isDangerous = st.deltaScore.includes('Nguy cơ')
+                    return (
+                      <tr
+                        key={st.id}
+                        className={`hover:bg-slate-800/40 transition ${
+                          !isUnlocked && isDangerous ? 'bg-rose-950/10' : ''
+                        }`}
+                      >
+                        <td className={`p-3 font-bold ${isUnlocked ? 'text-teal-400' : 'text-rose-400'}`}>
+                          {st.id}
+                        </td>
+                        <td className="p-3 text-slate-300">{st.riasec}</td>
+                        <td className="p-3 text-white font-semibold">{st.major}</td>
+                        <td className="p-3 text-center">
+                          <span className={`font-bold ${
+                            st.deltaScore.includes('An toàn') 
+                              ? 'text-emerald-400' 
+                              : st.deltaScore.includes('Biên giới') 
+                              ? 'text-amber-400' 
+                              : 'text-rose-400'
+                          }`}>
+                            {st.deltaScore}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] ${
+                            st.triage.includes('Fast-track')
+                              ? 'bg-emerald-500/20 text-emerald-300'
+                              : 'bg-rose-500/20 text-rose-300'
+                          }`}>
+                            {st.triage}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center text-slate-300">{st.conf}</td>
+                        <td className="p-3 text-center">
+                          <span className={`font-bold ${
+                            st.crs.includes('--') ? 'text-amber-400' : 'text-cyan-300'
+                          }`}>
+                            {st.crs}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          {isUnlocked ? (
+                            <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 text-[10px] font-bold">
+                              Đã Mở Khóa B5
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">
+                              Đang Khóa Cổng
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          {isUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handlePreviewStudentPDF(st.id)}
+                              className="text-teal-400 hover:text-teal-300 underline text-xs cursor-pointer"
+                            >
+                              Xem Cam Kết PDF
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmConsultationComplete(st.id)}
+                              className="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-bold text-[11px] transition cursor-pointer"
+                            >
+                              Xác Nhận Đã TV & Mở Khóa B5
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+      )}
 
       {/* =========================================================================
           TAB 1: BÁO CÁO KHOA HỌC THỰC NGHIỆM (N=90)
@@ -2175,6 +2687,267 @@ const AdminDashboard = ({ activeTabDefault = 'experiment' }) => {
               >
                 Đóng
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL XEM TRƯỚC BẢN CAM KẾT HÀNH ĐỘNG A4 (CHUẨN VISEF 2026 CBAS)
+          ========================================================================= */}
+      {previewPdfStudent && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-reveal">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 space-y-4 max-h-[95vh] overflow-y-auto">
+            {/* Thanh điều khiển thao tác (Ẩn khi in) */}
+            <div className="no-print flex items-center justify-between bg-slate-800 p-3 rounded-xl border border-slate-700">
+              <span className="text-xs text-slate-300 font-semibold flex items-center gap-2">
+                <span>📄 Xem trước Bản Cam Kết A4 ({previewPdfStudent.id})</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg shadow-md flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>🖨️ IN BẢN A4 NÀY</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewPdfStudent(null)}
+                  className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+
+            {/* Khung tài liệu A4 chuẩn in ấn */}
+            <div className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200">
+              {/* Header */}
+              <div className="border-b-2 border-teal-700 pb-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
+                      DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
+                    </span>
+                    <div className="text-sm font-extrabold text-slate-800 mt-1">
+                      MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | KHỐI 12 THPT
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
+                      NHÓM CAN THIỆP (SOCRACAREER)
+                    </span>
+                  </div>
+                </div>
+
+                <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
+                  BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
+                </h1>
+                <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
+                  "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
+                </p>
+              </div>
+
+              {/* Khối Đo lường & Hiệu chuẩn nhận thức */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase">Ngành mục tiêu chốt lại:</div>
+                  <div className="text-sm font-black text-slate-900 mt-1">{previewPdfStudent.major}</div>
+                  <div className="text-[10px] text-emerald-700 font-bold mt-0.5">☑ Đã đối chứng & Cam kết dấn thân</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase">Độ tự tin (Trước vs Sau):</div>
+                  <div className="text-sm font-black text-teal-800 mt-1">{previewPdfStudent.conf}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Mã RIASEC: <strong className="text-slate-800">{previewPdfStudent.riasec}</strong></div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase">Chỉ số Thiên lệch (CRS):</div>
+                  <div className="text-sm font-black text-cyan-800 mt-1">{previewPdfStudent.crs}</div>
+                  <div className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ Đã hiệu chuẩn thiên lệch</div>
+                </div>
+              </div>
+
+              {/* Tam giác nguyện vọng thích ứng */}
+              <div className="space-y-2 border border-slate-200 rounded-lg p-4">
+                <h3 className="text-xs font-bold text-teal-900 uppercase tracking-wide flex items-center gap-1.5">
+                  <span>🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
+                  <div className="bg-teal-50/70 p-3 rounded border border-teal-200">
+                    <span className="text-[10px] font-bold text-teal-800 uppercase block">1. Nguyện vọng Mơ ước (Aspiration)</span>
+                    <strong className="text-slate-900 block mt-1">{previewPdfStudent.major}</strong>
+                    <p className="text-[10px] text-slate-600 mt-1">ĐH Top đầu - Điểm sàn cao (Mục tiêu dấn thân nỗ lực cao độ)</p>
+                  </div>
+                  <div className="bg-sky-50/70 p-3 rounded border border-sky-200">
+                    <span className="text-[10px] font-bold text-sky-800 uppercase block">2. Nguyện vọng Vừa sức (Realistic)</span>
+                    <strong className="text-slate-900 block mt-1">{previewPdfStudent.major} (Trường công lập)</strong>
+                    <p className="text-[10px] text-slate-600 mt-1">Điểm xét tuyển nằm trong ngưỡng biên độ an toàn học bạ</p>
+                  </div>
+                  <div className="bg-slate-100/80 p-3 rounded border border-slate-300">
+                    <span className="text-[10px] font-bold text-slate-700 uppercase block">3. Nguyện vọng Dự phòng (Safety)</span>
+                    <strong className="text-slate-900 block mt-1">Ngành gần / Chương trình tiêu chuẩn</strong>
+                    <p className="text-[10px] text-slate-600 mt-1">Đảm bảo chắc chắn cơ hội trúng tuyển và tối ưu học phí</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kế hoạch hành động 30 ngày */}
+              <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  📋 KẾ HOẠCH HÀNH ĐỘNG 30 NGÀY TỰ CHỦ
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 1 - 10</span>
+                    <p className="text-[11px] text-slate-700 mt-1">Ôn tập trọng tâm các môn xét tuyển còn yếu, làm đề thi ĐGNL mẫu.</p>
+                  </div>
+                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 11 - 20</span>
+                    <p className="text-[11px] text-slate-700 mt-1">Kiểm tra đề án tuyển sinh, chuẩn bị hồ sơ xét tuyển sớm và chứng chỉ.</p>
+                  </div>
+                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
+                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 21 - 30</span>
+                    <p className="text-[11px] text-slate-700 mt-1">Đối thoại lần cuối cùng chuyên gia/mentor, chốt thứ tự nguyện vọng.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chữ ký 3 bên */}
+              <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
+                <div className="space-y-8">
+                  <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
+                  <div className="font-black text-teal-800">{previewPdfStudent.id} (Đã ký điện tử)</div>
+                </div>
+                <div className="space-y-8">
+                  <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
+                  <div className="italic text-slate-500 font-semibold">(Xác nhận đồng hành)</div>
+                </div>
+                <div className="space-y-8">
+                  <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
+                  <div className="italic text-slate-500 font-semibold">(Chứng kiến & Hỗ trợ)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL IN HÀNG LOẠT 30 BẢN CAM KẾT A4 (PHỤ LỤC MINH CHỨNG VISEF 2026)
+          ========================================================================= */}
+      {isBatchPrintModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-reveal">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-5xl w-full p-6 space-y-4 max-h-[95vh] overflow-y-auto">
+            {/* Thanh điều khiển thao tác */}
+            <div className="no-print flex items-center justify-between bg-slate-800 p-3.5 rounded-xl border border-slate-700 sticky top-0 z-10 shadow-md">
+              <div>
+                <span className="text-xs text-white font-bold block">
+                  📚 TẬP HỒ SƠ 30 BẢN CAM KẾT HÀNH ĐỘNG THỰC NGHIỆM (N=30)
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  Chuẩn A4 dọc phục vụ đóng tập Phụ lục Hồ sơ Dự thi ViSEF 2026
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg shadow-lg flex items-center gap-2 transition cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>🖨️ IN TOÀN BỘ 30 BẢN (PDF)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBatchPrintModalOpen(false)}
+                  className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs rounded-lg transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+
+            {/* Danh sách 30 bản in */}
+            <div className="space-y-8">
+              {cbasStudents.map((st, idx) => (
+                <div
+                  key={st.id}
+                  className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200 page-break-inside-avoid"
+                >
+                  {/* Header */}
+                  <div className="border-b-2 border-teal-700 pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
+                          DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #{idx + 1}/30
+                        </span>
+                        <div className="text-sm font-extrabold text-slate-800 mt-1">
+                          MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{st.id}</span> | KHỐI 12 THPT
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
+                          NHÓM CAN THIỆP (SOCRACAREER)
+                        </span>
+                      </div>
+                    </div>
+
+                    <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
+                      BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
+                    </h1>
+                  </div>
+
+                  {/* Khối Đo lường */}
+                  <div className="grid grid-cols-3 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Ngành mục tiêu:</div>
+                      <div className="text-xs font-black text-slate-900 mt-0.5">{st.major}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Độ tự tin & RIASEC:</div>
+                      <div className="text-xs font-black text-teal-800 mt-0.5">{st.conf} ({st.riasec})</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Chỉ số CRS:</div>
+                      <div className="text-xs font-black text-cyan-800 mt-0.5">{st.crs}</div>
+                    </div>
+                  </div>
+
+                  {/* Tam giác nguyện vọng */}
+                  <div className="grid grid-cols-3 gap-3 text-xs border border-slate-200 rounded-lg p-3">
+                    <div className="bg-teal-50 p-2.5 rounded border border-teal-200">
+                      <span className="text-[10px] font-bold text-teal-800 uppercase block">1. Mơ ước</span>
+                      <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major}</strong>
+                    </div>
+                    <div className="bg-sky-50 p-2.5 rounded border border-sky-200">
+                      <span className="text-[10px] font-bold text-sky-800 uppercase block">2. Vừa sức</span>
+                      <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major} (Trường công lập)</strong>
+                    </div>
+                    <div className="bg-slate-100 p-2.5 rounded border border-slate-300">
+                      <span className="text-[10px] font-bold text-slate-700 uppercase block">3. Dự phòng</span>
+                      <strong className="text-slate-900 block mt-0.5 text-[11px]">Ngành gần / Chuẩn đầu ra tương đương</strong>
+                    </div>
+                  </div>
+
+                  {/* Chữ ký 3 bên */}
+                  <div className="grid grid-cols-3 gap-4 pt-3 text-center text-xs border-t border-slate-200">
+                    <div>
+                      <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
+                      <div className="font-black text-teal-800 mt-6">{st.id}</div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
+                      <div className="italic text-slate-500 font-semibold mt-6">(Xác nhận)</div>
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
+                      <div className="italic text-slate-500 font-semibold mt-6">(Chứng kiến)</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
