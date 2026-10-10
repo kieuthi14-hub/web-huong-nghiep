@@ -42,10 +42,11 @@ const Register = () => {
         setToast({ type: 'error', message: error.message || 'Lỗi đăng ký tài khoản!' })
       } else {
         setIsSuccess(true)
+        localStorage.setItem('cbas_student_code', fullName.trim().toUpperCase())
         setToast({ type: 'success', message: 'Đăng ký tài khoản học sinh thành công!' })
         setTimeout(() => {
           navigate('/login')
-        }, 3000)
+        }, 2000)
       }
     } catch (err) {
       setToast({ type: 'error', message: 'Có lỗi xảy ra, vui lòng thử lại!' })
@@ -135,10 +136,11 @@ const Register = () => {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-4.5">
-                  {/* Họ tên */}
+                  {/* Họ tên / Mã học sinh */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider" htmlFor="fullName">
-                      Họ và tên học sinh
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between" htmlFor="fullName">
+                      <span>Mã học sinh (Khuyến nghị điền CT_01 ➔ CT_30 để ẩn danh)</span>
+                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Chuẩn ViSEF</span>
                     </label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -148,8 +150,8 @@ const Register = () => {
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none transition-all rounded-sm font-medium"
-                        placeholder="Nguyễn Văn A"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 focus:border-brand-500 focus:bg-white focus:outline-none transition-all rounded-sm font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
+                        placeholder="VD: CT_01, CT_02... (Để mã hóa hoàn toàn họ tên)"
                       />
                     </div>
                   </div>

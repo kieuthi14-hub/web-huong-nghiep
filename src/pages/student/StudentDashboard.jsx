@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 
 const StudentDashboard = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, displayName, studentCode } = useAuth()
   const location = useLocation()
   const [toast, setToast] = useState(null)
 
@@ -373,10 +373,14 @@ const StudentDashboard = () => {
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
                 Mô Hình Can Thiệp Giảm Thiên Lệch Nhận Thức
               </span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-teal-500/20 text-teal-300 border border-teal-400/30 rounded-full flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
+                <span>Mã hóa ẩn danh: {displayName || studentCode || 'CT_01'}</span>
+              </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-              Xin chào, {profile?.full_name || 'Học sinh'}! 👋
+              Xin chào, {displayName || studentCode || 'Học sinh'}! 👋
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">

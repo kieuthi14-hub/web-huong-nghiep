@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { user, profile } = useAuth()
+  const { user, profile, displayName, studentCode } = useAuth()
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
@@ -93,12 +93,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-sm bg-slate-800 flex items-center justify-center text-brand-400 border border-slate-700">
               <span className="font-bold text-sm uppercase">
-                {profile?.full_name?.substring(0, 2) || 'HS'}
+                {(displayName || profile?.full_name || 'CT').substring(0, 2)}
               </span>
             </div>
             <div>
               <p className="text-sm font-semibold text-white leading-none mb-1">
-                {profile?.full_name || 'Học sinh'}
+                {displayName || profile?.full_name || 'Học sinh'}
               </p>
               {isTeacherAdmin ? (
                 <Link
@@ -110,8 +110,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   ADMIN ⚙️
                 </Link>
               ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-brand-900/60 text-brand-300 border border-brand-800 uppercase">
-                  {userRole.toUpperCase()}
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-teal-950/80 text-teal-300 border border-teal-800 uppercase">
+                  🛡️ {studentCode || 'CT_01'}
                 </span>
               )}
             </div>

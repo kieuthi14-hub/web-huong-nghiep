@@ -66,23 +66,40 @@ export const AuthProvider = ({ children }) => {
       const userEmail = currentUser?.email?.toLowerCase().trim() || ''
       const isWhitelistedAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)
 
-      // Nhận diện mã học sinh thực nghiệm CT_01 -> CT_30
+      // Nhận diện mã học sinh thực nghiệm CT_01 -> CT_30 hoặc mã do học sinh tự điền
       let detectedStudentCode = null
-      const ctMatch = userEmail.match(/^ct[_\-]?(\d{1,2})@/)
+      const ctMatch = userEmail.match(/^ct[_\-]?(\d{1,3})@/)
       if (ctMatch) {
         const n = parseInt(ctMatch[1], 10)
         detectedStudentCode = `CT_${n < 10 ? '0' + n : n}`
       } else if (currentUser?.user_metadata?.student_code) {
         detectedStudentCode = currentUser.user_metadata.student_code
+      } else if (data?.student_code) {
+        detectedStudentCode = data.student_code
+      }
+
+      // Kiểm tra localStorage (mã học sinh đã nhập lúc đăng nhập hoặc tự đổi)
+      if (!detectedStudentCode) {
+        try {
+          const local = localStorage.getItem('cbas_student_code')
+          if (local && local.trim()) {
+            detectedStudentCode = local.trim().toUpperCase()
+          }
+        } catch (e) {}
+      }
+
+      // Mặc định đối với học sinh: Mã hóa ẩn danh bảo vệ danh tính tuyệt đối
+      if (!isWhitelistedAdmin && !detectedStudentCode) {
+        detectedStudentCode = 'CT_01'
       }
 
       if (!data && currentUser) {
         const newProfile = {
           id: userId,
           email: currentUser.email,
-          full_name: detectedStudentCode || currentUser.user_metadata?.full_name || 'Học sinh',
+          full_name: isWhitelistedAdmin ? (currentUser.user_metadata?.full_name || 'Quản trị viên') : detectedStudentCode,
           role: isWhitelistedAdmin ? 'admin' : (currentUser.user_metadata?.role || 'student'),
-          student_code: detectedStudentCode
+          student_code: isWhitelistedAdmin ? null : detectedStudentCode
         }
         
         const { data: createdData } = await supabase
@@ -96,9 +113,21 @@ export const AuthProvider = ({ children }) => {
         if (isWhitelistedAdmin && data) {
           data.role = 'admin'
         }
-        if (detectedStudentCode && data) {
-          data.student_code = detectedStudentCode
-          data.full_name = detectedStudentCode
+        if (!isWhitelistedAdmin && data) {
+          // Bắt buộc ẩn danh hóa đối với học sinh: Tuyệt đối không để lộ email hoặc tên mail
+          data.student_code = detectedStudentCode || data.student_code || 'CT_01'
+          const isEmailLike = !data.full_name || data.full_name.includes('@') || data.full_name.toLowerCase() === userEmail.split('@')[0]
+          if (isEmailLike || detectedStudentCode) {
+            data.full_name = detectedStudentCode || data.student_code || 'CT_01'
+          }
+
+          // Tự động chữa lành dữ liệu cũ trong Supabase nếu database đang lưu tên mail
+          if (isEmailLike && detectedStudentCode && data.id) {
+            supabase.from('profiles').update({
+              full_name: detectedStudentCode,
+              student_code: detectedStudentCode
+            }).eq('id', data.id).then(() => {}).catch(() => {})
+          }
         }
         setProfile(data)
       }
@@ -158,29 +187,67 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Mã học sinh ẩn danh (ưu tiên localStorage do học sinh tự điền hoặc chọn)
   const studentCode = (() => {
+    try {
+      const local = localStorage.getItem('cbas_student_code')
+      if (local && local.trim()) return local.trim().toUpperCase()
+    } catch (e) {}
+
     const email = (user?.email || profile?.email || '').toLowerCase().trim()
-    const ctMatch = email.match(/^ct[_\-]?(\d{1,2})@/)
+    const ctMatch = email.match(/^ct[_\-]?(\d{1,3})@/)
     if (ctMatch) {
       const n = parseInt(ctMatch[1], 10)
       return `CT_${n < 10 ? '0' + n : n}`
     }
     if (profile?.student_code) return profile.student_code
-    if (profile?.full_name && /^CT_\d{2}$/i.test(profile.full_name)) {
+    if (profile?.full_name && /^CT_\d{1,3}$/i.test(profile.full_name)) {
       return profile.full_name.toUpperCase()
     }
-    try {
-      const local = localStorage.getItem('cbas_student_code')
-      if (local) return local
-    } catch (e) {}
-    return profile?.full_name || 'Học sinh'
+    return 'CT_01'
   })()
+
+  // Tên hiển thị chuẩn đạo đức ViSEF: Tuyệt đối KHÔNG hiển thị email hoặc tên email đối với học sinh
+  const displayName = (() => {
+    const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
+    const isWhitelistedAdmin = ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)
+    if (isWhitelistedAdmin) {
+      return profile?.full_name || 'Admin Quản trị viên'
+    }
+    // Đối với học sinh: 100% hiển thị mã ẩn danh (VD: CT_01)
+    return studentCode || 'CT_01'
+  })()
+
+  // Hàm cho phép học sinh tự đổi mã ẩn danh (VD: CT_01 -> CT_02,...) ngay trên giao diện
+  const updateStudentCode = async (newCode) => {
+    const formatted = (newCode || 'CT_01').trim().toUpperCase()
+    localStorage.setItem('cbas_student_code', formatted)
+    
+    if (user?.id) {
+      try {
+        await supabase.from('profiles').update({
+          full_name: formatted,
+          student_code: formatted
+        }).eq('id', user.id)
+      } catch (err) {
+        console.warn('Lỗi updateStudentCode:', err)
+      }
+    }
+
+    setProfile(prev => prev ? {
+      ...prev,
+      full_name: formatted,
+      student_code: formatted
+    } : prev)
+  }
 
   return (
     <AuthContext.Provider value={{ 
       user, 
       profile, 
       studentCode,
+      displayName,
+      updateStudentCode,
       loading, 
       signIn, 
       signUp, 

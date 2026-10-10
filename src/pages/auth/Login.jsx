@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import { Lock, Mail, ArrowRight, Eye, EyeOff, Sparkles, UserCheck, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react'
@@ -16,6 +17,7 @@ const Login = () => {
   const navigate = useNavigate()
   
   const [identifier, setIdentifier] = useState('')
+  const [anonymizedCode, setAnonymizedCode] = useState('CT_01')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -23,39 +25,38 @@ const Login = () => {
   const [showQuickSelect, setShowQuickSelect] = useState(false)
 
   // Hàm chuẩn hóa thông tin đăng nhập: Tên CT_01 -> CT_30, Tên thử nghiệm khác hoặc Email
-  const normalizeCredentials = (input, pwd) => {
+  const normalizeCredentials = (input, pwd, customCode = '') => {
     const raw = (input || '').trim()
     const rawPwd = (pwd || '').trim()
+    const targetCode = (customCode || anonymizedCode || 'CT_01').trim().toUpperCase()
 
-    // 1. Kiểm tra mã học sinh thực nghiệm: CT_01 đến CT_30 (chấp nhận ct01, CT_1, ct-02,...)
-    const ctMatch = raw.match(/^ct[_\-]?(\d{1,2})$/i)
+    // 1. Kiểm tra mã học sinh thực nghiệm: CT_01 đến CT_99... (chấp nhận ct01, CT_1, ct-02,...)
+    const ctMatch = raw.match(/^ct[_\-]?(\d{1,3})$/i)
     if (ctMatch) {
       const num = parseInt(ctMatch[1], 10)
-      if (num >= 1 && num <= 30) {
-        const code = `CT_${num < 10 ? '0' + num : num}`
-        const email = `ct_${num < 10 ? '0' + num : num}@student.visef.edu.vn`
-        return {
-          email,
-          password: rawPwd || '123456',
-          studentCode: code,
-          isExperimental: true
-        }
+      const code = `CT_${num < 10 ? '0' + num : num}`
+      const email = `ct_${num < 10 ? '0' + num : num}@student.visef.edu.vn`
+      return {
+        email,
+        password: rawPwd || '123456',
+        studentCode: code,
+        isExperimental: true
       }
     }
 
-    // 2. Nếu người dùng nhập địa chỉ email có @ (VD: kieuthi14@gmail.com)
+    // 2. Nếu người dùng nhập địa chỉ email có @ (VD: nguyenvana@gmail.com)
     if (raw.includes('@')) {
       return {
         email: raw.toLowerCase(),
         password: rawPwd,
-        studentCode: null,
-        isExperimental: false
+        studentCode: targetCode || 'CT_01',
+        isExperimental: true
       }
     }
 
-    // 3. Nếu người dùng nhập tên khác để thử web (VD: 'thunghiem_01', 'guest', 'lan_anh')
+    // 3. Nếu người dùng nhập tên khác để thử web (VD: 'CT_01', 'guest', 'lan_anh')
     const cleanName = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '_')
-    const code = raw.toUpperCase()
+    const code = targetCode || raw.toUpperCase()
     return {
       email: `${cleanName || 'student_test'}@student.visef.edu.vn`,
       password: rawPwd || '123456',
@@ -64,13 +65,13 @@ const Login = () => {
     }
   }
 
-  const handlePerformLogin = async (rawId, rawPwd) => {
+  const handlePerformLogin = async (rawId, rawPwd, customCode = '') => {
     if (!rawId) {
       setToast({ type: 'error', message: 'Vui lòng nhập mã học sinh (CT_01 - CT_30), tên đăng nhập hoặc email!' })
       return
     }
 
-    const { email, password: finalPassword, studentCode, isExperimental } = normalizeCredentials(rawId, rawPwd)
+    const { email, password: finalPassword, studentCode, isExperimental } = normalizeCredentials(rawId, rawPwd, customCode || anonymizedCode)
 
     if (!finalPassword) {
       setToast({ type: 'error', message: 'Vui lòng nhập mật khẩu (Mật khẩu mặc định là 123456)!' })
@@ -85,7 +86,7 @@ const Login = () => {
       // 2. Nếu tài khoản chưa tồn tại trên Supabase Auth (tài khoản thử nghiệm mới):
       if (error && (error.message?.includes('Invalid login credentials') || error.message?.includes('Email not confirmed'))) {
         // Tự động khởi tạo tài khoản mới ngay lập tức
-        const defaultCode = studentCode || 'Học sinh thử nghiệm'
+        const defaultCode = studentCode || 'CT_01'
         const { error: signUpError } = await signUp(email, finalPassword, defaultCode)
 
         if (!signUpError) {
@@ -115,16 +116,27 @@ const Login = () => {
         }
         localStorage.setItem('cbas_is_experimental_group', isExperimental ? 'true' : 'false')
 
+        // Cập nhật profile ngay vào DB để xóa sạch mọi dấu vết tên mail cũ
+        const currentUserId = data?.user?.id
+        if (currentUserId && studentCode) {
+          try {
+            await supabase.from('profiles').update({
+              full_name: studentCode,
+              student_code: studentCode
+            }).eq('id', currentUserId)
+          } catch (err) {
+            console.warn('Lỗi cập nhật profile Supabase:', err)
+          }
+        }
+
         setToast({ 
           type: 'success', 
-          message: isExperimental 
-            ? `🎉 Đăng nhập thành công học sinh thực nghiệm ${studentCode}!` 
-            : '🎉 Đăng nhập hệ thống thành công!' 
+          message: `🎉 Đăng nhập thành công! Danh tính học sinh đã được mã hóa là ${studentCode || 'CT_01'}.`
         })
 
         setTimeout(() => {
           navigate('/')
-        }, 800)
+        }, 600)
       }
     } catch (err) {
       console.error(err)
@@ -136,14 +148,15 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    handlePerformLogin(identifier, password)
+    handlePerformLogin(identifier, password, anonymizedCode)
   }
 
   // Bấm nhanh 1 mã học sinh trong danh sách 30 mã
   const handleQuickCodeSelect = (code) => {
     setIdentifier(code)
+    setAnonymizedCode(code)
     setPassword('123456')
-    handlePerformLogin(code, '123456')
+    handlePerformLogin(code, '123456', code)
   }
 
   return (
@@ -226,7 +239,7 @@ const Login = () => {
             {/* Input Mã học sinh / Email */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block" htmlFor="identifier">
-                Mã học sinh thực nghiệm hoặc Email / Tên thử nghiệm *
+                Mã học sinh (CT_01 ➔ CT_30) hoặc Email *
               </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -235,11 +248,66 @@ const Login = () => {
                   type="text"
                   required
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    setIdentifier(val)
+                    if (/^ct[_\-]?\d{1,3}$/i.test(val.trim())) {
+                      setAnonymizedCode(val.trim().toUpperCase())
+                    }
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 focus:border-indigo-600 focus:bg-white focus:outline-none transition-all rounded-xl font-bold text-slate-900 placeholder:font-normal placeholder:text-slate-400"
-                  placeholder="VD: CT_01, CT_02... hoặc tên khác để thử web"
+                  placeholder="VD: CT_01, CT_02... hoặc email cá nhân"
                 />
               </div>
+            </div>
+
+            {/* Ô điền mã định danh ẩn danh (Mã hóa hoàn toàn họ tên học sinh) */}
+            <div className="p-3.5 bg-indigo-50/70 border border-indigo-200/80 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5" htmlFor="anonymizedCode">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  <span>Mã định danh ẩn danh (Mã hóa tên học sinh):</span>
+                </label>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Chuẩn ViSEF 2026
+                </span>
+              </div>
+              <div className="relative">
+                <UserCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500" />
+                <input
+                  id="anonymizedCode"
+                  type="text"
+                  value={anonymizedCode}
+                  onChange={(e) => setAnonymizedCode(e.target.value.toUpperCase())}
+                  className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-indigo-300 focus:border-indigo-600 focus:outline-none transition-all rounded-lg font-black text-indigo-900 tracking-wider shadow-sm"
+                  placeholder="VD: CT_01, CT_02, CT_08..."
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] font-bold text-indigo-700">Gợi ý nhanh:</span>
+                {['CT_01', 'CT_02', 'CT_03', 'CT_05', 'CT_08', 'CT_12', 'CT_15', 'CT_20'].map(code => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => {
+                      setAnonymizedCode(code)
+                      if (!identifier || identifier.startsWith('CT_')) {
+                        setIdentifier(code)
+                      }
+                    }}
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                      anonymizedCode === code 
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
+                        : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                    }`}
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-indigo-800 font-medium leading-tight">
+                🔒 Khi đăng nhập, tên học sinh sẽ hiển thị là <strong className="text-indigo-950 font-black">{anonymizedCode || 'CT_01'}</strong> trên toàn hệ thống (hoàn toàn không hiển thị tên của mail).
+              </p>
             </div>
 
             {/* Input Password */}

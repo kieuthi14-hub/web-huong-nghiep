@@ -53,7 +53,7 @@ export default function DebiasMatrix() {
     return studentCode || profile?.student_code || 'CT_01';
   })();
 
-  const studentName = profile?.full_name || 'Lương Hữu Khoa';
+  const studentName = displayStudentCode;
 
   // --- 1. DỮ LIỆU ĐỐI CHỨNG CÁC BƯỚC TRƯỚC ---
   const [step1Data, setStep1Data] = useState({
@@ -975,7 +975,7 @@ export default function DebiasMatrix() {
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-300">Học sinh cam kết:</span>
               <span className="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-bold border border-slate-700">
-                {studentName} ({displayStudentCode})
+                Mã định danh: {displayStudentCode}
               </span>
             </div>
 

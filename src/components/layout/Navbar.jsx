@@ -1,12 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
-import { LogOut, User, Menu } from 'lucide-react'
+import { LogOut, User, Menu, ShieldCheck, X } from 'lucide-react'
 
 const Navbar = ({ onToggleSidebar }) => {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, displayName, studentCode, updateStudentCode } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [newCodeInput, setNewCodeInput] = useState('')
 
   const handleLogout = async () => {
     const { error } = await signOut()
@@ -24,6 +27,13 @@ const Navbar = ({ onToggleSidebar }) => {
   const userEmail = (profile?.email || '').toLowerCase().trim()
   const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail))
   const isInAdminView = location.pathname.startsWith('/admin')
+
+  const handleSaveCode = async (e) => {
+    e.preventDefault()
+    if (!newCodeInput.trim()) return
+    await updateStudentCode(newCodeInput.trim().toUpperCase())
+    setIsModalOpen(false)
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6">
@@ -56,23 +66,43 @@ const Navbar = ({ onToggleSidebar }) => {
               </Link>
             )}
             <div className="hidden sm:block text-right">
-              <p className="text-sm font-semibold text-slate-800 leading-tight">
-                {profile.full_name || 'Học sinh'}
-              </p>
-              <p className="text-xs text-slate-500 font-medium">
-                {roleLabels[profile.role] || 'Thành viên'}
+              <div className="flex items-center justify-end gap-1.5">
+                <p className="text-sm font-bold text-slate-900 leading-tight">
+                  {displayName || profile.full_name || 'Học sinh'}
+                </p>
+                {!isTeacherAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewCodeInput(studentCode || 'CT_01')
+                      setIsModalOpen(true)
+                    }}
+                    className="text-[10px] text-indigo-700 hover:text-indigo-900 font-bold bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded border border-indigo-200 transition-colors cursor-pointer"
+                    title="Bấm để đổi mã định danh ẩn danh (CT_01, CT_02...)"
+                  >
+                    ✎ Đổi mã
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 font-medium flex items-center justify-end gap-1">
+                {!isTeacherAdmin && (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                    🛡️ Ẩn danh ViSEF
+                  </span>
+                )}
+                <span>{roleLabels[profile.role] || 'Thành viên'}</span>
               </p>
             </div>
             
-            <div className="w-9 h-9 rounded-sm bg-brand-100 flex items-center justify-center text-brand-700 border border-brand-200">
+            <div className="w-9 h-9 rounded-sm bg-brand-100 flex items-center justify-center text-brand-700 border border-brand-200 font-extrabold text-xs uppercase">
               {profile.avatar_url ? (
                 <img 
                   src={profile.avatar_url} 
-                  alt={profile.full_name} 
+                  alt={displayName} 
                   className="w-full h-full object-cover rounded-sm"
                 />
               ) : (
-                <User className="w-4 h-4" />
+                <span>{(displayName || 'CT').substring(0, 2)}</span>
               )}
             </div>
             
@@ -86,6 +116,83 @@ const Navbar = ({ onToggleSidebar }) => {
           </div>
         )}
       </div>
+
+      {/* Modal Đổi Mã Ẩn Danh ViSEF */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-reveal">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-indigo-950 font-black text-sm">
+                <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                <span>MÃ HÓA DANH TÍNH HỌC SINH</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Theo chuẩn Đạo đức Nghiên cứu ViSEF 2026, hệ thống hiển thị mã định danh (VD: <strong className="text-indigo-600">CT_01</strong>) thay vì email cá nhân để ẩn danh hóa hoàn toàn dữ liệu.
+            </p>
+
+            <form onSubmit={handleSaveCode} className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 uppercase" htmlFor="studentCodeModal">
+                  Mã học sinh của em:
+                </label>
+                <input
+                  id="studentCodeModal"
+                  type="text"
+                  required
+                  value={newCodeInput}
+                  onChange={(e) => setNewCodeInput(e.target.value.toUpperCase())}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 focus:border-indigo-600 focus:bg-white focus:outline-none rounded-xl font-black text-indigo-950 tracking-wider"
+                  placeholder="VD: CT_01, CT_08..."
+                />
+              </div>
+
+              {/* Gợi ý 1 số mã nhanh */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                <span className="text-[10px] font-bold text-slate-500">Mã nhanh:</span>
+                {['CT_01', 'CT_02', 'CT_03', 'CT_05', 'CT_08', 'CT_10', 'CT_15', 'CT_20'].map(code => (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => setNewCodeInput(code)}
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                      newCodeInput === code
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                    }`}
+                  >
+                    {code}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition cursor-pointer"
+                >
+                  Xác Nhận & Lưu Mã
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

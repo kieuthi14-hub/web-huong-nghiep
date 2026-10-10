@@ -106,7 +106,7 @@ const standardRoadmaps = {
 }
 
 const RoadmapBuilder = () => {
-  const { user, profile } = useAuth()
+  const { user, profile, displayName, studentCode } = useAuth()
   const navigate = useNavigate()
   
   // Tab khối lớp hiện tại
@@ -251,7 +251,7 @@ const RoadmapBuilder = () => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
-      const studentNameClean = (profile?.full_name || user?.email || 'Hoc-Sinh').replace(/[^a-zA-Z0-9]/g, '_')
+      const studentNameClean = (studentCode || displayName || 'CT_01').replace(/[^a-zA-Z0-9]/g, '_')
       pdf.save(`Ban-Ke-Hoach-Huong-Nghiep-${studentNameClean}.pdf`)
 
       setToast({
@@ -569,8 +569,8 @@ const RoadmapBuilder = () => {
           {/* Thông tin học sinh */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50 border border-slate-200 text-xs">
             <div>
-              <span className="font-bold text-slate-500 block text-[10px] uppercase">Họ và tên học sinh</span>
-              <span className="font-black text-slate-900 text-sm">{profile?.full_name || user?.email || 'Học sinh THPT'}</span>
+              <span className="font-bold text-slate-500 block text-[10px] uppercase">Mã học sinh (Mã hóa ViSEF)</span>
+              <span className="font-black text-slate-900 text-sm">{studentCode || displayName || 'CT_01'}</span>
             </div>
             <div>
               <span className="font-bold text-slate-500 block text-[10px] uppercase">Khối lớp hiện tại</span>
@@ -657,7 +657,7 @@ const RoadmapBuilder = () => {
                   <span className="italic text-[11px] text-slate-600">(Ký và ghi rõ họ tên)</span>
                 </div>
                 <p className="font-black text-slate-900 uppercase">
-                  {profile?.full_name || user?.email || 'Học sinh'}
+                  Mã học sinh: {studentCode || displayName || 'CT_01'}
                 </p>
               </div>
             </div>
