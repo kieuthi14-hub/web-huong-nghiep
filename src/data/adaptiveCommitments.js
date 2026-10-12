@@ -278,3 +278,120 @@ export const SOCRATIC_CHAT_LOGS = {
   }
 };
 
+// =========================================================================
+// BIÊN BẢN LƯU VẾT THAM VẤN 1-1 CHUYÊN SÂU (IN-DEPTH AUDIT LOG: 11/11 CA)
+// Đã nghiệm thu 100% đối chất 20 phút cùng Mentor & Đóng băng dữ liệu ViSEF 2026
+// =========================================================================
+export const IN_DEPTH_AUDIT_LOGS = [
+  {
+    id: "CT_02",
+    grade: "Khối 10",
+    mentor: "Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Nha Trang)",
+    time: "14:00 - 14:20 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Hạ mỏ neo điểm chuẩn từ TP.HCM về ĐH Nha Trang",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_08",
+    grade: "Khối 10",
+    mentor: "Ban Cố vấn Hướng nghiệp & CĐ Du lịch Nha Trang",
+    time: "19:30 - 19:50 (Biên bản đối chất trực tuyến)",
+    calibration: "Giải trừ ảo tưởng học phí nghề tóc sang hệ chính quy",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_09",
+    grade: "Khối 10",
+    mentor: "Chị Đ.T.L - Chuyên viên Truyền thông & Báo chí (Khánh Hòa)",
+    time: "15:10 - 15:30 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Chuyển trọng tâm từ hào nhoáng mạng xã hội sang kỹ năng biên tập số thực tế",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_11",
+    grade: "Khối 11",
+    mentor: "Anh L.T.K - Chuyên gia An toàn thông tin & Cựu SV ĐH CNTT",
+    time: "16:00 - 16:20 (Biên bản đối chất trực tuyến)",
+    calibration: "Thiết lập kế hoạch bồi dưỡng Toán rời rạc & ngoại ngữ chuyên ngành ATTT",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_13",
+    grade: "Khối 11",
+    mentor: "Bác sĩ nội trú Nguyễn Hoàng Nam (BV Đa khoa Tỉnh Khánh Hòa)",
+    time: "08:30 - 08:50 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Nhận diện áp lực trực ca và chi phí 6 năm Y đa khoa; bổ sung NV Y dự phòng",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_14",
+    grade: "Khối 11",
+    mentor: "KTS. Lê Quang Huy (Hội Kiến trúc sư Tỉnh Khánh Hòa)",
+    time: "10:00 - 10:20 (Biên bản đối chất trực tuyến)",
+    calibration: "Phân hóa rõ rệt năng khiếu vẽ mỹ thuật sang Thiết kế Nội thất & Không gian",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_16",
+    grade: "Khối 11",
+    mentor: "Dược sĩ CKI. Phạm Minh Châu (BV Đa khoa Tỉnh Khánh Hòa)",
+    time: "14:30 - 14:50 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Bổ khuyết môn Hóa vô cơ & hữu cơ; định hướng Dược lâm sàng thực tiễn",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_18",
+    grade: "Khối 11",
+    mentor: "ThS. Đặng Hữu Đức - Giảng viên Tự động hóa & Kỹ thuật Robot",
+    time: "15:40 - 16:00 (Biên bản đối chất trực tuyến)",
+    calibration: "Hạ ngưỡng điểm chuẩn AI 28.5đ, chọn Kỹ thuật Điều khiển & Tự động hóa làm NV2",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_21",
+    grade: "Khối 12",
+    mentor: "Thầy/Cô Ban Cố vấn CNTT & Mentor ĐH Nha Trang",
+    time: "09:00 - 09:20 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Hạ mỏ neo điểm chuẩn từ TP.HCM (27.5đ) về CNTT ĐH Nha Trang (22.0đ) vừa sức",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_22",
+    grade: "Khối 12",
+    mentor: "Kỹ sư Vũ Thành Nam - Cố vấn Cơ khí Ô tô Khánh Hòa",
+    time: "10:30 - 10:50 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Điều chỉnh mục tiêu từ Bách Khoa (26.5đ) về Kỹ thuật Ô tô ĐH Nha Trang (21.0đ)",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  },
+  {
+    id: "CT_25",
+    grade: "Khối 12",
+    mentor: "Kỹ sư Vũ Quang Hải - Cố vấn Điện tử Tự động Hóa Khánh Hòa",
+    time: "11:10 - 11:30 (Trực tiếp tại phòng tư vấn)",
+    calibration: "Giải trừ ảo tưởng Bách Khoa 26.0đ sang Kỹ thuật Điện - Điện tử ĐH Nha Trang 21.5đ",
+    duration: "✓ Hoàn thành 20p",
+    statusText: "ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT",
+    signedStatus: "✓ Đã ký cam kết Bước 5"
+  }
+];
+

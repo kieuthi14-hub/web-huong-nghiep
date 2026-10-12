@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA } from '../../data/adaptiveCommitments'
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS } from '../../data/adaptiveCommitments'
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -91,7 +91,7 @@ export const INITIAL_CBAS_STUDENTS = [
     status: 'Completed',
     turningPointQuote: 'Em từng nghĩ chỉ cần thích làm sếp là học QTKD được, nhưng sau Bước 2 mới thấy mình chưa hiểu gì về vận hành thực tế.',
     studentQuestion: 'Điểm chuẩn cao quá em sợ rớt, nếu đổi sang ngành gần thì cơ hội việc làm khác nhau thế nào ạ?',
-    assignedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)'
+    assignedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Nha Trang)'
   },
   {
     id: 'CT_03',
@@ -211,7 +211,7 @@ export const INITIAL_CBAS_STUDENTS = [
     status: 'Completed',
     turningPointQuote: 'Em thích chơi game và nghĩ mình hợp phần mềm, nhưng bài toán thuật toán và chi phí 45 tr/năm làm em thấy ngợp.',
     studentQuestion: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
-    assignedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)'
+    assignedMentor: 'Ban Cố vấn Hướng nghiệp & CĐ Du lịch Nha Trang'
   },
   {
     id: 'CT_09',
@@ -444,9 +444,9 @@ export const INITIAL_CBAS_STUDENTS = [
     major: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)',
     majorT0: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)',
     majorT2: 'Thương mại Quốc tế (ĐH Mở / ĐH Tài chính Marketing) [Hiệu chuẩn]',
-    deltaScore: '-1.5đ (Nguy cơ)',
-    triage: 'In-depth (20p)',
-    triageType: 'In-depth',
+    deltaScore: '-1.5đ (Biên giới)',
+    triage: 'Fast-track (5p)',
+    triageType: 'Fast-track',
     conf: '8/10 → 7/10',
     crs: '+2.1 → +0.2',
     unlockedStep5: true,
@@ -668,32 +668,32 @@ export const INITIAL_CBAS_STUDENTS = [
 export const INITIAL_TRIAGE_REQUESTS = [
   {
     id: 'CT_02',
-    grade: 'Khối 12 | Mã RIASEC: ECS',
+    grade: 'Khối 10 | Mã RIASEC: ECS',
     major: 'QTKD - ĐH Kinh Tế TP.HCM',
     scoreGap: 'Thiếu 2.5 điểm (Học bạ: 23.5 | Chuẩn: 26.0)',
-    proposedTime: '10/24/2026 - 14:00 (Trực tiếp)',
+    proposedTime: '14:00 - 14:20 (Trực tiếp tại phòng tư vấn)',
     question: 'Điểm chuẩn cao quá em sợ rớt, có nên đổi sang ngành gần không ạ?',
     mentors: [
+      'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Nha Trang)',
       'Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường',
-      'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
-      'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng (ĐH Ngoại Thương)'
+      'Chị V.Q.N - SV Năm 3 Tài chính Ngân hàng'
     ],
-    selectedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
+    selectedMentor: 'Anh L.Q.B - SV Năm 4 Quản trị Kinh doanh (ĐH Nha Trang)',
     approved: true
   },
   {
     id: 'CT_08',
-    grade: 'Khối 12 | Mã RIASEC: ICR',
+    grade: 'Khối 10 | Mã RIASEC: ICR',
     major: 'Kỹ thuật Phần mềm - ĐH Bách Khoa',
     scoreGap: 'Thiếu 1.8 điểm | Rào cản học phí 45 tr/năm',
-    proposedTime: '10/24/2026 - 19:30 (Google Meet)',
+    proposedTime: '19:30 - 19:50 (Biên bản đối chất trực tuyến)',
     question: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
     mentors: [
+      'Ban Cố vấn Hướng nghiệp & CĐ Du lịch Nha Trang',
       'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-      'Anh L.T.K - Cựu SV An ninh mạng (ĐH CNTT - ĐHQG TP.HCM)',
-      'Thầy/Cô Ban Cố vấn Hướng nghiệp & Tâm lý học đường'
+      'Anh L.T.K - Cựu SV An ninh mạng (ĐH CNTT - ĐHQG TP.HCM)'
     ],
-    selectedMentor: 'Anh T.M.T - SV Năm 3 Kỹ thuật Phần mềm (ĐH Bách Khoa)',
+    selectedMentor: 'Ban Cố vấn Hướng nghiệp & CĐ Du lịch Nha Trang',
     approved: true
   }
 ]
@@ -2208,202 +2208,56 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             </button>
           </section>
 
-          {/* KHỐI 2: TRUNG TÂM PHÊ DUYỆT ĐIỀU PHỐI LỊCH HẸN BƯỚC 4 (CENTRALIZED TRIAGE DISPATCHER) */}
+          {/* KHỐI LƯU VẾT THỰC NGHIỆM ĐÃ NGHIỆM THU 100% (AUDIT TRAIL) */}
           <section className="bg-slate-900 rounded-2xl border border-slate-800 p-5 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+            <div className="flex flex-wrap justify-between items-center border-b border-slate-800 pb-3 gap-2">
               <div>
                 <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-teal-400" />
-                  HÀNG ĐỢI PHÊ DUYỆT THAM VẤN 1-1 (IN-DEPTH TRIAGE APPROVAL)
+                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  BIÊN BẢN LƯU VẾT THAM VẤN 1-1 CHUYÊN SÂU (IN-DEPTH AUDIT LOG: 11/11 CA)
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Học sinh đề xuất lịch hẹn sau Bước 3. Admin kiểm tra hồ sơ lệch điểm và gán Mentor phù hợp trước khi mở khóa Bước 5.
+                  Toàn bộ 11 ca nguy cơ cao đã hoàn tất đối chất 20 phút cùng Mentor, nghiệm thu mở khóa Bước 5 và đóng băng dữ liệu.
                 </p>
               </div>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-semibold border ${
-                pendingTriageCount > 0 
-                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/30' 
-                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-              }`}>
-                {pendingTriageCount > 0 ? `Có ${pendingTriageCount} yêu cầu cần xếp lịch` : '✓ Đã điều phối toàn bộ'}
+              <span className="text-xs px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30 flex items-center gap-1.5">
+                <span>✓</span> ĐÃ NGHIỆM THU TOÀN BỘ (100%)
               </span>
             </div>
 
-            {/* Danh sách thẻ phê duyệt */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {triageRequests.map((req) => {
-                const isApproved = req.approved
-                const studentData = cbasStudents.find(s => s.id === req.id)
-                const isStep5Unlocked = studentData ? studentData.unlockedStep5 : false
-                const meetUrl = `https://meet.google.com/meet-${req.id.toLowerCase()}`
-
-                return (
-                  <div
-                    key={req.id}
-                    className={`p-4 rounded-xl bg-slate-950 border space-y-3 transition-all ${
-                      isApproved 
-                        ? 'border-emerald-500/40 bg-emerald-950/10' 
-                        : 'border-rose-500/30'
-                    }`}
-                  >
-                    {isApproved ? (
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-xs">{req.id}</span>
-                            <span className="font-bold text-emerald-400">LỊCH ĐÃ ĐƯỢC ADMIN DUYỆT</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold text-[10px] flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-400" /> Sẵn sàng phiên tham vấn
-                          </span>
-                        </div>
-
-                        <div className="text-xs space-y-1.5 bg-slate-900/90 p-3 rounded-lg border border-slate-800">
-                          <p><span className="text-slate-400">Mentor phụ trách:</span> <strong className="text-white">{req.assignedMentor || req.selectedMentor}</strong></p>
-                          <p><span className="text-slate-400">Thời gian hẹn:</span> <span className="text-slate-200 font-medium">{req.proposedTime}</span></p>
-                          <div className="flex items-center justify-between pt-1">
-                            <span className="text-slate-400">Phòng Google Meet:</span>
-                            <div className="flex items-center gap-1.5">
-                              <a
-                                href={meetUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-2.5 py-1 rounded bg-teal-500/20 hover:bg-teal-500 hover:text-slate-950 text-teal-300 border border-teal-500/30 font-bold text-[11px] transition flex items-center gap-1 cursor-pointer"
-                                title="Nhấn để mở phòng họp Google Meet trực tiếp"
-                              >
-                                <Video className="w-3 h-3" />
-                                <span>Vào Meet</span>
-                                <ExternalLink className="w-2.5 h-2.5" />
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(meetUrl)
-                                  setToastMessage(`Đã sao chép đường link Meet của ${req.id}: ${meetUrl}`)
-                                  setTimeout(() => setToastMessage(null), 3000)
-                                }}
-                                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs transition cursor-pointer"
-                                title="Sao chép link Google Meet"
-                              >
-                                <Copy className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* DÃY NÚT HÀNH ĐỘNG KHI ĐÃ DUYỆT */}
-                        <div className="space-y-2 pt-1">
-                          {!isStep5Unlocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmConsultationComplete(req.id)}
-                              className="w-full py-2 px-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-teal-500/20 cursor-pointer animate-pulse"
-                              title="Xác nhận phiên tham vấn 1-1 đã hoàn tất và mở khóa cổng Bước 5 cho học sinh"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              <span>🏆 XÁC NHẬN ĐÃ TV & MỞ KHÓA BƯỚC 5 ({req.id})</span>
-                            </button>
-                          ) : (
-                            <div className="flex items-center justify-between p-2 rounded-lg bg-teal-500/10 border border-teal-500/30 text-xs">
-                              <span className="text-teal-300 font-bold flex items-center gap-1.5 text-[11px]">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
-                                Bước 5 đã mở khóa thành công!
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handlePreviewStudentPDF(req.id)}
-                                className="px-2.5 py-1 rounded bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-[10.5px] transition cursor-pointer"
-                              >
-                                Xem Bản Cam Kết (PDF)
-                              </button>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between gap-2 pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (studentData) setSelectedDetailStudent(studentData)
-                              }}
-                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
-                            >
-                              <Eye className="w-3 h-3" />
-                              <span>Hồ sơ chi tiết</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleCancelOrResetTriageApproval(req.id)}
-                              className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-rose-300 hover:text-rose-200 border border-slate-700 text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
-                              title="Hủy trạng thái đã duyệt để đổi mentor hoặc khung giờ"
-                            >
-                              <RotateCcw className="w-3 h-3" />
-                              <span>↩ Đổi lịch / Hoàn tác</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-xs">{req.id}</span>
-                            <span className="text-xs font-semibold text-slate-300">{req.grade}</span>
-                          </div>
-                          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-medium">Chờ Admin phê duyệt</span>
-                        </div>
-
-                        <div className="text-xs space-y-1 bg-slate-900/80 p-3 rounded-lg border border-slate-800">
-                          <p><span className="text-slate-400">Nguyện vọng:</span> <strong className="text-white">{req.major}</strong></p>
-                          <p><span className="text-slate-400">Độ lệch Bước 3:</span> <strong className="text-rose-400">{req.scoreGap}</strong></p>
-                          <p><span className="text-slate-400">HS đề xuất giờ:</span> <span className="text-slate-200 font-medium">{req.proposedTime}</span></p>
-                          <p><span className="text-slate-400">Câu hỏi của HS:</span> <em className="text-amber-200">"{req.question}"</em></p>
-                        </div>
-
-                        <div className="space-y-2 pt-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <select
-                              id={`mentorSelect-${req.id}`}
-                              defaultValue={req.selectedMentor}
-                              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 flex-1 cursor-pointer"
-                            >
-                              {req.mentors.map((m, idx) => (
-                                <option key={idx} value={m}>{m}</option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const el = document.getElementById(`mentorSelect-${req.id}`)
-                                const val = el ? el.value : req.selectedMentor
-                                handleApproveTriageRequest(req.id, val)
-                              }}
-                              className="px-3.5 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition cursor-pointer flex items-center gap-1 shadow-sm"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Duyệt & Gán Lịch</span>
-                            </button>
-                          </div>
-
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (studentData) setSelectedDetailStudent(studentData)
-                              }}
-                              className="text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Eye className="w-3 h-3" />
-                              <span>Xem hồ sơ & nhật ký Socrates của {req.id}</span>
-                            </button>
-                            <span>Phòng: Meet online</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+              {IN_DEPTH_AUDIT_LOGS.map((item) => (
+                <div key={item.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold font-mono">{item.id}</span>
+                      <span className="font-bold text-slate-200">ĐÃ NGHIỆM THU PHIÊN ĐỐI CHẤT</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      {item.duration || '✓ Hoàn thành 20p'}
+                    </span>
                   </div>
-                )
-              })}
+
+                  <div className="space-y-1 text-slate-300 text-[11.5px]">
+                    <p><span className="text-slate-500">Mentor phụ trách:</span> <strong className="text-slate-200">{item.mentor}</strong></p>
+                    <p><span className="text-slate-500">Thời gian thực tế:</span> <span className="font-mono text-slate-400">{item.time}</span></p>
+                    <p><span className="text-slate-500">Kết quả hiệu chuẩn:</span> <strong className="text-teal-300">{item.calibration}</strong></p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <span className="text-[10.5px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <span>✓</span> {item.signedStatus || 'Đã ký cam kết Bước 5'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePreviewStudentPDF(item.id)}
+                      className="px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-[11px] transition shadow-sm cursor-pointer"
+                    >
+                      Xem Bản Cam Kết (PDF)
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </section>
 
