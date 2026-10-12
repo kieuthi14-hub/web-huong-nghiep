@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS } from '../../data/adaptiveCommitments'
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge } from '../../data/adaptiveCommitments'
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -197,20 +197,26 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_08',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Khá',
+    academicRank: 'Trung bình',
     riasec: 'ICR',
-    major: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-    majorT0: 'Kỹ thuật Phần mềm (ĐH Bách Khoa)',
-    majorT2: 'Công nghệ Thông tin (ĐH SP Kỹ Thuật / ĐH Nha Trang) [Hiệu chuẩn]',
+    major: 'Tạo mẫu tóc tiệm tư (Nha Trang)',
+    majorT0: 'Tạo mẫu tóc tiệm tư',
+    majorT2: 'Nghiệp vụ Du lịch & Khách sạn (CĐ Du lịch Nha Trang) [Hiệu chuẩn]',
     deltaScore: '-1.8đ (Nguy cơ)',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
-    conf: '9/10 → 8/10',
-    crs: '+3.1 → +0.2',
+    conf: '9/10 → 7.5/10',
+    crs: '+4.0 → -0.3',
+    conf_T0: 9.0,
+    sdq_T0: 5.0,
+    crs_T0: 4.0,
+    conf_T2: 7.5,
+    sdq_T2: 7.8,
+    crs_T2: -0.3,
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Em thích chơi game và nghĩ mình hợp phần mềm, nhưng bài toán thuật toán và chi phí 45 tr/năm làm em thấy ngợp.',
-    studentQuestion: 'Môn Toán em chưa đạt 8.5 thì vào năm nhất có bị sốc lập trình không anh?',
+    turningPointQuote: 'Em thích làm đẹp nhưng chưa biết học phí và dụng cụ ban đầu lên tới hơn 40 triệu; gia đình không đủ điều kiện nên em chuyển sang học ngành Du lịch được nhà nước hỗ trợ.',
+    studentQuestion: 'Học phí trường nghề nhà nước có chính sách miễn giảm cho học sinh vùng khó khăn không ạ?',
     assignedMentor: 'Ban Cố vấn Hướng nghiệp & CĐ Du lịch Nha Trang'
   },
   {
@@ -647,21 +653,27 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_30',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
-    riasec: 'SER',
-    major: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)',
-    majorT0: 'Công tác Xã hội & Phát triển Cộng đồng (ĐH KHXH&NV)',
-    majorT2: 'Công tác Xã hội & Quản trị Dự án Phi chính phủ (ĐH KHXH&NV)',
-    deltaScore: '+1.3đ (An toàn)',
+    academicRank: 'Khá',
+    riasec: 'RIS',
+    major: 'Nuôi trồng Thủy sản (ĐH Nha Trang)',
+    majorT0: 'Nuôi trồng Thủy sản (ĐH Nha Trang)',
+    majorT2: 'Kỹ thuật Nuôi trồng Thủy sản Công nghệ cao (ĐH Nha Trang)',
+    deltaScore: '+2.0đ (An toàn)',
     triage: 'Fast-track (5p)',
     triageType: 'Fast-track',
-    conf: '7/10 → 8/10',
-    crs: '+0.6 → +0.1',
+    conf: '8/10 → 8.5/10',
+    crs: '-0.2 → -0.2',
+    conf_T0: 8.0,
+    sdq_T0: 8.2,
+    crs_T0: -0.2,
+    conf_T2: 8.5,
+    sdq_T2: 8.7,
+    crs_T2: -0.2,
     unlockedStep5: true,
-    status: 'Completed',
-    turningPointQuote: 'Em muốn cống hiến cho các dự án cộng đồng và tổ chức phi chính phủ quốc tế.',
-    studentQuestion: 'Làm việc cho các tổ chức NGO cần kỹ năng mềm và khả năng gây quỹ như thế nào ạ?',
-    assignedMentor: 'ThS. Trần Thị Kim Loan'
+    status: 'Thực chất',
+    turningPointQuote: '',
+    studentQuestion: 'Chương trình Nuôi trồng Thủy sản tại ĐH Nha Trang có phòng lab nuôi cấy giống công nghệ cao không ạ?',
+    assignedMentor: 'ThS. Trần Thị Kim Loan - Giảng viên Viện Nuôi trồng Thủy sản'
   }
 ]
 
@@ -2664,14 +2676,16 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
                 {/* PHẦN 5: CHỈ SỐ CRS VÀ TRẠNG THÁI CỔNG BƯỚC 5 */}
                 <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Hiệu Chuẩn Chỉ Số CRS (T₀ → T₂)
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                      CHỈ SỐ HIỆU CHUẨN NHẬN THỨC (CRS):
                     </span>
-                    <div className="text-base font-mono font-bold text-cyan-300 mt-0.5">
+                    <p className="text-sm font-black text-teal-300 font-mono">
                       {selectedDetailStudent.crs}
-                    </div>
-                    <p className="text-[10.5px] text-cyan-400">Độ vênh thực tế tiệm cận 0 (Phù hợp năng lực)</p>
+                    </p>
+                    <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1">
+                      <span>✓</span> {selectedDetailStudent.status === 'Thực chất' ? 'Nhận thức thực chất vững vàng' : 'Đã hiệu chuẩn nhận thức'}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -2751,13 +2765,13 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
                 <div className="space-y-3">
                   <div className="p-3.5 rounded-xl bg-slate-950 border border-cyan-500/30 space-y-2">
-                    <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">Công thức chuẩn hóa:</span>
+                    <span className="text-[10px] font-bold text-cyan-300 uppercase tracking-wider block">Công thức chuẩn hóa thực nghiệm:</span>
                     <div className="p-2.5 rounded bg-slate-900 font-mono text-center text-xs text-cyan-200 border border-slate-800">
-                      CRS = [ (Confidence_T0 - Confidence_T2) / 10 ] + [ Δ Điểm_B3 / Điểm_Chuẩn ]
+                      CRS = Confidence - SDQ (Đo lường độc lập từ phiếu đánh giá chuẩn hóa)
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      • <strong>CRS &gt; +1.0:</strong> Thiên lệch tự tin thái quá, lãng quên rào cản chi phí và điểm chuẩn.<br />
-                      • <strong>CRS tiệm cận 0 (-0.3 → +0.3):</strong> Vùng nhận thức duy lý, hài hòa năng lực & cơ hội.
+                      • <strong>CRS &gt; +1.0:</strong> Thiên lệch tự tin thái quá / Ảo tưởng kiểm soát (Overconfidence Bias).<br />
+                      • <strong>CRS tiệm cận 0 (-0.3 → +0.3):</strong> Vùng nhận thức duy lý, đã hiệu chuẩn thực chất hoặc phù hợp năng lực ngay từ đầu.
                     </p>
                   </div>
 

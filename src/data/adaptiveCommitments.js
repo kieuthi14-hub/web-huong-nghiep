@@ -419,3 +419,133 @@ export const IN_DEPTH_AUDIT_LOGS = [
   }
 ];
 
+// =========================================================================
+// CẤU TRÚC DỮ LIỆU CHUẨN THỰC NGHIỆM ĐÃ TÁCH RỜI TEST TÌNH HUỐNG RA KHỎI APP
+// Ghi nhận biến số độc lập T0 & T2 từ phiếu đánh giá chuẩn hóa thực địa ViSEF
+// =========================================================================
+export const EXPERIMENTAL_STUDENTS_N30 = [
+  {
+    id: "CT_01",
+    name: "Học sinh CT_01",
+    grade: "Khối 10",
+    academicLevel: "Giỏi",
+    baselineTarget: "Tâm lý học (ĐH KHXH&NV TP.HCM)",
+    // Dữ liệu đo lường độc lập T0 & T2 (từ phiếu đánh giá chuẩn hóa)
+    conf_T0: 7.0,
+    sdq_T0: 5.8, // Quy đổi từ điểm thô phiếu test đầu vào (7/12 * 10)
+    crs_T0: 1.2, // Conf - SDQ = +1.2 (Tự tin thái quá nhẹ)
+    
+    conf_T2: 8.0,
+    sdq_T2: 7.9, // Quy đổi từ phiếu hậu kiểm sau can thiệp
+    crs_T2: 0.1, // Conf - SDQ = +0.1 (Đã hiệu chuẩn về vùng tiệm cận 0)
+    
+    status: "Đã hiệu chuẩn",
+    triageFlow: "Fast-track",
+    turningPoint: true
+  },
+  {
+    id: "CT_02",
+    name: "Học sinh CT_02",
+    grade: "Khối 10",
+    academicLevel: "Khá",
+    baselineTarget: "Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)",
+    conf_T0: 8.0,
+    sdq_T0: 5.2,
+    crs_T0: 2.8,
+    conf_T2: 8.0,
+    sdq_T2: 7.9,
+    crs_T2: 0.1,
+    status: "Đã hiệu chuẩn",
+    triageFlow: "In-depth",
+    turningPoint: true
+  },
+  {
+    id: "CT_08",
+    name: "Học sinh CT_08",
+    grade: "Khối 10",
+    academicLevel: "Trung bình",
+    baselineTarget: "Tạo mẫu tóc tiệm tư",
+    conf_T0: 9.0,
+    sdq_T0: 5.0,
+    crs_T0: 4.0, // Ảo tưởng nặng
+    
+    conf_T2: 7.5,
+    sdq_T2: 7.8,
+    crs_T2: -0.3, // Hiệu chuẩn thành công
+    status: "Đã hiệu chuẩn",
+    triageFlow: "In-depth",
+    turningPoint: true
+  },
+  {
+    id: "CT_13",
+    name: "Học sinh CT_13",
+    grade: "Khối 11",
+    academicLevel: "Xuất sắc",
+    baselineTarget: "Y đa khoa (ĐH Y Dược TP.HCM)",
+    conf_T0: 9.0,
+    sdq_T0: 5.6,
+    crs_T0: 3.4,
+    conf_T2: 7.0,
+    sdq_T2: 7.5,
+    crs_T2: -0.5,
+    status: "Đã hiệu chuẩn",
+    triageFlow: "In-depth",
+    turningPoint: true
+  },
+  {
+    id: "CT_21",
+    name: "Học sinh CT_21",
+    grade: "Khối 12",
+    academicLevel: "Giỏi",
+    baselineTarget: "Công nghệ Thông tin (ĐH CNTT TP.HCM)",
+    conf_T0: 8.0,
+    sdq_T0: 4.2,
+    crs_T0: 3.8,
+    conf_T2: 8.0,
+    sdq_T2: 8.5,
+    crs_T2: -0.5,
+    status: "Đã hiệu chuẩn",
+    triageFlow: "In-depth",
+    turningPoint: true
+  },
+  {
+    id: "CT_30",
+    name: "Học sinh CT_30",
+    grade: "Khối 12",
+    academicLevel: "Khá",
+    baselineTarget: "Nuôi trồng Thủy sản (ĐH Nha Trang)",
+    conf_T0: 8.0,
+    sdq_T0: 8.2,
+    crs_T0: -0.2, // Sát thực tế ngay từ đầu
+    
+    conf_T2: 8.5,
+    sdq_T2: 8.7,
+    crs_T2: -0.2, // Bảo toàn sự tự tin vững vàng
+    status: "Thực chất",
+    triageFlow: "Fast-track",
+    turningPoint: false // Không bộc lộ bẻ gãy
+  }
+];
+
+// HÀM HIỂN THỊ CHỈ SỐ HIỆU CHUẨN NHẬN THỨC (CRS) TRÊN ADMIN
+export function renderCalibrationBadge(student) {
+  const crsT0 = student.crs_T0 ?? (typeof student.crs === 'string' ? parseFloat(student.crs.split('→')[0]) : 0);
+  const crsT2 = student.crs_T2 ?? (typeof student.crs === 'string' ? parseFloat(student.crs.split('→')[1]) : 0);
+  const signT0 = crsT0 > 0 ? "+" : "";
+  const signT2 = crsT2 > 0 ? "+" : "";
+  const isReal = student.status === "Thực chất" || student.turningPoint === false;
+  return `
+    <div class="space-y-1">
+      <span class="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+        CHỈ SỐ HIỆU CHUẨN NHẬN THỨC (CRS):
+      </span>
+      <p class="text-sm font-black text-teal-300 font-mono">
+        ${signT0}${crsT0.toFixed(1)} &rarr; ${signT2}${crsT2.toFixed(1)}
+      </p>
+      <span class="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1">
+        <span>✓</span> ${isReal ? 'Nhận thức thực chất vững vàng' : 'Đã hiệu chuẩn nhận thức'}
+      </span>
+    </div>
+  `;
+}
+
