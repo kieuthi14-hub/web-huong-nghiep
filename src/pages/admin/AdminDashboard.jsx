@@ -45,6 +45,7 @@ import {
   Lock,
   X
 } from 'lucide-react'
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan } from '../../data/adaptiveCommitments'
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -1332,6 +1333,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   // Tải file Bản Cam Kết đơn lẻ dưới dạng HTML hoàn chỉnh (Dự phòng in ấn)
   const handleDownloadSinglePdfHtml = (student) => {
     if (!student) return
+    const plan = getGradeCommitmentPlan(student.gradeNum || student.grade)
     const content = `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1344,6 +1346,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     .highlight { background-color: #f0fdfa; border-color: #99f6e4; }
     .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
     .triangle-item { padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; }
+    .plan-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 12.5px; }
     .sign-row { display: flex; justify-content: space-between; margin-top: 48px; text-align: center; }
     @media print { body { padding: 0; } }
   </style>
@@ -1375,6 +1378,29 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       </div>
     </div>
   </div>
+
+  <div class="plan-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cbd5e1; padding-bottom:6px; margin-bottom:8px;">
+      <h3 style="margin:0; font-size:13px; color:#0f766e; text-transform:uppercase;">🎯 Ma Trận Kế Hoạch Hành Động (Implementation Intentions)</h3>
+      <span style="font-size:11px; font-weight:bold; color:#0f766e; background:#f0fdfa; padding:2px 8px; border-radius:4px; border:1px solid #99f6e4;">${plan.badge}</span>
+    </div>
+    <p style="font-size:11px; color:#64748b; font-style:italic; margin: 0 0 10px 0;">${plan.note}</p>
+    <div style="line-height:1.6;">
+      <div style="margin-bottom:8px;">
+        <strong style="color:#0f172a;">${plan.items[0].num}</strong>
+        <p style="margin:2px 0 0 0; color:#334155;">${plan.items[0].text}</p>
+      </div>
+      <div style="margin-bottom:8px; border-top:1px dashed #cbd5e1; padding-top:6px;">
+        <strong style="color:#0f172a;">${plan.items[1].num}</strong>
+        <p style="margin:2px 0 0 0; color:#334155;">${plan.items[1].text}</p>
+      </div>
+      <div style="border-top:1px dashed #cbd5e1; padding-top:6px;">
+        <strong style="color:#0f172a;">${plan.items[2].num}</strong>
+        <p style="margin:2px 0 0 0; color:#334155;">${plan.items[2].text}</p>
+      </div>
+    </div>
+  </div>
+
   <div class="box">
     <p><strong>Điểm bẻ gãy tư duy Socrates:</strong> <em>"${student.turningPointQuote || ''}"</em></p>
   </div>
@@ -1406,21 +1432,49 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
   // Tải tập hồ sơ toàn bộ 30 bản cam kết dưới dạng HTML hoàn chỉnh
   const handleDownloadBatchPdfHtml = () => {
-    const cards = cbasStudents.map((st, idx) => `
+    const cards = cbasStudents.map((st, idx) => {
+      const plan = getGradeCommitmentPlan(st.gradeNum || st.grade)
+      return `
     <div style="page-break-after: always; padding: 40px; border: 1px solid #cbd5e1; margin-bottom: 24px; border-radius: 8px; font-family: -apple-system, sans-serif;">
       <h2 style="color:#0f766e; border-bottom:2px solid #0f766e; padding-bottom:8px; margin-top:0;">VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #${idx + 1}/30</h2>
       <p><strong>MÃ ĐỐI TƯỢNG:</strong> ${st.id} | ${st.grade || 'Khối 12'} | RIASEC: ${st.riasec} | Học lực: ${st.academicRank}</p>
       <p><strong>Ngành chốt lại (T2):</strong> ${st.majorT2 || st.major}</p>
       <p><strong>Độ tự tin:</strong> ${st.conf} | <strong>Chỉ số CRS:</strong> ${st.crs}</p>
-      <div style="background:#f8fafc; padding:12px; border-radius:6px; margin: 12px 0;">
+
+      <!-- Tam giác nguyện vọng -->
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin: 12px 0; font-size:12px;">
+        <div style="background:#f0fdfa; border:1px solid #99f6e4; padding:8px; border-radius:6px;">
+          <strong>1. Mơ ước:</strong><br/>${st.majorT2 || st.major}
+        </div>
+        <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:8px; border-radius:6px;">
+          <strong>2. Vừa sức:</strong><br/>${st.majorT2 || st.major} (Trường công lập)
+        </div>
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:6px;">
+          <strong>3. Dự phòng:</strong><br/>Ngành gần / Chuẩn đầu ra tương đương
+        </div>
+      </div>
+
+      <!-- Kế hoạch hành động 2 trụ cột -->
+      <div style="border:1px solid #cbd5e1; border-radius:6px; padding:12px; margin: 12px 0; background:#f8fafc; font-size:11.5px; line-height:1.5;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">
+          <strong style="color:#0f766e; text-transform:uppercase;">🎯 Ma Trận Kế Hoạch Hành Động (Implementation Intentions)</strong>
+          <span style="font-weight:bold; color:#0f766e;">${plan.badge}</span>
+        </div>
+        <p style="font-size:10.5px; color:#64748b; font-style:italic; margin: 0 0 6px 0;">${plan.note}</p>
+        <div style="margin-bottom:6px;"><strong>${plan.items[0].num}</strong> ${plan.items[0].text}</div>
+        <div style="margin-bottom:6px; border-top:1px dashed #cbd5e1; padding-top:4px;"><strong>${plan.items[1].num}</strong> ${plan.items[1].text}</div>
+        <div style="border-top:1px dashed #cbd5e1; padding-top:4px;"><strong>${plan.items[2].num}</strong> ${plan.items[2].text}</div>
+      </div>
+
+      <div style="background:#f8fafc; padding:12px; border-radius:6px; margin: 12px 0; font-size:12px;">
         <strong>Điểm bẻ gãy Socrates (B2):</strong> <em>"${st.turningPointQuote || ''}"</em>
       </div>
-      <div style="display:flex; justify-content:space-between; margin-top:40px;">
+      <div style="display:flex; justify-content:space-between; margin-top:36px; font-size:12px;">
         <div><strong>Học sinh cam kết:</strong> ${st.id} (Đã ký)</div>
         <div><strong>Mentor phụ trách:</strong> ${st.assignedMentor || 'Ban Cố vấn ViSEF'}</div>
       </div>
     </div>
-    `).join('')
+    `}).join('')
 
     const fullHtml = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>30 Ban Cam Ket Hanh Dong ViSEF 2026</title></head><body>${cards}</body></html>`
     const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' })
@@ -4225,26 +4279,42 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 </div>
               </div>
 
-              {/* Kế hoạch hành động 30 ngày */}
-              <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs">
-                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  📋 KẾ HOẠCH HÀNH ĐỘNG 30 NGÀY TỰ CHỦ
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 1 - 10</span>
-                    <p className="text-[11px] text-slate-700 mt-1">Ôn tập trọng tâm các môn xét tuyển còn yếu, làm đề thi ĐGNL mẫu.</p>
+              {/* Ma trận kế hoạch hành động phân hóa theo khối lớp (2 Trụ cột) */}
+              {(() => {
+                const plan = getGradeCommitmentPlan(previewPdfStudent.gradeNum || previewPdfStudent.grade);
+                return (
+                  <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                          <Target className="w-3.5 h-3.5 text-teal-600" />
+                          <span>MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-600 italic mt-0.5">
+                          {plan.note}
+                        </p>
+                      </div>
+                      <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded border border-teal-200">
+                        {plan.badge}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 pt-1">
+                      {plan.items.map((item, idx) => (
+                        <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 text-xs leading-relaxed">
+                          <span className="font-bold text-slate-800 block text-[11px] text-teal-900 mb-0.5">
+                            {item.num}
+                          </span>
+                          <div 
+                            className="text-slate-700 text-[11px]" 
+                            dangerouslySetInnerHTML={{ __html: item.text }} 
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 11 - 20</span>
-                    <p className="text-[11px] text-slate-700 mt-1">Kiểm tra đề án tuyển sinh, chuẩn bị hồ sơ xét tuyển sớm và chứng chỉ.</p>
-                  </div>
-                  <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                    <span className="text-[10px] font-bold text-teal-700 uppercase block">Ngày 21 - 30</span>
-                    <p className="text-[11px] text-slate-700 mt-1">Đối thoại lần cuối cùng chuyên gia/mentor, chốt thứ tự nguyện vọng.</p>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Chữ ký 3 bên */}
               <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
@@ -4325,7 +4395,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                           DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #{idx + 1}/30
                         </span>
                         <div className="text-sm font-extrabold text-slate-800 mt-1">
-                          MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{st.id}</span> | KHỐI 12 THPT
+                          MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{st.id}</span> | {st.grade || 'Khối 12'} THPT
                         </div>
                       </div>
                       <div className="text-right">
@@ -4371,6 +4441,40 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <strong className="text-slate-900 block mt-0.5 text-[11px]">Ngành gần / Chuẩn đầu ra tương đương</strong>
                     </div>
                   </div>
+
+                  {/* Ma trận kế hoạch hành động phân hóa theo khối lớp */}
+                  {(() => {
+                    const plan = getGradeCommitmentPlan(st.gradeNum || st.grade);
+                    return (
+                      <div className="space-y-2 border border-slate-200 rounded-lg p-3.5 text-xs bg-slate-50/50">
+                        <div className="flex flex-wrap items-center justify-between gap-1 border-b border-slate-200 pb-1.5">
+                          <span className="font-bold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                            <Target className="w-3.5 h-3.5 text-teal-600" />
+                            <span>MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)</span>
+                          </span>
+                          <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                            {plan.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 italic">
+                          {plan.note}
+                        </p>
+                        <div className="space-y-1.5 pt-1">
+                          {plan.items.map((item, iIdx) => (
+                            <div key={iIdx} className="bg-white p-2 rounded border border-slate-200 text-[11px] leading-relaxed">
+                              <span className="font-bold text-slate-800 block text-[10.5px] text-teal-900 mb-0.5">
+                                {item.num}
+                              </span>
+                              <div 
+                                className="text-slate-700" 
+                                dangerouslySetInnerHTML={{ __html: item.text }} 
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {/* Chữ ký 3 bên */}
                   <div className="grid grid-cols-3 gap-4 pt-3 text-center text-xs border-t border-slate-200">

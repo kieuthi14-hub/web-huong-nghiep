@@ -21,8 +21,12 @@ import {
   Home,
   Award,
   Eye,
-  EyeOff
+  EyeOff,
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan } from '../../data/adaptiveCommitments';
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan };
 
 /**
  * BƯỚC 5: LỘ TRÌNH KẾ HOẠCH HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG
@@ -97,22 +101,43 @@ export default function DebiasMatrix() {
   // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP ---
   const [selectedGrade, setSelectedGrade] = useState(12);
   const [actionPlans, setActionPlans] = useState({
-    12: {
-      scoreGoal: 'Ngữ văn: 9.0+ | Lịch sử: 9.0+ | Tiếng Anh: 8.5+ (Tổng tổ hợp D14/C00: 26.5+ điểm)',
-      weakSubjectsPlan: 'Duy trì thế mạnh môn Tiếng Anh (8.5+); tăng cường ôn luyện phần làm văn nghị luận xã hội môn Ngữ văn mỗi tối thứ 3 và thứ 5 để kéo điểm trên 9.0; củng cố sơ đồ tư duy môn Lịch sử.',
-      studyTimeCommitment: 'Dành tối thiểu 120 phút/ngày (20h00 - 22h00) tập trung giải đề thi tốt nghiệp, không sử dụng điện thoại, tuân thủ nghiêm ngặt kỹ thuật Pomodoro.'
+    10: {
+      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[0].text,
+      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[1].text,
+      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[2].text,
+      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[0].text,
+      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[1].text,
+      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[2].text
     },
     11: {
-      scoreGoal: 'Toán: 8.0+ | Ngữ văn: 8.0+ | Tiếng Anh: 8.5+ (Điểm tổng kết năm: 8.2+)',
-      weakSubjectsPlan: 'Tập trung nâng cao kiến thức nền tảng tổ hợp chuyên sâu; tham gia các kỳ thi thử và câu lạc bộ chuyên môn.',
-      studyTimeCommitment: 'Dành tối thiểu 90 phút/ngày (19h30 - 21h00) tự học và hệ thống hóa kiến thức các môn tự chọn.'
+      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[0].text,
+      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[1].text,
+      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[2].text,
+      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[0].text,
+      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[1].text,
+      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[2].text
     },
-    10: {
-      scoreGoal: 'Xây dựng học bạ xuất sắc đều các môn, GPA mục tiêu từ 8.0 trở lên.',
-      weakSubjectsPlan: 'Tập trung củng cố phương pháp tự học cấp THPT; chú trọng môn Ngoại ngữ và Tin học ứng dụng.',
-      studyTimeCommitment: 'Dành tối thiểu 60-90 phút/ngày rèn luyện tính tự giác, đọc thêm sách tham khảo ngành nghề.'
+    12: {
+      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[0].text,
+      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[1].text,
+      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[2].text,
+      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[0].text,
+      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[1].text,
+      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[2].text
     }
   });
+
+  // Trợ cấp lấy nội dung mục cam kết theo khối lớp
+  const getPlanItem = (grade, itemIndex) => {
+    const g = Number(grade) || 12;
+    const plan = actionPlans[g];
+    const defaultText = ADAPTIVE_COMMITMENTS_BY_GRADE[g]?.items[itemIndex]?.text || '';
+    if (!plan) return defaultText;
+    if (itemIndex === 0) return plan.item1 ?? plan.scoreGoal ?? defaultText;
+    if (itemIndex === 1) return plan.item2 ?? plan.weakSubjectsPlan ?? defaultText;
+    if (itemIndex === 2) return plan.item3 ?? plan.studyTimeCommitment ?? defaultText;
+    return defaultText;
+  };
 
   // --- 5. CHỮ KÝ CAM KẾT ĐIỆN TỬ (CANVAS) ---
   const canvasRef = useRef(null);
@@ -293,13 +318,41 @@ export default function DebiasMatrix() {
 
   // Cập nhật giá trị ma trận theo khối lớp
   const handleUpdatePlan = (field, value) => {
+    setActionPlans(prev => {
+      const current = prev[selectedGrade] || {};
+      return {
+        ...prev,
+        [selectedGrade]: {
+          ...current,
+          [field]: value,
+          ...(field === 'item1' ? { scoreGoal: value } : {}),
+          ...(field === 'item2' ? { weakSubjectsPlan: value } : {}),
+          ...(field === 'item3' ? { studyTimeCommitment: value } : {}),
+          ...(field === 'scoreGoal' ? { item1: value } : {}),
+          ...(field === 'weakSubjectsPlan' ? { item2: value } : {}),
+          ...(field === 'studyTimeCommitment' ? { item3: value } : {})
+        }
+      };
+    });
+  };
+
+  // Khôi phục nội dung cam kết mẫu chuẩn hóa ViSEF 2026 cho khối lớp đang chọn
+  const handleResetToDefaultTemplate = () => {
+    const defaultGrade = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade];
+    if (!defaultGrade) return;
     setActionPlans(prev => ({
       ...prev,
       [selectedGrade]: {
-        ...prev[selectedGrade],
-        [field]: value
+        item1: defaultGrade.items[0].text,
+        item2: defaultGrade.items[1].text,
+        item3: defaultGrade.items[2].text,
+        scoreGoal: defaultGrade.items[0].text,
+        weakSubjectsPlan: defaultGrade.items[1].text,
+        studyTimeCommitment: defaultGrade.items[2].text
       }
     }));
+    setToast(`Đã khôi phục mẫu kế hoạch hành động chuẩn hóa ViSEF cho Khối ${selectedGrade}`);
+    setTimeout(() => setToast(null), 3000);
   };
 
   // Cập nhật Tam giác 3 nấc
@@ -371,8 +424,8 @@ export default function DebiasMatrix() {
           student_id: user.id,
           target_major: targetMajor,
           evidence: `[Tam giác 3 Nấc]: Nấc 1: ${triadTiers.dream.majorSchool} | Nấc 2: ${triadTiers.realistic.majorSchool} | Nấc 3: ${triadTiers.safe.majorSchool}`,
-          verified_sources: `[Kế hoạch K${selectedGrade}]: ${actionPlans[selectedGrade]?.scoreGoal}`,
-          risk_analysis: `[Bồi dưỡng]: ${actionPlans[selectedGrade]?.weakSubjectsPlan} | [Tự học]: ${actionPlans[selectedGrade]?.studyTimeCommitment}`,
+          verified_sources: `[Kế hoạch K${selectedGrade}]: ${getPlanItem(selectedGrade, 0)}`,
+          risk_analysis: `[Kỹ năng nghề]: ${getPlanItem(selectedGrade, 1)} | [Vật neo]: ${getPlanItem(selectedGrade, 2)}`,
           bias_check: `T0=${step1Data.initialConfidence} -> T2=${confidenceT2} | Ký cam kết: Đã ký`,
           detected_bias: 'DEBIASED_SUCCESS',
           final_decision: 'CONFIRMED'
@@ -859,7 +912,7 @@ export default function DebiasMatrix() {
         </div>
 
         {/* =========================================================================
-            KHỐI 2: MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP
+            KHỐI 2: MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (CHUẨN HÓA 2 TRỤ CỘT)
             ========================================================================= */}
         <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-5 print-sheet">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
@@ -869,7 +922,7 @@ export default function DebiasMatrix() {
                 <span>BẢNG MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX)</span>
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Xác lập mục tiêu điểm số và kế hoạch bù đắp kiến thức theo thuyết Implementation Intentions
+                Xác lập mục tiêu học vấn tổ hợp & hệ thống kỹ năng nghề theo thuyết Implementation Intentions
               </p>
             </div>
 
@@ -910,51 +963,76 @@ export default function DebiasMatrix() {
             </span>
           </div>
 
-          {/* Nội dung mục tiêu chi tiết */}
+          {/* Banner Phân hóa theo Khối lớp */}
+          {(() => {
+            const gradeInfo = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade] || ADAPTIVE_COMMITMENTS_BY_GRADE[12];
+            return (
+              <div className="p-3.5 rounded-xl bg-teal-950/30 border border-teal-500/30 flex flex-wrap items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold">
+                    🎯 {gradeInfo.badge}
+                  </span>
+                  <p className="text-xs text-slate-300 italic flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                    <span>{gradeInfo.note}</span>
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResetToDefaultTemplate}
+                  className="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-teal-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition flex items-center gap-1 cursor-pointer no-print"
+                  title="Khôi phục lại nội dung mẫu chuẩn ViSEF cho khối này"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Khôi phục mẫu ViSEF</span>
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* Nội dung mục tiêu chi tiết 3 Mục chuẩn hóa 2 Trụ cột */}
           <div className="space-y-4 text-xs">
-            
-            {/* Mục tiêu điểm số */}
+            {/* Mục 1: Trọng tâm Học vấn */}
             <div className="space-y-1.5">
               <label className="font-semibold text-slate-300 flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-teal-400 shrink-0" />
-                <span>1. Điểm tổng kết tổ hợp xét tuyển cần đạt (Mục tiêu 3 môn chính):</span>
-              </label>
-              <input
-                type="text"
-                value={actionPlans[selectedGrade]?.scoreGoal || ''}
-                onChange={(e) => handleUpdatePlan('scoreGoal', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs"
-              />
-            </div>
-
-            {/* Môn trọng tâm cần cải thiện */}
-            <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>2. Môn trọng tâm còn yếu và Kế hoạch bồi dưỡng kiến thức cụ thể:</span>
+                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}</span>
               </label>
               <textarea
                 rows={2}
-                value={actionPlans[selectedGrade]?.weakSubjectsPlan || ''}
-                onChange={(e) => handleUpdatePlan('weakSubjectsPlan', e.target.value)}
+                value={getPlanItem(selectedGrade, 0)}
+                onChange={(e) => handleUpdatePlan('item1', e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
               />
             </div>
 
-            {/* Khung giờ tự học cam kết */}
+            {/* Mục 2: Kỹ năng nghề / Thích ứng */}
             <div className="space-y-1.5">
               <label className="font-semibold text-slate-300 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>3. Cam kết thời gian tự học có kỷ luật:</span>
+                <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}</span>
               </label>
-              <input
-                type="text"
-                value={actionPlans[selectedGrade]?.studyTimeCommitment || ''}
-                onChange={(e) => handleUpdatePlan('studyTimeCommitment', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2.5 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs"
+              <textarea
+                rows={2}
+                value={getPlanItem(selectedGrade, 1)}
+                onChange={(e) => handleUpdatePlan('item2', e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
               />
             </div>
 
+            {/* Mục 3: Vật neo kỷ luật / Giữ vững chiến lược */}
+            <div className="space-y-1.5">
+              <label className="font-semibold text-slate-300 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}</span>
+              </label>
+              <textarea
+                rows={2}
+                value={getPlanItem(selectedGrade, 2)}
+                onChange={(e) => handleUpdatePlan('item3', e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
+              />
+            </div>
           </div>
         </div>
 
@@ -1156,36 +1234,52 @@ export default function DebiasMatrix() {
 
           {/* 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS) */}
           <section className="border border-slate-200 rounded-lg p-3.5 mb-4 text-xs bg-white">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-2 mb-2.5">
-              <h3 className="font-black text-slate-900 uppercase">
-                🎯 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)
-              </h3>
-              <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded">
-                Áp dụng: Khối {selectedGrade} THPT
+            <div className="flex justify-between items-start border-b border-slate-200 pb-2 mb-2.5">
+              <div>
+                <h3 className="font-black text-slate-900 uppercase">
+                  🎯 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)
+                </h3>
+                <p className="text-[10px] text-slate-600 italic mt-0.5">
+                  {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.note}
+                </p>
+              </div>
+              <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-right">
+                {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.badge || `Áp dụng: Khối ${selectedGrade} THPT`}
               </span>
             </div>
 
             <div className="space-y-2.5">
-              {/* Đã chuẩn hóa: Khớp 26.5+ với Nấc 1 */}
+              {/* Mục 1: Trọng tâm Học vấn */}
               <div>
-                <span className="font-bold text-slate-800">1. ĐIỂM TỔNG KẾT TỔ HỢP XÉT TUYỂN CẦN ĐẠT (MỤC TIÊU 3 MÔN CHÍNH):</span>
-                <div className="bg-slate-50 border border-slate-200 p-2 rounded font-extrabold text-teal-800 mt-1">
-                  {actionPlans[selectedGrade]?.scoreGoal}
-                </div>
+                <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
+                  {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}
+                </span>
+                <div 
+                  className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 0) }}
+                />
               </div>
 
+              {/* Mục 2: Kế hoạch rèn luyện kỹ năng nghề */}
               <div className="border-t border-dashed border-slate-200 pt-2">
-                <span className="font-bold text-slate-800">2. MÔN TRỌNG TÂM CÒN YẾU & KẾ HOẠCH BỒI DƯỠNG KIẾN THỨC CỤ THỂ:</span>
-                <div className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 mt-1 leading-relaxed">
-                  {actionPlans[selectedGrade]?.weakSubjectsPlan}
-                </div>
+                <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
+                  {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}
+                </span>
+                <div 
+                  className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 1) }}
+                />
               </div>
 
+              {/* Mục 3: Vật neo kỷ luật */}
               <div className="border-t border-dashed border-slate-200 pt-2">
-                <span className="font-bold text-slate-800">3. CAM KẾT THỜI GIAN TỰ HỌC CÓ KỶ LUẬT:</span>
-                <div className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 mt-1">
-                  {actionPlans[selectedGrade]?.studyTimeCommitment}
-                </div>
+                <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
+                  {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}
+                </span>
+                <div 
+                  className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 2) }}
+                />
               </div>
             </div>
           </section>
