@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS } from '../../data/adaptiveCommitments'
-export { UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA } from '../../data/adaptiveCommitments'
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -4347,7 +4347,11 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
                         2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)
                       </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major} (Trường công lập trọng điểm)</p>
+                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                        {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
+                          ? DEFAULT_TRIANGLE_DATA.realistic.major
+                          : `${previewPdfStudent.major} (Trường công lập trọng điểm)`}
+                      </p>
                     </div>
                     <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
                       Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)
@@ -4360,7 +4364,11 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
                         3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)
                       </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">Ngành gần / Chương trình tiêu chuẩn (ĐH Địa phương)</p>
+                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                        {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
+                          ? DEFAULT_TRIANGLE_DATA.safety.major
+                          : 'Ngành gần / Chương trình tiêu chuẩn (Trường ĐH Nha Trang)'}
+                      </p>
                     </div>
                     <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
                       Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo
@@ -4535,14 +4543,18 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <div className="bg-cyan-50/70 p-2 rounded border border-cyan-200 flex flex-col justify-between">
                         <div>
                           <span className="text-[9.5px] font-bold text-cyan-800 uppercase block">2. Vừa sức (Realistic)</span>
-                          <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major} (Công lập)</strong>
+                          <strong className="text-slate-900 block mt-0.5 text-[11px]">
+                            {st.id === 'CT_01' || st.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.realistic.major : `${st.major} (Công lập)`}
+                          </strong>
                         </div>
                         <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-cyan-200/50">Phong độ học bạ (22.5 - 24.0)</div>
                       </div>
                       <div className="bg-slate-50 p-2 rounded border border-slate-300 flex flex-col justify-between">
                         <div>
                           <span className="text-[9.5px] font-bold text-slate-700 uppercase block">3. Bảo toàn (Safety Buffer)</span>
-                          <strong className="text-slate-900 block mt-0.5 text-[11px]">Ngành gần / ĐH Địa phương</strong>
+                          <strong className="text-slate-900 block mt-0.5 text-[11px]">
+                            {st.id === 'CT_01' || st.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.safety.major : 'Ngành gần / Trường ĐH Nha Trang'}
+                          </strong>
                         </div>
                         <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-slate-200">Vùng đệm dự phòng an toàn</div>
                       </div>

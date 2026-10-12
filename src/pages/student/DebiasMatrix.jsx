@@ -25,8 +25,12 @@ import {
   ShieldCheck,
   Sparkles
 } from 'lucide-react';
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan } from '../../data/adaptiveCommitments';
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan };
+import { 
+  ADAPTIVE_COMMITMENTS_BY_GRADE, 
+  getGradeCommitmentPlan, 
+  DEFAULT_TRIANGLE_DATA 
+} from '../../data/adaptiveCommitments';
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA };
 
 /**
  * BƯỚC 5: LỘ TRÌNH KẾ HOẠCH HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG
@@ -75,25 +79,25 @@ export default function DebiasMatrix() {
   const [confidenceT2, setConfidenceT2] = useState(7);
   const [showConfidenceSlider, setShowConfidenceSlider] = useState(false);
 
-  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO) ---
+  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO - CHUẨN HÓA KHÁNH HÒA) ---
   const [triadTiers, setTriadTiers] = useState({
     dream: {
-      label: '1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)',
+      label: DEFAULT_TRIANGLE_DATA.stretch.title,
       targetScore: 'Tham chiếu: 26.5+',
-      majorSchool: 'Tâm lý học — ĐH KHXH&NV TP.HCM',
-      notes: 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)'
+      majorSchool: DEFAULT_TRIANGLE_DATA.stretch.major,
+      notes: DEFAULT_TRIANGLE_DATA.stretch.desc
     },
     realistic: {
-      label: '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)',
+      label: DEFAULT_TRIANGLE_DATA.realistic.title,
       targetScore: 'Phong độ: 22.5 – 24.0',
-      majorSchool: 'Tâm lý học (ĐH Sư phạm) / QTKD (ĐH Nha Trang)',
-      notes: 'Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)'
+      majorSchool: DEFAULT_TRIANGLE_DATA.realistic.major,
+      notes: DEFAULT_TRIANGLE_DATA.realistic.desc
     },
     safe: {
-      label: '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)',
+      label: DEFAULT_TRIANGLE_DATA.safety.title,
       targetScore: 'Vùng đệm an toàn',
-      majorSchool: 'Công tác Xã hội — ĐH Nha Trang',
-      notes: 'Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo'
+      majorSchool: DEFAULT_TRIANGLE_DATA.safety.major,
+      notes: DEFAULT_TRIANGLE_DATA.safety.desc
     }
   });
   const [isEditingTriad, setIsEditingTriad] = useState(false);
@@ -1204,14 +1208,14 @@ export default function DebiasMatrix() {
               <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
                 <div>
                   <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                    {triadTiers.realistic?.label || '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)'}
+                    {triadTiers.realistic?.label || DEFAULT_TRIANGLE_DATA.realistic.title}
                   </span>
                   <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                    {triadTiers.realistic?.majorSchool || 'Tâm lý học (ĐH Sư phạm) / QTKD (ĐH Nha Trang)'}
+                    {triadTiers.realistic?.majorSchool || DEFAULT_TRIANGLE_DATA.realistic.major}
                   </p>
                 </div>
                 <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
-                  {triadTiers.realistic?.notes || 'Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)'}
+                  {triadTiers.realistic?.notes || DEFAULT_TRIANGLE_DATA.realistic.desc}
                 </div>
               </div>
 
@@ -1219,14 +1223,14 @@ export default function DebiasMatrix() {
               <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
                 <div>
                   <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                    {triadTiers.safe?.label || '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)'}
+                    {triadTiers.safe?.label || DEFAULT_TRIANGLE_DATA.safety.title}
                   </span>
                   <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                    {triadTiers.safe?.majorSchool || 'Công tác Xã hội — ĐH Nha Trang'}
+                    {triadTiers.safe?.majorSchool || DEFAULT_TRIANGLE_DATA.safety.major}
                   </p>
                 </div>
                 <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                  {triadTiers.safe?.notes || 'Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo'}
+                  {triadTiers.safe?.notes || DEFAULT_TRIANGLE_DATA.safety.desc}
                 </div>
               </div>
             </div>

@@ -50,9 +50,28 @@ export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
       },
       {
         num: "3. Vật neo Giữ vững Chiến lược:",
-        text: "Dán bản cam kết trước bàn học và thống nhất kế hoạch cùng gia đình; giữ vững chiến lược Tam giác nguyện vọng 3 nấc (Ước mơ – Vừa sức – An toàn), không thay đổi thứ tự theo cảm xúc đám đông."
+        text: "Dán bản cam kết trước bàn học và thống nhất kế hoạch cùng gia đình; giữ vững chiến lược Tam giác nguyện vọng 3 nấc (Thử thách – Vừa sức – Bảo toàn), không thay đổi thứ tự theo cảm xúc đám đông."
       }
     ]
+  }
+};
+
+// DỮ LIỆU ĐÃ CHUẨN HÓA THỰC ĐỊA KHÁNH HÒA:
+export const DEFAULT_TRIANGLE_DATA = {
+  stretch: {
+    title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)",
+    major: "Tâm lý học — ĐH KHXH&NV TP.HCM",
+    desc: "Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)"
+  },
+  realistic: {
+    title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)",
+    major: "Tâm lý học (ĐH Sư phạm TP.HCM) / Quản trị Nhân lực (ĐH Nha Trang)",
+    desc: "Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)"
+  },
+  safety: {
+    title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+    major: "Công tác Xã hội — Trường ĐH Nha Trang",
+    desc: "Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo"
   }
 };
 
