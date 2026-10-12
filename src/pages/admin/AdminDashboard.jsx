@@ -45,7 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan } from '../../data/adaptiveCommitments'
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY } from '../../data/adaptiveCommitments'
+export { UPDATED_STUDENTS_DISPLAY }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -461,40 +462,42 @@ export const INITIAL_CBAS_STUDENTS = [
     grade: 'Khối 12',
     gradeNum: '12',
     academicRank: 'Giỏi',
-    riasec: 'RCI',
-    major: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)',
-    majorT0: 'Kỹ thuật Ô tô & Xe điện (ĐH Sư Phạm Kỹ Thuật)',
-    majorT2: 'Kỹ thuật Ô tô Chuyên sâu Xe điện (ĐH SPKT TP.HCM)',
-    deltaScore: '+0.9đ (An toàn)',
-    triage: 'Fast-track (5p)',
-    triageType: 'Fast-track',
-    conf: '7/10 → 8/10',
-    crs: '+1.3 → +0.2',
+    riasec: 'IRE',
+    major: 'Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)',
+    majorT0: 'Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)',
+    majorT2: 'Công nghệ Thông tin (ĐH Nha Trang - 22.0đ)',
+    deltaScore: '-2.5đ (Nguy cơ)',
+    riskLevel: 'Nguy cơ',
+    triage: 'In-depth (20p)',
+    triageType: 'In-depth',
+    conf: '8/10 → 8/10',
+    crs: '+3.8 → -0.5',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Em nhận thấy xe điện là tương lai ngành ô tô nên quyết định tập trung vào mảng này.',
-    studentQuestion: 'Ngành xe điện có cơ hội thực tập tại các nhà máy VinFast hoặc Hyundai không ạ?',
-    assignedMentor: 'Kỹ sư Vũ Thành Nam'
+    turningPointQuote: 'Em nhận diện rõ mức độ cạnh tranh 27.5đ ở TP.HCM là rào cản quá lớn; chuyển sang ĐH Nha Trang giúp bảo đảm cơ hội trúng tuyển và phù hợp tài chính gia đình.',
+    studentQuestion: 'Chương trình đào tạo CNTT tại ĐH Nha Trang có liên kết doanh nghiệp phần mềm để thực tập sớm không ạ?',
+    assignedMentor: 'Thầy/Cô Ban Cố vấn CNTT & Mentor ĐH Nha Trang'
   },
   {
     id: 'CT_22',
     grade: 'Khối 12',
     gradeNum: '12',
     academicRank: 'Khá',
-    riasec: 'AIR',
-    major: 'Thiết kế Thời trang (ĐH Mỹ Thuật)',
-    majorT0: 'Thiết kế Thời trang (ĐH Mỹ Thuật TP.HCM)',
-    majorT2: 'May & Thiết kế Thời trang Ứng dụng (ĐH SP Kỹ Thuật) [Hiệu chuẩn]',
+    riasec: 'RIE',
+    major: 'Kỹ thuật Ô tô (Bách Khoa TP.HCM - 26.5đ)',
+    majorT0: 'Kỹ thuật Ô tô (Bách Khoa TP.HCM - 26.5đ)',
+    majorT2: 'Kỹ thuật Kỹ thuật Ô tô (ĐH Nha Trang - 21.0đ)',
     deltaScore: '-2.1đ (Nguy cơ)',
+    riskLevel: 'Nguy cơ',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
     conf: '8/10 → 7/10',
-    crs: '+2.7 → +0.3',
+    crs: '+2.7 → -0.3',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Chi phí mua nguyên vật liệu đồ án rất lớn, em chuyển hướng sang mảng may công nghiệp.',
-    studentQuestion: 'Chi phí nguyên phụ liệu mỗi kỳ học khoảng bao nhiêu để em chuẩn bị tài chính ạ?',
-    assignedMentor: 'NTK. Chu Kim Yến'
+    turningPointQuote: 'Điểm chuẩn Bách Khoa quá cao so với học lực Khá; em chọn Kỹ thuật Ô tô tại ĐH Nha Trang với mức điểm 21.0đ vừa sức hơn nhiều.',
+    studentQuestion: 'Xưởng thực hành Cơ khí - Động lực tại ĐH Nha Trang được trang bị ra sao ạ?',
+    assignedMentor: 'Kỹ sư Vũ Thành Nam - Cố vấn Cơ khí Ô tô'
   },
   {
     id: 'CT_23',
@@ -502,18 +505,19 @@ export const INITIAL_CBAS_STUDENTS = [
     gradeNum: '12',
     academicRank: 'Khá',
     riasec: 'SCI',
-    major: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)',
-    majorT0: 'Điều dưỡng Đa khoa (ĐH Y Khoa Phạm Ngọc Thạch)',
-    majorT2: 'Điều dưỡng Quốc tế (ĐH Y Khoa Phạm Ngọc Thạch)',
+    major: 'Điều dưỡng Đa khoa (ĐH Y Dược TP.HCM)',
+    majorT0: 'Điều dưỡng Đa khoa (ĐH Y Dược TP.HCM)',
+    majorT2: 'Điều dưỡng (ĐH Y Dược / CĐ Y tế Khánh Hòa)',
     deltaScore: '+1.8đ (An toàn)',
+    riskLevel: 'An toàn',
     triage: 'Fast-track (5p)',
     triageType: 'Fast-track',
     conf: '6/10 → 8/10',
-    crs: '+0.6 → +0.1',
+    crs: '+0.6 → -0.1',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Em thích chăm sóc người bệnh và muốn hướng đến cơ hội làm việc tại Nhật Bản hoặc Đức.',
-    studentQuestion: 'Chương trình điều dưỡng sang Đức hoặc Nhật có yêu cầu chứng chỉ tiếng B2 ngay từ đầu không ạ?',
+    turningPointQuote: 'Em thích chăm sóc người bệnh, bổ sung thêm CĐ Y tế Khánh Hòa làm nấc an toàn tuyệt đối để chắc chắn cơ hội hành nghề tại địa phương.',
+    studentQuestion: 'Cơ hội việc làm tại các bệnh viện đa khoa tỉnh Khánh Hòa sau khi tốt nghiệp ra sao ạ?',
     assignedMentor: 'Điều dưỡng trưởng Lê Thu Hà'
   },
   {
@@ -522,18 +526,19 @@ export const INITIAL_CBAS_STUDENTS = [
     gradeNum: '12',
     academicRank: 'Giỏi',
     riasec: 'ESI',
-    major: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)',
-    majorT0: 'Quản trị Khách sạn & Du lịch (ĐH Tôn Đức Thắng)',
-    majorT2: 'Quản trị Dịch vụ Du lịch & Lữ hành (ĐH Tôn Đức Thắng)',
+    major: 'Quản trị Khách sạn & Du lịch (Kinh Tế TP.HCM)',
+    majorT0: 'Quản trị Khách sạn & Du lịch (Kinh Tế TP.HCM)',
+    majorT2: 'Quản trị Du lịch & Khách sạn (ĐH Nha Trang)',
     deltaScore: '+0.6đ (An toàn)',
+    riskLevel: 'An toàn',
     triage: 'Fast-track (5p)',
     triageType: 'Fast-track',
     conf: '7/10 → 7/10',
-    crs: '+1.2 → +0.2',
+    crs: '+1.2 → -0.2',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Khách sạn đòi hỏi làm ca kíp và kỹ năng ứng xử linh hoạt, em đã rèn luyện thêm giao tiếp.',
-    studentQuestion: 'Nên đi làm thêm tại các chuỗi nhà hàng khách sạn từ năm mấy để lấy kinh nghiệm ạ?',
+    turningPointQuote: 'Khánh Hòa là thủ phủ du lịch, học tại ĐH Nha Trang giúp em tiếp cận ngay chuỗi khách sạn resort 5 sao quốc tế từ năm 2.',
+    studentQuestion: 'Sinh viên du lịch ĐH Nha Trang có được thực tập tại Vinpearl Nha Trang không ạ?',
     assignedMentor: 'Anh Phan Quốc Tuấn - Khách sạn 5 sao'
   },
   {
@@ -542,38 +547,40 @@ export const INITIAL_CBAS_STUDENTS = [
     gradeNum: '12',
     academicRank: 'Giỏi',
     riasec: 'IRC',
-    major: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)',
-    majorT0: 'Kỹ thuật Hàng không & Vũ trụ (ĐH Bách Khoa)',
-    majorT2: 'Kỹ thuật Cơ khí Chế tạo máy (ĐH Bách Khoa) [Hiệu chuẩn]',
+    major: 'Kỹ thuật Cơ điện tử (Bách Khoa TP.HCM - 26.0đ)',
+    majorT0: 'Kỹ thuật Cơ điện tử (Bách Khoa TP.HCM - 26.0đ)',
+    majorT2: 'Kỹ thuật Điện - Điện tử (ĐH Nha Trang - 21.5đ)',
     deltaScore: '-2.4đ (Nguy cơ)',
+    riskLevel: 'Nguy cơ',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
     conf: '9/10 → 8/10',
-    crs: '+3.2 → +0.5',
+    crs: '+3.2 → -0.3',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Chỉ tiêu Hàng không chỉ có 60 sinh viên, em chọn Cơ khí làm bàn đạp chuyên môn vững chắc.',
-    studentQuestion: 'Cơ hội thực tập tại các hãng hàng không như Vietnam Airlines hoặc Vietjet ra sao ạ?',
-    assignedMentor: 'Kỹ sư Vũ Quang Hải'
+    turningPointQuote: 'Em nhận thấy ngưỡng 26.0đ của Bách Khoa có rủi ro trượt cao; chuyển sang Điện - Điện tử ĐH Nha Trang 21.5đ bảo đảm an toàn mà vẫn đúng đam mê kỹ thuật.',
+    studentQuestion: 'Kỹ thuật Điện - Điện tử tại ĐH Nha Trang có đào tạo chuyên sâu về vi mạch và tự động hóa không ạ?',
+    assignedMentor: 'Kỹ sư Vũ Quang Hải - Cố vấn Điện tử Tự động'
   },
   {
     id: 'CT_26',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Xuất sắc',
+    academicRank: 'Giỏi',
     riasec: 'SAR',
     major: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
     majorT0: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
-    majorT2: 'Sư phạm Toán học Giảng dạy bằng Tiếng Anh (ĐH Sư Phạm)',
+    majorT2: 'Sư phạm Toán học (ĐH Sư phạm / CĐSP)',
     deltaScore: '+1.1đ (An toàn)',
+    riskLevel: 'An toàn',
     triage: 'Fast-track (5p)',
     triageType: 'Fast-track',
     conf: '8/10 → 8/10',
-    crs: '+0.7 → +0.1',
+    crs: '+0.7 → -0.1',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Em đam mê môn Toán và muốn dạy tại các trường song ngữ quốc tế.',
-    studentQuestion: 'Lớp Sư phạm Toán dạy bằng tiếng Anh thi đầu vào có phỏng vấn tiếng Anh không ạ?',
+    turningPointQuote: 'Em đam mê giảng dạy Toán, xây dựng thêm phương án dự phòng CĐSP để bảo đảm 100% cơ hội trúng tuyển theo học ngành Sư phạm.',
+    studentQuestion: 'Chế độ hỗ trợ sinh hoạt phí sinh viên Sư phạm theo Nghị định 116 tại Khánh Hòa triển khai thế nào ạ?',
     assignedMentor: 'Thầy Trần Đình Toàn - GV Sư phạm'
   },
   {
@@ -4218,7 +4225,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
                     </span>
                     <div className="text-sm font-extrabold text-slate-800 mt-1">
-                      MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | KHỐI 12 THPT
+                      MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | {previewPdfStudent.grade || 'Khối 12'} THPT
                     </div>
                   </div>
                   <div className="text-right">

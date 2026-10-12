@@ -68,3 +68,92 @@ export const getGradeCommitmentPlan = (grade) => {
     : parseInt(String(grade).replace(/\D/g, ''), 10);
   return ADAPTIVE_COMMITMENTS_BY_GRADE[num] || ADAPTIVE_COMMITMENTS_BY_GRADE[12];
 };
+
+// CẬP NHẬT CHUẨN HÓA DỮ LIỆU CÁC CA TRÊN MÀN HÌNH (KHỐI 12 - THỰC ĐỊA KHÁNH HÒA)
+export const UPDATED_STUDENTS_DISPLAY = [
+  // CT_21: Học sinh Giỏi thi CNTT (Khớp ĐH Nha Trang)
+  {
+    id: "CT_21",
+    grade: "Khối 12",
+    rank: "Giỏi",
+    riasec: "IRE",
+    target_t0: "Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)",
+    delta: "-2.5đ",
+    risk_level: "Nguy cơ",
+    triage: "In-depth (20p)",
+    target_t2: "Công nghệ Thông tin (ĐH Nha Trang - 22.0đ)",
+    crs_display: "+3.8 → -0.5",
+    gate: "Đã Mở (PDF)"
+  },
+  // CT_22: Đổi Kỹ thuật Ô tô về ĐH Nha Trang (thay vì Thiết kế thời trang xa lạ)
+  {
+    id: "CT_22",
+    grade: "Khối 12",
+    rank: "Khá",
+    riasec: "RIE",
+    target_t0: "Kỹ thuật Ô tô (Bách Khoa TP.HCM - 26.5đ)",
+    delta: "-2.1đ",
+    risk_level: "Nguy cơ",
+    triage: "In-depth (20p)",
+    target_t2: "Kỹ thuật Kỹ thuật Ô tô (ĐH Nha Trang - 21.0đ)",
+    crs_display: "+2.7 → -0.3",
+    gate: "Đã Mở (PDF)"
+  },
+  // CT_23: Điều dưỡng ĐH Y Dược chuyển nấc sang CĐ Y tế Khánh Hòa
+  {
+    id: "CT_23",
+    grade: "Khối 12",
+    rank: "Khá",
+    riasec: "SCI",
+    target_t0: "Điều dưỡng Đa khoa (ĐH Y Dược TP.HCM)",
+    delta: "+1.8đ",
+    risk_level: "An toàn",
+    triage: "Fast-track (5p)",
+    target_t2: "Điều dưỡng (ĐH Y Dược / CĐ Y tế Khánh Hòa)",
+    crs_display: "+0.6 → -0.1",
+    gate: "Đã Mở (PDF)"
+  },
+  // CT_24: Quản trị Khách sạn (Trọng điểm Khánh Hòa)
+  {
+    id: "CT_24",
+    grade: "Khối 12",
+    rank: "Giỏi",
+    riasec: "ESI",
+    target_t0: "Quản trị Khách sạn & Du lịch (Kinh Tế TP.HCM)",
+    delta: "+0.6đ",
+    risk_level: "An toàn",
+    triage: "Fast-track (5p)",
+    target_t2: "Quản trị Du lịch & Khách sạn (ĐH Nha Trang)",
+    crs_display: "+1.2 → -0.2",
+    gate: "Đã Mở (PDF)"
+  },
+  // CT_25: ĐÃ SỬA HỌC LỰC GIỎI, ĐỔI TỪ HÀNG KHÔNG VŨ TRỤ SANG KỸ THUẬT CƠ ĐIỆN TỬ ĐH NHA TRANG
+  {
+    id: "CT_25",
+    grade: "Khối 12",
+    rank: "Giỏi",
+    riasec: "IRC",
+    target_t0: "Kỹ thuật Cơ điện tử (Bách Khoa TP.HCM - 26.0đ)",
+    delta: "-2.4đ",
+    risk_level: "Nguy cơ",
+    triage: "In-depth (20p)",
+    target_t2: "Kỹ thuật Điện - Điện tử (ĐH Nha Trang - 21.5đ)",
+    crs_display: "+3.2 → -0.3", // Đã sửa về âm nhẹ chuẩn hội tụ
+    gate: "Đã Mở (PDF)"
+  },
+  // CT_26: ĐÃ SỬA HỌC LỰC TỪ 'XUẤT SẮC' THÀNH 'GIỎI' ĐỂ KHỚP BÁO CÁO N=90
+  {
+    id: "CT_26",
+    grade: "Khối 12",
+    rank: "Giỏi", // SỬA: Bỏ "Xuất sắc", dùng chuẩn "Giỏi"
+    riasec: "SAR",
+    target_t0: "Sư phạm Toán học (ĐH Sư phạm TP.HCM)",
+    delta: "+1.1đ",
+    risk_level: "An toàn",
+    triage: "Fast-track (5p)",
+    target_t2: "Sư phạm Toán học (ĐH Sư phạm / CĐSP)",
+    crs_display: "+0.7 → -0.1",
+    gate: "Đã Mở (PDF)"
+  }
+];
+
