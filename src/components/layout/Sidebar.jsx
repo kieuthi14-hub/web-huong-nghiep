@@ -14,6 +14,7 @@ import {
   Settings, 
   UserSquare2,
   ChevronRight,
+  BarChart3,
   Lock
 } from 'lucide-react'
 
@@ -44,7 +45,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   ]
 
   const adminLinks = [
-    { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị ViSEF', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+    { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị ViSEF (CBAS)', icon: <Settings className="w-4 h-4 text-amber-400" /> },
+    { to: '/admin/experiment', label: '📊 Báo Cáo Thực Nghiệm (N=90)', icon: <BarChart3 className="w-4 h-4 text-indigo-400" /> },
+    { to: '/admin/reflections', label: '📝 Nhật Ký Phản Tư (Socrates)', icon: <Brain className="w-4 h-4 text-emerald-400" /> },
     { to: '/admin/counseling', label: '📅 Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
   ]
 

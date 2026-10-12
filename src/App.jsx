@@ -479,6 +479,26 @@ const App = () => {
             } 
           />
           <Route 
+            path="/admin/experiment" 
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard activeTabDefault="experiment" />
+                </MainLayout>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/reflections" 
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard activeTabDefault="reflections" />
+                </MainLayout>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin/counseling" 
             element={
               <AdminProtectedRoute>

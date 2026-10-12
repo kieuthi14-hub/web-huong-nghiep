@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { getCounselorDetails, formatDateTimeFormatted, mentorMap, parseMeetingInfo, parseStudentContact, COUNSELOR_GROUPS } from '../student/CounselingBooking'
@@ -1107,9 +1107,49 @@ export const getMentorBadge = (displayName) => {
 const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const { user, lockAdmin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   
+  // Xác định tab ban đầu dựa trên URL hiện tại hoặc prop
+  const getInitialTab = () => {
+    const path = (location?.pathname || '').toLowerCase()
+    if (path.includes('/admin/counseling') || path.includes('/admin/management')) return 'counseling'
+    if (path.includes('/admin/experiment')) return 'experiment'
+    if (path.includes('/admin/reflections')) return 'reflections'
+    return activeTabDefault || 'cbas_hub'
+  }
+
   // 4 Tabs: 'cbas_hub' | 'experiment' | 'reflections' | 'counseling'
-  const [activeTab, setActiveTab] = useState(activeTabDefault)
+  const [activeTab, setActiveTab] = useState(getInitialTab)
+
+  // Đồng bộ hai chiều: Khi URL thay đổi (từ Sidebar/Browser Back-Forward) -> Cập nhật tab ngay lập tức
+  useEffect(() => {
+    const path = (location?.pathname || '').toLowerCase()
+    if (path.includes('/admin/counseling') || path.includes('/admin/management')) {
+      setActiveTab('counseling')
+    } else if (path.includes('/admin/experiment')) {
+      setActiveTab('experiment')
+    } else if (path.includes('/admin/reflections')) {
+      setActiveTab('reflections')
+    } else if (path === '/admin' || path === '/admin/dashboard' || path.includes('/admin/cbas')) {
+      setActiveTab('cbas_hub')
+    } else if (activeTabDefault) {
+      setActiveTab(activeTabDefault)
+    }
+  }, [location.pathname, activeTabDefault])
+
+  // Hàm chuyển tab đồng bộ URL khi người dùng bấm trực tiếp vào thanh Tab ngang
+  const handleSwitchTab = (tabKey) => {
+    setActiveTab(tabKey)
+    if (tabKey === 'counseling') {
+      navigate('/admin/counseling')
+    } else if (tabKey === 'experiment') {
+      navigate('/admin/experiment')
+    } else if (tabKey === 'reflections') {
+      navigate('/admin/reflections')
+    } else {
+      navigate('/admin/dashboard')
+    }
+  }
 
   // Dữ liệu Thực nghiệm CBAS 2026 (N=30 Đối tượng Can thiệp)
   const [cbasStudents, setCbasStudents] = useState(() => {
@@ -1891,7 +1931,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
         <div className="flex border-b border-slate-200 gap-6 pt-2 overflow-x-auto">
           {/* TAB CBAS 2026 */}
           <button
-            onClick={() => setActiveTab('cbas_hub')}
+            onClick={() => handleSwitchTab('cbas_hub')}
             className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               activeTab === 'cbas_hub' 
                 ? 'border-teal-600 text-teal-800 bg-teal-50/80 px-3 py-1.5 rounded-t-sm shadow-2xs' 
@@ -1909,7 +1949,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
           {/* TAB 1 */}
           <button
-            onClick={() => setActiveTab('experiment')}
+            onClick={() => handleSwitchTab('experiment')}
             className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               activeTab === 'experiment' 
                 ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm' 
@@ -1922,7 +1962,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
           {/* TAB 2 */}
           <button
-            onClick={() => setActiveTab('reflections')}
+            onClick={() => handleSwitchTab('reflections')}
             className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               activeTab === 'reflections' 
                 ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm' 
@@ -1935,7 +1975,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
           {/* TAB 3 */}
           <button
-            onClick={() => setActiveTab('counseling')}
+            onClick={() => handleSwitchTab('counseling')}
             className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer ${
               activeTab === 'counseling' 
                 ? 'border-brand-600 text-brand-700 bg-brand-50/40 px-3 py-1.5 rounded-t-sm' 
