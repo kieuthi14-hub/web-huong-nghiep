@@ -30,9 +30,13 @@ import {
   getGradeCommitmentPlan, 
   DEFAULT_TRIANGLE_DATA,
   CT21_COMMITMENT_DATA,
-  getStudentCommitmentData
+  CT13_COMMITMENT_DATA,
+  CT08_COMMITMENT_DATA,
+  getStudentCommitmentData,
+  getAdaptiveStep5Data,
+  generateStep5Content
 } from '../../data/adaptiveCommitments';
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA, CT21_COMMITMENT_DATA, getStudentCommitmentData };
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content };
 
 /**
  * BƯỚC 5: LỘ TRÌNH KẾ HOẠCH HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG
@@ -155,46 +159,46 @@ export default function DebiasMatrix() {
 
   // Khởi tạo và đọc dữ liệu đã lưu
   useEffect(() => {
-    const isCT21 = displayStudentCode === 'CT_21';
-    if (isCT21) {
-      const ct21 = CT21_COMMITMENT_DATA;
+    const studentCommitment = getStudentCommitmentData(displayStudentCode);
+    if (studentCommitment) {
       setStep1Data({
-        targetMajor: 'Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)',
-        initialConfidence: 8,
-        hollandCode: 'IRE'
+        targetMajor: studentCommitment.triangle.stretch.majorSchool,
+        initialConfidence: parseInt(studentCommitment.calibration.confT0) || 8,
+        hollandCode: studentCommitment.studentInfo.riasec.split(' ')[0] || 'IRE'
       });
-      setTargetMajor(ct21.coreCareerGoal.major);
-      setConfidenceT2(8);
-      setSelectedGrade(12);
+      setTargetMajor(studentCommitment.coreCareerGoal.major);
+      setConfidenceT2(parseInt(studentCommitment.calibration.confT2) || 8);
+      const gNum = studentCommitment.studentInfo.gradeNum || 12;
+      setSelectedGrade(gNum);
       setTriadTiers({
         dream: {
-          label: ct21.triangle.stretch.title,
-          targetScore: ct21.triangle.stretch.targetScore,
-          majorSchool: ct21.triangle.stretch.majorSchool,
-          notes: ct21.triangle.stretch.notes
+          label: studentCommitment.triangle.stretch.title,
+          targetScore: studentCommitment.triangle.stretch.targetScore,
+          majorSchool: studentCommitment.triangle.stretch.majorSchool,
+          notes: studentCommitment.triangle.stretch.notes
         },
         realistic: {
-          label: ct21.triangle.realistic.title,
-          targetScore: ct21.triangle.realistic.targetScore,
-          majorSchool: ct21.triangle.realistic.majorSchool,
-          notes: ct21.triangle.realistic.notes
+          label: studentCommitment.triangle.realistic.title,
+          targetScore: studentCommitment.triangle.realistic.targetScore,
+          majorSchool: studentCommitment.triangle.realistic.majorSchool,
+          notes: studentCommitment.triangle.realistic.notes
         },
         safe: {
-          label: ct21.triangle.safety.title,
-          targetScore: ct21.triangle.safety.targetScore,
-          majorSchool: ct21.triangle.safety.majorSchool,
-          notes: ct21.triangle.safety.notes
+          label: studentCommitment.triangle.safety.title,
+          targetScore: studentCommitment.triangle.safety.targetScore,
+          majorSchool: studentCommitment.triangle.safety.majorSchool,
+          notes: studentCommitment.triangle.safety.notes
         }
       });
       setActionPlans(prev => ({
         ...prev,
-        12: {
-          item1: ct21.implementationIntentions[0].text,
-          item2: ct21.implementationIntentions[1].text,
-          item3: ct21.implementationIntentions[2].text,
-          scoreGoal: ct21.implementationIntentions[0].text,
-          weakSubjectsPlan: ct21.implementationIntentions[1].text,
-          studyTimeCommitment: ct21.implementationIntentions[2].text
+        [gNum]: {
+          item1: studentCommitment.implementationIntentions[0].text,
+          item2: studentCommitment.implementationIntentions[1].text,
+          item3: studentCommitment.implementationIntentions[2].text,
+          scoreGoal: studentCommitment.implementationIntentions[0].text,
+          weakSubjectsPlan: studentCommitment.implementationIntentions[1].text,
+          studyTimeCommitment: studentCommitment.implementationIntentions[2].text
         }
       }));
     }
@@ -205,11 +209,13 @@ export default function DebiasMatrix() {
       const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData');
       const p = rawProfile ? JSON.parse(rawProfile) : {};
       const a = rawAnchor ? JSON.parse(rawAnchor) : {};
-      const m = p.targetMajor || a.target_career || (isCT21 ? CT21_COMMITMENT_DATA.coreCareerGoal.major : 'Tâm lý học');
+      const m = p.targetMajor || a.target_career || (studentCommitment ? studentCommitment.coreCareerGoal.major : 'Tâm lý học');
       const c = Number(p.initialConfidence || a.confidence_score || 8);
-      const h = p.hollandCode || a.holland_code || (isCT21 ? 'IRE' : 'RIA');
-      setStep1Data({ targetMajor: m, initialConfidence: c, hollandCode: h });
-      if (!isCT21) setTargetMajor(m);
+      const h = p.hollandCode || a.holland_code || (studentCommitment ? studentCommitment.studentInfo.riasec.split(' ')[0] : 'RIA');
+      if (!studentCommitment) {
+        setStep1Data({ targetMajor: m, initialConfidence: c, hollandCode: h });
+        setTargetMajor(m);
+      }
     } catch (e) {
       console.warn('Lỗi đọc Step 1:', e);
     }
@@ -386,26 +392,96 @@ export default function DebiasMatrix() {
     });
   };
 
+  // Chuyển đổi khối lớp nhanh và đồng bộ hóa Tam giác nguyện vọng & Ma trận ý định
+  const handleGradeSwitch = (g) => {
+    setSelectedGrade(g);
+    if (!isEditingTriad) {
+      const { triangle } = getAdaptiveStep5Data({ grade: g, id: displayStudentCode });
+      setTriadTiers({
+        dream: {
+          label: triangle.stretchTitle,
+          targetScore: g === 10 ? '21.0 điểm' : (g === 11 ? '27.5đ+' : '27.50 điểm'),
+          majorSchool: triangle.stretchSchool,
+          notes: triangle.stretchDesc
+        },
+        realistic: {
+          label: triangle.realisticTitle,
+          targetScore: g === 10 ? 'Xét tuyển học bạ THPT' : (g === 11 ? '21.5 - 23.0đ' : '22.0 - 23.5 điểm'),
+          majorSchool: triangle.realisticSchool,
+          notes: triangle.realisticDesc
+        },
+        safe: {
+          label: triangle.safetyTitle,
+          targetScore: g === 10 ? 'Miễn học phí theo chính sách' : (g === 11 ? 'Xét học bạ sớm' : 'Vùng đệm dự phòng rủi ro'),
+          majorSchool: triangle.safetySchool,
+          notes: triangle.safetyDesc
+        }
+      });
+    }
+  };
+
   // Khôi phục nội dung cam kết mẫu chuẩn hóa ViSEF 2026 cho khối lớp đang chọn
   const handleResetToDefaultTemplate = () => {
-    if (displayStudentCode === 'CT_21') {
-      const ct21 = CT21_COMMITMENT_DATA;
+    const studentCommitment = getStudentCommitmentData(displayStudentCode);
+    if (studentCommitment) {
+      const gNum = studentCommitment.studentInfo.gradeNum || 12;
       setActionPlans(prev => ({
         ...prev,
-        12: {
-          item1: ct21.implementationIntentions[0].text,
-          item2: ct21.implementationIntentions[1].text,
-          item3: ct21.implementationIntentions[2].text,
-          scoreGoal: ct21.implementationIntentions[0].text,
-          weakSubjectsPlan: ct21.implementationIntentions[1].text,
-          studyTimeCommitment: ct21.implementationIntentions[2].text
+        [gNum]: {
+          item1: studentCommitment.implementationIntentions[0].text,
+          item2: studentCommitment.implementationIntentions[1].text,
+          item3: studentCommitment.implementationIntentions[2].text,
+          scoreGoal: studentCommitment.implementationIntentions[0].text,
+          weakSubjectsPlan: studentCommitment.implementationIntentions[1].text,
+          studyTimeCommitment: studentCommitment.implementationIntentions[2].text
         }
       }));
-      setToast({ message: 'Đã khôi phục ma trận ý định thực thi chuẩn ViSEF cho CT_21 (THPT Trần Quý Cáp)!', type: 'success' });
+      setTriadTiers({
+        dream: {
+          label: studentCommitment.triangle.stretch.title,
+          targetScore: studentCommitment.triangle.stretch.targetScore,
+          majorSchool: studentCommitment.triangle.stretch.majorSchool,
+          notes: studentCommitment.triangle.stretch.notes
+        },
+        realistic: {
+          label: studentCommitment.triangle.realistic.title,
+          targetScore: studentCommitment.triangle.realistic.targetScore,
+          majorSchool: studentCommitment.triangle.realistic.majorSchool,
+          notes: studentCommitment.triangle.realistic.notes
+        },
+        safe: {
+          label: studentCommitment.triangle.safety.title,
+          targetScore: studentCommitment.triangle.safety.targetScore,
+          majorSchool: studentCommitment.triangle.safety.majorSchool,
+          notes: studentCommitment.triangle.safety.notes
+        }
+      });
+      setToast({ message: `Đã khôi phục ma trận ý định thực thi chuẩn ViSEF cho ${displayStudentCode}!`, type: 'success' });
       return;
     }
     const defaultGrade = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade];
     if (!defaultGrade) return;
+    const { triangle } = getAdaptiveStep5Data({ grade: selectedGrade, id: displayStudentCode });
+    setTriadTiers({
+      dream: {
+        label: triangle.stretchTitle,
+        targetScore: selectedGrade === 10 ? '21.0 điểm' : (selectedGrade === 11 ? '27.5đ+' : '27.50 điểm'),
+        majorSchool: triangle.stretchSchool,
+        notes: triangle.stretchDesc
+      },
+      realistic: {
+        label: triangle.realisticTitle,
+        targetScore: selectedGrade === 10 ? 'Xét tuyển học bạ THPT' : (selectedGrade === 11 ? '21.5 - 23.0đ' : '22.0 - 23.5 điểm'),
+        majorSchool: triangle.realisticSchool,
+        notes: triangle.realisticDesc
+      },
+      safe: {
+        label: triangle.safetyTitle,
+        targetScore: selectedGrade === 10 ? 'Miễn học phí theo chính sách' : (selectedGrade === 11 ? 'Xét học bạ sớm' : 'Vùng đệm dự phòng rủi ro'),
+        majorSchool: triangle.safetySchool,
+        notes: triangle.safetyDesc
+      }
+    });
     setActionPlans(prev => ({
       ...prev,
       [selectedGrade]: {
@@ -722,6 +798,39 @@ export default function DebiasMatrix() {
       <div className="space-y-6 no-print">
 
         {/* =========================================================================
+            KHỐI GIAO DIỆN CHUẨN VISEF QUỐC GIA (THEO QUY CHUẨN HÀNH VI CBAS)
+            ========================================================================= */}
+        <div className="rounded-2xl border border-teal-500/30 overflow-hidden shadow-2xl bg-slate-900/90">
+          <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-slate-950 px-5 py-3 border-b border-teal-500/30 flex flex-wrap justify-between items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-teal-400" />
+              <span className="font-extrabold text-xs text-teal-300 uppercase tracking-wide">
+                HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER) — BƯỚC 5 CHUẨN VISEF
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2.5 py-0.5 rounded font-bold">
+                {displayStudentCode} • Khối {selectedGrade} THPT
+              </span>
+            </div>
+          </div>
+          <div 
+            className="p-5" 
+            dangerouslySetInnerHTML={{ 
+              __html: generateStep5Content({
+                id: displayStudentCode,
+                grade: `Khối ${selectedGrade}`,
+                conf_T0: step1Data.initialConfidence || (displayStudentCode === 'CT_21' ? 8 : (displayStudentCode === 'CT_13' ? 9 : 9)),
+                conf_T2: confidenceT2 || (displayStudentCode === 'CT_21' ? 8 : (displayStudentCode === 'CT_13' ? 7 : 7.5)),
+                crs_T0: displayStudentCode === 'CT_21' ? '3.8' : (displayStudentCode === 'CT_13' ? '3.4' : '4.0'),
+                crs_T2: displayStudentCode === 'CT_21' ? '-0.2' : (displayStudentCode === 'CT_13' ? '+0.5' : '-0.3'),
+                riasec: step1Data.hollandCode || (displayStudentCode === 'CT_21' ? 'IRE' : (displayStudentCode === 'CT_13' ? 'ISR' : 'ICR'))
+              }) 
+            }} 
+          />
+        </div>
+
+        {/* =========================================================================
             BẢNG ĐO LƯỜNG VÀ HIỆU CHUẨN NHẬN THỨC
             ========================================================================= */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -995,7 +1104,7 @@ export default function DebiasMatrix() {
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs no-print">
               <button
                 type="button"
-                onClick={() => setSelectedGrade(10)}
+                onClick={() => handleGradeSwitch(10)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   selectedGrade === 10 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
                 }`}
@@ -1004,7 +1113,7 @@ export default function DebiasMatrix() {
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedGrade(11)}
+                onClick={() => handleGradeSwitch(11)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   selectedGrade === 11 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
                 }`}
@@ -1013,7 +1122,7 @@ export default function DebiasMatrix() {
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedGrade(12)}
+                onClick={() => handleGradeSwitch(12)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
                   selectedGrade === 12 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
                 }`}

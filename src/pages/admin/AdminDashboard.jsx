@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, getStudentCommitmentData } from '../../data/adaptiveCommitments'
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, getStudentCommitmentData }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content } from '../../data/adaptiveCommitments'
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -309,17 +309,17 @@ export const INITIAL_CBAS_STUDENTS = [
     riasec: 'ISR',
     major: 'Y đa khoa (ĐH Y Dược TP.HCM)',
     majorT0: 'Y đa khoa (ĐH Y Dược TP.HCM)',
-    majorT2: 'Y Đa Khoa (Khoa Y - ĐHQG TP.HCM / Cần Thơ) [Dự phòng]',
-    deltaScore: '-2.8đ (Nguy cơ)',
+    majorT2: 'Kỹ thuật Xét nghiệm Y học / Điều dưỡng (CĐ Y tế Khánh Hòa)',
+    deltaScore: '-3.2đ (Nguy cơ)',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
     conf: '9/10 → 7/10',
     crs: '+3.4 → +0.5',
     unlockedStep5: true,
     status: 'Completed',
-    turningPointQuote: 'Khối lượng học 6 năm cùng áp lực trực đêm là rào cản thực tế em phải đối mặt.',
-    studentQuestion: 'Học phí Y khoa hiện nay rất cao, có chính sách vay vốn sinh viên ra sao ạ?',
-    assignedMentor: 'Bác sĩ nội trú Nguyễn Hoàng Nam'
+    turningPointQuote: 'Áp lực học 6 năm và thiếu 3.2 điểm sàn làm em ngộ ra con đường thực hành xét nghiệm / điều dưỡng tại địa phương an toàn và thiết thực hơn.',
+    studentQuestion: 'Học nghề điều dưỡng tại địa phương có bảo đảm việc làm tại bệnh viện tỉnh Khánh Hòa không ạ?',
+    assignedMentor: 'BS. Nguyễn Hoàng Nam - CĐ Y Tế Khánh Hòa'
   },
   {
     id: 'CT_14',
@@ -4811,8 +4811,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             {/* Danh sách 30 bản in */}
             <div className="space-y-8">
               {cbasStudents.map((st, idx) => {
-                if (st.id === 'CT_21') {
-                  const ct21 = CT21_COMMITMENT_DATA;
+                const ct21 = getStudentCommitmentData(st.id);
+                if (ct21) {
                   return (
                     <div
                       key={st.id}
@@ -5002,41 +5002,42 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   </div>
 
                   {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO) */}
-                  <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 uppercase text-[10.5px]">
-                        🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
-                      </span>
-                      <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2.5 pt-0.5">
-                      <div className="bg-teal-50/70 p-2 rounded border border-teal-200 flex flex-col justify-between">
-                        <div>
-                          <span className="text-[9.5px] font-bold text-teal-800 uppercase block">1. Thử thách (Stretch)</span>
-                          <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major}</strong>
+                  {(() => {
+                    const { triangle } = getAdaptiveStep5Data(st);
+                    return (
+                      <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900 uppercase text-[10.5px]">
+                            🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                         </div>
-                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-teal-200/50">Trường Top đầu (26.5+)</div>
-                      </div>
-                      <div className="bg-cyan-50/70 p-2 rounded border border-cyan-200 flex flex-col justify-between">
-                        <div>
-                          <span className="text-[9.5px] font-bold text-cyan-800 uppercase block">2. Vừa sức (Realistic)</span>
-                          <strong className="text-slate-900 block mt-0.5 text-[11px]">
-                            {st.id === 'CT_01' || st.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.realistic.major : `${st.major} (Công lập)`}
-                          </strong>
+                        <div className="grid grid-cols-3 gap-2.5 pt-0.5">
+                          <div className="bg-teal-50/70 p-2 rounded border border-teal-200 flex flex-col justify-between">
+                            <div>
+                              <span className="text-[9.5px] font-bold text-teal-800 uppercase block">{triangle.stretchTitle}</span>
+                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.stretchSchool}</strong>
+                            </div>
+                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-teal-200/50">{triangle.stretchDesc}</div>
+                          </div>
+                          <div className="bg-cyan-50/70 p-2 rounded border border-cyan-200 flex flex-col justify-between">
+                            <div>
+                              <span className="text-[9.5px] font-bold text-cyan-800 uppercase block">{triangle.realisticTitle}</span>
+                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.realisticSchool}</strong>
+                            </div>
+                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-cyan-200/50">{triangle.realisticDesc}</div>
+                          </div>
+                          <div className="bg-slate-50 p-2 rounded border border-slate-300 flex flex-col justify-between">
+                            <div>
+                              <span className="text-[9.5px] font-bold text-slate-700 uppercase block">{triangle.safetyTitle}</span>
+                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.safetySchool}</strong>
+                            </div>
+                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-slate-200">{triangle.safetyDesc}</div>
+                          </div>
                         </div>
-                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-cyan-200/50">Phong độ học bạ (22.5 - 24.0)</div>
                       </div>
-                      <div className="bg-slate-50 p-2 rounded border border-slate-300 flex flex-col justify-between">
-                        <div>
-                          <span className="text-[9.5px] font-bold text-slate-700 uppercase block">3. Bảo toàn (Safety Buffer)</span>
-                          <strong className="text-slate-900 block mt-0.5 text-[11px]">
-                            {st.id === 'CT_01' || st.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.safety.major : 'Ngành gần / Trường ĐH Nha Trang'}
-                          </strong>
-                        </div>
-                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-slate-200">Vùng đệm dự phòng an toàn</div>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Ma trận kế hoạch hành động phân hóa theo khối lớp */}
                   {(() => {
