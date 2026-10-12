@@ -1198,9 +1198,23 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const [filterBias, setFilterBias] = useState('ALL')
   const [filterDecision, setFilterDecision] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedMatrixDetail, setSelectedMatrixDetail] = useState(null)
   const [selectedChatStudentId, setSelectedChatStudentId] = useState('CT_08')
 
+  const switchStudentLog = (val) => {
+    setSelectedChatStudentId(val)
+    if (val === 'FULL_LOGS') {
+      setIsSocratesModalOpen(true)
+    }
+  }
+
+  useEffect(() => {
+    window.switchStudentLog = switchStudentLog
+    return () => {
+      delete window.switchStudentLog
+    }
+  }, [])
+
+  const [selectedMatrixDetail, setSelectedMatrixDetail] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
@@ -3153,23 +3167,88 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
             {/* Chọn học sinh để xem nhật ký đối thoại */}
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-400 font-medium">Chọn hồ sơ đối tượng:</span>
+              <span className="text-slate-400 font-medium">Hồ sơ trích xuất:</span>
               <select
                 id="selectStudentChatLog"
                 value={selectedChatStudentId}
-                onChange={(e) => setSelectedChatStudentId(e.target.value)}
+                onChange={(e) => switchStudentLog(e.target.value)}
                 className="bg-slate-900 border border-slate-700 text-teal-300 font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 cursor-pointer"
               >
-                <option value="CT_08">CT_08 (Khối 10 - Mỏ neo: Tạo mẫu tóc tiệm tư)</option>
-                <option value="CT_02">CT_02 (Khối 10 - Mỏ neo: QTKD ĐH Kinh Tế TP.HCM)</option>
-                <option value="CT_13">CT_13 (Khối 11 - Mỏ neo: Bác sĩ Đa khoa Y Dược TP.HCM)</option>
-                <option value="CT_21">CT_21 (Khối 12 - Mỏ neo: Trí tuệ nhân tạo ĐH CNTT)</option>
+                <optgroup label="── 4 CA ĐIỂN HÌNH BỘC LỘ TURNING POINT RÕ NÉT ──">
+                  <option value="CT_08">CT_08 (K10 - Nghề tóc: Bẻ gãy mỏ neo chi phí nghề tự do)</option>
+                  <option value="CT_02">CT_02 (K10 - QTKD: Thích ứng điểm học bạ về ĐH Nha Trang)</option>
+                  <option value="CT_13">CT_13 (K11 - Y Đa khoa: Điều chỉnh sang CĐ Điều dưỡng Khánh Hòa)</option>
+                  <option value="CT_21">CT_21 (K12 - CNTT/AI: Bẻ gãy ảo tưởng lương nghìn đô, thiếu 2.5đ sàn)</option>
+                </optgroup>
+                <optgroup label="── CA ĐIỂN HÌNH NHÓM THỰC CHẤT (KHÔNG BẺ GÃY) ──">
+                  <option value="CT_30">CT_30 (K12 - Thủy sản ĐH Nha Trang: Nhận thức thực chất từ đầu)</option>
+                </optgroup>
+                <optgroup label="── TOÀN BỘ 25 HỒ SƠ CÒN LẠI (TRÍCH XUẤT NHANH) ──">
+                  <option value="FULL_LOGS">📥 Xem danh sách lưu vết đầy đủ 30/30 học sinh (Mã QR / Logbook)...</option>
+                </optgroup>
               </select>
             </div>
 
             {/* Khung hiển thị chi tiết biên bản chat phản tư */}
             {(() => {
+              if (selectedChatStudentId === 'FULL_LOGS') {
+                return (
+                  <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-3.5 text-xs font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                      <div>
+                        <h4 className="font-bold text-teal-300 text-sm flex items-center gap-2">
+                          <span>📥</span> DANH SÁCH LƯU VẾT ĐẦY ĐỦ 30/30 HỌC SINH (LOGBOOK & MÃ QR)
+                        </h4>
+                        <p className="text-slate-400 text-[11px] mt-0.5">
+                          Trích xuất 26 ca bộc lộ Turning Point (86.7%) và 4 ca nhận thức thực chất không bẻ gãy (13.3%).
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsSocratesModalOpen(true)}
+                        className="px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500 text-purple-300 hover:text-white border border-purple-500/40 font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                      >
+                        <Brain className="w-3.5 h-3.5" />
+                        <span>Mở Modal Chi Tiết 26 Turning Points</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-96 overflow-y-auto pr-1">
+                      {cbasStudents.map((st) => (
+                        <div
+                          key={st.id}
+                          className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 space-y-1 transition text-[11px]"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono font-bold text-teal-400">{st.id} ({st.grade})</span>
+                            <span className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold ${
+                              st.turningPointQuote ? 'bg-purple-500/20 text-purple-300' : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {st.turningPointQuote ? 'Turning Point ✓' : 'Thực chất'}
+                            </span>
+                          </div>
+                          <p className="text-slate-300 truncate" title={st.major}>
+                            {st.major}
+                          </p>
+                          {st.turningPointQuote ? (
+                            <p className="text-slate-400 text-[10px] italic truncate" title={st.turningPointQuote}>
+                              "{st.turningPointQuote}"
+                            </p>
+                          ) : (
+                            <p className="text-slate-500 text-[10px] italic">
+                              Nhận thức tương thích, không phát sinh thiên lệch
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
               const currentLog = SOCRATIC_CHAT_LOGS[selectedChatStudentId] || SOCRATIC_CHAT_LOGS['CT_08'];
+              const isNonBiasCase = currentLog.id === 'CT_30';
+
               return (
                 <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-3.5 text-xs font-sans">
                   {/* Vòng 1 */}
@@ -3211,13 +3290,23 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   </div>
 
                   {/* Nhãn ghi nhận kết quả phản tư */}
-                  <div className="p-3 rounded-lg bg-purple-950/30 border border-purple-500/40 flex flex-wrap items-center justify-between text-xs gap-2">
+                  <div className={`p-3 rounded-lg border flex flex-wrap items-center justify-between text-xs gap-2 ${
+                    isNonBiasCase 
+                      ? 'bg-teal-950/30 border-teal-500/40' 
+                      : 'bg-purple-950/30 border-purple-500/40'
+                  }`}>
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                      <span className="text-purple-200 font-bold">Xác nhận Điểm bẻ gãy nhận thức (Turning Point):</span>
+                      <CheckCircle2 className={`w-4 h-4 shrink-0 ${isNonBiasCase ? 'text-teal-400' : 'text-purple-400'}`} />
+                      <span className={`font-bold ${isNonBiasCase ? 'text-teal-200' : 'text-purple-200'}`}>
+                        {isNonBiasCase ? 'Ghi nhận Nhóm Thực chất (Realistic Fit):' : 'Xác nhận Điểm bẻ gãy nhận thức (Turning Point):'}
+                      </span>
                       <span className="text-slate-300">{currentLog.turningPoint.desc}</span>
                     </div>
-                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px]">
+                    <span className={`px-2 py-0.5 rounded font-mono font-bold text-[10px] ${
+                      isNonBiasCase 
+                        ? 'bg-teal-500/20 text-teal-300' 
+                        : 'bg-purple-500/20 text-purple-300'
+                    }`}>
                       {currentLog.turningPoint.action}
                     </span>
                   </div>

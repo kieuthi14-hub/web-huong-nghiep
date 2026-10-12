@@ -275,6 +275,30 @@ export const SOCRATIC_CHAT_LOGS = {
       desc: "Bẻ gãy ảo tưởng bứt phá điểm số không thực tế; chủ động chuyển nấc Tam giác nguyện vọng về ĐH Nha Trang bảo đảm an toàn.",
       action: "KÍCH HOẠT BƯỚC 3"
     }
+  },
+  CT_30: {
+    id: "CT_30",
+    grade: "Khối 12",
+    label: "CT_30 (K12 - Thủy sản ĐH Nha Trang: Nhận thức thực chất từ đầu)",
+    studentInitial: "Học sinh (CT_30)",
+    round1: {
+      title: "VÒNG 1: XÁC LẬP GIẢ ĐỊNH BAN ĐẦU (T₀)",
+      student: "Gia đình em làm nghề nuôi trồng thủy sản tại Cam Ranh (Khánh Hòa). Em định hướng theo học ngành Kỹ thuật Nuôi trồng Thủy sản tại Trường ĐH Nha Trang để tiếp quản trang trại gia đình và ứng dụng công nghệ cao."
+    },
+    round2: {
+      title: "VÒNG 2: AI TRUY VẤN MÂU THUẪN RIASEC (ANTI-SYCOPHANCY)",
+      ai: "Ngành Thủy sản yêu cầu làm việc thực địa ngoài trời nhiều, tính chất lao động biển đảo tương đối vất vả. Hồ sơ RIASEC của em là <strong>Thực tế [R]</strong> và <strong>Nghiên cứu [I]</strong>, điểm học bạ đạt 23.5 điểm trong khi điểm chuẩn ĐH Nha Trang là 18.5đ. Em có băn khoăn khi không chọn các trường đại học lớn tại TP.HCM như các bạn không?",
+      student: "Dạ không, em hiểu rất rõ thế mạnh kinh tế biển của Khánh Hòa và uy tín đầu ngành Thủy sản của Trường ĐH Nha Trang. Mục tiêu của em là làm chủ kỹ thuật để phát triển kinh tế gia đình tại quê hương."
+    },
+    round3: {
+      title: "VÒNG 3: TRUY VẤN RỦI RO & BỘC LỘ TURNING POINT",
+      ai: "Hệ thống ghi nhận sự tương thích cao giữa năng lực học vấn, thiên hướng RIASEC và tính khả thi tài chính/nghề nghiệp. Em đã sẵn sàng để chuyển thẳng sang xác lập Tam giác nguyện vọng và Bản cam kết hành động chưa?",
+      student: "Dạ em đã hoàn toàn sẵn sàng, em muốn vào ngay Bước 5 để lập kế hoạch cam kết học tập và rèn luyện kỹ năng thực tế."
+    },
+    turningPoint: {
+      desc: "Đối tượng thuộc nhóm Thực chất (Realistic Fit): Không xuất hiện điểm bẻ gãy do nhận thức đã chuẩn xác và thực tế từ đầu (Non-bias Case).",
+      action: "FAST-TRACK BƯỚC 3"
+    }
   }
 };
 
