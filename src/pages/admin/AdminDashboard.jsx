@@ -1370,19 +1370,22 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     <p><strong>Chỉ số thiên lệch (CRS):</strong> ${student.crs}</p>
   </div>
   <div class="box">
-    <h3 style="margin-top:0;">TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG:</h3>
+    <h3 style="margin-top:0; font-size:12px; color:#0f766e; text-transform:uppercase;">🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO):</h3>
     <div class="grid">
-      <div class="triangle-item" style="background:#f0fdfa;">
-        <strong>1. Nguyện vọng Mơ ước (Aspiration)</strong>
-        <p>${student.majorT2 || student.major}</p>
+      <div class="triangle-item" style="background:#f0fdfa; border:1px solid #99f6e4; padding:8px; border-radius:6px;">
+        <strong style="color:#0f766e; font-size:10px; text-transform:uppercase; display:block;">1. Nguyện vọng Thử thách (Stretch)</strong>
+        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">${student.majorT2 || student.major}</p>
+        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Trường Top đầu — Nỗ lực tối đa (26.5+)</span>
       </div>
-      <div class="triangle-item" style="background:#f0f9ff;">
-        <strong>2. Nguyện vọng Vừa sức (Realistic)</strong>
-        <p>${student.majorT2 || student.major} (Trường công lập)</p>
+      <div class="triangle-item" style="background:#ecfeff; border:1px solid #a5f3fc; padding:8px; border-radius:6px;">
+        <strong style="color:#0e7490; font-size:10px; text-transform:uppercase; display:block;">2. Nguyện vọng Vừa sức (Realistic)</strong>
+        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">${student.majorT2 || student.major} (Trường công lập)</p>
+        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Mục tiêu chính — Dải phong độ (22.5 – 24.0)</span>
       </div>
-      <div class="triangle-item" style="background:#f8fafc;">
-        <strong>3. Nguyện vọng Dự phòng (Safety)</strong>
-        <p>Ngành gần / Chương trình chuẩn</p>
+      <div class="triangle-item" style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px;">
+        <strong style="color:#334155; font-size:10px; text-transform:uppercase; display:block;">3. Nguyện vọng Bảo toàn (Safety Buffer)</strong>
+        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">Ngành gần / ĐH Địa phương</p>
+        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Vùng đệm dự phòng — Biên độ an toàn cao</span>
       </div>
     </div>
   </div>
@@ -4312,26 +4315,56 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 </div>
               </div>
 
-              {/* Tam giác nguyện vọng thích ứng */}
-              <div className="space-y-2 border border-slate-200 rounded-lg p-4">
-                <h3 className="text-xs font-bold text-teal-900 uppercase tracking-wide flex items-center gap-1.5">
-                  <span>🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs pt-1">
-                  <div className="bg-teal-50/70 p-3 rounded border border-teal-200">
-                    <span className="text-[10px] font-bold text-teal-800 uppercase block">1. Nguyện vọng Mơ ước (Aspiration)</span>
-                    <strong className="text-slate-900 block mt-1">{previewPdfStudent.major}</strong>
-                    <p className="text-[10px] text-slate-600 mt-1">ĐH Top đầu - Điểm sàn cao (Mục tiêu dấn thân nỗ lực cao độ)</p>
+              {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ĐÃ CHUẨN HÓA CÂU TỪ KHOA HỌC) */}
+              <div className="space-y-1.5 mb-3 text-xs border border-slate-200 rounded-lg p-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-teal-900 font-bold">🔺</span>
+                    <span className="font-black text-slate-900 uppercase text-[11px] tracking-wide">
+                      TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                    </span>
                   </div>
-                  <div className="bg-sky-50/70 p-3 rounded border border-sky-200">
-                    <span className="text-[10px] font-bold text-sky-800 uppercase block">2. Nguyện vọng Vừa sức (Realistic)</span>
-                    <strong className="text-slate-900 block mt-1">{previewPdfStudent.major} (Trường công lập)</strong>
-                    <p className="text-[10px] text-slate-600 mt-1">Điểm xét tuyển nằm trong ngưỡng biên độ an toàn học bạ</p>
+                  <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                  {/* Nấc 1: Thử thách */}
+                  <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
+                    <div>
+                      <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
+                        1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)
+                      </span>
+                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major}</p>
+                    </div>
+                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
+                      Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)
+                    </div>
                   </div>
-                  <div className="bg-slate-100/80 p-3 rounded border border-slate-300">
-                    <span className="text-[10px] font-bold text-slate-700 uppercase block">3. Nguyện vọng Dự phòng (Safety)</span>
-                    <strong className="text-slate-900 block mt-1">Ngành gần / Chương trình tiêu chuẩn</strong>
-                    <p className="text-[10px] text-slate-600 mt-1">Đảm bảo chắc chắn cơ hội trúng tuyển và tối ưu học phí</p>
+
+                  {/* Nấc 2: Vừa sức */}
+                  <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
+                    <div>
+                      <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
+                        2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)
+                      </span>
+                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major} (Trường công lập trọng điểm)</p>
+                    </div>
+                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
+                      Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)
+                    </div>
+                  </div>
+
+                  {/* Nấc 3: Bảo toàn rủi ro (ĐÃ SỬA: KHÔNG DÙNG CHỮ CHẮC CHẮN) */}
+                  <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
+                    <div>
+                      <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
+                        3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)
+                      </span>
+                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">Ngành gần / Chương trình tiêu chuẩn (ĐH Địa phương)</p>
+                    </div>
+                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
+                      Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4483,19 +4516,36 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     </div>
                   </div>
 
-                  {/* Tam giác nguyện vọng */}
-                  <div className="grid grid-cols-3 gap-3 text-xs border border-slate-200 rounded-lg p-3">
-                    <div className="bg-teal-50 p-2.5 rounded border border-teal-200">
-                      <span className="text-[10px] font-bold text-teal-800 uppercase block">1. Mơ ước</span>
-                      <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major}</strong>
+                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO) */}
+                  <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 uppercase text-[10.5px]">
+                        🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                      </span>
+                      <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                     </div>
-                    <div className="bg-sky-50 p-2.5 rounded border border-sky-200">
-                      <span className="text-[10px] font-bold text-sky-800 uppercase block">2. Vừa sức</span>
-                      <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major} (Trường công lập)</strong>
-                    </div>
-                    <div className="bg-slate-100 p-2.5 rounded border border-slate-300">
-                      <span className="text-[10px] font-bold text-slate-700 uppercase block">3. Dự phòng</span>
-                      <strong className="text-slate-900 block mt-0.5 text-[11px]">Ngành gần / Chuẩn đầu ra tương đương</strong>
+                    <div className="grid grid-cols-3 gap-2.5 pt-0.5">
+                      <div className="bg-teal-50/70 p-2 rounded border border-teal-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[9.5px] font-bold text-teal-800 uppercase block">1. Thử thách (Stretch)</span>
+                          <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major}</strong>
+                        </div>
+                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-teal-200/50">Trường Top đầu (26.5+)</div>
+                      </div>
+                      <div className="bg-cyan-50/70 p-2 rounded border border-cyan-200 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[9.5px] font-bold text-cyan-800 uppercase block">2. Vừa sức (Realistic)</span>
+                          <strong className="text-slate-900 block mt-0.5 text-[11px]">{st.major} (Công lập)</strong>
+                        </div>
+                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-cyan-200/50">Phong độ học bạ (22.5 - 24.0)</div>
+                      </div>
+                      <div className="bg-slate-50 p-2 rounded border border-slate-300 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[9.5px] font-bold text-slate-700 uppercase block">3. Bảo toàn (Safety Buffer)</span>
+                          <strong className="text-slate-900 block mt-0.5 text-[11px]">Ngành gần / ĐH Địa phương</strong>
+                        </div>
+                        <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-slate-200">Vùng đệm dự phòng an toàn</div>
+                      </div>
                     </div>
                   </div>
 

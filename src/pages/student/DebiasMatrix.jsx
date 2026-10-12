@@ -75,25 +75,25 @@ export default function DebiasMatrix() {
   const [confidenceT2, setConfidenceT2] = useState(7);
   const [showConfidenceSlider, setShowConfidenceSlider] = useState(false);
 
-  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG ---
+  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO) ---
   const [triadTiers, setTriadTiers] = useState({
     dream: {
-      label: 'Nấc 1: Ước mơ (Dream)',
-      targetScore: 'Mục tiêu: 26.5+',
-      majorSchool: 'Tâm lý học - ĐH KHXH&NV TP.HCM',
-      notes: 'Tổ hợp C00 / D14. Thách thức lớn nhất: Điểm chuẩn các năm luôn ở mức rất cao.'
+      label: '1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)',
+      targetScore: 'Tham chiếu: 26.5+',
+      majorSchool: 'Tâm lý học — ĐH KHXH&NV TP.HCM',
+      notes: 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)'
     },
     realistic: {
-      label: 'Nấc 2: Vừa sức (Realistic)',
-      targetScore: 'Mục tiêu: 23.5+',
-      majorSchool: 'Tâm lý học Giáo dục - ĐH Sư phạm',
-      notes: 'Tổ hợp C00 / D01. Khả thi cao dựa trên phong độ học bạ hiện tại của học sinh.'
+      label: '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)',
+      targetScore: 'Phong độ: 22.5 – 24.0',
+      majorSchool: 'Tâm lý học (ĐH Sư phạm) / QTKD (ĐH Nha Trang)',
+      notes: 'Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)'
     },
     safe: {
-      label: 'Nấc 3: An toàn (Safe)',
-      targetScore: 'Mục tiêu: 20.0+',
-      majorSchool: 'Công tác xã hội - ĐH Nha Trang',
-      notes: 'Lưới bảo hiểm an toàn, bảo đảm 100% cơ hội vào đại học đúng khối ngành mong muốn.'
+      label: '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)',
+      targetScore: 'Vùng đệm an toàn',
+      majorSchool: 'Công tác Xã hội — ĐH Nha Trang',
+      notes: 'Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo'
     }
   });
   const [isEditingTriad, setIsEditingTriad] = useState(false);
@@ -759,19 +759,19 @@ export default function DebiasMatrix() {
         </div>
 
         {/* =========================================================================
-            KHỐI 1: TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG
+            KHỐI 1: TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
             ========================================================================= */}
         <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 print-sheet">
           <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
             <div className="flex items-center gap-2.5">
               <Triangle className="w-5 h-5 text-teal-400 font-bold" />
               <h2 className="font-bold text-sm text-white uppercase tracking-wide">
-                TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (3 NẤC AN TOÀN)
+                TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
               </h2>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-400">
-                Giảm thiểu rủi ro biến động điểm chuẩn tuyển sinh
+                Chiến lược dải điểm bậc thang 3 nấc
               </span>
               <button
                 type="button"
@@ -1172,65 +1172,65 @@ export default function DebiasMatrix() {
             </div>
           </section>
 
-          {/* 3. TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (3 NẤC AN TOÀN) */}
-          <section className="mb-4">
-            <div className="flex justify-between items-baseline mb-2">
-              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wide">
-                ▲ TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (3 NẤC AN TOÀN)
-              </h2>
-              <span className="text-[10.5px] text-slate-500 italic">Giảm thiểu rủi ro biến động điểm chuẩn tuyển sinh</span>
+          {/* 3. KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ĐÃ CHUẨN HÓA CÂU TỪ KHOA HỌC) */}
+          <div className="space-y-1.5 mb-3 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="text-teal-900 font-bold">🔺</span>
+                <span className="font-black text-slate-900 uppercase text-[11px] tracking-wide">
+                  TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-2.5 text-xs">
-              {/* Nấc 1: Ước mơ */}
-              <div className="border border-purple-200 bg-purple-50/50 rounded-lg p-2.5 flex flex-col justify-between">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+              {/* Nấc 1: Thử thách */}
+              <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between font-bold text-purple-900 text-[10px]">
-                    <span>{triadTiers.dream?.label || 'NẤC 1: ƯỚC MƠ (DREAM)'}</span>
-                    <span className="text-purple-700 font-extrabold">{triadTiers.dream?.targetScore || 'Mục tiêu: 26.5+'}</span>
-                  </div>
-                  <div className="font-extrabold text-slate-900 text-xs mt-1 leading-snug">
-                    {triadTiers.dream?.majorSchool || 'Tâm lý học - ĐH KHXH&NV TP.HCM'}
-                  </div>
+                  <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
+                    {triadTiers.dream?.label || '1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)'}
+                  </span>
+                  <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                    {triadTiers.dream?.majorSchool || 'Tâm lý học — ĐH KHXH&NV TP.HCM'}
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1.5 leading-relaxed">
-                  {triadTiers.dream?.notes || 'Tổ hợp C00 / D14. Thách thức lớn nhất: Điểm chuẩn các năm luôn ở mức rất cao.'}
-                </p>
+                <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
+                  {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)'}
+                </div>
               </div>
 
               {/* Nấc 2: Vừa sức */}
-              <div className="border border-teal-200 bg-teal-50/50 rounded-lg p-2.5 flex flex-col justify-between">
+              <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between font-bold text-teal-900 text-[10px]">
-                    <span>{triadTiers.realistic?.label || 'NẤC 2: VỪA SỨC (REALISTIC)'}</span>
-                    <span className="text-teal-700 font-extrabold">{triadTiers.realistic?.targetScore || 'Mục tiêu: 23.5+'}</span>
-                  </div>
-                  <div className="font-extrabold text-slate-900 text-xs mt-1 leading-snug">
-                    {triadTiers.realistic?.majorSchool || 'Tâm lý học Giáo dục - ĐH Sư phạm'}
-                  </div>
+                  <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
+                    {triadTiers.realistic?.label || '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)'}
+                  </span>
+                  <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                    {triadTiers.realistic?.majorSchool || 'Tâm lý học (ĐH Sư phạm) / QTKD (ĐH Nha Trang)'}
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1.5 leading-relaxed">
-                  {triadTiers.realistic?.notes || 'Tổ hợp C00 / D01. Khả thi cao dựa trên phong độ học bạ hiện tại của học sinh.'}
-                </p>
+                <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
+                  {triadTiers.realistic?.notes || 'Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)'}
+                </div>
               </div>
 
-              {/* Nấc 3: An toàn */}
-              <div className="border border-sky-200 bg-sky-50/50 rounded-lg p-2.5 flex flex-col justify-between">
+              {/* Nấc 3: Bảo toàn rủi ro (ĐÃ SỬA: KHÔNG DÙNG CHỮ CHẮC CHẮN) */}
+              <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between font-bold text-sky-900 text-[10px]">
-                    <span>{triadTiers.safe?.label || 'NẤC 3: AN TOÀN (SAFE)'}</span>
-                    <span className="text-sky-700 font-extrabold">{triadTiers.safe?.targetScore || 'Mục tiêu: 20.0+'}</span>
-                  </div>
-                  <div className="font-extrabold text-slate-900 text-xs mt-1 leading-snug">
-                    {triadTiers.safe?.majorSchool || 'Công tác xã hội - ĐH Nha Trang'}
-                  </div>
+                  <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
+                    {triadTiers.safe?.label || '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)'}
+                  </span>
+                  <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                    {triadTiers.safe?.majorSchool || 'Công tác Xã hội — ĐH Nha Trang'}
+                  </p>
                 </div>
-                <p className="text-[10px] text-slate-600 mt-1.5 leading-relaxed">
-                  {triadTiers.safe?.notes || 'Lưới bảo hiểm an toàn, bảo đảm 100% cơ hội vào đại học đúng khối ngành mong muốn.'}
-                </p>
+                <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
+                  {triadTiers.safe?.notes || 'Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo'}
+                </div>
               </div>
             </div>
-          </section>
+          </div>
 
           {/* 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS) */}
           <section className="border border-slate-200 rounded-lg p-3.5 mb-4 text-xs bg-white">
