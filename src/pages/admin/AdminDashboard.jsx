@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge } from '../../data/adaptiveCommitments'
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, getStudentCommitmentData } from '../../data/adaptiveCommitments'
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, getStudentCommitmentData }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -467,22 +467,25 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_21',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    school: 'Trường THPT Trần Quý Cáp',
+    academicRank: 'Khá',
+    combo: 'A00 (Toán - Lý - Hóa)',
+    gpa3: '25.0 / 30.0',
     riasec: 'IRE',
-    major: 'Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)',
+    major: 'Công nghệ Thông tin — Trường Đại học Nha Trang (Mã ngành: 7480201)',
     majorT0: 'Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)',
-    majorT2: 'Công nghệ Thông tin (ĐH Nha Trang - 22.0đ)',
+    majorT2: 'Công nghệ Thông tin — Trường Đại học Nha Trang (Mã ngành: 7480201)',
     deltaScore: '-2.5đ (Nguy cơ)',
     riskLevel: 'Nguy cơ',
     triage: 'In-depth (20p)',
     triageType: 'In-depth',
     conf: '8/10 → 8/10',
-    crs: '+3.8 → -0.5',
+    crs: '+3.8 → -0.2',
     unlockedStep5: true,
     status: 'Completed',
     turningPointQuote: 'Em nhận diện rõ mức độ cạnh tranh 27.5đ ở TP.HCM là rào cản quá lớn; chuyển sang ĐH Nha Trang giúp bảo đảm cơ hội trúng tuyển và phù hợp tài chính gia đình.',
     studentQuestion: 'Chương trình đào tạo CNTT tại ĐH Nha Trang có liên kết doanh nghiệp phần mềm để thực tập sớm không ạ?',
-    assignedMentor: 'Thầy/Cô Ban Cố vấn CNTT & Mentor ĐH Nha Trang'
+    assignedMentor: 'Mentor ĐH Nha Trang'
   },
   {
     id: 'CT_22',
@@ -1367,8 +1370,142 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   // Tải file Bản Cam Kết đơn lẻ dưới dạng HTML hoàn chỉnh (Dự phòng in ấn)
   const handleDownloadSinglePdfHtml = (student) => {
     if (!student) return
-    const plan = getGradeCommitmentPlan(student.gradeNum || student.grade)
-    const content = `<!DOCTYPE html>
+    const ct21 = getStudentCommitmentData(student.id)
+    let content = ''
+    if (ct21) {
+      content = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Bản Cam Kết Hành Động & Tam Giác Nguyện Vọng - ${ct21.studentInfo.id}</title>
+  <style>
+    @page { size: A4 portrait; margin: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 14mm 16mm 14mm 22mm; color: #0f172a; max-width: 210mm; margin: auto; box-sizing: border-box; line-height: 1.45; font-size: 11px; background: #fff; }
+    .header { border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 10px; }
+    .sub-header { font-size: 9.5px; font-weight: 800; color: #115e59; text-transform: uppercase; letter-spacing: 0.5px; }
+    .title { font-size: 15px; font-weight: 900; text-align: center; color: #0f172a; margin: 6px 0 2px 0; text-transform: uppercase; }
+    .subtitle { font-size: 10px; font-style: italic; text-align: center; color: #64748b; margin: 0 0 6px 0; }
+    .info-box { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; margin-bottom: 9px; }
+    .section-title { font-weight: 900; font-size: 10px; color: #0f172a; text-transform: uppercase; margin-bottom: 4px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+    .tier-card { border-radius: 6px; padding: 8px; border: 1px solid #cbd5e1; font-size: 10px; }
+    .tier-stretch { background: #f0fdf4; border-color: #86efac; }
+    .tier-realistic { background: #ecfeff; border-color: #a5f3fc; }
+    .tier-safety { background: #f8fafc; border-color: #cbd5e1; }
+    .tier-title { font-size: 9px; font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 3px; }
+    .tier-major { font-weight: 800; color: #0f172a; font-size: 10.5px; margin-bottom: 2px; }
+    .tier-score { font-weight: 700; font-size: 9.5px; margin-bottom: 3px; }
+    .tier-note { font-size: 9px; color: #475569; border-top: 1px dashed #cbd5e1; padding-top: 3px; margin-top: 3px; }
+    .intention-item { margin-bottom: 6px; }
+    .intention-title { font-weight: 800; color: #0f172a; font-size: 10px; }
+    .intention-desc { color: #334155; font-size: 10px; margin-top: 1px; }
+    .sign-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 20px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; }
+    .sign-col { font-size: 10px; }
+    .sign-role { font-weight: 800; color: #0f172a; }
+    .sign-sub { font-size: 9px; color: #64748b; font-style: italic; margin-top: 2px; }
+    .sign-name { font-weight: 800; color: #0f766e; margin-top: 30px; font-size: 10.5px; }
+    @media print { body { padding: 14mm 16mm 14mm 22mm; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div>
+        <div class="sub-header">${ct21.header.ministry}</div>
+        <div style="font-weight:700; color:#1e293b; margin-top:2px;">${ct21.header.project}</div>
+        <div style="font-size:9.5px; color:#475569;">${ct21.header.field}</div>
+      </div>
+      <div style="text-align:right;">
+        <span style="display:inline-block; padding:2px 8px; background:#f0fdfa; color:#0f766e; border:1px solid #99f6e4; border-radius:4px; font-weight:800; font-size:9px; text-transform:uppercase;">NHÓM CAN THIỆP (SOCRACAREER)</span>
+      </div>
+    </div>
+    <div class="title">${ct21.header.title}</div>
+    <div class="subtitle">${ct21.header.subtitle}</div>
+  </div>
+
+  <div class="info-box">
+    <div class="section-title">THÔNG TIN ĐỐI TƯỢNG CAN THIỆP:</div>
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px;">
+      <div>• Mã định danh: <strong>${ct21.studentInfo.id}</strong></div>
+      <div>• Khối lớp: <strong>${ct21.studentInfo.grade}</strong></div>
+      <div>• Phân tầng học lực: <strong>${ct21.studentInfo.academicRank}</strong></div>
+      <div>• Tổ hợp xét tuyển: <strong>${ct21.studentInfo.combo}</strong></div>
+      <div style="grid-column: span 2;">• Điểm TB học bạ 3 môn: <strong>${ct21.studentInfo.gpa3}</strong></div>
+    </div>
+    <div style="margin-top:3px;">• Mã hình mẫu RIASEC: <strong>${ct21.studentInfo.riasec}</strong></div>
+    
+    <div class="section-title" style="margin-top:7px; border-top:1px dashed #cbd5e1; padding-top:5px;">ĐO LƯỜNG HIỆU CHUẨN NHẬN THỨC:</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+      <div>• Mức độ Tự tin chủ quan (Conf): <strong>${ct21.calibration.confT0} ──► ${ct21.calibration.confT2}</strong> <span style="color:#0f766e; font-size:9.5px;">(${ct21.calibration.confNote})</span></div>
+      <div>• Chỉ số Hiệu chuẩn Nhận thức (CRS): <strong>${ct21.calibration.crsT0} ──► ${ct21.calibration.crsT2}</strong> <span style="color:#16a34a; font-weight:700; font-size:9.5px;">(${ct21.calibration.crsNote})</span></div>
+    </div>
+  </div>
+
+  <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:6px; padding:7px 10px; margin-bottom:9px;">
+    <div style="font-weight:900; font-size:10px; color:#0f766e; text-transform:uppercase;">MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI (SAU HIỆU CHUẨN BƯỚC 3 & 4):</div>
+    <div style="font-size:11.5px; font-weight:900; color:#0f172a; margin-top:2px;">► NGÀNH: ${ct21.coreCareerGoal.major}</div>
+    <div style="font-size:9.5px; color:#475569; font-style:italic;">${ct21.coreCareerGoal.note}</div>
+  </div>
+
+  <div class="info-box">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+      <span class="section-title" style="margin:0;">🔺 CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE):</span>
+      <span style="font-size:9px; color:#64748b; font-style:italic;">Chiến lược dải điểm bậc thang 3 nấc</span>
+    </div>
+    <div class="grid-3">
+      <div class="tier-card tier-stretch">
+        <span class="tier-title" style="color:#15803d;">${ct21.triangle.stretch.title}</span>
+        <div class="tier-major">${ct21.triangle.stretch.majorSchool}</div>
+        <div class="tier-score" style="color:#166534;">• Điểm tham chiếu: ${ct21.triangle.stretch.targetScore}</div>
+        <div class="tier-note">${ct21.triangle.stretch.notes}</div>
+      </div>
+      <div class="tier-card tier-realistic">
+        <span class="tier-title" style="color:#0e7490;">${ct21.triangle.realistic.title}</span>
+        <div class="tier-major">${ct21.triangle.realistic.majorSchool}</div>
+        <div class="tier-score" style="color:#155e75;">• ${ct21.triangle.realistic.targetScore}</div>
+        <div class="tier-note">${ct21.triangle.realistic.notes}</div>
+      </div>
+      <div class="tier-card tier-safety">
+        <span class="tier-title" style="color:#334155;">${ct21.triangle.safety.title}</span>
+        <div class="tier-major">${ct21.triangle.safety.majorSchool}</div>
+        <div class="tier-score" style="color:#475569;">• ${ct21.triangle.safety.targetScore}</div>
+        <div class="tier-note">${ct21.triangle.safety.notes}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <div class="section-title">MA TRẬN Ý ĐỊNH THỰC THI VI MÔ DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS):</div>
+    ${ct21.implementationIntentions.map(item => `
+      <div class="intention-item">
+        <div class="intention-title">${item.num}</div>
+        <div class="intention-desc">${item.text}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="sign-row">
+    <div class="sign-col">
+      <div class="sign-role">${ct21.signatures.student.title}</div>
+      <div class="sign-sub">${ct21.signatures.student.subtitle}</div>
+      <div class="sign-name">${ct21.signatures.student.name}</div>
+    </div>
+    <div class="sign-col">
+      <div class="sign-role">${ct21.signatures.mentor.title}</div>
+      <div class="sign-sub">${ct21.signatures.mentor.subtitle}</div>
+      <div class="sign-name">${ct21.signatures.mentor.name}</div>
+    </div>
+    <div class="sign-col">
+      <div class="sign-role">${ct21.signatures.parent.title}</div>
+      <div class="sign-sub">${ct21.signatures.parent.subtitle}</div>
+      <div class="sign-name">${ct21.signatures.parent.name}</div>
+    </div>
+  </div>
+</body>
+</html>`
+    } else {
+      const plan = getGradeCommitmentPlan(student.gradeNum || student.grade)
+      content = `<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
@@ -1455,6 +1592,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   </div>
 </body>
 </html>`
+    }
     const blob = new Blob([content], { type: 'text/html;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -1470,6 +1608,93 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   // Tải tập hồ sơ toàn bộ 30 bản cam kết dưới dạng HTML hoàn chỉnh
   const handleDownloadBatchPdfHtml = () => {
     const cards = cbasStudents.map((st, idx) => {
+      if (st.id === 'CT_21') {
+        const ct21 = CT21_COMMITMENT_DATA
+        return `
+    <div style="page-break-after: always; padding: 30px; border: 1px solid #cbd5e1; margin-bottom: 24px; border-radius: 8px; font-family: -apple-system, sans-serif; font-size:11px; line-height:1.45;">
+      <div style="border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 10px;">
+        <div style="font-size:9px; font-weight:800; color:#115e59;">${ct21.header.ministry}</div>
+        <div style="font-weight:700; color:#1e293b;">${ct21.header.project}</div>
+        <div style="font-size:9.5px; color:#475569;">${ct21.header.field} | BẢN #${idx + 1}/30</div>
+        <div style="font-size:14px; font-weight:900; text-align:center; color:#0f172a; margin-top:4px; text-transform:uppercase;">${ct21.header.title}</div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:8px 12px; margin-bottom:8px;">
+        <div style="font-weight:900; font-size:10px; color:#0f172a;">THÔNG TIN ĐỐI TƯỢNG CAN THIỆP:</div>
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top:3px;">
+          <div>• Mã định danh: <strong>${ct21.studentInfo.id}</strong></div>
+          <div>• Khối lớp: <strong>${ct21.studentInfo.grade}</strong></div>
+          <div>• Phân tầng học lực: <strong>${ct21.studentInfo.academicRank}</strong></div>
+          <div>• Tổ hợp: <strong>${ct21.studentInfo.combo}</strong></div>
+          <div style="grid-column: span 2;">• Điểm TB học bạ 3 môn: <strong>${ct21.studentInfo.gpa3}</strong></div>
+        </div>
+        <div style="margin-top:2px;">• Mã hình mẫu RIASEC: <strong>${ct21.studentInfo.riasec}</strong></div>
+        <div style="margin-top:4px; border-top:1px dashed #cbd5e1; padding-top:4px; display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+          <div>• Tự tin (Conf): <strong>${ct21.calibration.confT0} ──► ${ct21.calibration.confT2}</strong></div>
+          <div>• Chỉ số (CRS): <strong>${ct21.calibration.crsT0} ──► ${ct21.calibration.crsT2}</strong> (${ct21.calibration.crsNote})</div>
+        </div>
+      </div>
+
+      <div style="background:#f0fdfa; border:1px solid #99f6e4; border-radius:6px; padding:6px 10px; margin-bottom:8px;">
+        <div style="font-weight:900; font-size:10px; color:#0f766e;">MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI (SAU HIỆU CHUẨN BƯỚC 3 & 4):</div>
+        <div style="font-size:11px; font-weight:900; color:#0f172a; margin-top:2px;">► NGÀNH: ${ct21.coreCareerGoal.major}</div>
+        <div style="font-size:9.5px; color:#475569; font-style:italic;">${ct21.coreCareerGoal.note}</div>
+      </div>
+
+      <!-- Tam giác nguyện vọng -->
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin: 8px 0; font-size:10.5px;">
+        <div style="background:#f0fdf4; border:1px solid #86efac; padding:8px; border-radius:6px;">
+          <strong style="color:#15803d; font-size:9.5px; text-transform:uppercase; display:block;">1. Thử thách (Stretch)</strong>
+          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.stretch.majorSchool}</div>
+          <div style="font-size:9.5px; color:#166534; margin-top:2px;">${ct21.triangle.stretch.targetScore}</div>
+          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.stretch.notes}</div>
+        </div>
+        <div style="background:#ecfeff; border:1px solid #a5f3fc; padding:8px; border-radius:6px;">
+          <strong style="color:#0e7490; font-size:9.5px; text-transform:uppercase; display:block;">2. Vừa sức (Realistic)</strong>
+          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.realistic.majorSchool}</div>
+          <div style="font-size:9.5px; color:#155e75; margin-top:2px;">${ct21.triangle.realistic.targetScore}</div>
+          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.realistic.notes}</div>
+        </div>
+        <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px;">
+          <strong style="color:#334155; font-size:9.5px; text-transform:uppercase; display:block;">3. Bảo toàn (Safety Buffer)</strong>
+          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.safety.majorSchool}</div>
+          <div style="font-size:9.5px; color:#475569; margin-top:2px;">${ct21.triangle.safety.targetScore}</div>
+          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.safety.notes}</div>
+        </div>
+      </div>
+
+      <!-- Kế hoạch hành động -->
+      <div style="border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin: 8px 0; background:#f8fafc; font-size:10.5px; line-height:1.45;">
+        <div style="font-weight:900; color:#0f766e; text-transform:uppercase; margin-bottom:4px; font-size:10px;">🎯 MA TRẬN Ý ĐỊNH THỰC THI VI MÔ DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)</div>
+        ${ct21.implementationIntentions.map(it => `
+          <div style="margin-bottom:4px;">
+            <strong style="color:#0f172a;">${it.num}</strong>
+            <div style="color:#334155;">${it.text}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); margin-top:18px; text-align:center; border-top:1px solid #cbd5e1; padding-top:8px; font-size:10px;">
+        <div>
+          <strong>${ct21.signatures.student.title}</strong><br/>
+          <span style="font-size:9px; color:#64748b;">${ct21.signatures.student.subtitle}</span><br/><br/>
+          <strong style="color:#0f766e;">${ct21.signatures.student.name}</strong>
+        </div>
+        <div>
+          <strong>${ct21.signatures.mentor.title}</strong><br/>
+          <span style="font-size:9px; color:#64748b;">${ct21.signatures.mentor.subtitle}</span><br/><br/>
+          <strong style="color:#0f766e;">${ct21.signatures.mentor.name}</strong>
+        </div>
+        <div>
+          <strong>${ct21.signatures.parent.title}</strong><br/>
+          <span style="font-size:9px; color:#64748b;">${ct21.signatures.parent.subtitle}</span><br/><br/>
+          <strong style="color:#0f766e;">${ct21.signatures.parent.name}</strong>
+        </div>
+      </div>
+    </div>
+        `
+      }
+
       const plan = getGradeCommitmentPlan(st.gradeNum || st.grade)
       return `
     <div style="page-break-after: always; padding: 40px; border: 1px solid #cbd5e1; margin-bottom: 24px; border-radius: 8px; font-family: -apple-system, sans-serif;">
@@ -4226,167 +4451,315 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             </div>
 
             {/* Khung tài liệu A4 chuẩn in ấn */}
-            <div className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200">
-              {/* Header */}
-              <div className="border-b-2 border-teal-700 pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                      DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
-                    </span>
-                    <div className="text-sm font-extrabold text-slate-800 mt-1">
-                      MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | {previewPdfStudent.grade || 'Khối 12'} THPT
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
-                      NHÓM CAN THIỆP (SOCRACAREER)
-                    </span>
-                  </div>
-                </div>
-
-                <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
-                  BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
-                </h1>
-                <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
-                  "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
-                </p>
-              </div>
-
-              {/* Khối Đo lường & Hiệu chuẩn nhận thức */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs">
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">Ngành mục tiêu chốt lại:</div>
-                  <div className="text-sm font-black text-slate-900 mt-1">{previewPdfStudent.major}</div>
-                  <div className="text-[10px] text-emerald-700 font-bold mt-0.5">☑ Đã đối chứng & Cam kết dấn thân</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">Độ tự tin (Trước vs Sau):</div>
-                  <div className="text-sm font-black text-teal-800 mt-1">{previewPdfStudent.conf}</div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">Mã RIASEC: <strong className="text-slate-800">{previewPdfStudent.riasec}</strong></div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase">Chỉ số Thiên lệch (CRS):</div>
-                  <div className="text-sm font-black text-cyan-800 mt-1">{previewPdfStudent.crs}</div>
-                  <div className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ Đã hiệu chuẩn thiên lệch</div>
-                </div>
-              </div>
-
-              {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ĐÃ CHUẨN HÓA CÂU TỪ KHOA HỌC) */}
-              <div className="space-y-1.5 mb-3 text-xs border border-slate-200 rounded-lg p-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-teal-900 font-bold">🔺</span>
-                    <span className="font-black text-slate-900 uppercase text-[11px] tracking-wide">
-                      TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
-                  {/* Nấc 1: Thử thách */}
-                  <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
-                    <div>
-                      <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
-                        1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major}</p>
-                    </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
-                      Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)
-                    </div>
-                  </div>
-
-                  {/* Nấc 2: Vừa sức */}
-                  <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
-                    <div>
-                      <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                        2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                        {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
-                          ? DEFAULT_TRIANGLE_DATA.realistic.major
-                          : `${previewPdfStudent.major} (Trường công lập trọng điểm)`}
-                      </p>
-                    </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
-                      Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)
-                    </div>
-                  </div>
-
-                  {/* Nấc 3: Bảo toàn rủi ro (ĐÃ SỬA: KHÔNG DÙNG CHỮ CHẮC CHẮN) */}
-                  <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
-                    <div>
-                      <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                        3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                        {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
-                          ? DEFAULT_TRIANGLE_DATA.safety.major
-                          : 'Ngành gần / Chương trình tiêu chuẩn (Trường ĐH Nha Trang)'}
-                      </p>
-                    </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                      Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ma trận kế hoạch hành động phân hóa theo khối lớp (2 Trụ cột) */}
-              {(() => {
-                const plan = getGradeCommitmentPlan(previewPdfStudent.gradeNum || previewPdfStudent.grade);
+            {(() => {
+              const ct21 = getStudentCommitmentData(previewPdfStudent.id);
+              if (ct21) {
                 return (
-                  <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
-                      <div>
+                  <div className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-4 border border-slate-200">
+                    {/* Header */}
+                    <div className="border-b-2 border-teal-700 pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
+                            {ct21.header.ministry}
+                          </span>
+                          <div className="text-sm font-extrabold text-slate-800 mt-1">
+                            {ct21.header.project}
+                          </div>
+                          <div className="text-[10px] text-slate-600 font-medium">
+                            {ct21.header.field}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
+                            NHÓM CAN THIỆP (SOCRACAREER)
+                          </span>
+                        </div>
+                      </div>
+
+                      <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
+                        {ct21.header.title}
+                      </h1>
+                      <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
+                        {ct21.header.subtitle}
+                      </p>
+                    </div>
+
+                    {/* THÔNG TIN ĐỐI TƯỢNG CAN THIỆP */}
+                    <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs space-y-2">
+                      <div className="font-black text-slate-900 uppercase text-[10.5px]">THÔNG TIN ĐỐI TƯỢNG CAN THIỆP:</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <div>• Mã định danh: <strong className="text-teal-700">{ct21.studentInfo.id}</strong></div>
+                        <div>• Khối lớp: <strong>{ct21.studentInfo.grade}</strong></div>
+                        <div>• Phân tầng học lực: <strong>{ct21.studentInfo.academicRank}</strong></div>
+                        <div>• Tổ hợp xét tuyển: <strong>{ct21.studentInfo.combo}</strong></div>
+                        <div className="md:col-span-2">• Điểm TB học bạ 3 môn: <strong>{ct21.studentInfo.gpa3}</strong></div>
+                      </div>
+                      <div>• Mã hình mẫu RIASEC: <strong>{ct21.studentInfo.riasec}</strong></div>
+
+                      <div className="border-t border-dashed border-slate-200 pt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div>
+                          <span className="font-bold text-slate-600 block text-[10px] uppercase">Mức độ Tự tin chủ quan (Conf):</span>
+                          <span className="font-black text-teal-800">{ct21.calibration.confT0} ──► {ct21.calibration.confT2}</span>
+                          <span className="text-[10px] text-slate-500 block italic">({ct21.calibration.confNote})</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-slate-600 block text-[10px] uppercase">Chỉ số Hiệu chuẩn Nhận thức (CRS):</span>
+                          <span className="font-black text-cyan-800">{ct21.calibration.crsT0} ──► {ct21.calibration.crsT2}</span>
+                          <span className="text-[10px] text-emerald-600 font-bold block">{ct21.calibration.crsNote}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI */}
+                    <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-lg text-xs space-y-1">
+                      <div className="font-black text-teal-900 uppercase text-[10.5px]">MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI (SAU HIỆU CHUẨN BƯỚC 3 & 4):</div>
+                      <p className="font-black text-slate-900 text-sm">► NGÀNH: {ct21.coreCareerGoal.major}</p>
+                      <p className="text-[10.5px] text-slate-600 italic">{ct21.coreCareerGoal.note}</p>
+                    </div>
+
+                    {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
+                    <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                          <span className="text-teal-900">🔺</span>
+                          <span>CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                        <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
+                          <div>
+                            <span className="font-extrabold text-teal-900 text-[10px] block uppercase">{ct21.triangle.stretch.title}</span>
+                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.stretch.majorSchool}</p>
+                            <div className="text-[10.5px] font-bold text-teal-800 mt-1">• {ct21.triangle.stretch.targetScore}</div>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">{ct21.triangle.stretch.notes}</div>
+                        </div>
+                        <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
+                          <div>
+                            <span className="font-extrabold text-cyan-900 text-[10px] block uppercase">{ct21.triangle.realistic.title}</span>
+                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.realistic.majorSchool}</p>
+                            <div className="text-[10.5px] font-bold text-cyan-800 mt-1">• {ct21.triangle.realistic.targetScore}</div>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">{ct21.triangle.realistic.notes}</div>
+                        </div>
+                        <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
+                          <div>
+                            <span className="font-extrabold text-slate-800 text-[10px] block uppercase">{ct21.triangle.safety.title}</span>
+                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.safety.majorSchool}</p>
+                            <div className="text-[10.5px] font-bold text-slate-700 mt-1">• {ct21.triangle.safety.targetScore}</div>
+                          </div>
+                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">{ct21.triangle.safety.notes}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MA TRẬN Ý ĐỊNH THỰC THI VI MÔ */}
+                    <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
+                      <div className="border-b border-slate-200 pb-2">
                         <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
                           <Target className="w-3.5 h-3.5 text-teal-600" />
-                          <span>MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)</span>
+                          <span>MA TRẬN Ý ĐỊNH THỰC THI VI MÔ DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)</span>
                         </h3>
-                        <p className="text-[11px] text-slate-600 italic mt-0.5">
-                          {plan.note}
-                        </p>
                       </div>
-                      <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded border border-teal-200">
-                        {plan.badge}
-                      </span>
+                      <div className="space-y-2 pt-1">
+                        {ct21.implementationIntentions.map((item, idx) => (
+                          <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 text-xs leading-relaxed">
+                            <span className="font-bold text-teal-900 block text-[11px] mb-0.5">{item.num}</span>
+                            <div className="text-slate-700 text-[11px]" dangerouslySetInnerHTML={{ __html: item.text }} />
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="space-y-2 pt-1">
-                      {plan.items.map((item, idx) => (
-                        <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 text-xs leading-relaxed">
-                          <span className="font-bold text-slate-800 block text-[11px] text-teal-900 mb-0.5">
-                            {item.num}
-                          </span>
-                          <div 
-                            className="text-slate-700 text-[11px]" 
-                            dangerouslySetInnerHTML={{ __html: item.text }} 
-                          />
-                        </div>
-                      ))}
+                    {/* Chữ ký 3 bên */}
+                    <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
+                      <div className="space-y-6">
+                        <div className="font-bold text-slate-700">{ct21.signatures.student.title}</div>
+                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.student.subtitle}</div>
+                        <div className="font-black text-teal-800">{ct21.signatures.student.name}</div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="font-bold text-slate-700">{ct21.signatures.mentor.title}</div>
+                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.mentor.subtitle}</div>
+                        <div className="font-black text-teal-800">{ct21.signatures.mentor.name}</div>
+                      </div>
+                      <div className="space-y-6">
+                        <div className="font-bold text-slate-700">{ct21.signatures.parent.title}</div>
+                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.parent.subtitle}</div>
+                        <div className="font-black text-teal-800">{ct21.signatures.parent.name}</div>
+                      </div>
                     </div>
                   </div>
                 );
-              })()}
+              }
 
-              {/* Chữ ký 3 bên */}
-              <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
-                <div className="space-y-8">
-                  <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
-                  <div className="font-black text-teal-800">{previewPdfStudent.id} (Đã ký điện tử)</div>
+              // Fallback tiêu chuẩn cho các mã khác
+              return (
+                <div className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200">
+                  {/* Header */}
+                  <div className="border-b-2 border-teal-700 pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
+                          DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
+                        </span>
+                        <div className="text-sm font-extrabold text-slate-800 mt-1">
+                          MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | {previewPdfStudent.grade || 'Khối 12'} THPT
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
+                          NHÓM CAN THIỆP (SOCRACAREER)
+                        </span>
+                      </div>
+                    </div>
+
+                    <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
+                      BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
+                    </h1>
+                    <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
+                      "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
+                    </p>
+                  </div>
+
+                  {/* Khối Đo lường & Hiệu chuẩn nhận thức */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs">
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Ngành mục tiêu chốt lại:</div>
+                      <div className="text-sm font-black text-slate-900 mt-1">{previewPdfStudent.major}</div>
+                      <div className="text-[10px] text-emerald-700 font-bold mt-0.5">☑ Đã đối chứng & Cam kết dấn thân</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Độ tự tin (Trước vs Sau):</div>
+                      <div className="text-sm font-black text-teal-800 mt-1">{previewPdfStudent.conf}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">Mã RIASEC: <strong className="text-slate-800">{previewPdfStudent.riasec}</strong></div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase">Chỉ số Thiên lệch (CRS):</div>
+                      <div className="text-sm font-black text-cyan-800 mt-1">{previewPdfStudent.crs}</div>
+                      <div className="text-[10px] text-emerald-600 font-bold mt-0.5">✓ Đã hiệu chuẩn thiên lệch</div>
+                    </div>
+                  </div>
+
+                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
+                  <div className="space-y-1.5 mb-3 text-xs border border-slate-200 rounded-lg p-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-teal-900 font-bold">🔺</span>
+                        <span className="font-black text-slate-900 uppercase text-[11px] tracking-wide">
+                          TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                      {/* Nấc 1: Thử thách */}
+                      <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
+                        <div>
+                          <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
+                            1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)
+                          </span>
+                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major}</p>
+                        </div>
+                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
+                          Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)
+                        </div>
+                      </div>
+
+                      {/* Nấc 2: Vừa sức */}
+                      <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
+                        <div>
+                          <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
+                            2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)
+                          </span>
+                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                            {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
+                              ? DEFAULT_TRIANGLE_DATA.realistic.major
+                              : `${previewPdfStudent.major} (Trường công lập trọng điểm)`}
+                          </p>
+                        </div>
+                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
+                          Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)
+                        </div>
+                      </div>
+
+                      {/* Nấc 3: Bảo toàn rủi ro */}
+                      <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
+                        <div>
+                          <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
+                            3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)
+                          </span>
+                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                            {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
+                              ? DEFAULT_TRIANGLE_DATA.safety.major
+                              : 'Ngành gần / Chương trình tiêu chuẩn (Trường ĐH Nha Trang)'}
+                          </p>
+                        </div>
+                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
+                          Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ma trận kế hoạch hành động */}
+                  {(() => {
+                    const plan = getGradeCommitmentPlan(previewPdfStudent.gradeNum || previewPdfStudent.grade);
+                    return (
+                      <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                          <div>
+                            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                              <Target className="w-3.5 h-3.5 text-teal-600" />
+                              <span>MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)</span>
+                            </h3>
+                            <p className="text-[11px] text-slate-600 italic mt-0.5">
+                              {plan.note}
+                            </p>
+                          </div>
+                          <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded border border-teal-200">
+                            {plan.badge}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                          {plan.items.map((item, idx) => (
+                            <div key={idx} className="bg-white p-2.5 rounded border border-slate-200 text-xs leading-relaxed">
+                              <span className="font-bold text-slate-800 block text-[11px] text-teal-900 mb-0.5">
+                                {item.num}
+                              </span>
+                              <div 
+                                className="text-slate-700 text-[11px]" 
+                                dangerouslySetInnerHTML={{ __html: item.text }} 
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Chữ ký 3 bên */}
+                  <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
+                    <div className="space-y-8">
+                      <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
+                      <div className="font-black text-teal-800">{previewPdfStudent.id} (Đã ký điện tử)</div>
+                    </div>
+                    <div className="space-y-8">
+                      <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
+                      <div className="italic text-slate-500 font-semibold">(Xác nhận đồng hành)</div>
+                    </div>
+                    <div className="space-y-8">
+                      <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
+                      <div className="italic text-slate-500 font-semibold">(Chứng kiến & Hỗ trợ)</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-8">
-                  <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
-                  <div className="italic text-slate-500 font-semibold">(Xác nhận đồng hành)</div>
-                </div>
-                <div className="space-y-8">
-                  <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
-                  <div className="italic text-slate-500 font-semibold">(Chứng kiến & Hỗ trợ)</div>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -4437,13 +4810,160 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
 
             {/* Danh sách 30 bản in */}
             <div className="space-y-8">
-              {cbasStudents.map((st, idx) => (
-                <div
-                  key={st.id}
-                  className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200 page-break-inside-avoid"
-                >
-                  {/* Header */}
-                  <div className="border-b-2 border-teal-700 pb-3">
+              {cbasStudents.map((st, idx) => {
+                if (st.id === 'CT_21') {
+                  const ct21 = CT21_COMMITMENT_DATA;
+                  return (
+                    <div
+                      key={st.id}
+                      className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-4 border border-slate-200 page-break-inside-avoid text-xs"
+                    >
+                      {/* Header */}
+                      <div className="border-b-2 border-teal-700 pb-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
+                              {ct21.header.ministry}
+                            </span>
+                            <div className="text-sm font-extrabold text-slate-800 mt-1">
+                              {ct21.header.project}
+                            </div>
+                            <div className="text-[10px] text-slate-600 font-medium">
+                              {ct21.header.field} | BẢN #{idx + 1}/30
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
+                              NHÓM CAN THIỆP (SOCRACAREER)
+                            </span>
+                          </div>
+                        </div>
+
+                        <h1 className="text-lg font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
+                          {ct21.header.title}
+                        </h1>
+                        <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
+                          {ct21.header.subtitle}
+                        </p>
+                      </div>
+
+                      {/* THÔNG TIN ĐỐI TƯỢNG CAN THIỆP */}
+                      <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200 text-xs space-y-2">
+                        <div className="font-black text-slate-900 uppercase text-[10.5px]">THÔNG TIN ĐỐI TƯỢNG CAN THIỆP:</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <div>• Mã định danh: <strong className="text-teal-700">{ct21.studentInfo.id}</strong></div>
+                          <div>• Khối lớp: <strong>{ct21.studentInfo.grade}</strong></div>
+                          <div>• Phân tầng học lực: <strong>{ct21.studentInfo.academicRank}</strong></div>
+                          <div>• Tổ hợp xét tuyển: <strong>{ct21.studentInfo.combo}</strong></div>
+                          <div className="md:col-span-2">• Điểm TB học bạ 3 môn: <strong>{ct21.studentInfo.gpa3}</strong></div>
+                        </div>
+                        <div>• Mã hình mẫu RIASEC: <strong>{ct21.studentInfo.riasec}</strong></div>
+
+                        <div className="border-t border-dashed border-slate-200 pt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <span className="font-bold text-slate-600 block text-[10px] uppercase">Mức độ Tự tin chủ quan (Conf):</span>
+                            <span className="font-black text-teal-800">{ct21.calibration.confT0} ──► {ct21.calibration.confT2}</span>
+                            <span className="text-[10px] text-slate-500 block italic">({ct21.calibration.confNote})</span>
+                          </div>
+                          <div>
+                            <span className="font-bold text-slate-600 block text-[10px] uppercase">Chỉ số Hiệu chuẩn Nhận thức (CRS):</span>
+                            <span className="font-black text-cyan-800">{ct21.calibration.crsT0} ──► {ct21.calibration.crsT2}</span>
+                            <span className="text-[10px] text-emerald-600 font-bold block">{ct21.calibration.crsNote}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI */}
+                      <div className="p-3 bg-teal-50/70 border border-teal-200 rounded-lg text-xs space-y-1">
+                        <div className="font-black text-teal-900 uppercase text-[10.5px]">MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI (SAU HIỆU CHUẨN BƯỚC 3 & 4):</div>
+                        <p className="font-black text-slate-900 text-sm">► NGÀNH: {ct21.coreCareerGoal.major}</p>
+                        <p className="text-[10.5px] text-slate-600 italic">{ct21.coreCareerGoal.note}</p>
+                      </div>
+
+                      {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
+                      <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-black text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                            <span className="text-teal-900">🔺</span>
+                            <span>CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
+                          </span>
+                          <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+                          <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
+                            <div>
+                              <span className="font-extrabold text-teal-900 text-[10px] block uppercase">{ct21.triangle.stretch.title}</span>
+                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.stretch.majorSchool}</p>
+                              <div className="text-[10.5px] font-bold text-teal-800 mt-1">• {ct21.triangle.stretch.targetScore}</div>
+                            </div>
+                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">{ct21.triangle.stretch.notes}</div>
+                          </div>
+                          <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
+                            <div>
+                              <span className="font-extrabold text-cyan-900 text-[10px] block uppercase">{ct21.triangle.realistic.title}</span>
+                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.realistic.majorSchool}</p>
+                              <div className="text-[10.5px] font-bold text-cyan-800 mt-1">• {ct21.triangle.realistic.targetScore}</div>
+                            </div>
+                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">{ct21.triangle.realistic.notes}</div>
+                          </div>
+                          <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
+                            <div>
+                              <span className="font-extrabold text-slate-800 text-[10px] block uppercase">{ct21.triangle.safety.title}</span>
+                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.safety.majorSchool}</p>
+                              <div className="text-[10.5px] font-bold text-slate-700 mt-1">• {ct21.triangle.safety.targetScore}</div>
+                            </div>
+                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">{ct21.triangle.safety.notes}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* MA TRẬN Ý ĐỊNH THỰC THI VI MÔ */}
+                      <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
+                        <div className="border-b border-slate-200 pb-2">
+                          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide flex items-center gap-1.5">
+                            <Target className="w-3.5 h-3.5 text-teal-600" />
+                            <span>MA TRẬN Ý ĐỊNH THỰC THI VI MÔ DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)</span>
+                          </h3>
+                        </div>
+                        <div className="space-y-2 pt-1">
+                          {ct21.implementationIntentions.map((item, iIdx) => (
+                            <div key={iIdx} className="bg-white p-2.5 rounded border border-slate-200 text-xs leading-relaxed">
+                              <span className="font-bold text-teal-900 block text-[11px] mb-0.5">{item.num}</span>
+                              <div className="text-slate-700 text-[11px]" dangerouslySetInnerHTML={{ __html: item.text }} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Chữ ký 3 bên */}
+                      <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
+                        <div className="space-y-6">
+                          <div className="font-bold text-slate-700">{ct21.signatures.student.title}</div>
+                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.student.subtitle}</div>
+                          <div className="font-black text-teal-800">{ct21.signatures.student.name}</div>
+                        </div>
+                        <div className="space-y-6">
+                          <div className="font-bold text-slate-700">{ct21.signatures.mentor.title}</div>
+                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.mentor.subtitle}</div>
+                          <div className="font-black text-teal-800">{ct21.signatures.mentor.name}</div>
+                        </div>
+                        <div className="space-y-6">
+                          <div className="font-bold text-slate-700">{ct21.signatures.parent.title}</div>
+                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.parent.subtitle}</div>
+                          <div className="font-black text-teal-800">{ct21.signatures.parent.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={st.id}
+                    className="bg-white text-slate-900 p-8 rounded-xl shadow-xl space-y-5 border border-slate-200 page-break-inside-avoid"
+                  >
+                    {/* Header */}
+                    <div className="border-b-2 border-teal-700 pb-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
@@ -4568,7 +5088,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
         </div>

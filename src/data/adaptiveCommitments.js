@@ -75,6 +75,104 @@ export const DEFAULT_TRIANGLE_DATA = {
   }
 };
 
+// =========================================================================
+// BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG - ĐỐI TƯỢNG CT_21
+// Thực địa: Trường THPT Trần Quý Cáp | ViSEF 2026 - Phân ngành CBAS
+// =========================================================================
+export const CT21_COMMITMENT_DATA = {
+  header: {
+    ministry: "BỘ GIÁO DỤC VÀ ĐÀO TẠO — CUỘC THI KHKT CẤP QUỐC GIA HỌC SINH TRUNG HỌC (ViSEF)",
+    project: 'Dự án: HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG "SOCRACAREER"',
+    field: "Lĩnh vực: Khoa học Xã hội và Hành vi (CBAS) | Mẫu thực nghiệm: Trường THPT Trần Quý Cáp",
+    title: "BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG",
+    subtitle: "(Cơ chế Ý định Thực thi & Quản trị Rủi ro Đa tầng)"
+  },
+  studentInfo: {
+    id: "CT_21",
+    grade: "Khối 12 THPT",
+    gradeNum: 12,
+    academicRank: "Khá",
+    combo: "A00 (Toán - Lý - Hóa)",
+    gpa3: "25.0 / 30.0",
+    riasec: "IRE (Nghiên cứu - Thực tế - Quản lý)",
+    school: "Trường THPT Trần Quý Cáp"
+  },
+  calibration: {
+    confT0: "8.0/10",
+    confT2: "8.0/10",
+    confNote: "Giữ vững tự tin dựa trên thực chất",
+    crsT0: "+3.8",
+    crsT2: "-0.2",
+    crsDisplay: "+3.8 → -0.2",
+    crsNote: "✓ Đã triệt tiêu tự tin thái quá"
+  },
+  coreCareerGoal: {
+    major: "CÔNG NGHỆ THÔNG TIN — TRƯỜNG ĐẠI HỌC NHA TRANG (Mã ngành: 7480201)",
+    note: "(Đã giải trừ mỏ neo ảo tưởng AI lương nghìn đô tại TP.HCM; xác lập vùng an toàn thực địa)"
+  },
+  triangle: {
+    stretch: {
+      title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
+      majorSchool: "Trí tuệ Nhân tạo — Trường ĐH Công nghệ Thông tin - ĐHQG TP.HCM",
+      targetScore: "27.50 điểm (Khoảng cách nỗ lực: Thiếu 2.50 điểm so với phong độ hiện tại)",
+      notes: "Mục tiêu dấn thân phấn đấu cao độ, đòi hỏi bứt phá vượt bậc trong kỳ thi TN THPT."
+    },
+    realistic: {
+      title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
+      majorSchool: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: 22.0 - 23.5 điểm)",
+      targetScore: "Biên độ an toàn: Điểm học bạ hiện tại (25.0) cao hơn điểm chuẩn từ +1.5 đến +3.0 điểm.",
+      notes: "Mục tiêu trọng tâm bảo đảm cơ hội trúng tuyển cao và tối ưu chi phí đào tạo."
+    },
+    safety: {
+      title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+      majorSchool: "Kỹ thuật Phần mềm — Cao đẳng Kỹ thuật Công nghệ Khánh Hòa (Xét học bạ THPT)",
+      targetScore: "Vùng đệm dự phòng rủi ro",
+      notes: "Vùng đệm dự phòng rủi ro; bảo đảm lộ trình học tập liên tục không bị đứt gãy nếu kỳ thi tốt nghiệp có biến động điểm thi bất khả kháng. Tuyệt đối không phó mặc may rủi."
+    }
+  },
+  implementationIntentions: [
+    {
+      num: "1. Kỷ luật Tổ hợp Môn thi Xét tuyển (Cấu trúc \"Nếu... Thì...\"):",
+      text: "- NẾU đến 19h30 các tối Thứ 2, Thứ 4, Thứ 6: THÌ tôi sẽ tắt chuông điện thoại, bấm đồng hồ nghiêm túc giải 01 đề thi thử môn Toán/Lý chuẩn cấu trúc Bộ GD&ĐT trong 90 phút.<br/>- NẾU chấm đề đạt dưới 8.0 điểm: THÌ tôi dành 45 phút ngay sau đó để phân tích lỗi sai vào sổ tay \"Bẫy nhận thức\" và làm lại 5 bài toán cùng dạng."
+    },
+    {
+      num: "2. Rèn luyện Kỹ năng Thích ứng Chuyên môn:",
+      text: "- Dành 60 phút sáng Chủ nhật tự học 01 bài giảng lập trình tư duy cơ bản (Python) trên mạng.<br/>- Lập bảng dự toán chi phí học tập và sinh hoạt 4 năm tại Nha Trang để thống nhất cùng gia đình."
+    },
+    {
+      num: "3. Vật neo Hành vi (Behavioral Anchor):",
+      text: "- Bản cam kết này được dán tại góc trái bàn học ở độ cao ngang tầm mắt.<br/>- Cam kết tuân thủ nghiêm ngặt thứ tự ưu tiên của Tam giác 3 nấc, không xáo trộn nguyện vọng theo hiệu ứng đám đông trước ngày khóa cổng đăng ký thi."
+    }
+  ],
+  signatures: {
+    student: {
+      title: "HỌC SINH CAM KẾT",
+      subtitle: "(Ký và ghi rõ họ tên)",
+      name: "(Mã số: CT_21)"
+    },
+    mentor: {
+      title: "CỐ VẤN / MENTOR",
+      subtitle: "(Xác nhận nghiệm thu)",
+      name: "(Mentor ĐH Nha Trang)"
+    },
+    parent: {
+      title: "ĐẠI DIỆN PHỤ HUYNH",
+      subtitle: "(Ký chứng kiến hỗ trợ)",
+      name: "(Phụ huynh học sinh)"
+    }
+  }
+};
+
+/**
+ * Trợ cấp lấy dữ liệu cam kết theo mã học sinh (Hỗ trợ chuyên biệt CT_21)
+ */
+export const getStudentCommitmentData = (studentId) => {
+  if (studentId === 'CT_21') {
+    return CT21_COMMITMENT_DATA;
+  }
+  return null;
+};
+
 /**
  * Trợ cấp lấy dữ liệu cam kết theo khối lớp (10, 11, 12)
  * @param {string|number} grade - Giá trị khối lớp (10, 11, 12, 'Khối 10', 'Grade 11', etc.)
@@ -90,18 +188,18 @@ export const getGradeCommitmentPlan = (grade) => {
 
 // CẬP NHẬT CHUẨN HÓA DỮ LIỆU CÁC CA TRÊN MÀN HÌNH (KHỐI 12 - THỰC ĐỊA KHÁNH HÒA)
 export const UPDATED_STUDENTS_DISPLAY = [
-  // CT_21: Học sinh Giỏi thi CNTT (Khớp ĐH Nha Trang)
+  // CT_21: Học sinh Khá thi CNTT (Khớp ĐH Nha Trang - THPT Trần Quý Cáp)
   {
     id: "CT_21",
     grade: "Khối 12",
-    rank: "Giỏi",
+    rank: "Khá",
     riasec: "IRE",
     target_t0: "Công nghệ Thông tin (ĐH CNTT TP.HCM - 27.5đ)",
     delta: "-2.5đ",
     risk_level: "Nguy cơ",
     triage: "In-depth (20p)",
-    target_t2: "Công nghệ Thông tin (ĐH Nha Trang - 22.0đ)",
-    crs_display: "+3.8 → -0.5",
+    target_t2: "Công nghệ Thông tin — ĐH Nha Trang (7480201 - 22.0đ)",
+    crs_display: "+3.8 → -0.2",
     gate: "Đã Mở (PDF)"
   },
   // CT_22: Đổi Kỹ thuật Ô tô về ĐH Nha Trang (thay vì Thiết kế thời trang xa lạ)
@@ -496,14 +594,14 @@ export const EXPERIMENTAL_STUDENTS_N30 = [
     id: "CT_21",
     name: "Học sinh CT_21",
     grade: "Khối 12",
-    academicLevel: "Giỏi",
+    academicLevel: "Khá",
     baselineTarget: "Công nghệ Thông tin (ĐH CNTT TP.HCM)",
     conf_T0: 8.0,
     sdq_T0: 4.2,
     crs_T0: 3.8,
     conf_T2: 8.0,
-    sdq_T2: 8.5,
-    crs_T2: -0.5,
+    sdq_T2: 8.2, // Conf (8.0) - SDQ (8.2) = -0.2 (Đã triệt tiêu tự tin thái quá)
+    crs_T2: -0.2,
     status: "Đã hiệu chuẩn",
     triageFlow: "In-depth",
     turningPoint: true
