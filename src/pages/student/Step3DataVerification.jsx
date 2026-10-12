@@ -231,12 +231,26 @@ export default function Step3DataVerification({
       onComplete(triageResult, targetStep);
     } else {
       if (targetStep === 'STEP_5') {
-        navigate('/student/roadmap');
+        try {
+          localStorage.setItem('cbas_step4_fast_track', 'true');
+          localStorage.setItem('cbas_step4_completed', 'true');
+        } catch (e) {}
+        navigate('/student/reflection');
       } else {
         navigate('/student/booking');
       }
     }
   };
+
+  React.useEffect(() => {
+    window.goToStep = (step) => {
+      if (step === 5) handleCompleteAction('STEP_5');
+      else if (step === 4) handleCompleteAction('STEP_4');
+    };
+    return () => {
+      delete window.goToStep;
+    };
+  }, [triageResult]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-slate-50 min-h-screen text-slate-800 font-sans">
@@ -643,13 +657,39 @@ export default function Step3DataVerification({
                 Hệ thống tự động kích hoạt <strong>Phân luồng 2 (Xác nhận thực chứng tinh gọn)</strong> tại Bước 4: 
                 rà soát độc lập Hồ sơ kinh nghiệm thực tế (Case Dossier) và hoàn thành bảng kiểm phản tư góc khuất nghề nghiệp dưới sự giám sát gián tiếp của Mentor.
               </p>
-              <button
-                type="button"
-                onClick={() => handleCompleteAction('STEP_4')}
-                className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer"
-              >
-                TIẾP TỤC BƯỚC 4: XÁC NHẬN THỰC CHỨNG TINH GỌN (FAST-TRACK) ➔
-              </button>
+              {/* THẺ XÁC THỰC NHANH FAST-TRACK CHUẨN CBAS */}
+              <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 text-xs space-y-2.5 max-w-xl mx-auto text-left mb-6 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-sm">✓</span>
+                  <span className="font-bold text-teal-300 uppercase tracking-wide text-[11px]">
+                    KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: NHÁNH FAST-TRACK
+                  </span>
+                </div>
+
+                <p className="text-slate-200 leading-relaxed">
+                  Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của bạn đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống tự động xác thực và mở cổng Bước 5 để bạn tiếp tục xác lập Tam giác nguyện vọng và Bản cam kết kỷ luật tại bàn học.
+                </p>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => handleCompleteAction('STEP_5')}
+                    className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md cursor-pointer"
+                  >
+                    TIẾN VÀO BƯỚC 5: XÁC LẬP BẢN CAM KẾT & IN A4 →
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleCompleteAction('STEP_4')}
+                  className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition text-xs cursor-pointer border border-slate-300"
+                >
+                  Hoặc sang Bước 4: Xác nhận thực chứng tinh gọn (Fast-track) ➔
+                </button>
+              </div>
               <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
                   type="button"

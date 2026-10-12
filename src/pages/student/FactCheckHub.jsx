@@ -171,8 +171,8 @@ export default function FactCheckHub() {
     } catch (e) {}
   }, [triageResult, currentMode]);
 
-  // 6. TIẾP TỤC SANG BƯỚC 4
-  const proceedToStep4 = async () => {
+  // 6. TIẾP TỤC SANG BƯỚC 4 HOẶC BƯỚC 5 (FAST-TRACK)
+  const goToStep = async (stepNum) => {
     const branchLabel = triageResult.type === 'in_depth' ? 'In-depth' : 'Fast-track';
 
     const step3Evidence = {
@@ -198,28 +198,77 @@ export default function FactCheckHub() {
     localStorage.setItem('cbas_step3_evidence', JSON.stringify(step3Evidence));
     localStorage.setItem('cbas_triage_result', JSON.stringify(step3Evidence));
 
-    if (user?.id) {
-      try {
-        await supabase.from('metacognitive_matrix').insert([
-          {
-            student_id: user.id,
-            target_major: currentMode === 'academic' ? academicTargetDisplay : targetVocationalCareer,
-            evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU THỰC CHỨNG]\nChế độ: ${currentMode === 'academic' ? 'Đại học/Cao đẳng' : 'Học nghề tư nhân'}\nĐộ lệch: ${currentMode === 'academic' ? `${academicGap} điểm` : `Ngân sách: ${vocBudget}, Cam kết: ${vocCommitment}`}\nPhân luồng: ${branchLabel}\nLý do: ${triageResult.desc}`,
-            verified_sources: currentMode === 'academic' ? 'Đề án tuyển sinh & Điểm chuẩn 3 năm' : 'Khung thực tế thị trường học nghề tự do (Baseline)',
-            risk_analysis: triageResult.desc,
-            bias_check: 'Empirical Grounding + Algorithmic Cognitive Triage',
-            detected_bias: triageResult.type === 'in_depth' ? 'COGNITIVE_GAP_DETECTED' : 'CALIBRATED_REALISTIC',
-            final_decision: triageResult.type === 'in_depth' ? 'IN_DEPTH_MENTORSHIP' : 'FAST_TRACK_ROADMAP'
-          }
-        ]);
-      } catch (dbErr) {
-        console.warn('Lỗi ghi Supabase Bước 3:', dbErr);
+    if (stepNum === 5) {
+      // Đánh dấu hoàn tất xác thực nhanh Fast-Track cho Bước 4
+      localStorage.setItem('cbas_step4_fast_track', 'true');
+      localStorage.setItem('cbas_step4_completed', 'true');
+      const fastTrackFeedback = {
+        triage: 'PHAN_LUONG_2_FAST_TRACK',
+        illusion: 'cleared',
+        readiness: 9,
+        notes: 'Xác thực nhanh Fast-track: Năng lực học bạ và hồ sơ thiên hướng tương thích tốt với ngưỡng tham chiếu.',
+        savedAt: new Date().toISOString()
+      };
+      localStorage.setItem('mentor_feedback_record', JSON.stringify(fastTrackFeedback));
+      localStorage.setItem('cbas_step4_feedback', JSON.stringify(fastTrackFeedback));
+
+      if (user?.id) {
+        try {
+          await supabase.from('metacognitive_matrix').insert([
+            {
+              student_id: user.id,
+              target_major: currentMode === 'academic' ? academicTargetDisplay : targetVocationalCareer,
+              evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU - NHÁNH FAST-TRACK]\nNăng lực học bạ và hồ sơ thiên hướng tương thích tốt với ngưỡng tham chiếu.\nHệ thống tự động xác thực và mở cổng Bước 5.`,
+              verified_sources: currentMode === 'academic' ? 'Đề án tuyển sinh & Điểm chuẩn 3 năm' : 'Khung thực tế thị trường học nghề tự do (Baseline)',
+              risk_analysis: triageResult.desc,
+              bias_check: 'Empirical Grounding + Algorithmic Cognitive Triage',
+              detected_bias: 'CALIBRATED_REALISTIC',
+              final_decision: 'FAST_TRACK_ROADMAP'
+            }
+          ]);
+        } catch (dbErr) {
+          console.warn('Lỗi ghi Supabase Bước 3 Fast-track:', dbErr);
+        }
       }
+
+      navigate('/student/reflection');
+      return;
     }
 
-    alert('Đã lưu kết quả phân luồng Bước 3 vào hồ sơ thực nghiệm! Hệ thống tự động chuyển tiếp đối tượng sang Bước 4.');
-    navigate('/student/booking');
+    if (stepNum === 4) {
+      if (user?.id) {
+        try {
+          await supabase.from('metacognitive_matrix').insert([
+            {
+              student_id: user.id,
+              target_major: currentMode === 'academic' ? academicTargetDisplay : targetVocationalCareer,
+              evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU THỰC CHỨNG]\nChế độ: ${currentMode === 'academic' ? 'Đại học/Cao đẳng' : 'Học nghề tư nhân'}\nĐộ lệch: ${currentMode === 'academic' ? `${academicGap} điểm` : `Ngân sách: ${vocBudget}, Cam kết: ${vocCommitment}`}\nPhân luồng: ${branchLabel}\nLý do: ${triageResult.desc}`,
+              verified_sources: currentMode === 'academic' ? 'Đề án tuyển sinh & Điểm chuẩn 3 năm' : 'Khung thực tế thị trường học nghề tự do (Baseline)',
+              risk_analysis: triageResult.desc,
+              bias_check: 'Empirical Grounding + Algorithmic Cognitive Triage',
+              detected_bias: triageResult.type === 'in_depth' ? 'COGNITIVE_GAP_DETECTED' : 'CALIBRATED_REALISTIC',
+              final_decision: triageResult.type === 'in_depth' ? 'IN_DEPTH_MENTORSHIP' : 'FAST_TRACK_ROADMAP'
+            }
+          ]);
+        } catch (dbErr) {
+          console.warn('Lỗi ghi Supabase Bước 3:', dbErr);
+        }
+      }
+
+      alert('Đã lưu kết quả phân luồng Bước 3 vào hồ sơ thực nghiệm! Hệ thống tự động chuyển tiếp đối tượng sang Bước 4.');
+      navigate('/student/booking');
+    }
   };
+
+  const proceedToStep4 = () => goToStep(4);
+
+  // Đăng ký toàn cục window.goToStep
+  useEffect(() => {
+    window.goToStep = (step) => goToStep(step);
+    return () => {
+      delete window.goToStep;
+    };
+  }, [triageResult, currentMode, academicScore, academicGap, vocBudget, vocCommitment, user]);
 
   return (
     <div className="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 flex flex-col items-center justify-start font-sans antialiased">
@@ -487,44 +536,70 @@ export default function FactCheckHub() {
           </div>
         )}
 
-        {/* ==================== KẾT QUẢ PHÂN LUỒNG TỰ ĐỘNG CỦA HỆ THỐNG SANG BƯỚC 4 ==================== */}
-        <div
-          id="triageResultBox"
-          className={`p-4 rounded-xl flex flex-wrap justify-between items-center gap-3 text-xs transition-all ${
-            triageResult.type === 'in_depth'
-              ? 'bg-rose-950/20 border border-rose-500/40 text-rose-300'
-              : 'bg-emerald-950/20 border border-emerald-500/40 text-emerald-300'
-          }`}
-        >
-          <div className="max-w-xl">
+        {/* ==================== KẾT QUẢ PHÂN LUỒNG TỰ ĐỘNG CỦA HỆ THỐNG SANG BƯỚC 4 / BƯỚC 5 ==================== */}
+        {triageResult.type === 'fast_track' ? (
+          /* THẺ XÁC THỰC NHANH FAST-TRACK CHUẨN CBAS */
+          <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 text-xs space-y-2.5">
             <div className="flex items-center gap-2">
-              <span
-                className={`px-2 py-0.5 rounded font-extrabold text-[10px] uppercase tracking-wider ${
-                  triageResult.type === 'in_depth'
-                    ? 'bg-rose-500/20 text-rose-300'
-                    : 'bg-emerald-500/20 text-emerald-300'
-                }`}
-              >
-                KẾT QUẢ PHÂN LUỒNG BƯỚC 4
-              </span>
-              <span id="triageStatusTitle" className="font-bold text-white text-xs">
-                {triageResult.title}
+              <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-sm">✓</span>
+              <span className="font-bold text-teal-300 uppercase tracking-wide text-[11px]">
+                KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: NHÁNH FAST-TRACK
               </span>
             </div>
-            <p id="triageStatusDesc" className="text-slate-300 text-[11px] mt-1 leading-relaxed">
-              {triageResult.desc}
-            </p>
-          </div>
 
-          <button
-            type="button"
-            onClick={proceedToStep4}
-            className="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 cursor-pointer shrink-0"
+            <p className="text-slate-200 leading-relaxed">
+              Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của bạn đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống tự động xác thực và mở cổng Bước 5 để bạn tiếp tục xác lập Tam giác nguyện vọng và Bản cam kết kỷ luật tại bàn học.
+            </p>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => goToStep(5)}
+                className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md cursor-pointer"
+              >
+                TIẾN VÀO BƯỚC 5: XÁC LẬP BẢN CAM KẾT & IN A4 →
+              </button>
+            </div>
+
+            <div className="text-right pt-0.5">
+              <button
+                type="button"
+                onClick={() => goToStep(4)}
+                className="text-[11px] text-slate-400 hover:text-teal-300 underline cursor-pointer"
+              >
+                Hoặc xem lại hồ sơ đối chất & rà soát tinh gọn tại Bước 4 →
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            id="triageResultBox"
+            className="p-4 rounded-xl flex flex-wrap justify-between items-center gap-3 text-xs transition-all bg-rose-950/20 border border-rose-500/40 text-rose-300"
           >
-            <span>Tiếp tục sang Bước 4 (Đặt lịch Mentor)</span>
-            <i className="ph ph-arrow-right font-bold text-sm"></i>
-          </button>
-        </div>
+            <div className="max-w-xl">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded font-extrabold text-[10px] uppercase tracking-wider bg-rose-500/20 text-rose-300">
+                  KẾT QUẢ PHÂN LUỒNG BƯỚC 4
+                </span>
+                <span id="triageStatusTitle" className="font-bold text-white text-xs">
+                  {triageResult.title}
+                </span>
+              </div>
+              <p id="triageStatusDesc" className="text-slate-300 text-[11px] mt-1 leading-relaxed">
+                {triageResult.desc}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={proceedToStep4}
+              className="px-5 py-2.5 bg-teal-500 hover:bg-teal-400 active:bg-teal-600 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <span>Tiếp tục sang Bước 4 (Đặt lịch Mentor)</span>
+              <i className="ph ph-arrow-right font-bold text-sm"></i>
+            </button>
+          </div>
+        )}
 
       </div>
 

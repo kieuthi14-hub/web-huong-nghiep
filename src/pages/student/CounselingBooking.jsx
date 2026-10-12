@@ -986,9 +986,13 @@ const CounselingBooking = () => {
   useEffect(() => {
     window.handleBookingStep4 = handleBookingStep4
     window.goToStep5 = goToStep5
+    window.goToStep = (step) => {
+      if (step === 5) goToStep5()
+    }
     return () => {
       delete window.handleBookingStep4
       delete window.goToStep5
+      delete window.goToStep
     }
   }, [selectedMentor, appointmentTime, studentQuestions, meetType, user])
 
@@ -2090,6 +2094,30 @@ const CounselingBooking = () => {
       {/* ========================================================================= */}
       {activeTriage === 'PHAN_LUONG_2' && (
         <div className="space-y-6">
+
+          {/* THẺ XÁC THỰC NHANH FAST-TRACK CHUẨN CBAS */}
+          <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 text-xs space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-sm">✓</span>
+              <span className="font-bold text-teal-300 uppercase tracking-wide text-[11px]">
+                KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: NHÁNH FAST-TRACK
+              </span>
+            </div>
+
+            <p className="text-slate-200 leading-relaxed">
+              Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của bạn đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống tự động xác thực và mở cổng Bước 5 để bạn tiếp tục xác lập Tam giác nguyện vọng và Bản cam kết kỷ luật tại bàn học.
+            </p>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={goToStep5}
+                className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md cursor-pointer"
+              >
+                TIẾN VÀO BƯỚC 5: XÁC LẬP BẢN CAM KẾT & IN A4 →
+              </button>
+            </div>
+          </div>
 
           {/* 1. THẺ GIẢI THÍCH PHÂN LUỒNG & TRẠNG THÁI CÂN BẰNG NHẬN THỨC */}
           <div className="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-6 space-y-4">
