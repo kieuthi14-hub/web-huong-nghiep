@@ -157,3 +157,105 @@ export const UPDATED_STUDENTS_DISPLAY = [
   }
 ];
 
+// =========================================================================
+// BIÊN BẢN TRÍCH XUẤT PHIÊN ĐỐI THOẠI PHẢN TƯ SOCRATES & ĐIỂM BẺ GÃY NHẬN THỨC (BƯỚC 2)
+// =========================================================================
+export const SOCRATIC_CHAT_LOGS = {
+  CT_08: {
+    id: "CT_08",
+    grade: "Khối 10",
+    label: "CT_08 (Khối 10 - Mỏ neo: Tạo mẫu tóc tiệm tư)",
+    studentInitial: "Học sinh (CT_08)",
+    round1: {
+      title: "VÒNG 1: XÁC LẬP GIẢ ĐỊNH BAN ĐẦU (T₀)",
+      student: "Em rất thích làm đẹp và muốn học nghề tạo mẫu tóc ở một salon nổi tiếng tại Nha Trang. Em nghĩ học nghề này tầm 6 tháng là có thể đi làm với mức lương 10 - 15 triệu/tháng."
+    },
+    round2: {
+      title: "VÒNG 2: AI TRUY VẤN MÂU THUẪN RIASEC (ANTI-SYCOPHANCY)",
+      ai: "Kết quả trắc nghiệm RIASEC của em cho thấy nhóm nổi trội là <strong>Nghiên cứu [I]</strong> và <strong>Nghiệp vụ [C]</strong> (thích sự ngăn nắp, dữ liệu quy chuẩn). Tuy nhiên, nghề tạo mẫu tóc đòi hỏi năng lực <strong>Thẩm mỹ tự do [A]</strong> và <strong>Vận động thao tác cơ học liên tục [R]</strong>. Điều gì khiến em tin rằng tính cách thích phân tích, quy củ của em sẽ phù hợp với môi trường làm tóc?",
+      student: "Thực ra em thích nói chuyện với khách hàng (nhóm S) và thích ngắm người ta làm đẹp thôi, chứ em chưa từng tự tay cắt tóc hay đứng liên tục nhiều giờ bao giờ..."
+    },
+    round3: {
+      title: "VÒNG 3: TRUY VẤN RỦI RO & BỘC LỘ TURNING POINT",
+      ai: "Nếu trong 12 - 18 tháng đầu tiên tại tiệm tóc, em chỉ làm công việc thợ phụ gội đầu với mức hỗ trợ 2 - 3 triệu/tháng, trong khi phải tự bỏ ra hơn 40 triệu tiền học phí và dụng cụ ban đầu, liệu em có sẵn sàng chấp nhận điều đó để theo đuổi mục tiêu không?",
+      student: "Dạ em không biết học phí lại cao như vậy, nhà em chắc chắn không lo được 40 triệu lúc này. Chắc em phải tìm hiểu lại ngành nào có học phí nhà nước hỗ trợ như Cao đẳng Du lịch thôi ạ."
+    },
+    turningPoint: {
+      desc: "Học sinh vỡ mộng tài chính và rào cản nghề, tự giác đề xuất chuyển hướng.",
+      action: "KÍCH HOẠT BƯỚC 3"
+    }
+  },
+  CT_02: {
+    id: "CT_02",
+    grade: "Khối 10",
+    label: "CT_02 (Khối 10 - Mỏ neo: QTKD ĐH Kinh Tế TP.HCM)",
+    studentInitial: "Học sinh (CT_02)",
+    round1: {
+      title: "VÒNG 1: XÁC LẬP GIẢ ĐỊNH BAN ĐẦU (T₀)",
+      student: "Em muốn thi ngành Quản trị Kinh doanh ĐH Kinh Tế TP.HCM vì em thích làm sếp, tự do chỉ đạo và khởi nghiệp làm giàu nhanh."
+    },
+    round2: {
+      title: "VÒNG 2: AI TRUY VẤN MÂU THUẪN RIASEC (ANTI-SYCOPHANCY)",
+      ai: "Nhóm RIASEC của em là <strong>Nghiệp vụ [C]</strong> và <strong>Xã hội [S]</strong>. Quản trị doanh nghiệp đòi hỏi năng lực <strong>Lãnh đạo [E]</strong> chịu rủi ro vốn lớn và năng lực phân tích số liệu tài chính liên tục. Em đã từng thử lập kế hoạch chi tiêu hay điều hành dự án nhóm thực tế chưa?",
+      student: "Dạ chưa, em chỉ nghĩ làm sếp thì thuê người làm báo cáo số liệu là được..."
+    },
+    round3: {
+      title: "VÒNG 3: TRUY VẤN RỦI RO & BỘC LỘ TURNING POINT",
+      ai: "Theo dữ liệu thực tế, điểm chuẩn QTKD là 26.0+ trong khi điểm hiện tại của em đang thiếu 2.5đ. Hơn 70% cử nhân QTKD mới ra trường phải bắt đầu từ nhân viên telesale hoặc thị trường. Em có sẵn sàng đối mặt nếu chưa thể làm quản lý ngay không?",
+      student: "Em từng nghĩ chỉ cần thích làm sếp là học QTKD được, nhưng sau Bước 2 mới thấy mình chưa hiểu gì về vận hành thực tế. Em cần tìm ngành gần vừa sức và tích lũy từ chuyên môn trước."
+    },
+    turningPoint: {
+      desc: "Nhận diện bẫy ảo tưởng vị trí quản lý; chấp nhận chọn ngành vừa sức và lộ trình chuyên môn thực chất.",
+      action: "KÍCH HOẠT BƯỚC 3"
+    }
+  },
+  CT_13: {
+    id: "CT_13",
+    grade: "Khối 11",
+    label: "CT_13 (Khối 11 - Mỏ neo: Bác sĩ Đa khoa Y Dược TP.HCM)",
+    studentInitial: "Học sinh (CT_13)",
+    round1: {
+      title: "VÒNG 1: XÁC LẬP GIẢ ĐỊNH BAN ĐẦU (T₀)",
+      student: "Gia đình em định hướng em thi Bác sĩ Đa khoa ĐH Y Dược TP.HCM vì nghề bác sĩ có địa vị cao và thu nhập ổn định suốt đời."
+    },
+    round2: {
+      title: "VÒNG 2: AI TRUY VẤN MÂU THUẪN RIASEC (ANTI-SYCOPHANCY)",
+      ai: "Học Bác sĩ Đa khoa kéo dài tối thiểu 6 năm đại học cộng 18 tháng thực hành chứng chỉ hành nghề, học phí và chi phí nội trú rất cao. Nhóm RIASEC của em là <strong>Xã hội [S]</strong> và <strong>Nghệ thuật [A]</strong>. Em có thực sự đam mê việc trực đêm 24/7 và đối mặt thường xuyên với bệnh lý nặng không?",
+      student: "Thực ra em rất sợ nhìn thấy máu và áp lực phòng cấp cứu, chỉ là ba mẹ kỳ vọng nên em không dám từ chối..."
+    },
+    round3: {
+      title: "VÒNG 3: TRUY VẤN RỦI RO & BỘC LỘ TURNING POINT",
+      ai: "Điểm chuẩn Y khoa luôn ở ngưỡng 27.5 - 28.0đ. Nếu em cố gắng vì kỳ vọng người khác nhưng kiệt sức trong 6 năm học, em nghĩ bản thân sẽ hạnh phúc hay hối tiếc?",
+      student: "Em nhận ra mình không thể sống thay ước mơ của cha mẹ. Em muốn chuyển sang ngành Dược hoặc Điều dưỡng / Y tế công cộng để vừa đúng khối ngành chăm sóc sức khỏe vừa bớt áp lực phẫu thuật."
+    },
+    turningPoint: {
+      desc: "Bẻ gãy áp lực kỳ vọng gia đình, nhận diện ranh giới sức bền tâm lý và định vị ngành chăm sóc phù hợp cá nhân.",
+      action: "KÍCH HOẠT BƯỚC 3"
+    }
+  },
+  CT_21: {
+    id: "CT_21",
+    grade: "Khối 12",
+    label: "CT_21 (Khối 12 - Mỏ neo: Trí tuệ nhân tạo ĐH CNTT)",
+    studentInitial: "Học sinh (CT_21)",
+    round1: {
+      title: "VÒNG 1: XÁC LẬP GIẢ ĐỊNH BAN ĐẦU (T₀)",
+      student: "Em đặt mục tiêu ngành Trí tuệ nhân tạo / CNTT tại ĐH CNTT TP.HCM vì ngành này cực hot, lương nghìn đô ngay khi tốt nghiệp."
+    },
+    round2: {
+      title: "VÒNG 2: AI TRUY VẤN MÂU THUẪN RIASEC (ANTI-SYCOPHANCY)",
+      ai: "Điểm chuẩn ngành AI/CNTT tại ĐH CNTT TP.HCM các năm gần đây từ 27.5 đến 28.2 điểm. Điểm tổng kết 3 môn tổ hợp hiện tại của em đạt 25.0 điểm, khoảng cách thiếu 2.5 điểm trong khi chỉ còn 5 tháng nữa là thi tốt nghiệp. Em đã có giải pháp bứt phá cụ thể nào chưa?",
+      student: "Em dự định cày thêm giải đề Toán và tiếng Anh mỗi đêm, hy vọng đến lúc thi sẽ kéo lên được 27.5..."
+    },
+    round3: {
+      title: "VÒNG 3: TRUY VẤN RỦI RO & BỘC LỘ TURNING POINT",
+      ai: "Dữ liệu cho thấy xác suất bứt phá 2.5 điểm ở giai đoạn nước rút mà không có chiến lược dự phòng rủi ro là dưới 15%. Nếu dồn toàn bộ nguyện vọng vào TP.HCM và rớt, em có phương án an toàn nào không?",
+      student: "Em nhận diện rõ mức độ cạnh tranh 27.5đ ở TP.HCM là rào cản quá lớn; chuyển sang CNTT tại ĐH Nha Trang (22.0đ) giúp em bảo đảm cơ hội trúng tuyển và phù hợp tài chính gia đình."
+    },
+    turningPoint: {
+      desc: "Bẻ gãy ảo tưởng bứt phá điểm số không thực tế; chủ động chuyển nấc Tam giác nguyện vọng về ĐH Nha Trang bảo đảm an toàn.",
+      action: "KÍCH HOẠT BƯỚC 3"
+    }
+  }
+};
+

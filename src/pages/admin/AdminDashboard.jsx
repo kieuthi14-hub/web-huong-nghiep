@@ -45,8 +45,8 @@ import {
   Lock,
   X
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY } from '../../data/adaptiveCommitments'
-export { UPDATED_STUDENTS_DISPLAY }
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS } from '../../data/adaptiveCommitments'
+export { UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS }
 
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
@@ -1199,6 +1199,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const [filterDecision, setFilterDecision] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedMatrixDetail, setSelectedMatrixDetail] = useState(null)
+  const [selectedChatStudentId, setSelectedChatStudentId] = useState('CT_08')
 
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -3274,49 +3275,98 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
           ========================================================================= */}
       {activeTab === 'reflections' && (
         <div className="space-y-6 animate-reveal">
-          {/* 4 BÀI TẬP TÌNH HUỐNG CHỐNG BẪY THÔNG TIN SỐ */}
-          <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          {/* =========================================================================
+              KHỐI THAY THẾ CHUẨN: NHẬT KÝ PHẢN TƯ SOCRATES & GHI NHẬN ĐIỂM BẺ GÃY (BƯỚC 2)
+              ========================================================================= */}
+          <div className="space-y-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-slate-100">
+            <div className="flex flex-wrap justify-between items-center border-b border-slate-800 pb-3 gap-2">
               <div>
-                <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Brain className="w-4.5 h-4.5 text-amber-600" />
-                  KẾT QUẢ BÀI TEST TÁC VỤ TÌNH HUỐNG CHỐNG BẪY THÔNG TIN SỐ (4 SCENARIOS)
-                </h2>
-                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                  Đánh giá khả năng nhận diện tin giả, bẫy truyền thông và phản biện thông tin tuyển sinh trên môi trường số.
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-purple-400" />
+                  NHẬT KÝ TRUY VẤN PHẢN TƯ SOCRATES & ĐIỂM BẺ GÃY NHẬN THỨC (BƯỚC 2)
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Trích xuất toàn văn phiên đối thoại giữa AI phản biện trung tính và học sinh (Anti-Sycophancy).
                 </p>
               </div>
-              <span className="text-[10px] font-black px-2.5 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-sm uppercase">
-                Tỷ Lệ Đạt Trung Bình: 89.2%
+              <span className="text-xs px-2.5 py-1 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">
+                26 / 30 HS Bộc Lộ Turning Point (86.7%)
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {DIGITAL_SCENARIOS.map((sc) => (
-                <div key={sc.id} className="bg-slate-50/80 border border-slate-200 p-4 rounded-sm space-y-2.5 flex flex-col justify-between hover:border-amber-400 transition-all">
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-200 rounded-sm uppercase block w-max">
-                      {sc.biasLabel}
+            {/* Chọn học sinh để xem nhật ký đối thoại */}
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-slate-400 font-medium">Chọn hồ sơ đối tượng:</span>
+              <select
+                id="selectStudentChatLog"
+                value={selectedChatStudentId}
+                onChange={(e) => setSelectedChatStudentId(e.target.value)}
+                className="bg-slate-900 border border-slate-700 text-teal-300 font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-500 cursor-pointer"
+              >
+                <option value="CT_08">CT_08 (Khối 10 - Mỏ neo: Tạo mẫu tóc tiệm tư)</option>
+                <option value="CT_02">CT_02 (Khối 10 - Mỏ neo: QTKD ĐH Kinh Tế TP.HCM)</option>
+                <option value="CT_13">CT_13 (Khối 11 - Mỏ neo: Bác sĩ Đa khoa Y Dược TP.HCM)</option>
+                <option value="CT_21">CT_21 (Khối 12 - Mỏ neo: Trí tuệ nhân tạo ĐH CNTT)</option>
+              </select>
+            </div>
+
+            {/* Khung hiển thị chi tiết biên bản chat phản tư */}
+            {(() => {
+              const currentLog = SOCRATIC_CHAT_LOGS[selectedChatStudentId] || SOCRATIC_CHAT_LOGS['CT_08'];
+              return (
+                <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-3.5 text-xs font-sans">
+                  {/* Vòng 1 */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {currentLog.round1.title}
                     </span>
-                    <h4 className="text-xs font-black text-slate-800 leading-snug">
-                      {sc.title}
-                    </h4>
-                    <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                      {sc.context}
-                    </p>
+                    <div className="p-3 rounded-lg bg-teal-950/20 border border-teal-500/20 text-teal-200">
+                      <strong>{currentLog.studentInitial}:</strong> "{currentLog.round1.student}"
+                    </div>
                   </div>
 
-                  <div className="pt-2 border-t border-slate-200 space-y-1">
-                    <p className="text-[10px] text-emerald-700 font-bold">
-                      ✓ Hành động phản tư chuẩn: {sc.correctDebiasAction}
-                    </p>
-                    <p className="text-[10px] text-slate-800 font-black">
-                      🎯 Tỷ lệ vượt qua: {sc.successRate}
-                    </p>
+                  {/* Vòng 2 */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {currentLog.round2.title}
+                    </span>
+                    <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
+                      <strong className="text-purple-400">AI Socrates:</strong>{" "}
+                      <span dangerouslySetInnerHTML={{ __html: currentLog.round2.ai }} />
+                    </div>
+                    <div className="p-3 rounded-lg bg-teal-950/20 border border-teal-500/20 text-teal-200 text-right">
+                      <strong>{currentLog.studentInitial}:</strong> "{currentLog.round2.student}"
+                    </div>
+                  </div>
+
+                  {/* Vòng 3 & Điểm bẻ gãy */}
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                      {currentLog.round3.title}
+                    </span>
+                    <div className="p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
+                      <strong className="text-purple-400">AI Socrates:</strong>{" "}
+                      <span dangerouslySetInnerHTML={{ __html: currentLog.round3.ai }} />
+                    </div>
+                    <div className="p-3 rounded-lg bg-teal-950/20 border border-teal-500/20 text-teal-200 text-right">
+                      <strong>{currentLog.studentInitial}:</strong> "{currentLog.round3.student}"
+                    </div>
+                  </div>
+
+                  {/* Nhãn ghi nhận kết quả phản tư */}
+                  <div className="p-3 rounded-lg bg-purple-950/30 border border-purple-500/40 flex flex-wrap items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
+                      <span className="text-purple-200 font-bold">Xác nhận Điểm bẻ gãy nhận thức (Turning Point):</span>
+                      <span className="text-slate-300">{currentLog.turningPoint.desc}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono font-bold text-[10px]">
+                      {currentLog.turningPoint.action}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })()}
           </div>
 
           {/* BẢNG DANH SÁCH NHẬT KÝ PHẢN TƯ CỦA HỌC SINH TỪ SUPABASE */}
