@@ -1,14 +1,16 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
-import { LogOut, User, Menu, ShieldCheck, X } from 'lucide-react'
+import { LogOut, User, Menu, ShieldCheck, X, Lock } from 'lucide-react'
+import AdminPasswordModal from '../admin/AdminPasswordModal'
 
 const Navbar = ({ onToggleSidebar }) => {
-  const { profile, signOut, displayName, studentCode, updateStudentCode } = useAuth()
+  const { profile, signOut, displayName, studentCode, updateStudentCode, isAdminVerified, lockAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
   const [newCodeInput, setNewCodeInput] = useState('')
 
   const handleLogout = async () => {
@@ -55,21 +57,43 @@ const Navbar = ({ onToggleSidebar }) => {
       <div className="flex items-center gap-3">
         {/* Nút chuyển đổi giao diện linh hoạt giữa Admin và Học sinh */}
         {isInAdminView ? (
-          <Link
-            to="/student/dashboard"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
-            title="Chuyển sang xem giao diện học sinh"
-          >
-            <span>🎓 Xem Cổng Học Sinh</span>
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                lockAdmin()
+                navigate('/student/dashboard')
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-300 hover:text-rose-300 border border-slate-700 hover:border-rose-700/50 text-xs font-semibold transition cursor-pointer"
+              title="Khóa quyền Quản trị & quay về Cổng học sinh"
+            >
+              <Lock className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">Khóa Admin</span>
+            </button>
+            <Link
+              to="/student/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-sm transition-all cursor-pointer"
+              title="Chuyển sang xem giao diện học sinh"
+            >
+              <span>🎓 Xem Cổng Học Sinh</span>
+            </Link>
+          </div>
         ) : (
-          <Link
-            to="/admin/dashboard"
+          <button
+            type="button"
+            onClick={() => {
+              if (isAdminVerified) {
+                navigate('/admin/dashboard')
+              } else {
+                setIsAdminModalOpen(true)
+              }
+            }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-teal-300 font-bold text-xs shadow-sm transition-all border border-slate-700 hover:border-teal-500/50 cursor-pointer"
-            title="Mở Bảng Quản Trị Thực Nghiệm CBAS 2026"
+            title="Mở Bảng Quản Trị Thực Nghiệm CBAS 2026 (Yêu cầu mật khẩu)"
           >
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
             <span>⚙️ Bảng Quản Trị (Admin)</span>
-          </Link>
+          </button>
         )}
 
         {profile && (
@@ -202,6 +226,16 @@ const Navbar = ({ onToggleSidebar }) => {
           </div>
         </div>
       )}
+
+      {/* Modal Nhập Mật Khẩu Quản Trị Viên (Bảo vệ tuyệt đối chống học sinh truy cập) */}
+      <AdminPasswordModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onSuccess={() => {
+          setIsAdminModalOpen(false)
+          navigate('/admin/dashboard')
+        }}
+      />
     </header>
   )
 }

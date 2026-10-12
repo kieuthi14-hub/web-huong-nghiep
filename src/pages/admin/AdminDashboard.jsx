@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { getCounselorDetails, formatDateTimeFormatted, mentorMap, parseMeetingInfo, parseStudentContact, COUNSELOR_GROUPS } from '../student/CounselingBooking'
@@ -41,6 +42,7 @@ import {
   Download,
   Table,
   RotateCcw,
+  Lock,
   X
 } from 'lucide-react'
 
@@ -1103,7 +1105,8 @@ export const getMentorBadge = (displayName) => {
 // 3. MAIN COMPONENT: ADMIN DASHBOARD VISEF
 // =========================================================================
 const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
-  const { user } = useAuth()
+  const { user, lockAdmin } = useAuth()
+  const navigate = useNavigate()
   
   // 4 Tabs: 'cbas_hub' | 'experiment' | 'reflections' | 'counseling'
   const [activeTab, setActiveTab] = useState(activeTabDefault)
@@ -1971,8 +1974,20 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               </div>
             </div>
 
-            {/* CÁC THAO TÁC XUẤT DỮ LIỆU THỰC CHỨNG */}
+            {/* CÁC THAO TÁC XUẤT DỮ LIỆU THỰC CHỨNG & BẢO MẬT */}
             <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  lockAdmin()
+                  navigate('/student/dashboard')
+                }}
+                className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                title="Khóa phiên Quản trị & quay về Cổng học sinh (Yêu cầu mật khẩu nếu muốn vào lại)"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Khóa Admin 🔒</span>
+              </button>
               <button
                 type="button"
                 onClick={handleExportRawDataCSV}

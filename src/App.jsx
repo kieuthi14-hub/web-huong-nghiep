@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
 import Sidebar from './components/layout/Sidebar'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import AdminPasswordModal from './components/admin/AdminPasswordModal'
 
 // Public Pages
 import Login from './pages/auth/Login'
@@ -56,9 +57,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children
 }
 
-// Guard cho trang Admin Dashboard (Hỗ trợ truy cập trực tiếp nghiệm thu CBAS 2026)
+// Guard cho trang Admin Dashboard: BẢO MẬT BẰNG MẬT KHẨU QUẢN TRỊ VIÊN
 const AdminProtectedRoute = ({ children }) => {
-  const { loading } = useAuth()
+  const { loading, isAdminVerified } = useAuth()
+  const navigate = useNavigate()
 
   if (loading) {
     return (
@@ -74,7 +76,17 @@ const AdminProtectedRoute = ({ children }) => {
     )
   }
 
-  // Cho phép truy cập trực tiếp Admin Dashboard để kiểm tra & nghiệm thu nghiên cứu
+  // Nếu chưa xác thực mật khẩu: hiển thị Cổng bảo vệ Gate Mode (ngăn chặn học sinh truy cập)
+  if (!isAdminVerified) {
+    return (
+      <AdminPasswordModal 
+        isOpen={true} 
+        isGateMode={true} 
+        onClose={() => navigate('/student/dashboard')} 
+      />
+    )
+  }
+
   return children
 }
 

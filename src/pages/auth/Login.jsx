@@ -12,7 +12,7 @@ const EXPERIMENTAL_CODES = Array.from({ length: 30 }, (_, i) => {
 })
 
 const Login = () => {
-  const { signIn, signUp, setLocalSession } = useAuth()
+  const { signIn, signUp, setLocalSession, verifyAdminPassword } = useAuth()
   const navigate = useNavigate()
   
   // Tab chế độ: 'demo' (Trải nghiệm thử) | 'research' (Đối tượng N=30) | 'admin' (Quản trị viên)
@@ -28,7 +28,7 @@ const Login = () => {
 
   // Form 3: Quản trị viên / Giáo viên (Admin)
   const [adminEmail, setAdminEmail] = useState('kieuthi14@gmail.com')
-  const [adminPassword, setAdminPassword] = useState('123456')
+  const [adminPassword, setAdminPassword] = useState('')
   const [showAdminPassword, setShowAdminPassword] = useState(false)
   const [showAdminTab, setShowAdminTab] = useState(false)
 
@@ -137,6 +137,14 @@ const Login = () => {
     setIsLoading(true)
     try {
       const emailClean = adminEmail.trim().toLowerCase()
+
+      // Xác thực mật khẩu quản trị hệ thống
+      if (verifyAdminPassword) {
+        verifyAdminPassword(adminPassword)
+      } else {
+        sessionStorage.setItem('cbas_admin_verified', 'true')
+      }
+
       const { data, error } = await signIn(emailClean, adminPassword)
 
       if (error) {
@@ -150,6 +158,18 @@ const Login = () => {
             return
           }
         }
+
+        // Nếu email thuộc Whitelist Admin và mật khẩu khớp mật khẩu hệ thống
+        if (ADMIN_EMAILS.includes(emailClean)) {
+          const verifyRes = verifyAdminPassword ? verifyAdminPassword(adminPassword) : { success: true }
+          if (verifyRes.success) {
+            if (setLocalSession) setLocalSession('admin', 'ADMIN_CBAS', 'ADMIN')
+            setToast({ type: 'success', message: 'Xác thực quyền Quản trị viên thành công!' })
+            setTimeout(() => navigate('/admin'), 500)
+            return
+          }
+        }
+
         setToast({ type: 'error', message: 'Email hoặc mật khẩu quản trị không chính xác!' })
       } else {
         setToast({ type: 'success', message: 'Đăng nhập Quản trị viên thành công!' })
@@ -392,7 +412,7 @@ const Login = () => {
               <div>
                 <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
                   <span>Mật khẩu:</span>
-                  <span className="text-amber-400/80">Mặc định: 123456</span>
+                  <span className="text-slate-500 italic">Bảo mật ViSEF 2026</span>
                 </div>
                 <div className="relative">
                   <input

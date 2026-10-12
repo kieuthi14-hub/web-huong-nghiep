@@ -11,10 +11,67 @@ export const ADMIN_EMAILS = [
   'cbas.admin@gmail.com'
 ]
 
+// Danh sách Mật khẩu Quản trị viên hợp lệ (chuẩn ViSEF CBAS 2026)
+export const DEFAULT_ADMIN_PASSWORDS = [
+  '123456',
+  'admin2026',
+  'cbas2026',
+  'admin123',
+  'admin'
+]
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // Trạng thái đã xác thực mật khẩu Quản trị viên (Session-based)
+  const [isAdminVerified, setIsAdminVerified] = useState(() => {
+    try {
+      return sessionStorage.getItem('cbas_admin_verified') === 'true'
+    } catch (e) {
+      return false
+    }
+  })
+
+  // Hàm xác thực mật khẩu Quản trị viên
+  const verifyAdminPassword = (enteredPassword) => {
+    const cleanPwd = (enteredPassword || '').trim()
+    if (!cleanPwd) {
+      return { success: false, error: 'Vui lòng nhập mật khẩu quản trị viên!' }
+    }
+
+    let customPwd = null
+    try {
+      customPwd = localStorage.getItem('cbas_custom_admin_password')
+    } catch (e) {}
+
+    const envPwd = import.meta.env?.VITE_ADMIN_PASSWORD
+
+    const validPasswords = [
+      customPwd,
+      envPwd,
+      ...DEFAULT_ADMIN_PASSWORDS
+    ].filter(Boolean)
+
+    if (validPasswords.includes(cleanPwd)) {
+      try {
+        sessionStorage.setItem('cbas_admin_verified', 'true')
+      } catch (e) {}
+      setIsAdminVerified(true)
+      return { success: true }
+    } else {
+      return { success: false, error: 'Mật khẩu quản trị viên không chính xác! Vui lòng thử lại.' }
+    }
+  }
+
+  // Khóa quyền quản trị viên (trở về trạng thái cần mật khẩu)
+  const lockAdmin = () => {
+    try {
+      sessionStorage.removeItem('cbas_admin_verified')
+    } catch (e) {}
+    setIsAdminVerified(false)
+  }
 
   useEffect(() => {
     // 1. Lấy session hiện tại khi ứng dụng khởi chạy
@@ -192,7 +249,9 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.removeItem('currentUserRole')
       localStorage.removeItem('currentUserId')
+      sessionStorage.removeItem('cbas_admin_verified')
     } catch (e) {}
+    setIsAdminVerified(false)
     setUser(null)
     setProfile(null)
     const { error } = await supabase.auth.signOut()
@@ -202,13 +261,21 @@ export const AuthProvider = ({ children }) => {
   // Thiết lập phiên đăng nhập cục bộ cho Giám khảo / Đối tượng thực nghiệm
   const setLocalSession = (role, userId, code) => {
     const isGuest = role === 'guest'
+    const isAdmin = role === 'admin'
     const targetCode = (code || userId || 'CT_01').toUpperCase()
     try {
       localStorage.setItem('currentUserRole', role)
       localStorage.setItem('currentUserId', userId)
       localStorage.setItem('cbas_student_code', targetCode)
-      localStorage.setItem('cbas_is_experimental_group', isGuest ? 'false' : 'true')
+      localStorage.setItem('cbas_is_experimental_group', (isGuest || isAdmin) ? 'false' : 'true')
+      if (isAdmin) {
+        sessionStorage.setItem('cbas_admin_verified', 'true')
+      }
     } catch (e) {}
+
+    if (isAdmin) {
+      setIsAdminVerified(true)
+    }
 
     const mockUser = {
       id: userId,
@@ -310,6 +377,9 @@ export const AuthProvider = ({ children }) => {
       displayName,
       updateStudentCode,
       setLocalSession,
+      isAdminVerified,
+      verifyAdminPassword,
+      lockAdmin,
       loading, 
       signIn, 
       signUp, 

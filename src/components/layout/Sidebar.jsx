@@ -1,6 +1,7 @@
-import React from 'react'
-import { NavLink, Link, useLocation } from 'react-router-dom'
+import React, { useState } from 'react'
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, ADMIN_EMAILS } from '../../context/AuthContext'
+import AdminPasswordModal from '../admin/AdminPasswordModal'
 import { 
   LayoutDashboard, 
   ClipboardList, 
@@ -12,11 +13,15 @@ import {
   CalendarDays, 
   Settings, 
   UserSquare2,
-  ChevronRight
+  ChevronRight,
+  Lock
 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { user, profile, displayName, studentCode } = useAuth()
+  const { user, profile, displayName, studentCode, isAdminVerified } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
@@ -101,14 +106,23 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {displayName || profile?.full_name || 'Học sinh'}
               </p>
               {isTeacherAdmin ? (
-                <Link
-                  to="/admin/dashboard"
-                  onClick={onClose}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    if (isAdminVerified) {
+                      if (onClose) onClose()
+                      navigate('/admin/dashboard')
+                    } else {
+                      setIsAdminModalOpen(true)
+                    }
+                  }}
                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 uppercase hover:bg-amber-900 transition-colors cursor-pointer"
-                  title="Tài khoản Quản trị viên (Bấm để vào Bảng Admin)"
+                  title="Tài khoản Quản trị viên (Bấm để vào Bảng Admin - Yêu cầu mật khẩu)"
                 >
-                  ADMIN ⚙️
-                </Link>
+                  <Lock className="w-2.5 h-2.5 text-amber-400" />
+                  <span>ADMIN ⚙️</span>
+                </button>
               ) : (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-bold bg-teal-950/80 text-teal-300 border border-teal-800 uppercase">
                   🛡️ {studentCode || 'CT_01'}
@@ -145,16 +159,36 @@ const Sidebar = ({ isOpen, onClose }) => {
               <span>🎓 Xem Cổng Học Sinh</span>
             </Link>
           ) : (
-            <Link
-              to="/admin/dashboard"
-              onClick={onClose}
-              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-md bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 hover:border-teal-500/50 text-center"
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                if (isAdminVerified) {
+                  if (onClose) onClose()
+                  navigate('/admin/dashboard')
+                } else {
+                  setIsAdminModalOpen(true)
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-md bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 hover:border-teal-500/50 text-center cursor-pointer"
+              title="Mở Bảng Quản Trị CBAS (Yêu cầu mật khẩu)"
             >
-              <Settings className="w-4 h-4 text-teal-400 flex-shrink-0" />
+              <Lock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
               <span>⚙️ Bảng Quản Trị CBAS (Admin)</span>
-            </Link>
+            </button>
           )}
         </div>
+
+        {/* Modal Nhập Mật Khẩu Quản Trị Viên */}
+        <AdminPasswordModal
+          isOpen={isAdminModalOpen}
+          onClose={() => setIsAdminModalOpen(false)}
+          onSuccess={() => {
+            setIsAdminModalOpen(false)
+            if (onClose) onClose()
+            navigate('/admin/dashboard')
+          }}
+        />
 
         {/* Footer info */}
         <div className="p-4 border-t border-slate-800 bg-slate-950/20 text-center">
