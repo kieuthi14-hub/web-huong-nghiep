@@ -272,7 +272,7 @@ const FactCheckHub = () => {
         <StepProgressHeader 
           currentStep={3} 
           title="Bước 3: Đối Chứng Dữ Liệu Khách Quan (Điểm Chuẩn & Học Phí)" 
-          subtitle="Nhập điểm học bạ, đối chiếu điểm chuẩn thực tế 2 năm và khảo sát bài toán tài chính trước khi chọn trường." 
+          subtitle="Nhập điểm học bạ, đối chiếu điểm chuẩn thực tế 2 năm (2025 & 2026) và khảo sát bài toán tài chính trước khi chọn trường." 
         />
       </div>
 

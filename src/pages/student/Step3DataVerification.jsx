@@ -60,9 +60,32 @@ export default function Step3DataVerification({
   const [scoreSubject1, setScoreSubject1] = useState('');
   const [scoreSubject2, setScoreSubject2] = useState('');
   const [scoreSubject3, setScoreSubject3] = useState('');
-  const [cutoff2024, setCutoff2024] = useState('');
   const [cutoff2025, setCutoff2025] = useState('');
+  const [cutoff2026, setCutoff2026] = useState('');
   const [tuitionFee, setTuitionFee] = useState('');
+
+  // Tự động khôi phục dữ liệu đã lưu nếu học sinh quay lại
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem('cbas_step3_triage');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.targetCombination) setTargetCombination(parsed.targetCombination);
+        if (parsed.scoreSubject1 != null) setScoreSubject1(String(parsed.scoreSubject1));
+        if (parsed.scoreSubject2 != null) setScoreSubject2(String(parsed.scoreSubject2));
+        if (parsed.scoreSubject3 != null) setScoreSubject3(String(parsed.scoreSubject3));
+        if (parsed.cutoff2025 != null) setCutoff2025(String(parsed.cutoff2025));
+        else if (parsed.cutoff2024 != null) setCutoff2025(String(parsed.cutoff2024));
+        if (parsed.cutoff2026 != null) setCutoff2026(String(parsed.cutoff2026));
+        else if (parsed.cutoff2025 != null && parsed.cutoff2024 != null) setCutoff2026(String(parsed.cutoff2025));
+        if (parsed.tuitionFee != null) setTuitionFee(String(parsed.tuitionFee));
+        if (parsed.employmentRate != null) setEmploymentRate(String(parsed.employmentRate));
+        if (parsed.laborMarketTrend) setLaborMarketTrend(parsed.laborMarketTrend);
+        if (Array.isArray(parsed.unemploymentReasons)) setUnemploymentReasons(parsed.unemploymentReasons);
+        if (parsed.reflectionText) setReflectionText(parsed.reflectionText);
+      }
+    } catch (e) {}
+  }, []);
 
   // 2. STATE DỮ LIỆU KHỐI 2: THỊ TRƯỜNG VIỆC LÀM
   const [employmentRate, setEmploymentRate] = useState('');
@@ -101,13 +124,13 @@ export default function Step3DataVerification({
   }, [scoreSubject1, scoreSubject2, scoreSubject3]);
 
   const avgCutoff = useMemo(() => {
-    const c24 = parseFloat(cutoff2024) || 0;
     const c25 = parseFloat(cutoff2025) || 0;
-    if (c24 > 0 && c25 > 0) return Number(((c24 + c25) / 2).toFixed(2));
-    if (c24 > 0) return c24;
+    const c26 = parseFloat(cutoff2026) || 0;
+    if (c25 > 0 && c26 > 0) return Number(((c25 + c26) / 2).toFixed(2));
     if (c25 > 0) return c25;
+    if (c26 > 0) return c26;
     return 0;
-  }, [cutoff2024, cutoff2025]);
+  }, [cutoff2025, cutoff2026]);
 
   // Khoảng cách điểm: Âm nghĩa là điểm học sinh còn thiếu so với điểm chuẩn
   const scoreGap = useMemo(() => {
@@ -131,7 +154,7 @@ export default function Step3DataVerification({
     e.preventDefault();
 
     // 1. Kiểm tra validation tối thiểu
-    if (!cutoff2024 || !cutoff2025 || !scoreSubject1 || !scoreSubject2 || !scoreSubject3 || !reflectionText.trim()) {
+    if (!cutoff2025 || !cutoff2026 || !scoreSubject1 || !scoreSubject2 || !scoreSubject3 || !reflectionText.trim()) {
       alert("Vui lòng tra cứu và điền đầy đủ các thông tin đối chứng bắt buộc để hệ thống phân tích.");
       return;
     }
@@ -160,8 +183,9 @@ export default function Step3DataVerification({
       scoreSubject2: parseFloat(scoreSubject2),
       scoreSubject3: parseFloat(scoreSubject3),
       totalStudentScore,
-      cutoff2024: parseFloat(cutoff2024),
       cutoff2025: parseFloat(cutoff2025),
+      cutoff2026: parseFloat(cutoff2026),
+      cutoff2024: parseFloat(cutoff2025), // Tương thích ngược với các module cũ
       avgCutoff,
       scoreGap: actualGap,
       tuitionFee: parseFloat(tuitionFee) || 0,
@@ -213,8 +237,8 @@ export default function Step3DataVerification({
       setScoreSubject1('');
       setScoreSubject2('');
       setScoreSubject3('');
-      setCutoff2024('');
       setCutoff2025('');
+      setCutoff2026('');
       setTuitionFee('');
       setEmploymentRate('');
       setLaborMarketTrend('balanced');
@@ -433,7 +457,7 @@ export default function Step3DataVerification({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm chuẩn Năm 2024:
+                  Điểm chuẩn Năm 2025:
                 </label>
                 <input
                   type="number"
@@ -441,8 +465,8 @@ export default function Step3DataVerification({
                   min="0"
                   max="30"
                   placeholder="VD: 25.5"
-                  value={cutoff2024}
-                  onChange={(e) => setCutoff2024(e.target.value)}
+                  value={cutoff2025}
+                  onChange={(e) => setCutoff2025(e.target.value)}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   required
                 />
@@ -450,7 +474,7 @@ export default function Step3DataVerification({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm chuẩn Năm 2025/2026:
+                  Điểm chuẩn Năm 2026:
                 </label>
                 <input
                   type="number"
@@ -458,8 +482,8 @@ export default function Step3DataVerification({
                   min="0"
                   max="30"
                   placeholder="VD: 26.0"
-                  value={cutoff2025}
-                  onChange={(e) => setCutoff2025(e.target.value)}
+                  value={cutoff2026}
+                  onChange={(e) => setCutoff2026(e.target.value)}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   required
                 />
@@ -501,7 +525,7 @@ export default function Step3DataVerification({
                       </span>
                     )}
                     <span className="font-normal text-xs text-slate-500">
-                      (Điểm chuẩn TB 2 năm: {avgCutoff} điểm)
+                      (Điểm chuẩn TB 2 năm (2025 - 2026): {avgCutoff} điểm)
                     </span>
                   </div>
                   
@@ -731,7 +755,7 @@ export default function Step3DataVerification({
               <div className="bg-slate-50 p-4 rounded-xl max-w-md mx-auto mb-6 text-left text-xs text-slate-600 space-y-1.5 border border-slate-200">
                 <div className="font-bold text-slate-700 mb-1">Dữ liệu tóm tắt phục vụ tham vấn Bước 4:</div>
                 <div>• Tổ hợp môn: <span className="font-bold">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}đ)</div>
-                <div>• Điểm chuẩn 2 năm: <span className="font-bold">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap}đ)</div>
+                <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap}đ)</div>
                 <div>• Học phí: <span className="font-bold">{triageResult.tuitionFee} triệu/năm</span></div>
                 {triageResult.employmentRate > 0 && (
                   <div>• Tỷ lệ việc làm sau 1 năm: <span className="font-bold">{triageResult.employmentRate}%</span></div>
