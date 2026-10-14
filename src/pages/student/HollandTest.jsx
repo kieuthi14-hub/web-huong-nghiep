@@ -93,6 +93,55 @@ export const CAREER_BENCHMARKS = {
     code: ["A", "R", "S"],
     name: "Nghệ thuật & Thực tế (A-R)"
   },
+  // Nghề nấu ăn / Đầu bếp / Ẩm thực thuộc nhóm Nghệ thuật (A) & Thực tế (R) & Quản lý (E)
+  "Nghề nấu ăn": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Kỹ thuật Chế biến (A-R)"
+  },
+  "Nấu ăn": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Kỹ thuật Chế biến (A-R)"
+  },
+  "Đầu bếp": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Kỹ thuật Chế biến (A-R)"
+  },
+  "Bếp trưởng": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Quản trị Bếp (A-R)"
+  },
+  "Kỹ thuật chế biến món ăn": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Kỹ thuật Chế biến (A-R)"
+  },
+  "Nghệ thuật ẩm thực": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Sáng tạo Món ăn (A-R)"
+  },
+  "Chế biến món ăn": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Ẩm thực & Kỹ thuật Chế biến (A-R)"
+  },
+  "Làm bánh": {
+    code: ["A", "R", "C"],
+    name: "Nghệ thuật Làm bánh & Tạo hình (A-R)"
+  },
+  "Bếp bánh": {
+    code: ["A", "R", "C"],
+    name: "Nghệ thuật Làm bánh & Tạo hình (A-R)"
+  },
+  "Pha chế": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Pha chế & Đồ uống (A-R)"
+  },
+  "Barista": {
+    code: ["A", "R", "S"],
+    name: "Nghệ thuật Pha chế Cà phê (A-R)"
+  },
+  "Bartender": {
+    code: ["A", "R", "E"],
+    name: "Nghệ thuật Pha chế & Biểu diễn (A-R)"
+  },
   "Tâm Lý": {
     code: ["S", "I", "A"],
     name: "Xã hội & Nghiên cứu (S-I)"
@@ -188,6 +237,16 @@ export function findCareerBenchmark(targetCareer) {
   return null;
 }
 
+// Tên ngắn gọn chuẩn hóa của 6 nhóm Holland
+export const hollandShortNames = {
+  'R': 'Thực tế / Kỹ thuật',
+  'I': 'Nghiên cứu',
+  'A': 'Nghệ thuật',
+  'S': 'Xã hội',
+  'E': 'Quản lý / Doanh nhân',
+  'C': 'Nghiệp vụ / Văn phòng'
+};
+
 // Hàm tạo thông điệp cảnh báo thích ứng chính xác chuẩn ViSEF CBAS
 export function getConflictMessage(studentHollandCode, targetCareer) {
   const benchmark = CAREER_BENCHMARKS[targetCareer] || findCareerBenchmark(targetCareer);
@@ -203,7 +262,8 @@ export function getConflictMessage(studentHollandCode, targetCareer) {
   const missingTraits = benchmark.code.filter(trait => !studentCodes.includes(trait));
 
   if (missingTraits.length > 0) {
-    return `Thách thức thích ứng: Nghề đòi hỏi cao nhóm [${missingTraits.join(', ')}] – những năng lực thực tế chưa xuất hiện trong bài trắc nghiệm [${codeStr}] của em.`;
+    const traitNames = missingTraits.map(t => `${t} (${hollandShortNames[t] || t})`).join(', ');
+    return `Thách thức thích ứng: Nghề đòi hỏi cao nhóm [${traitNames}] – những năng lực thực tế cần rèn luyện thêm so với kết quả trắc nghiệm [${codeStr}] hiện tại của em.`;
   }
   return "Hồ sơ năng lực có độ tương thích cao với ngành nghề mục tiêu.";
 }
@@ -220,6 +280,24 @@ export const hollandDescriptions = {
 
 // Danh mục hồ sơ RIASEC các nhóm ngành đại học toàn diện (Chuẩn GDPT & Khung phân ngành quốc tế)
 export const CAREER_HOLLAND_PROFILES = [
+  {
+    id: 'culinary_arts',
+    categoryName: 'Nghệ thuật Ẩm thực & Kỹ thuật Chế biến Món ăn (A-R)',
+    keywords: [
+      'nấu ăn', 'nghề nấu ăn', 'đầu bếp', 'bếp', 'bếp trưởng', 'chế biến món ăn',
+      'kỹ thuật chế biến', 'ẩm thực', 'culinary', 'chef', 'làm bánh', 'baker',
+      'pastry', 'pha chế', 'nấu nướng', 'nấu', 'bếp bánh', 'barista', 'bartender'
+    ],
+    expectedCodes: ['A', 'R', 'E'],
+    expectedDesc: 'Nghệ thuật & Thực tế (A-R-E: Óc sáng tạo hương vị, thẩm mỹ bài trí món ăn, kỹ thuật chế biến thực tế & quản lý bếp)',
+    workEnvironment: 'Khu vực bếp nhà hàng, khách sạn cao cấp, trung tâm tiệc cưới, studio ẩm thực hoặc tiệm bánh; làm việc trong môi trường nhiệt độ cao, áp lực thời gian dồn dập vào giờ cao điểm, đứng liên tục 8-10 tiếng.',
+    coreSkills: 'Khứu giác & vị giác tinh tế, óc nghệ thuật sáng tạo phối vị và thẩm mỹ bài trí đĩa ăn (plating / food styling), kỹ năng dao thớt và kiểm soát nhiệt độ lửa điêu luyện, kỷ luật vệ sinh an toàn thực phẩm (HACCP), khả năng chịu nhiệt và áp lực bếp line.',
+    commonBlindSpots: 'Nghĩ nghề nấu ăn chỉ cần "thích nấu nướng tại nhà là làm đầu bếp chuyên nghiệp được"; chưa lường trước áp lực đứng bếp 8-10 tiếng trong hơi nóng hầm hập, bỏng rát, áp lực ra món đúng chuẩn trong vài phút và cường độ làm việc cật lực vào đúng các dịp lễ Tết khi người khác đi chơi.',
+    socraticQuestions: [
+      'Em có sẵn sàng đứng bếp liên tục 8-10 tiếng mỗi ngày trong môi trường khói lửa, nhiệt độ cao và áp lực hàng chục order dồn dập cùng lúc không?',
+      'Em muốn theo nghề nấu ăn vì thực sự đam mê sáng tạo nghệ thuật ẩm thực độc bản và bền bỉ tôi luyện tay nghề, hay chỉ vì sở thích nấu nướng ngẫu hứng tại gia đình?'
+    ]
+  },
   {
     id: 'hair_spa',
     categoryName: 'Nghệ thuật & Thực tế (A-R)',
@@ -431,7 +509,7 @@ export const CAREER_HOLLAND_PROFILES = [
     categoryName: 'Du lịch, Khách sạn & Dịch vụ hàng không',
     keywords: [
       'du lịch', 'khách sạn', 'nhà hàng', 'lữ hành', 'hàng không', 'tiếp viên', 'hướng dẫn viên',
-      'ẩm thực', 'pha chế', 'resort', 'dịch vụ khách hàng'
+      'resort', 'dịch vụ khách hàng'
     ],
     expectedCodes: ['E', 'S', 'R'],
     expectedDesc: 'Quản lý & Xã hội (Chăm sóc khách hàng đa văn hóa, linh hoạt xử lý biến cố, dẻo dai thể lực)',
@@ -493,7 +571,7 @@ export function getCareerHollandProfile(careerName) {
       return {
         ...matched,
         expectedCodes: benchmark.code,
-        categoryName: benchmark.name ? `${matched.categoryName} (${benchmark.name})` : matched.categoryName
+        categoryName: benchmark.name || matched.categoryName
       };
     }
     return matched;
@@ -516,7 +594,23 @@ export function getCareerHollandProfile(careerName) {
     };
   }
 
-  // 3. Dự đoán thông minh dựa trên từ khóa hàn lâm / khoa học
+  // 3. Dự đoán thông minh dựa trên từ khóa Nghệ thuật Ẩm thực / Nấu ăn / Bếp
+  const culinaryWords = ['nấu', 'ăn', 'bếp', 'ẩm thực', 'chế biến', 'bánh', 'pha chế', 'barista', 'chef', 'culinary', 'pastry'];
+  if (culinaryWords.some(w => nameLower.includes(w))) {
+    const culinaryProfile = CAREER_HOLLAND_PROFILES.find(p => p.id === 'culinary_arts');
+    if (culinaryProfile) {
+      if (benchmark && benchmark.code) {
+        return {
+          ...culinaryProfile,
+          expectedCodes: benchmark.code,
+          categoryName: benchmark.name || culinaryProfile.categoryName
+        };
+      }
+      return culinaryProfile;
+    }
+  }
+
+  // 4. Dự đoán thông minh dựa trên từ khóa hàn lâm / khoa học
   if (nameLower.includes('học') || nameLower.includes('nghiên cứu') || nameLower.includes('khoa')) {
     return {
       id: 'custom_science',
@@ -626,11 +720,11 @@ export function analyzeHollandCompatibility(targetCareer, userHollandCodes) {
   const { targetCareer: career, profile, userCodes, targetCodes, compatibilityScore, levelLabel, levelSummary, matchedCodes, gapCodes } = evalResult;
 
   const matchedDesc = matchedCodes.length > 0
-    ? matchedCodes.map(c => `${c} (${hollandDescriptions[c]?.split(' ')[0] || c})`).join(', ')
+    ? matchedCodes.map(c => `${c} (${hollandShortNames[c] || c})`).join(', ')
     : 'Chưa có nhóm nào trùng khớp trực tiếp';
 
   const gapDesc = gapCodes.length > 0
-    ? gapCodes.map(c => `${c} (${hollandDescriptions[c]?.split(' ')[0] || c})`).join(', ')
+    ? gapCodes.map(c => `${c} (${hollandShortNames[c] || c})`).join(', ')
     : 'Không có độ lệch đáng kể';
 
   return `📊 ĐỐI CHIẾU THIÊN HƯỚNG RIASEC VÀ NGÀNH MỤC TIÊU:
@@ -1984,7 +2078,7 @@ const HollandTest = () => {
                       <div className="pt-2 border-t border-slate-200/70">
                         {evalData.matchedCodes.length > 0 ? (
                           <div className="text-[11.5px] text-emerald-900 bg-emerald-100/60 p-2 rounded border border-emerald-200 font-medium">
-                            ✓ <strong>Tố chất tự nhiên phù hợp nghề:</strong> [{evalData.matchedCodes.join(', ')}] ({evalData.matchedCodes.map(c => hollandDescriptions[c]?.split(' ')[0] || c).join(', ')})
+                            ✓ <strong>Tố chất tự nhiên phù hợp nghề:</strong> [{evalData.matchedCodes.join(', ')}] ({evalData.matchedCodes.map(c => hollandShortNames[c] || c).join(', ')})
                           </div>
                         ) : (
                           <div className="text-[11.5px] text-slate-500 italic bg-white p-2 rounded border border-slate-200">
