@@ -261,6 +261,10 @@ export default function Step3DataVerification({
         } catch (e) {}
         navigate('/student/reflection');
       } else {
+        try {
+          localStorage.setItem('cbas_step4_active_stage', '4A');
+          localStorage.setItem('cbas_step4_active_triage', 'PHAN_LUONG_1');
+        } catch (e) {}
         navigate('/student/booking');
       }
     }
@@ -681,39 +685,30 @@ export default function Step3DataVerification({
                 Hệ thống tự động kích hoạt <strong>Phân luồng 2 (Xác nhận thực chứng tinh gọn)</strong> tại Bước 4: 
                 rà soát độc lập Hồ sơ kinh nghiệm thực tế (Case Dossier) và hoàn thành bảng kiểm phản tư góc khuất nghề nghiệp dưới sự giám sát gián tiếp của Mentor.
               </p>
-              {/* THẺ XÁC THỰC NHANH FAST-TRACK CHUẨN CBAS */}
-              <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 text-xs space-y-2.5 max-w-xl mx-auto text-left mb-6 shadow-sm">
+              {/* THẺ XÁC THỰC PHÂN LUỒNG 2: FAST-TRACK CHUẨN CBAS */}
+              <div className="p-5 rounded-2xl bg-teal-50 border-2 border-teal-300 text-xs space-y-3 max-w-xl mx-auto text-left mb-6 shadow-sm">
                 <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-sm">✓</span>
-                  <span className="font-bold text-teal-300 uppercase tracking-wide text-[11px]">
-                    KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: NHÁNH FAST-TRACK
+                  <span className="w-7 h-7 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-sm">✓</span>
+                  <span className="font-extrabold text-teal-900 uppercase tracking-wide text-xs">
+                    KẾT QUẢ PHÂN LUỒNG: XÁC NHẬN TINH GỌN (FAST-TRACK)
                   </span>
                 </div>
 
-                <p className="text-slate-200 leading-relaxed">
-                  Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của bạn đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống tự động xác thực và mở cổng Bước 5 để bạn tiếp tục xác lập Tam giác nguyện vọng và Bản cam kết kỷ luật tại bàn học.
+                <p className="text-slate-700 leading-relaxed font-medium">
+                  Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của em đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống chuyển tiếp em sang <strong>Bước 4 để Đăng ký lịch hẹn xác nhận cùng Mentor</strong> và rà soát hồ sơ đối chất thực tế trước khi hoàn thiện cam kết hành động.
                 </p>
 
                 <div className="pt-1">
                   <button
                     type="button"
-                    onClick={() => handleCompleteAction('STEP_5')}
-                    className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md cursor-pointer"
+                    onClick={() => handleCompleteAction('STEP_4')}
+                    className="w-full py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-extrabold rounded-xl transition shadow-md hover:shadow-lg text-sm flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    TIẾN VÀO BƯỚC 5: XÁC LẬP BẢN CAM KẾT & IN A4 →
+                    <span>TIẾP TỤC BƯỚC 4: ĐẶT LỊCH HẸN VỚI MENTOR ➔</span>
                   </button>
                 </div>
               </div>
 
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleCompleteAction('STEP_4')}
-                  className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition text-xs cursor-pointer border border-slate-300"
-                >
-                  Hoặc sang Bước 4: Xác nhận thực chứng tinh gọn (Fast-track) ➔
-                </button>
-              </div>
               <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button
                   type="button"
@@ -765,9 +760,9 @@ export default function Step3DataVerification({
               <button
                 type="button"
                 onClick={() => handleCompleteAction('STEP_4')}
-                className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition text-sm cursor-pointer"
+                className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition text-sm cursor-pointer"
               >
-                TIẾP TỤC BƯỚC 4: THAM VẤN ĐỐI CHẤT 1-1 CHUYÊN SÂU ➔
+                TIẾP TỤC BƯỚC 4: ĐẶT LỊCH THAM VẤN 1-1 CHUYÊN SÂU ➔
               </button>
               <div className="mt-4 flex items-center justify-center gap-4 flex-wrap">
                 <button

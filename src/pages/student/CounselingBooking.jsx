@@ -421,11 +421,13 @@ const CounselingBooking = () => {
     return studentCode || profile?.student_code || 'CT_01'
   })()
 
-  // 1. Quản lý trạng thái 2 Giai đoạn: 4A (Chuẩn bị & Hồ sơ đối chất) | 4B (Biên bản sau buổi gặp)
+  // 1. Quản lý trạng thái 2 Giai đoạn: 4A (Đặt lịch & Hồ sơ đối chất) | 4B (Biên bản sau buổi gặp)
   const [currentStage, setCurrentStage] = useState(() => {
     try {
-      const saved = localStorage.getItem('cbas_step4_active_stage')
-      if (saved === '4B') return '4B'
+      const savedBooking = localStorage.getItem('cbas_step4_booking')
+      const savedStage = localStorage.getItem('cbas_step4_active_stage')
+      // Chỉ cho phép vào 4B nếu học sinh đã từng đăng ký đặt lịch
+      if (savedStage === '4B' && savedBooking) return '4B'
     } catch (e) {}
     return '4A'
   })
@@ -514,8 +516,15 @@ const CounselingBooking = () => {
     window.print()
   }
 
-  // Kích hoạt hoàn thành 4A và chuyển sang 4B
+  // Kích hoạt hoàn thành 4A và chuyển sang 4B (Bắt buộc phải có lịch hẹn trước)
   const handleComplete4A = () => {
+    if (!booking) {
+      setToast({
+        type: 'warning',
+        message: '⚠️ Em cần đăng ký đặt lịch và tham gia phiên tham vấn cùng Mentor trước khi ghi chép Nhật ký thu hoạch!'
+      })
+      return
+    }
     setCurrentStage('4B')
     try {
       localStorage.setItem('cbas_step4_active_stage', '4B')
@@ -1069,8 +1078,8 @@ const CounselingBooking = () => {
       <div className="no-print">
         <StepProgressHeader 
           currentStep={4} 
-          title="Bước 4: Tư Vấn 1-1 Đối Chứng Thực Tế" 
-          subtitle="Xuất Hồ sơ lâm sàng mang theo gặp Mentor/Cố vấn và ghi lại Nhật ký thu hoạch sau buổi đối thoại." 
+          title="Bước 4: Đặt Lịch & Tham Vấn 1-1 Đối Chất Thực Tế" 
+          subtitle="Đặt lịch hẹn với Mentor/Cố vấn, xuất Hồ sơ đối chất mang theo và ghi lại Nhật ký thu hoạch sau buổi đối thoại." 
         />
       </div>
 
@@ -1108,10 +1117,10 @@ const CounselingBooking = () => {
 
         <div>
           <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
-            BƯỚC 4: THAM VẤN ĐỐI CHẤT CÓ PHÂN LUỒNG THÍCH ỨNG (ADAPTIVE TRIAGE)
+            BƯỚC 4: ĐẶT LỊCH HẸN & THAM VẤN ĐỐI CHẤT CÙNG MENTOR
           </h1>
           <p className="text-xs md:text-sm text-slate-500 mt-1 leading-relaxed">
-            Hệ thống tự động kích hoạt thuật toán phân luồng dựa trên mức độ lệch nhận thức (CRS) và đối chứng dữ liệu tại Bước 3 nhằm tối ưu hóa nguồn lực tư vấn học đường.
+            Học sinh đăng ký lịch hẹn trực tiếp hoặc online cùng Mentor/Cố vấn theo đúng ngành mục tiêu đã phân luồng tại Bước 3. Sau khi tham gia phiên đối chất, em sẽ hoàn thành Nhật ký thu hoạch để mở khóa Bước 5.
           </p>
         </div>
 
@@ -1160,22 +1169,21 @@ const CounselingBooking = () => {
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                <span>4A. Chuẩn Bị & Xuất Hồ Sơ</span>
+                <span>4A. Đặt Lịch Hẹn & Chuẩn Bị Hồ Sơ</span>
                 {currentStage === '4A' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
               </button>
               <span className="text-slate-300">➔</span>
               <button
                 type="button"
-                onClick={() => {
-                  if (currentStage === '4A') handleComplete4A()
-                }}
+                onClick={handleComplete4A}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
                   currentStage === '4B'
                     ? 'bg-violet-600 text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
+                } ${!booking ? 'opacity-70 cursor-not-allowed' : ''}`}
+                title={!booking ? 'Em cần đăng ký đặt lịch và tham gia tư vấn trước khi ghi nhật ký' : ''}
               >
-                <span>4B. Nhật Ký Thu Hoạch</span>
+                <span>4B. Nhật Ký Thu Hoạch {!booking ? '(Sau khi được tư vấn)' : ''}</span>
                 {feedbackSaved && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
               </button>
             </div>
@@ -1211,184 +1219,6 @@ const CounselingBooking = () => {
           {currentStage === '4A' && (
             <div className="space-y-6">
           
-          {/* 1. THẺ TÓM TẮT HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (CLINICAL DOSSIER CARD) */}
-          <div 
-            id="clinical-dossier-card"
-            className="bg-white rounded-2xl border-2 border-indigo-200 shadow-sm p-6 relative overflow-hidden"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[11px] font-extrabold rounded-full uppercase tracking-wider">
-                    CBAS VISEF 2026 • CLINICAL DOSSIER
-                  </span>
-                  <span className="text-xs text-slate-500 font-medium">
-                    Dùng để tham vấn trực tiếp 1-1
-                  </span>
-                </div>
-                <h3 className="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
-                  📋 HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (DÙNG ĐỂ THAM VẤN 1-1)
-                </h3>
-                <p className="text-xs font-black text-indigo-700 mt-1">
-                  MÃ HỌC SINH THỰC NGHIỆM: <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-indigo-900">{displayStudentCode}</span>
-                </p>
-              </div>
-
-              {/* Nút In / Lưu Ảnh Hồ Sơ */}
-              <button
-                type="button"
-                onClick={handlePrintDossier}
-                className="no-print inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow transition transform active:scale-95 cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                <span>In / Lưu Ảnh Hồ Sơ Này Để Cầm Theo 🖨️</span>
-              </button>
-            </div>
-
-            {/* LƯỚI THÔNG TIN TÓM TẮT */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm mb-4">
-              {/* Mục tiêu */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  🎯 Mục Tiêu Đào Tạo:
-                </span>
-                <p className="text-slate-900 font-medium">
-                  Ngành <span className="font-bold text-indigo-700 text-sm md:text-base">{dossierData.targetMajor}</span> tại <span className="font-bold text-slate-800 text-sm md:text-base">{dossierData.targetSchool}</span>
-                </p>
-              </div>
-
-              {/* Thiên hướng & Tự tin */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  🧭 Thiên Hướng & Mức Tự Tin:
-                </span>
-                <div className="flex items-center gap-4">
-                  <div>
-                    <span className="text-slate-600 text-xs">Mã Holland: </span>
-                    <span className="font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-200 text-xs">{dossierData.hollandCode}</span>
-                  </div>
-                  <div className="border-l border-slate-300 pl-4">
-                    <span className="text-slate-600 text-xs">Tự tin ban đầu: </span>
-                    <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs">{dossierData.initialConfidence}/10</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tổ hợp & Học bạ */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  📚 Tổ Hợp Xét Tuyển & Năng Lực Học Bạ:
-                </span>
-                <div className="flex items-center gap-3">
-                  <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200 text-xs">
-                    Tổ hợp: {dossierData.targetCombination}
-                  </span>
-                  <span className="text-slate-400 text-xs">|</span>
-                  <span className="text-slate-700 font-semibold text-xs">
-                    Điểm học bạ: <strong className="text-emerald-700 text-sm">{dossierData.totalStudentScore}đ</strong>
-                  </span>
-                </div>
-              </div>
-
-              {/* Điểm chuẩn 2 năm & Chênh lệch */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  ⚖️ Điểm Chuẩn Thực Tế 2 Năm & Độ Lệch:
-                </span>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-slate-800 font-semibold text-xs">
-                    Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
-                  </span>
-                  <span className="text-slate-400 text-xs">•</span>
-                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
-                    isPositiveGap 
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                      : 'bg-rose-50 border-rose-300 text-rose-800'
-                  }`}>
-                    Chênh lệch: {formattedScoreGap}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Băn khoăn cốt lõi */}
-            <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200">
-              <div className="flex items-center gap-2 mb-1.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-                  Băn khoăn cốt lõi của học sinh (Tự phản tư tại Bước 3):
-                </span>
-              </div>
-              <p className="text-xs md:text-sm text-amber-950 font-medium italic leading-relaxed pl-6">
-                "{dossierData.reflectionText}"
-              </p>
-            </div>
-          </div>
-
-          {/* 2. HƯỚNG DẪN HỌC SINH ĐẶT CÂU HỎI CHO MENTOR / CỐ VẤN */}
-          <div className="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-            <div className="flex items-center gap-2.5 mb-3 border-b border-slate-100 pb-3">
-              <HelpCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />
-              <h3 className="text-sm md:text-base font-bold text-slate-900 uppercase tracking-wide">
-                💡 Hướng Dẫn Học Sinh Đặt Câu Hỏi Cho Mentor / Cố Vấn (3 Câu Hỏi Then Chốt):
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-600 mb-4">
-              Khi đối thoại 1-1 cùng Thầy/Cô hoặc Anh/Chị Mentor, em hãy tự tin cầm theo Hồ sơ đối chất phía trên và trực tiếp chất vấn 3 câu hỏi sau để bóc tách toàn diện mọi rủi ro:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-              {/* Câu 1 */}
-              <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5 text-indigo-700 font-bold mb-2">
-                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[11px]">1</span>
-                    <span>Bứt Phá Điểm Môn Sở Trường</span>
-                  </div>
-                  <p className="text-slate-800 leading-relaxed font-bold">
-                    "Chiến lược kéo điểm môn sở trường để bù cho môn đang đuối sức."
-                  </p>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-indigo-100 italic">
-                  Hỏi cách phân bổ thời gian ôn tập và kỹ năng phòng thi thực chiến để tối ưu hóa điểm số môn thế mạnh.
-                </p>
-              </div>
-
-              {/* Câu 2 */}
-              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5 text-sky-700 font-bold mb-2">
-                    <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[11px]">2</span>
-                    <span>Trường Dự Phòng Vừa Sức (NV2)</span>
-                  </div>
-                  <p className="text-slate-800 leading-relaxed font-bold">
-                    "Các trường Đại học nguyện vọng dự phòng vừa sức (ĐH Phú Yên, Khánh Hòa...)."
-                  </p>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-sky-100 italic">
-                  Hỏi kinh nghiệm chọn trường có cùng ngành đào tạo với phổ điểm an toàn hơn để lập mạng lưới dự phòng vững vàng.
-                </p>
-              </div>
-
-              {/* Câu 3 */}
-              <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-1.5 text-emerald-700 font-bold mb-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">3</span>
-                    <span>Thuyết Phục Gia Đình Đồng Thuận</span>
-                  </div>
-                  <p className="text-slate-800 leading-relaxed font-bold">
-                    "Cách thuyết phục cha mẹ đồng thuận với năng lực thực tế của bản thân."
-                  </p>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-emerald-100 italic">
-                  Hỏi phương pháp trình bày số liệu điểm số và cơ hội nghề nghiệp để cha mẹ thấu hiểu thay vì áp đặt kỳ vọng quá lớn.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* ========================================================================= */}
           {/* QUY TRÌNH TƯƠNG TÁC ĐẶT LỊCH VÀ XẾP LỊCH 1-1 PHÂN LUỒNG 1 (ADAPTIVE TRIAGE) */}
           {/* ========================================================================= */}
@@ -1929,6 +1759,186 @@ const CounselingBooking = () => {
 
           </div>
 
+          {/* 1. THẺ TÓM TẮT HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (CLINICAL DOSSIER CARD) */}
+          <div 
+            id="clinical-dossier-card"
+            className="bg-white rounded-2xl border-2 border-indigo-200 shadow-sm p-6 relative overflow-hidden"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[11px] font-extrabold rounded-full uppercase tracking-wider">
+                    CBAS VISEF 2026 • CLINICAL DOSSIER
+                  </span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    Dùng để tham vấn trực tiếp 1-1
+                  </span>
+                </div>
+                <h3 className="text-base md:text-lg font-bold text-slate-900 flex items-center gap-2">
+                  📋 HỒ SƠ ĐỐI CHẤT DỮ LIỆU CÁ NHÂN (DÙNG ĐỂ THAM VẤN 1-1)
+                </h3>
+                <p className="text-xs font-black text-indigo-700 mt-1">
+                  MÃ HỌC SINH THỰC NGHIỆM: <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-indigo-900">{displayStudentCode}</span>
+                </p>
+              </div>
+
+              {/* Nút In / Lưu Ảnh Hồ Sơ */}
+              <button
+                type="button"
+                onClick={handlePrintDossier}
+                className="no-print inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow transition transform active:scale-95 cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>In / Lưu Ảnh Hồ Sơ Này Để Cầm Theo 🖨️</span>
+              </button>
+            </div>
+
+            {/* LƯỚI THÔNG TIN TÓM TẮT */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm mb-4">
+              {/* Mục tiêu */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  🎯 Mục Tiêu Đào Tạo:
+                </span>
+                <p className="text-slate-900 font-medium">
+                  Ngành <span className="font-bold text-indigo-700 text-sm md:text-base">{dossierData.targetMajor}</span> tại <span className="font-bold text-slate-800 text-sm md:text-base">{dossierData.targetSchool}</span>
+                </p>
+              </div>
+
+              {/* Thiên hướng & Tự tin */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  🧭 Thiên Hướng & Mức Tự Tin:
+                </span>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <span className="text-slate-600 text-xs">Mã Holland: </span>
+                    <span className="font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-200 text-xs">{dossierData.hollandCode}</span>
+                  </div>
+                  <div className="border-l border-slate-300 pl-4">
+                    <span className="text-slate-600 text-xs">Tự tin ban đầu: </span>
+                    <span className="font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-xs">{dossierData.initialConfidence}/10</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tổ hợp & Học bạ */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  📚 Tổ Hợp Xét Tuyển & Năng Lực Học Bạ:
+                </span>
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200 text-xs">
+                    Tổ hợp: {dossierData.targetCombination}
+                  </span>
+                  <span className="text-slate-400 text-xs">|</span>
+                  <span className="text-slate-700 font-semibold text-xs">
+                    Điểm học bạ: <strong className="text-emerald-700 text-sm">{dossierData.totalStudentScore}đ</strong>
+                  </span>
+                </div>
+              </div>
+
+              {/* Điểm chuẩn 2 năm & Chênh lệch */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  ⚖️ Điểm Chuẩn Thực Tế 2 Năm & Độ Lệch:
+                </span>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-slate-800 font-semibold text-xs">
+                    Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
+                  </span>
+                  <span className="text-slate-400 text-xs">•</span>
+                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
+                    isPositiveGap 
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                      : 'bg-rose-50 border-rose-300 text-rose-800'
+                  }`}>
+                    Chênh lệch: {formattedScoreGap}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Băn khoăn cốt lõi */}
+            <div className="p-4 bg-amber-50/70 rounded-xl border border-amber-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                  Băn khoăn cốt lõi của học sinh (Tự phản tư tại Bước 3):
+                </span>
+              </div>
+              <p className="text-xs md:text-sm text-amber-950 font-medium italic leading-relaxed pl-6">
+                "{dossierData.reflectionText}"
+              </p>
+            </div>
+          </div>
+
+          {/* 2. HƯỚNG DẪN HỌC SINH ĐẶT CÂU HỎI CHO MENTOR / CỐ VẤN */}
+          <div className="no-print bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center gap-2.5 mb-3 border-b border-slate-100 pb-3">
+              <HelpCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+              <h3 className="text-sm md:text-base font-bold text-slate-900 uppercase tracking-wide">
+                💡 Hướng Dẫn Học Sinh Đặt Câu Hỏi Cho Mentor / Cố Vấn (3 Câu Hỏi Then Chốt):
+              </h3>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              Khi đối thoại 1-1 cùng Thầy/Cô hoặc Anh/Chị Mentor, em hãy tự tin cầm theo Hồ sơ đối chất phía trên và trực tiếp chất vấn 3 câu hỏi sau để bóc tách toàn diện mọi rủi ro:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {/* Câu 1 */}
+              <div className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5 text-indigo-700 font-bold mb-2">
+                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[11px]">1</span>
+                    <span>Bứt Phá Điểm Môn Sở Trường</span>
+                  </div>
+                  <p className="text-slate-800 leading-relaxed font-bold">
+                    "Chiến lược kéo điểm môn sở trường để bù cho môn đang đuối sức."
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-indigo-100 italic">
+                  Hỏi cách phân bổ thời gian ôn tập và kỹ năng phòng thi thực chiến để tối ưu hóa điểm số môn thế mạnh.
+                </p>
+              </div>
+
+              {/* Câu 2 */}
+              <div className="p-4 bg-sky-50/50 rounded-xl border border-sky-100 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5 text-sky-700 font-bold mb-2">
+                    <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[11px]">2</span>
+                    <span>Trường Dự Phòng Vừa Sức (NV2)</span>
+                  </div>
+                  <p className="text-slate-800 leading-relaxed font-bold">
+                    "Các trường Đại học nguyện vọng dự phòng vừa sức (ĐH Phú Yên, Khánh Hòa...)."
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-sky-100 italic">
+                  Hỏi kinh nghiệm chọn trường có cùng ngành đào tạo với phổ điểm an toàn hơn để lập mạng lưới dự phòng vững vàng.
+                </p>
+              </div>
+
+              {/* Câu 3 */}
+              <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-bold mb-2">
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px]">3</span>
+                    <span>Thuyết Phục Gia Đình Đồng Thuận</span>
+                  </div>
+                  <p className="text-slate-800 leading-relaxed font-bold">
+                    "Cách thuyết phục cha mẹ đồng thuận với năng lực thực tế của bản thân."
+                  </p>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-emerald-100 italic">
+                  Hỏi phương pháp trình bày số liệu điểm số và cơ hội nghề nghiệp để cha mẹ thấu hiểu thay vì áp đặt kỳ vọng quá lớn.
+                </p>
+              </div>
+            </div>
+          </div>
+
+
+
         </div>
       )}
 
@@ -2108,25 +2118,31 @@ const CounselingBooking = () => {
         <div className="space-y-6">
 
           {/* THẺ XÁC THỰC NHANH FAST-TRACK CHUẨN CBAS */}
-          <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 text-xs space-y-2.5">
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center font-bold text-sm">✓</span>
-              <span className="font-bold text-teal-300 uppercase tracking-wide text-[11px]">
-                KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: NHÁNH FAST-TRACK
+          <div className="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-xs space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">✓</span>
+                <span className="font-extrabold text-emerald-900 uppercase tracking-wide text-xs">
+                  KẾT QUẢ ĐỐI CHỨNG DỮ LIỆU: PHÂN LUỒNG 2 (TINH GỌN)
+                </span>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-300">
+                Độ lệch CRS tiệm cận 0
               </span>
             </div>
 
-            <p className="text-slate-200 leading-relaxed">
-              Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của bạn đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống tự động xác thực và mở cổng Bước 5 để bạn tiếp tục xác lập Tam giác nguyện vọng và Bản cam kết kỷ luật tại bàn học.
+            <p className="text-slate-700 leading-relaxed font-medium">
+              Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của em đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu ({dossierData.targetMajor}). Em có thể thực hiện rà soát độc lập theo <strong>Bảng kiểm 5 tiêu chí phản tư</strong> bên dưới, hoặc chủ động chuyển sang Phân Luồng 1 để <strong>đặt lịch hẹn trực tiếp 1-1 cùng Mentor</strong>.
             </p>
 
-            <div className="pt-1">
+            <div className="pt-1 flex flex-wrap items-center gap-3">
               <button
                 type="button"
-                onClick={goToStep5}
-                className="w-full py-2.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-lg transition shadow-md cursor-pointer"
+                onClick={() => handleSelectTriage('PHAN_LUONG_1')}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer text-xs md:text-sm"
               >
-                TIẾN VÀO BƯỚC 5: XÁC LẬP BẢN CAM KẾT & IN A4 →
+                <CalendarDays className="w-4 h-4" />
+                <span>CHUYỂN SANG ĐẶT LỊCH HẸN ĐỐI CHẤT 1-1 CÙNG MENTOR (PHÂN LUỒNG 1) ➔</span>
               </button>
             </div>
           </div>

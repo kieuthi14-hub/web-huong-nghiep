@@ -201,6 +201,10 @@ const FactCheckHub = () => {
       }
     }
 
+    try {
+      localStorage.setItem('cbas_step4_active_stage', '4A');
+      localStorage.setItem('cbas_step4_active_triage', 'PHAN_LUONG_1');
+    } catch (e) {}
     alert("🎉 Hồ sơ thẩm định học nghề thực chiến đã được hiệu chỉnh thành công! Chuẩn bị chuyển sang Bước 4.");
     navigate('/student/booking');
   };
@@ -240,7 +244,7 @@ const FactCheckHub = () => {
             target_major: targetCareerDisplay || 'Chưa rõ',
             evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN & THỊ TRƯỜNG LAO ĐỘNG]\n1. Tổ hợp (${triageResult?.targetCombination}): ${triageResult?.totalStudentScore}/30 so với Điểm chuẩn TB (${triageResult?.avgCutoff})\n2. Khoảng cách: ${triageResult?.scoreGap} điểm\n3. Học phí: ${triageResult?.tuitionFee} triệu/năm\n4. Tỷ lệ việc làm: ${triageResult?.employmentRate}%\n5. Xu thế: ${triageResult?.laborMarketTrend}\n6. Lý do thất nghiệp: ${triageResult?.unemploymentReasons?.join(', ')}\n7. Phản tư: ${triageResult?.reflectionText}`,
             verified_sources: 'Đề án tuyển sinh 3 công khai & Báo cáo thị trường lao động (Bộ GD&ĐT, Bộ LĐ-TB&XH)',
-            risk_analysis: `Phân luồng: ${triageResult?.triageDecision}. ${triageResult?.triageDecision === 'Fast-Track' ? 'Năng lực và nhận thức phù hợp, chuyển thẳng Bước 5.' : 'Có khoảng cách điểm số hoặc mâu thuẫn ngoại sinh, cần tham vấn Bước 4.'}`,
+            risk_analysis: `Phân luồng: ${triageResult?.triageDecision}. Chuyển tiếp Bước 4 để đăng ký lịch hẹn tham vấn cùng Mentor.`,
             bias_check: 'Empirical Grounding + Algorithmic Cognitive Triage',
             detected_bias: triageResult?.triageDecision === 'Fast-Track' ? 'CALIBRATED_REALISTIC' : 'COGNITIVE_GAP_DETECTED',
             final_decision: triageResult?.triageDecision === 'Fast-Track' ? 'FAST_TRACK_ROADMAP' : 'IN_DEPTH_MENTORSHIP'
@@ -251,11 +255,13 @@ const FactCheckHub = () => {
       }
     }
 
-    if (nextStep === 'STEP_5') {
-      navigate('/student/reflection');
-    } else {
-      navigate('/student/booking');
-    }
+    // Sau Bước 3 luôn luôn chuyển sang Bước 4 (Giai đoạn 4A: Đặt lịch hẹn với Mentor)
+    try {
+      localStorage.setItem('cbas_step4_active_stage', '4A');
+      localStorage.setItem('cbas_step4_active_triage', 'PHAN_LUONG_1');
+    } catch (e) {}
+
+    navigate('/student/booking');
   };
 
   // Đăng ký các hàm ra global window để hỗ trợ nếu cần
