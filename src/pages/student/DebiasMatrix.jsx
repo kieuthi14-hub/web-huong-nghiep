@@ -652,9 +652,7 @@ export default function DebiasMatrix() {
           .alert-box, 
           button, 
           aside, 
-          nav, 
-          header,
-          footer {
+          nav {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -694,8 +692,8 @@ export default function DebiasMatrix() {
             min-height: 297mm !important;
             height: auto !important;
             margin: 0 auto !important;
-            /* LỀ AN TOÀN BẢO VỆ CHỮ: Trên 14mm, Phải 16mm, Dưới 14mm, Trái 22mm (chừa kẹp ghim báo cáo) */
-            padding: 14mm 16mm 14mm 22mm !important;
+            /* LỀ AN TOÀN BẢO VỆ CHỮ: Trên 12mm, Phải 14mm, Dưới 12mm, Trái 18mm */
+            padding: 12mm 14mm 12mm 18mm !important;
             box-sizing: border-box !important;
             background: #ffffff !important;
             border: none !important;
@@ -703,6 +701,23 @@ export default function DebiasMatrix() {
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+          }
+
+          /* ĐẢM BẢO TIÊU ĐỀ & CHÂN TRANG A4 LUÔN HIỂN THỊ ĐẦY ĐỦ 100% TRONG BẢN IN */
+          .a4-container .a4-header {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: auto !important;
+            width: 100% !important;
+          }
+
+          .a4-container .a4-footer {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            height: auto !important;
+            width: 100% !important;
           }
 
           /* Chống ngắt trang đột ngột giữa chừng */
@@ -1303,31 +1318,39 @@ export default function DebiasMatrix() {
         {(() => {
           return (
             <div>
-              {/* 1. PHẦN ĐẦU TRANG (HEADER TIÊU CHUẨN) */}
-              <header className="border-b-2 border-teal-700 pb-3 mb-4">
+              {/* 1. PHẦN ĐẦU TRANG (HEADER TIÊU CHUẨN CỦA BẢN CAM KẾT A4) */}
+              <div className="a4-header border-b-2 border-teal-700 pb-3 mb-3">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                      BỘ GIÁO DỤC VÀ ĐÀO TẠO — CUỘC THI KHKT CẤP QUỐC GIA HỌC SINH TRUNG HỌC
+                    <span className="text-[10px] font-black text-teal-900 tracking-wider uppercase block">
+                      SỞ GD&ĐT KHÁNH HÒA — TRƯỜNG THPT TRẦN QUÝ CÁP
                     </span>
-                    <div className="text-sm font-extrabold text-slate-800 mt-1">
-                      MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{displayStudentCode}</span> | KHỐI {selectedGrade} THPT
+                    <div className="text-xs font-black text-slate-800 mt-0.5">
+                      DỰ ÁN NGHIÊN CỨU KHOA HỌC KỸ THUẬT CẤP QUỐC GIA (KHKT 2026)
+                    </div>
+                    <div className="text-[9.5px] text-slate-600 font-medium">
+                      Lĩnh vực: Khoa học Xã hội & Hành vi • Hệ thống Trợ lý AI SocraCareer
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="inline-block px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[10px] tracking-wide">
-                      NHÓM CAN THIỆP (SOCRACAREER)
+                    <span className="inline-block px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-300 rounded font-bold uppercase text-[9.5px] tracking-wide">
+                      NHÓM CAN THIỆP N=30 (SOCRACAREER)
                     </span>
+                    <div className="text-[10px] font-bold text-slate-700 mt-1">
+                      MÃ ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{displayStudentCode}</span> | KHỐI {selectedGrade} THPT
+                    </div>
                   </div>
                 </div>
 
-                <h1 className="text-xl font-black text-center text-slate-900 mt-3 uppercase tracking-tight">
-                  BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
-                </h1>
-                <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
-                  "Bản kế hoạch hành động tự chủ dán tại góc học tập — Thực hiện kỷ luật mỗi ngày để bứt phá."
-                </p>
-              </header>
+                <div className="text-center mt-2.5">
+                  <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">
+                    BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
+                  </h1>
+                  <p className="text-[10px] italic text-slate-500 mt-0.5">
+                    "Bản kế hoạch hành động tự chủ dán tại góc học tập — Thực hiện kỷ luật mỗi ngày để bứt phá."
+                  </p>
+                </div>
+              </div>
 
               {/* 2. KHỐI TRẠNG THÁI HIỆU CHUẨN NHẬN THỨC */}
               <section className="grid grid-cols-3 gap-3 bg-slate-50/80 border border-slate-200 rounded-lg p-3 text-xs mb-4">
@@ -1514,10 +1537,10 @@ export default function DebiasMatrix() {
         })()}
 
         {/* CHÂN TRANG A4 */}
-        <footer className="border-t border-slate-200 pt-2 text-[9.5px] text-slate-400 flex justify-between items-center mt-3">
+        <div className="a4-footer border-t border-slate-200 pt-2 text-[9.5px] text-slate-400 flex justify-between items-center mt-3">
           <span>SocraCareer — Hệ thống Can thiệp Phản tư & Hiệu chuẩn Nhận thức</span>
           <span>Hội đồng Khoa học KHKT 2026 • SocraCareer Model</span>
-        </footer>
+        </div>
       </div>
 
       {/* THANH ĐIỀU HƯỚNG CUỐI TRANG */}

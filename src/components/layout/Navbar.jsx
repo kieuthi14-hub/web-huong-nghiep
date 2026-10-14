@@ -38,7 +38,7 @@ const Navbar = ({ onToggleSidebar }) => {
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6">
+    <header className="no-print sticky top-0 z-40 bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6">
       <div className="flex items-center gap-4">
         <button 
           onClick={onToggleSidebar}
