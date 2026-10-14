@@ -631,7 +631,7 @@ export default function DebiasMatrix() {
   const crsDelta = confidenceT2 - step1Data.initialConfidence;
 
   return (
-    <div className="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8 space-y-6">
+    <div className="bg-slate-50 text-slate-800 min-h-screen font-sans antialiased p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
 
       {/* CSS CHO IN ẤN CHUẨN A4 DÁN GÓC HỌC TẬP (CHUẨN ĐẠO ĐỨC & KHẮC PHỤC LỖI IN) */}
       <style>{`
@@ -751,20 +751,20 @@ export default function DebiasMatrix() {
       {/* =========================================================================
           HEADER BƯỚC 5 (ACTION PLAN MATRIX & COMMITMENT DEVICE)
           ========================================================================= */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-950/40 p-6 rounded-2xl border border-slate-800 no-print">
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm no-print">
         <div className="space-y-1.5">
           <div className="flex items-center gap-3">
-            <span className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-lg border border-teal-500/40 shrink-0">
+            <span className="w-9 h-9 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-lg border border-teal-200 shrink-0">
               5
             </span>
-            <h1 className="text-xl font-bold text-white tracking-tight">
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">
               Lộ Trình Kế Hoạch Hành Động & Tam Giác Nguyện Vọng
             </h1>
-            <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 hidden sm:inline-block">
+            <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 hidden sm:inline-block">
               Action Plan Matrix & Commitment Device
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Chuyển hóa nhận thức phản tư thành hành động cụ thể (Implementation Intentions). Xuất bản cam kết hành động dán ở góc học tập.
           </p>
         </div>
@@ -774,7 +774,7 @@ export default function DebiasMatrix() {
           <button
             type="button"
             onClick={handleSaveAndPrint}
-            className="px-4 py-2.5 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-teal-500/20 transition-all cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-teal-600/20 transition-all cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>KÝ CAM KẾT & XUẤT PDF</span>
@@ -784,27 +784,27 @@ export default function DebiasMatrix() {
             onClick={() => setShowPrintPreview(!showPrintPreview)}
             className={`px-3.5 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
               showPrintPreview 
-                ? 'bg-teal-500/20 text-teal-300 border-teal-500/40' 
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                ? 'bg-teal-50 text-teal-800 border-teal-300' 
+                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
             }`}
             title="Xem trước mẫu văn bản in A4 dán góc học tập"
           >
-            {showPrintPreview ? <EyeOff className="w-3.5 h-3.5 text-teal-400" /> : <Eye className="w-3.5 h-3.5 text-teal-400" />}
+            {showPrintPreview ? <EyeOff className="w-3.5 h-3.5 text-teal-600" /> : <Eye className="w-3.5 h-3.5 text-teal-600" />}
             <span>{showPrintPreview ? 'Ẩn Bản In A4' : 'Xem Bản In A4'}</span>
           </button>
           <button
             type="button"
             onClick={handleDownloadJSON}
-            className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-700"
+            className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-slate-200"
             title="Tải dữ liệu nghiên cứu JSON phục vụ Hội đồng ViSEF"
           >
-            <Download className="w-3.5 h-3.5 text-teal-400" />
+            <Download className="w-3.5 h-3.5 text-teal-600" />
             <span className="hidden md:inline">Tải JSON</span>
           </button>
           <button
             type="button"
             onClick={handleResetStep5}
-            className="px-3 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-500/30"
+            className="px-3 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-rose-200"
             title="Làm lại Bước 5 từ đầu"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -821,16 +821,16 @@ export default function DebiasMatrix() {
         {/* =========================================================================
             KHỐI GIAO DIỆN CHUẨN VISEF QUỐC GIA (THEO QUY CHUẨN HÀNH VI CBAS)
             ========================================================================= */}
-        <div className="rounded-2xl border border-teal-500/30 overflow-hidden shadow-2xl bg-slate-900/90">
-          <div className="bg-gradient-to-r from-teal-950 via-slate-900 to-slate-950 px-5 py-3 border-b border-teal-500/30 flex flex-wrap justify-between items-center gap-2">
+        <div className="rounded-2xl border border-teal-200 overflow-hidden shadow-sm bg-white">
+          <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 px-5 py-3 border-b border-teal-100 flex flex-wrap justify-between items-center gap-2">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-400" />
-              <span className="font-extrabold text-xs text-teal-300 uppercase tracking-wide">
+              <Sparkles className="w-4 h-4 text-teal-600" />
+              <span className="font-extrabold text-xs text-teal-900 uppercase tracking-wide">
                 HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER) — BƯỚC 5 CHUẨN KHKT QUỐC GIA
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2.5 py-0.5 rounded font-bold">
+              <span className="text-[10px] bg-teal-100/70 text-teal-800 border border-teal-200 px-2.5 py-0.5 rounded font-bold">
                 {displayStudentCode} • Khối {selectedGrade} THPT
               </span>
             </div>
@@ -859,15 +859,15 @@ export default function DebiasMatrix() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* Box 1: Ngành mục tiêu */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1 print-badge">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                 NGÀNH MỤC TIÊU CHỐT LẠI
               </span>
               <button
                 type="button"
                 onClick={() => setIsEditingMajor(!isEditingMajor)}
-                className="text-[10px] text-teal-400 hover:underline no-print"
+                className="text-[10px] text-teal-600 hover:text-teal-700 font-semibold hover:underline no-print"
               >
                 {isEditingMajor ? 'Xong' : '✎ Đổi ngành'}
               </button>
@@ -878,31 +878,31 @@ export default function DebiasMatrix() {
                 type="text"
                 value={targetMajor}
                 onChange={(e) => handleUpdateMajor(e.target.value)}
-                className="w-full bg-slate-900 border border-teal-500 rounded-lg px-2 py-1 text-sm text-white font-bold focus:outline-none"
+                className="w-full bg-slate-50 border border-teal-500 rounded-lg px-2 py-1 text-sm text-slate-900 font-bold focus:outline-none focus:bg-white"
               />
             ) : (
               <div className="flex items-center gap-2 pt-1">
-                <Crosshair className="w-5 h-5 text-rose-400 shrink-0" />
-                <span className="font-bold text-base text-white tracking-wide">{targetMajor}</span>
+                <Crosshair className="w-5 h-5 text-rose-500 shrink-0" />
+                <span className="font-bold text-base text-slate-900 tracking-wide">{targetMajor}</span>
               </div>
             )}
 
-            <p className="text-xs text-emerald-400 font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <p className="text-xs text-emerald-700 font-medium flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>Đã đối chứng & Cam kết dấn thân</span>
             </p>
           </div>
 
           {/* Box 2: Chỉ số hiệu chuẩn nhận thức (CRS) */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1 print-badge">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                 ĐỘ TỰ TIN (TRƯỚC VS SAU CAN THIỆP)
               </span>
               <button
                 type="button"
                 onClick={() => setShowConfidenceSlider(!showConfidenceSlider)}
-                className="text-[10px] text-teal-400 hover:underline no-print"
+                className="text-[10px] text-teal-600 hover:text-teal-700 font-semibold hover:underline no-print"
               >
                 {showConfidenceSlider ? 'Đóng' : '✎ Chỉnh T2'}
               </button>
@@ -912,8 +912,8 @@ export default function DebiasMatrix() {
               <span className="text-xs text-slate-400 line-through">
                 Trước: {step1Data.initialConfidence}/10
               </span>
-              <ArrowRight className="w-4 h-4 text-teal-400" />
-              <span className="font-bold text-base text-teal-300">
+              <ArrowRight className="w-4 h-4 text-teal-600" />
+              <span className="font-bold text-base text-teal-800">
                 Sau: {confidenceT2}/10
               </span>
             </div>
@@ -927,28 +927,28 @@ export default function DebiasMatrix() {
                   step="1"
                   value={confidenceT2}
                   onChange={(e) => setConfidenceT2(Number(e.target.value))}
-                  className="w-full accent-teal-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg"
+                  className="w-full accent-teal-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
                 />
               </div>
             )}
 
-            <p className="text-xs text-cyan-400 font-medium">
+            <p className="text-xs text-cyan-800 font-medium">
               Tự tin thực chứng ({crsDelta === 0 ? 'Hiệu chuẩn CRS tiệm cận 0' : `Hiệu chuẩn CRS: ${crsDelta > 0 ? `+${crsDelta}` : crsDelta}`})
             </p>
           </div>
 
           {/* Box 3: Trạng thái ràng buộc */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1 print-badge">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
               TRẠNG THÁI RÀNG BUỘC (COMMITMENT)
             </span>
             <div className="flex items-center gap-2 pt-1">
-              <PenTool className="w-5 h-5 text-amber-400 shrink-0" />
-              <span className="font-bold text-base text-slate-200">
+              <PenTool className="w-5 h-5 text-amber-500 shrink-0" />
+              <span className="font-bold text-base text-slate-900">
                 {hasSignature ? 'Đã ký cam kết điện tử' : 'Sẵn sàng ký cam kết'}
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               Bước 5/5 trong Mô hình Can thiệp SocraCareer
             </p>
           </div>
@@ -958,22 +958,22 @@ export default function DebiasMatrix() {
         {/* =========================================================================
             KHỐI 1: TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
             ========================================================================= */}
-        <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 print-sheet">
-          <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-3 gap-2">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 print-sheet">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div className="flex items-center gap-2.5">
-              <Triangle className="w-5 h-5 text-teal-400 font-bold" />
-              <h2 className="font-bold text-sm text-white uppercase tracking-wide">
+              <Triangle className="w-5 h-5 text-teal-600 font-bold" />
+              <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide">
                 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
               </h2>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 Chiến lược dải điểm bậc thang 3 nấc
               </span>
               <button
                 type="button"
                 onClick={() => setIsEditingTriad(!isEditingTriad)}
-                className="text-xs text-teal-400 hover:text-teal-300 font-semibold underline cursor-pointer no-print"
+                className="text-xs text-teal-700 hover:text-teal-800 font-semibold underline cursor-pointer no-print"
               >
                 {isEditingTriad ? '✓ Lưu tùy chỉnh' : '✎ Điều chỉnh 3 nấc'}
               </button>
@@ -983,9 +983,9 @@ export default function DebiasMatrix() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             
             {/* Nấc 1: Ước mơ */}
-            <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-500/30 space-y-2">
+            <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold uppercase text-[10px]">
                   {triadTiers.dream.label}
                 </span>
                 {isEditingTriad ? (
@@ -993,10 +993,10 @@ export default function DebiasMatrix() {
                     type="text"
                     value={triadTiers.dream.targetScore}
                     onChange={(e) => handleUpdateTriad('dream', 'targetScore', e.target.value)}
-                    className="w-24 bg-slate-900 border border-purple-400 text-purple-300 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-24 bg-white border border-purple-300 text-purple-800 rounded px-1.5 py-0.5 text-right font-semibold"
                   />
                 ) : (
-                  <span className="text-purple-400 font-semibold">{triadTiers.dream.targetScore}</span>
+                  <span className="text-purple-700 font-semibold">{triadTiers.dream.targetScore}</span>
                 )}
               </div>
 
@@ -1005,10 +1005,10 @@ export default function DebiasMatrix() {
                   type="text"
                   value={triadTiers.dream.majorSchool}
                   onChange={(e) => handleUpdateTriad('dream', 'majorSchool', e.target.value)}
-                  className="w-full bg-slate-900 border border-purple-400 text-white font-bold rounded px-2 py-1 text-sm"
+                  className="w-full bg-white border border-purple-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
                 />
               ) : (
-                <p className="font-bold text-white text-sm">{triadTiers.dream.majorSchool}</p>
+                <p className="font-bold text-slate-900 text-sm">{triadTiers.dream.majorSchool}</p>
               )}
 
               {isEditingTriad ? (
@@ -1016,17 +1016,17 @@ export default function DebiasMatrix() {
                   rows={2}
                   value={triadTiers.dream.notes}
                   onChange={(e) => handleUpdateTriad('dream', 'notes', e.target.value)}
-                  className="w-full bg-slate-900 border border-purple-400 text-slate-300 rounded p-1.5 text-[11px]"
+                  className="w-full bg-white border border-purple-300 text-slate-800 rounded p-1.5 text-[11px]"
                 />
               ) : (
-                <p className="text-slate-400 text-[11px] leading-relaxed">{triadTiers.dream.notes}</p>
+                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-purple-200/80 pt-1.5">{triadTiers.dream.notes}</p>
               )}
             </div>
 
             {/* Nấc 2: Vừa sức */}
-            <div className="p-4 rounded-xl bg-teal-950/20 border border-teal-500/30 space-y-2">
+            <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 font-bold uppercase text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-bold uppercase text-[10px]">
                   {triadTiers.realistic.label}
                 </span>
                 {isEditingTriad ? (
@@ -1034,10 +1034,10 @@ export default function DebiasMatrix() {
                     type="text"
                     value={triadTiers.realistic.targetScore}
                     onChange={(e) => handleUpdateTriad('realistic', 'targetScore', e.target.value)}
-                    className="w-24 bg-slate-900 border border-teal-400 text-teal-300 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-24 bg-white border border-teal-300 text-teal-800 rounded px-1.5 py-0.5 text-right font-semibold"
                   />
                 ) : (
-                  <span className="text-teal-400 font-semibold">{triadTiers.realistic.targetScore}</span>
+                  <span className="text-teal-700 font-semibold">{triadTiers.realistic.targetScore}</span>
                 )}
               </div>
 
@@ -1046,10 +1046,10 @@ export default function DebiasMatrix() {
                   type="text"
                   value={triadTiers.realistic.majorSchool}
                   onChange={(e) => handleUpdateTriad('realistic', 'majorSchool', e.target.value)}
-                  className="w-full bg-slate-900 border border-teal-400 text-white font-bold rounded px-2 py-1 text-sm"
+                  className="w-full bg-white border border-teal-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
                 />
               ) : (
-                <p className="font-bold text-white text-sm">{triadTiers.realistic.majorSchool}</p>
+                <p className="font-bold text-slate-900 text-sm">{triadTiers.realistic.majorSchool}</p>
               )}
 
               {isEditingTriad ? (
@@ -1057,17 +1057,17 @@ export default function DebiasMatrix() {
                   rows={2}
                   value={triadTiers.realistic.notes}
                   onChange={(e) => handleUpdateTriad('realistic', 'notes', e.target.value)}
-                  className="w-full bg-slate-900 border border-teal-400 text-slate-300 rounded p-1.5 text-[11px]"
+                  className="w-full bg-white border border-teal-300 text-slate-800 rounded p-1.5 text-[11px]"
                 />
               ) : (
-                <p className="text-slate-400 text-[11px] leading-relaxed">{triadTiers.realistic.notes}</p>
+                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-teal-200/80 pt-1.5">{triadTiers.realistic.notes}</p>
               )}
             </div>
 
             {/* Nấc 3: An toàn */}
-            <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-500/30 space-y-2">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-bold uppercase text-[10px]">
                   {triadTiers.safe.label}
                 </span>
                 {isEditingTriad ? (
@@ -1075,10 +1075,10 @@ export default function DebiasMatrix() {
                     type="text"
                     value={triadTiers.safe.targetScore}
                     onChange={(e) => handleUpdateTriad('safe', 'targetScore', e.target.value)}
-                    className="w-24 bg-slate-900 border border-blue-400 text-blue-300 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-24 bg-white border border-slate-300 text-slate-800 rounded px-1.5 py-0.5 text-right font-semibold"
                   />
                 ) : (
-                  <span className="text-blue-400 font-semibold">{triadTiers.safe.targetScore}</span>
+                  <span className="text-slate-600 font-semibold">{triadTiers.safe.targetScore}</span>
                 )}
               </div>
 
@@ -1087,10 +1087,10 @@ export default function DebiasMatrix() {
                   type="text"
                   value={triadTiers.safe.majorSchool}
                   onChange={(e) => handleUpdateTriad('safe', 'majorSchool', e.target.value)}
-                  className="w-full bg-slate-900 border border-blue-400 text-white font-bold rounded px-2 py-1 text-sm"
+                  className="w-full bg-white border border-slate-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
                 />
               ) : (
-                <p className="font-bold text-white text-sm">{triadTiers.safe.majorSchool}</p>
+                <p className="font-bold text-slate-900 text-sm">{triadTiers.safe.majorSchool}</p>
               )}
 
               {isEditingTriad ? (
@@ -1098,10 +1098,10 @@ export default function DebiasMatrix() {
                   rows={2}
                   value={triadTiers.safe.notes}
                   onChange={(e) => handleUpdateTriad('safe', 'notes', e.target.value)}
-                  className="w-full bg-slate-900 border border-blue-400 text-slate-300 rounded p-1.5 text-[11px]"
+                  className="w-full bg-white border border-slate-300 text-slate-800 rounded p-1.5 text-[11px]"
                 />
               ) : (
-                <p className="text-slate-400 text-[11px] leading-relaxed">{triadTiers.safe.notes}</p>
+                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-slate-200 pt-1.5">{triadTiers.safe.notes}</p>
               )}
             </div>
 
@@ -1111,25 +1111,25 @@ export default function DebiasMatrix() {
         {/* =========================================================================
             KHỐI 2: MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (CHUẨN HÓA 2 TRỤ CỘT)
             ========================================================================= */}
-        <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-5 print-sheet">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-5 print-sheet">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
-              <h2 className="font-bold text-sm text-white flex items-center gap-2">
-                <Target className="w-4 h-4 text-teal-400" />
+              <h2 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <Target className="w-4 h-4 text-teal-600" />
                 <span>BẢNG MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX)</span>
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Xác lập mục tiêu học vấn tổ hợp & hệ thống kỹ năng nghề theo thuyết Implementation Intentions
               </p>
             </div>
 
             {/* Tab Khối Lớp */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs no-print">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs no-print">
               <button
                 type="button"
                 onClick={() => handleGradeSwitch(10)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
-                  selectedGrade === 10 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
+                  selectedGrade === 10 ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Khối 10
@@ -1138,7 +1138,7 @@ export default function DebiasMatrix() {
                 type="button"
                 onClick={() => handleGradeSwitch(11)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
-                  selectedGrade === 11 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
+                  selectedGrade === 11 ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Khối 11
@@ -1147,7 +1147,7 @@ export default function DebiasMatrix() {
                 type="button"
                 onClick={() => handleGradeSwitch(12)}
                 className={`px-3 py-1 rounded-lg transition font-medium cursor-pointer ${
-                  selectedGrade === 12 ? 'bg-teal-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'
+                  selectedGrade === 12 ? 'bg-teal-600 text-white font-bold shadow' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Khối 12
@@ -1164,20 +1164,20 @@ export default function DebiasMatrix() {
           {(() => {
             const gradeInfo = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade] || ADAPTIVE_COMMITMENTS_BY_GRADE[12];
             return (
-              <div className="p-3.5 rounded-xl bg-teal-950/30 border border-teal-500/30 flex flex-wrap items-center justify-between gap-3">
+              <div className="p-3.5 rounded-xl bg-teal-50/70 border border-teal-200 flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] font-bold">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200 text-[11px] font-bold">
                     🎯 {gradeInfo.badge}
                   </span>
-                  <p className="text-xs text-slate-300 italic flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                  <p className="text-xs text-slate-700 italic flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                     <span>{gradeInfo.note}</span>
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleResetToDefaultTemplate}
-                  className="px-2.5 py-1 text-[11px] rounded bg-slate-800 text-teal-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition flex items-center gap-1 cursor-pointer no-print"
+                  className="px-2.5 py-1 text-[11px] rounded bg-white text-teal-800 hover:bg-slate-50 hover:text-teal-900 border border-slate-200 transition flex items-center gap-1 cursor-pointer no-print font-medium"
                   title="Khôi phục lại nội dung mẫu chuẩn ViSEF cho khối này"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -1191,43 +1191,43 @@ export default function DebiasMatrix() {
           <div className="space-y-4 text-xs">
             {/* Mục 1: Trọng tâm Học vấn */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-teal-400 shrink-0" />
+              <label className="font-semibold text-slate-700 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-teal-600 shrink-0" />
                 <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}</span>
               </label>
               <textarea
                 rows={2}
                 value={getPlanItem(selectedGrade, 0)}
                 onChange={(e) => handleUpdatePlan('item1', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
               />
             </div>
 
             {/* Mục 2: Kỹ năng nghề / Thích ứng */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+              <label className="font-semibold text-slate-700 flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}</span>
               </label>
               <textarea
                 rows={2}
                 value={getPlanItem(selectedGrade, 1)}
                 onChange={(e) => handleUpdatePlan('item2', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
               />
             </div>
 
             {/* Mục 3: Vật neo kỷ luật / Giữ vững chiến lược */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-300 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+              <label className="font-semibold text-slate-700 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0" />
                 <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}</span>
               </label>
               <textarea
                 rows={2}
                 value={getPlanItem(selectedGrade, 2)}
                 onChange={(e) => handleUpdatePlan('item3', e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700/80 rounded-xl p-3 text-slate-100 font-medium focus:outline-none focus:border-teal-500 text-xs leading-relaxed"
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
               />
             </div>
           </div>
@@ -1236,29 +1236,29 @@ export default function DebiasMatrix() {
         {/* =========================================================================
             KHỐI 3: KHUNG KÝ CAM KẾT ĐIỆN TỬ (COMMITMENT DEVICE)
             ========================================================================= */}
-        <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 print-sheet">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 print-sheet">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <PenTool className="w-4 h-4 text-teal-400" />
-              <h2 className="font-bold text-sm text-white uppercase tracking-wide">
+              <PenTool className="w-4 h-4 text-teal-600" />
+              <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide">
                 CHỮ KÝ CAM KẾT CÁ NHÂN (COMMITMENT DEVICE)
               </h2>
             </div>
             <button
               type="button"
               onClick={handleClearSignature}
-              className="text-xs text-rose-400 hover:text-rose-300 transition cursor-pointer no-print font-medium"
+              className="text-xs text-rose-600 hover:text-rose-700 transition cursor-pointer no-print font-medium"
             >
               Xóa chữ ký vẽ lại
             </button>
           </div>
 
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             Em ký tên xác nhận chịu trách nhiệm với mục tiêu của chính mình, in bản kế hoạch này dán tại góc học tập để nhắc nhở bản thân mỗi ngày.
           </p>
 
           {/* Vùng vẽ canvas */}
-          <div className="border border-dashed border-slate-700 rounded-xl bg-slate-900 p-2 flex justify-center print-canvas">
+          <div className="border border-dashed border-slate-300 rounded-xl bg-slate-50/70 p-2 flex justify-center print-canvas">
             <canvas
               ref={canvasRef}
               width={500}
@@ -1267,14 +1267,14 @@ export default function DebiasMatrix() {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="cursor-crosshair bg-slate-900 rounded-lg max-w-full touch-none"
+              className="cursor-crosshair bg-slate-50 rounded-lg max-w-full touch-none"
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-400">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-600">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-300">Học sinh cam kết:</span>
-              <span className="px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-bold border border-slate-700">
+              <span className="font-bold text-slate-700">Học sinh cam kết:</span>
+              <span className="px-2 py-0.5 rounded bg-slate-100 text-teal-800 font-bold border border-slate-200">
                 Mã định danh: {displayStudentCode}
               </span>
             </div>
@@ -1283,7 +1283,7 @@ export default function DebiasMatrix() {
               <button
                 type="button"
                 onClick={handleSaveAndPrint}
-                className="px-5 py-2 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-lg shadow-teal-500/20"
+                className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-2 transition cursor-pointer shadow-md shadow-teal-600/20"
               >
                 <Printer className="w-4 h-4" />
                 <span>Lưu & In Bản Cam Kết Dán Góc Học Tập</span>
@@ -1298,14 +1298,14 @@ export default function DebiasMatrix() {
           MẪU BẢN IN PDF CAM KẾT HÀNH ĐỘNG BƯỚC 5 (CHUẨN ĐẠO ĐỨC & KHẮC PHỤC LỖI IN)
           ========================================================================= */}
       {showPrintPreview && (
-        <div className="no-print w-full max-w-[210mm] mb-4 flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700 mx-auto">
-          <span className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+        <div className="no-print w-full max-w-[210mm] mb-4 flex justify-between items-center bg-teal-50/90 p-3 rounded-xl border border-teal-200 mx-auto shadow-sm">
+          <span className="text-xs text-teal-900 font-medium flex items-center gap-1.5">
             🔍 Chế độ xem trước trang in A4 thực tế (Bản ký tay thực địa)
           </span>
           <button
             type="button"
             onClick={handleSaveAndPrint}
-            className="px-5 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg shadow-lg flex items-center gap-2 transition-all cursor-pointer"
+            className="px-5 py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-lg shadow-md flex items-center gap-2 transition-all cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>🖨️ IN NGAY BẢN A4 HOÀN CHỈNH</span>
@@ -1544,11 +1544,11 @@ export default function DebiasMatrix() {
       </div>
 
       {/* THANH ĐIỀU HƯỚNG CUỐI TRANG */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800 no-print">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 no-print">
         <button
           type="button"
           onClick={() => navigate('/student/booking')}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition"
+          className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Quay lại Bước 4 (Tham vấn 1-1)</span>
@@ -1557,7 +1557,7 @@ export default function DebiasMatrix() {
         <button
           type="button"
           onClick={() => navigate('/student/dashboard')}
-          className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-2 transition shadow"
+          className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center gap-2 transition shadow cursor-pointer"
         >
           <Home className="w-3.5 h-3.5" />
           <span>Về Tổng Quan Lộ Trình Học Sinh ➔</span>

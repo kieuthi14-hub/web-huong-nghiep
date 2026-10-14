@@ -468,96 +468,96 @@ export function generateStep5Content(student = {}) {
 
   // 2. Trả về khối HTML giao diện chuẩn mực, sạch sẽ, hoàn toàn ăn khớp với mỏ neo T0
   return `
-  <div class="space-y-4 font-sans text-slate-200">
+  <div class="space-y-4 font-sans text-slate-800">
     <!-- KHỐI CHỈ SỐ VÀ MỤC TIÊU CỐT LÕI -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-slate-900 border border-slate-800 rounded-xl text-xs">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 bg-slate-50/90 border border-slate-200 rounded-xl text-xs">
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ngành mục tiêu sau hiệu chuẩn:</span>
-        <h4 class="text-sm font-black text-white mt-0.5 leading-snug">${triangle.targetCore}</h4>
-        <span class="text-[10.5px] text-teal-400 font-bold flex items-center gap-1 mt-1">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Ngành mục tiêu sau hiệu chuẩn:</span>
+        <h4 class="text-sm font-black text-slate-900 mt-0.5 leading-snug">${triangle.targetCore}</h4>
+        <span class="text-[10.5px] text-teal-700 font-bold flex items-center gap-1 mt-1">
           <span>✓</span> ${triangle.targetCoreNote}
         </span>
       </div>
 
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Độ tự tin thực chất (T0 &rarr; T2):</span>
-        <h4 class="text-sm font-black text-white mt-0.5">${student.conf_T0 || 8}/10 &rarr; ${student.conf_T2 || 8}/10 <span class="text-xs font-normal text-slate-400">(Mã RIASEC: ${student.riasec || 'IRE'})</span></h4>
-        <p class="text-[10.5px] text-slate-400 mt-1">Giữ vững niềm tin dựa trên năng lực thực chất</p>
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Độ tự tin thực chất (T0 &rarr; T2):</span>
+        <h4 class="text-sm font-black text-slate-900 mt-0.5">${student.conf_T0 || 8}/10 &rarr; <span class="text-teal-700">${student.conf_T2 || 8}/10</span> <span class="text-xs font-normal text-slate-500">(Mã RIASEC: ${student.riasec || 'IRE'})</span></h4>
+        <p class="text-[10.5px] text-slate-500 mt-1">Giữ vững niềm tin dựa trên năng lực thực chất</p>
       </div>
 
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chỉ số Hiệu chuẩn Nhận thức (CRS):</span>
-        <h4 class="text-sm font-black text-teal-300 font-mono mt-0.5">+${student.crs_T0 || '3.8'} &rarr; ${student.crs_T2 || '-0.2'}</h4>
-        <span class="text-[10.5px] text-emerald-400 font-bold flex items-center gap-1 mt-1">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Chỉ số Hiệu chuẩn Nhận thức (CRS):</span>
+        <h4 class="text-sm font-black text-teal-800 font-mono mt-0.5">+${student.crs_T0 || '3.8'} &rarr; ${student.crs_T2 || '-0.2'}</h4>
+        <span class="text-[10.5px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
           <span>✓</span> Đã hiệu chuẩn về vùng tiệm cận 0
         </span>
       </div>
     </div>
 
     <!-- KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG 3 NẤC -->
-    <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
+    <div class="p-4 bg-slate-50/90 border border-slate-200 rounded-xl space-y-3">
       <div class="flex justify-between items-center">
-        <span class="text-xs font-black text-white flex items-center gap-1.5 uppercase">
-          <span class="text-rose-500">▲</span> TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+        <span class="text-xs font-black text-slate-900 flex items-center gap-1.5 uppercase">
+          <span class="text-rose-600">▲</span> TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
         </span>
-        <span class="text-[10px] text-slate-400 italic">Phân tầng bậc thang 3 nấc bảo toàn lộ trình</span>
+        <span class="text-[10px] text-slate-500 italic">Phân tầng bậc thang 3 nấc bảo toàn lộ trình</span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <!-- Nấc 1: Thử thách -->
-        <div class="p-3.5 rounded-lg border border-teal-500/30 bg-teal-950/20 flex flex-col justify-between">
+        <div class="p-3.5 rounded-lg border border-purple-200 bg-purple-50/70 flex flex-col justify-between">
           <div>
-            <span class="font-extrabold text-teal-300 text-[10px] uppercase block">${triangle.stretchTitle}</span>
-            <h5 class="font-bold text-white text-[12px] mt-1">${triangle.stretchSchool}</h5>
+            <span class="font-extrabold text-purple-900 text-[10px] uppercase block">${triangle.stretchTitle}</span>
+            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.stretchSchool}</h5>
           </div>
-          <p class="text-[10.5px] text-slate-400 mt-2 pt-2 border-t border-slate-800 leading-relaxed">${triangle.stretchDesc}</p>
+          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-purple-200/80 leading-relaxed">${triangle.stretchDesc}</p>
         </div>
 
         <!-- Nấc 2: Vừa sức (Cốt lõi) -->
-        <div class="p-3.5 rounded-lg border border-cyan-500/30 bg-cyan-950/20 flex flex-col justify-between">
+        <div class="p-3.5 rounded-lg border border-teal-200 bg-teal-50/70 flex flex-col justify-between">
           <div>
-            <span class="font-extrabold text-cyan-300 text-[10px] uppercase block">${triangle.realisticTitle}</span>
-            <h5 class="font-bold text-white text-[12px] mt-1">${triangle.realisticSchool}</h5>
+            <span class="font-extrabold text-teal-900 text-[10px] uppercase block">${triangle.realisticTitle}</span>
+            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.realisticSchool}</h5>
           </div>
-          <p class="text-[10.5px] text-slate-400 mt-2 pt-2 border-t border-slate-800 leading-relaxed">${triangle.realisticDesc}</p>
+          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-teal-200/80 leading-relaxed">${triangle.realisticDesc}</p>
         </div>
 
         <!-- Nấc 3: Bảo toàn rủi ro -->
-        <div class="p-3.5 rounded-lg border border-slate-700 bg-slate-950 flex flex-col justify-between">
+        <div class="p-3.5 rounded-lg border border-slate-300 bg-white flex flex-col justify-between">
           <div>
-            <span class="font-extrabold text-slate-300 text-[10px] uppercase block">${triangle.safetyTitle}</span>
-            <h5 class="font-bold text-white text-[12px] mt-1">${triangle.safetySchool}</h5>
+            <span class="font-extrabold text-slate-800 text-[10px] uppercase block">${triangle.safetyTitle}</span>
+            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.safetySchool}</h5>
           </div>
-          <p class="text-[10.5px] text-slate-400 mt-2 pt-2 border-t border-slate-800 leading-relaxed">${triangle.safetyDesc}</p>
+          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-slate-200 leading-relaxed">${triangle.safetyDesc}</p>
         </div>
       </div>
     </div>
 
     <!-- KHỐI MA TRẬN Ý ĐỊNH THỰC THI (IMPLEMENTATION INTENTIONS) -->
-    <div class="p-4 bg-slate-900 border border-slate-800 rounded-xl space-y-3">
-      <div class="border-b border-slate-800 pb-2">
-        <h4 class="text-xs font-black text-white uppercase tracking-wider">
+    <div class="p-4 bg-slate-50/90 border border-slate-200 rounded-xl space-y-3">
+      <div class="border-b border-slate-200 pb-2">
+        <h4 class="text-xs font-black text-slate-900 uppercase tracking-wider">
           MA TRẬN KẾ HOẠCH HÀNH ĐỘNG DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)
         </h4>
-        <p class="text-[10.5px] text-slate-400 mt-0.5">
+        <p class="text-[10.5px] text-slate-500 mt-0.5">
           Quy chuẩn Thuyết Ý định Thực thi (Gollwitzer, 1999) — Thiết lập phản ứng hành vi kiểm soát rủi ro
         </p>
       </div>
 
       <div class="space-y-2.5 text-xs">
-        <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-          <span class="font-bold text-teal-300 block mb-1">${matrix.action1_title}</span>
-          <p class="text-[11.5px] text-slate-300 leading-relaxed">${matrix.action1_content}</p>
+        <div class="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
+          <span class="font-bold text-teal-800 block mb-1">${matrix.action1_title}</span>
+          <p class="text-[11.5px] text-slate-700 leading-relaxed">${matrix.action1_content}</p>
         </div>
 
-        <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-          <span class="font-bold text-cyan-300 block mb-1">${matrix.action2_title}</span>
-          <p class="text-[11.5px] text-slate-300 leading-relaxed">${matrix.action2_content}</p>
+        <div class="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
+          <span class="font-bold text-cyan-800 block mb-1">${matrix.action2_title}</span>
+          <p class="text-[11.5px] text-slate-700 leading-relaxed">${matrix.action2_content}</p>
         </div>
 
-        <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800/80">
-          <span class="font-bold text-slate-300 block mb-1">${matrix.action3_title}</span>
-          <p class="text-[11.5px] text-slate-300 leading-relaxed">${matrix.action3_content}</p>
+        <div class="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs">
+          <span class="font-bold text-slate-800 block mb-1">${matrix.action3_title}</span>
+          <p class="text-[11.5px] text-slate-700 leading-relaxed">${matrix.action3_content}</p>
         </div>
       </div>
     </div>
