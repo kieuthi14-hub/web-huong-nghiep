@@ -97,13 +97,13 @@ const AdminPasswordModal = ({
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold uppercase tracking-wider mb-1">
             <ShieldCheck className="w-3 h-3" />
-            Bảo Mật Quản Trị ViSEF 2026
+            Bảo Mật Quản Trị KHKT 2026
           </div>
           <h2 className="text-lg font-bold text-white tracking-tight">
             Xác Thực Quyền Quản Trị Viên
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Khu vực chỉ dành cho Ban Cố Vấn & Giáo Viên Phụ Trách Nghiên Cứu CBAS
+            Khu vực chỉ dành cho Ban Cố Vấn & Giáo Viên Phụ Trách Nghiên Cứu SocraCareer
           </p>
         </div>
       </div>
@@ -197,7 +197,7 @@ const AdminPasswordModal = ({
             </button>
           ) : (
             <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[10.5px] text-slate-400 space-y-1 animate-reveal">
-              <p>Mật khẩu mặc định hệ thống ViSEF: <code className="text-amber-300 font-bold px-1 bg-amber-950/40 rounded">123456</code> hoặc <code className="text-amber-300 font-bold px-1 bg-amber-950/40 rounded">admin2026</code></p>
+              <p>Mật khẩu mặc định hệ thống KHKT: <code className="text-amber-300 font-bold px-1 bg-amber-950/40 rounded">123456</code> hoặc <code className="text-amber-300 font-bold px-1 bg-amber-950/40 rounded">admin2026</code></p>
               <p className="text-[10px] text-slate-500 italic">*Chỉ cung cấp mã này cho Giáo viên hướng dẫn hoặc Giám khảo nghiệm thu.</p>
             </div>
           )}

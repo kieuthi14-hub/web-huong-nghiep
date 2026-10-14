@@ -1523,7 +1523,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   </style>
 </head>
 <body>
-  <h1>DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS</h1>
+  <h1>DỰ ÁN NGHIÊN CỨU KHKT 2026 - PHÂN NGÀNH KHOA HỌC XÃ HỘI VÀ HÀNH VI</h1>
   <p><strong>MÃ ĐỊNH DANH ĐỐI TƯỢNG:</strong> ${student.id} | ${student.grade || 'Khối 12 THPT'}</p>
   <p><strong>NHÓM CAN THIỆP:</strong> SOCRACAREER (N=30)</p>
   <div class="box highlight">
@@ -1698,7 +1698,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       const plan = getGradeCommitmentPlan(st.gradeNum || st.grade)
       return `
     <div style="page-break-after: always; padding: 40px; border: 1px solid #cbd5e1; margin-bottom: 24px; border-radius: 8px; font-family: -apple-system, sans-serif;">
-      <h2 style="color:#0f766e; border-bottom:2px solid #0f766e; padding-bottom:8px; margin-top:0;">VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #${idx + 1}/30</h2>
+      <h2 style="color:#0f766e; border-bottom:2px solid #0f766e; padding-bottom:8px; margin-top:0;">KHKT 2026 - SOCRACAREER | BẢN #${idx + 1}/30</h2>
       <p><strong>MÃ ĐỐI TƯỢNG:</strong> ${st.id} | ${st.grade || 'Khối 12'} | RIASEC: ${st.riasec} | Học lực: ${st.academicRank}</p>
       <p><strong>Ngành chốt lại (T2):</strong> ${st.majorT2 || st.major}</p>
       <p><strong>Độ tự tin:</strong> ${st.conf} | <strong>Chỉ số CRS:</strong> ${st.crs}</p>
@@ -1733,12 +1733,12 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       </div>
       <div style="display:flex; justify-content:space-between; margin-top:36px; font-size:12px;">
         <div><strong>Học sinh cam kết:</strong> ${st.id} (Đã ký)</div>
-        <div><strong>Mentor phụ trách:</strong> ${st.assignedMentor || 'Ban Cố vấn ViSEF'}</div>
+        <div><strong>Mentor phụ trách:</strong> ${st.assignedMentor || 'Ban Cố vấn KHKT'}</div>
       </div>
     </div>
     `}).join('')
 
-    const fullHtml = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>30 Ban Cam Ket Hanh Dong ViSEF 2026</title></head><body>${cards}</body></html>`
+    const fullHtml = `<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>30 Ban Cam Ket Hanh Dong KHKT 2026</title></head><body>${cards}</body></html>`
     const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
@@ -1951,7 +1951,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     setCounselingSessions(realCounseling)
 
     if (isManual) {
-      setToastMessage(isDbConnected ? 'Đã làm mới dữ liệu Live từ Supabase PostgreSQL DB!' : 'Đã nạp bộ dữ liệu NCKH ViSEF mẫu (N=90)!')
+      setToastMessage(isDbConnected ? 'Đã làm mới dữ liệu Live từ Supabase PostgreSQL DB!' : 'Đã nạp bộ dữ liệu NCKH KHKT mẫu (N=30)!')
       setTimeout(() => setToastMessage(null), 3000)
     }
 
@@ -2089,12 +2089,12 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.setAttribute('download', `Bao_Cao_ViSEF_Nghien_Cuu_Thuc_Nghiem_${new Date().toISOString().slice(0, 10)}.csv`)
+      link.setAttribute('download', `Bao_Cao_KHKT_Nghien_Cuu_Thuc_Nghiem_${new Date().toISOString().slice(0, 10)}.csv`)
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
 
-      setToastMessage('Đã xuất file báo cáo Khoa học ViSEF thành công!')
+      setToastMessage('Đã xuất file báo cáo Khoa học KHKT thành công!')
       setTimeout(() => setToastMessage(null), 3000)
     } catch (err) {
       console.error('Lỗi xuất CSV:', err)
@@ -2186,7 +2186,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     return (
       <div className="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center min-h-[400px] space-y-3 font-sans">
         <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải Dữ liệu Bảng Điều Khiển Nghiên Cứu ViSEF...</p>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Đang tải Dữ liệu Bảng Điều Khiển Nghiên Cứu KHKT...</p>
       </div>
     )
   }
@@ -2194,21 +2194,21 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-reveal font-sans">
       {/* =========================================================================
-          HEADER TRANG ADMIN CHUẨN KHOA HỌC VISEF
+          HEADER TRANG ADMIN CHUẨN KHOA HỌC KHKT
           ========================================================================= */}
       <div className="bg-white border border-slate-200 p-6 rounded-sm space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5">
               <div className="p-2 bg-brand-50 text-brand-700 border border-brand-200 rounded-sm font-bold">
-                🏆 ViSEF 2026
+                🏆 KHKT 2026
               </div>
               <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">
                 Bảng Điều Khiển Nghiên Cứu Thực Nghiệm & Quản Trị Hệ Thống
               </h1>
               {isUsingFallback ? (
                 <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-sm uppercase">
-                  🟡 Bộ dữ liệu Thực nghiệm N=90
+                  🟡 Bộ dữ liệu Thực nghiệm N=30
                 </span>
               ) : (
                 <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-sm uppercase">
@@ -2238,7 +2238,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-amber-400"
             >
               <FileSpreadsheet className="w-4 h-4" />
-              <span>XUẤT DỮ LIỆU ViSEF (CSV)</span>
+              <span>XUẤT DỮ LIỆU KHKT (CSV)</span>
             </button>
           </div>
         </div>
@@ -2255,7 +2255,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             }`}
           >
             <Sparkles className="w-4 h-4 text-teal-600" />
-            <span>⚡ 1. Điều Phối CBAS 2026 (N=30)</span>
+            <span>⚡ 1. Điều Phối SocraCareer 2026 (N=30)</span>
             {pendingTriageCount > 0 && (
               <span className="px-1.5 py-0.5 text-[10px] bg-rose-500 text-white rounded-full font-black">
                 {pendingTriageCount} chờ duyệt
@@ -2273,7 +2273,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             }`}
           >
             <BarChart3 className="w-4 h-4 text-indigo-600" />
-            <span>📊 2. Báo Cáo Khoa Học Thực Nghiệm (N=90)</span>
+            <span>📊 2. Báo Cáo Nhóm Can Thiệp (N=30)</span>
           </button>
 
           {/* TAB 2 */}
@@ -2324,7 +2324,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-sm font-bold text-white tracking-wide">SOCRACAREER ADMIN — COMMAND CENTER</h1>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">ViSEF CBAS 2026</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 border border-teal-500/30 font-semibold">KHKT SocraCareer 2026</span>
                 </div>
                 <p className="text-[11px] text-slate-400">Giám sát can thiệp thực nghiệm hành vi N=30 học sinh (Khánh Hòa Baseline)</p>
               </div>
@@ -2521,7 +2521,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   DANH SÁCH 30 ĐỐI TƯỢNG THỰC NGHIỆM KHÁNH HÒA (CT_01 → CT_30)
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Dữ liệu ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu ViSEF 2026.
+                  Dữ liệu ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu KHKT 2026.
                 </p>
               </div>
 
@@ -2788,7 +2788,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-1">
-                      Biên bản trích xuất quá trình can thiệp hành vi 5 bước chuẩn ViSEF CBAS 2026.
+                      Biên bản trích xuất quá trình can thiệp hành vi 5 bước chuẩn KHKT SocraCareer 2026.
                     </p>
                   </div>
                   <button
@@ -2885,7 +2885,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-400">Mentor gán:</span>
-                        <span className="text-slate-200 font-medium">{selectedDetailStudent.assignedMentor || 'Ban Cố vấn ViSEF'}</span>
+                        <span className="text-slate-200 font-medium">{selectedDetailStudent.assignedMentor || 'Ban Cố vấn KHKT'}</span>
                       </div>
                     </div>
                   </div>
@@ -2973,7 +2973,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   <div>
                     <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
                       <Scale className="w-4 h-4 text-cyan-400" />
-                      CHỈ SỐ HIỆU CHUẨN THIÊN LỆCH NHẬN THỨC (CRS) — ViSEF CBAS 2026
+                      CHỈ SỐ HIỆU CHUẨN THIÊN LỆCH NHẬN THỨC (CRS) — KHKT SocraCareer 2026
                     </h3>
                     <p className="text-[11px] text-slate-400 mt-0.5">
                       Đo lường sự thu hẹp độ vênh nhận thức giữa kỳ vọng chủ quan (T₀) và năng lực thực tế (T₂).
@@ -3126,11 +3126,11 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       )}
 
       {/* =========================================================================
-          TAB 1: BÁO CÁO KHOA HỌC THỰC NGHIỆM (N=90)
+          TAB 1: BÁO CÁO NHÓM CAN THIỆP (N=30)
           ========================================================================= */}
       {activeTab === 'experiment' && (
         <div className="space-y-6 animate-reveal">
-          {/* 4 Thẻ KPI Khoa học NCKH ViSEF */}
+          {/* 4 Thẻ KPI Khoa học NCKH KHKT */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-slate-200 p-5 rounded-sm shadow-xs space-y-2">
               <div className="flex items-center justify-between text-slate-400">
@@ -3138,8 +3138,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 <User className="w-4 h-4 text-brand-600" />
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-black text-slate-800">N = 90</span>
-                <span className="text-[11px] font-bold text-slate-500">(3 nhóm × 30 HS)</span>
+                <span className="text-2xl font-black text-slate-800">N = 30</span>
+                <span className="text-[11px] font-bold text-slate-500">(30 HS Nhóm Can Thiệp)</span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
                 Được chọn ngẫu nhiên phân tầng từ Khối lớp 10, 11, 12 THPT.
@@ -3195,7 +3195,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               <div>
                 <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                   <Scale className="w-4.5 h-4.5 text-brand-600" />
-                  BẢNG ĐỐI CHỨNG KẾT QUẢ THỰC NGHIỆM GIỮA 3 NHÓM HỌC SINH (N=90)
+                  BẢNG ĐỐI CHỨNG KẾT QUẢ THỰC NGHIỆM (N=30 NHÓM CAN THIỆP)
                 </h2>
                 <p className="text-[11px] text-slate-500 font-medium mt-0.5">
                   Đo lường trước và sau can thiệp (Pre-test vs Post-test) theo thang đo chuẩn quốc tế CBIS & CDSE-SF.
@@ -4603,7 +4603,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                          DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
+                          DỰ ÁN NGHIÊN CỨU KHKT 2026 - PHÂN NGÀNH KHOA HỌC XÃ HỘI VÀ HÀNH VI
                         </span>
                         <div className="text-sm font-extrabold text-slate-800 mt-1">
                           MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{previewPdfStudent.id}</span> | {previewPdfStudent.grade || 'Khối 12'} THPT
@@ -4777,7 +4777,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                   📚 TẬP HỒ SƠ 30 BẢN CAM KẾT HÀNH ĐỘNG THỰC NGHIỆM (N=30)
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  Chuẩn A4 dọc phục vụ đóng tập Phụ lục Hồ sơ Dự thi ViSEF 2026
+                  Chuẩn A4 dọc phục vụ đóng tập Phụ lục Hồ sơ Dự thi KHKT 2026
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -4967,7 +4967,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     <div className="flex justify-between items-start">
                       <div>
                         <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                          DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS | BẢN #{idx + 1}/30
+                          DỰ ÁN NGHIÊN CỨU KHKT 2026 - SOCRACAREER | BẢN #{idx + 1}/30
                         </span>
                         <div className="text-sm font-extrabold text-slate-800 mt-1">
                           MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{st.id}</span> | {st.grade || 'Khối 12'} THPT

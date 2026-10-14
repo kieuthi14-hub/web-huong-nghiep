@@ -1,7 +1,7 @@
-// DỮ LIỆU CAM KẾT CHUẨN HÓA 2 TRỤ CỘT: HỌC VẤN TỔ HỢP & HỆ THỐNG KỸ NĂNG NGHỀ (CHUẨN VISEF QUỐC GIA)
+// DỮ LIỆU CAM KẾT CHUẨN HÓA 2 TRỤ CỘT: HỌC VẤN TỔ HỢP & HỆ THỐNG KỸ NĂNG NGHỀ (CHUẨN KHKT QUỐC GIA)
 export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
   10: {
-    badge: "Phân hóa: Khối 10 THPT (Củng cố Môn nền tảng & Giải trừ ảo tưởng học phí)",
+    badge: "Phân hóa: Khối 10 THPT (Củng cố Môn nền tảng & Kiểm soát chi phí đào tạo)",
     note: "Giai đoạn định hình hệ đào tạo chính quy, kiểm soát chi phí thực tế và giữ vững môn học cốt lõi",
     items: [
       {
@@ -19,7 +19,7 @@ export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
     ]
   },
   11: {
-    badge: "Phân hóa: Khối 11 THPT (Tích lũy Học bạ & Đối chứng nghề Y dược / Kỹ thuật)",
+    badge: "Phân hóa: Khối 11 THPT (Tích lũy Học bạ & Đối chứng Thực tế Nghề Nghiệp)",
     note: "Giai đoạn then chốt cải thiện dải điểm học bạ, đối chứng áp lực thực tế và giải trừ ngộ nhận nghề",
     items: [
       {
@@ -28,7 +28,7 @@ export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
       },
       {
         num: "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:",
-        text: "NẾU có cơ hội tiếp cận môi trường làm việc thực tế: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế tại cơ sở y tế địa phương trước khi chốt định hướng chuyên ngành lâu dài."
+        text: "NẾU có cơ hội tiếp cận môi trường làm việc thực tế: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế tại các cơ sở chuyên môn trước khi chốt định hướng chuyên ngành lâu dài."
       },
       {
         num: "3. Vật neo Hành vi:",
@@ -37,41 +37,41 @@ export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
     ]
   },
   12: {
-    badge: "Phân hóa: Khối 12 THPT (Quản trị Rủi ro Điểm sàn Thi TN THPT & An toàn Địa phương)",
-    note: "Giai đoạn nước rút bứt phá dải điểm tổ hợp A00/KHTN, tối ưu hóa an toàn thực địa và giữ vững 3 nấc",
+    badge: "Phân hóa: Khối 12 THPT (Quản trị Rủi ro Điểm sàn Thi TN THPT & An toàn Tuyển sinh)",
+    note: "Giai đoạn nước rút bứt phá dải điểm tổ hợp xét tuyển, tối ưu hóa an toàn thực địa và giữ vững 3 nấc",
     items: [
       {
         num: "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Thu hẹp Δ Điểm):",
-        text: "NẾU kết quả các đợt thi thử hoặc kiểm tra định kỳ 3 môn tổ hợp chưa tiệm cận ngưỡng an toàn (25.0+ điểm): THÌ tập trung phân tích danh mục lỗi sai cố hữu và ưu tiên bổ khuyết dải điểm còn thiếu, quyết tâm bảo toàn ngưỡng điểm sàn của nguyện vọng cốt lõi."
+        text: "NẾU kết quả các đợt thi thử hoặc kiểm tra định kỳ 3 môn tổ hợp chưa tiệm cận ngưỡng an toàn: THÌ tập trung phân tích danh mục lỗi sai cố hữu và ưu tiên bổ khuyết dải điểm còn thiếu, quyết tâm bảo toàn ngưỡng điểm sàn của nguyện vọng cốt lõi."
       },
       {
         num: "2. Rèn luyện Năng lực Thích ứng Chuyên môn & Tài chính:",
-        text: "NẾU chuẩn bị bước vào giai đoạn xác nhận hồ sơ: THÌ chủ động tìm hiểu chương trình đào tạo chuyên ngành thực tế, đồng thời lập dự toán kinh phí đào tạo 4 năm tại ĐH Nha Trang để thống nhất phương án tài chính tự chủ cùng gia đình."
+        text: "NẾU chuẩn bị bước vào giai đoạn xác nhận hồ sơ: THÌ chủ động tìm hiểu chương trình đào tạo chuyên ngành thực tế, đồng thời lập dự toán kinh phí đào tạo 3–4 năm tại cơ sở đào tạo mục tiêu để thống nhất phương án tài chính tự chủ cùng gia đình."
       },
       {
         num: "3. Vật neo Giữ vững Chiến lược (Chống hiệu ứng đám đông):",
-        text: "Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc (Thử thách: ĐH CNTT TP.HCM — Vừa sức: ĐH Nha Trang — Bảo toàn: CĐ Kỹ thuật Khánh Hòa), không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh."
+        text: "Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc (Thử thách — Vừa sức — Bảo toàn), không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh."
       }
     ]
   }
 };
 
-// DỮ LIỆU ĐÃ CHUẨN HÓA THỰC ĐỊA KHÁNH HÒA:
+// DỮ LIỆU TAM GIÁC NGUYỆN VỌNG MẪU TIÊU CHUẨN (KHÔNG GÁN CỐ ĐỊNH NGÀNH HỌC KHÁC):
 export const DEFAULT_TRIANGLE_DATA = {
   stretch: {
     title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)",
-    major: "Tâm lý học — ĐH KHXH&NV TP.HCM",
-    desc: "Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)"
+    major: "Nguyện vọng Thử thách (Trường đại học trọng điểm / Tốp đầu)",
+    desc: "Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)"
   },
   realistic: {
     title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)",
-    major: "Tâm lý học (ĐH Sư phạm TP.HCM) / Quản trị Nhân lực (ĐH Nha Trang)",
-    desc: "Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)"
+    major: "Nguyện vọng Vừa sức (Hệ chính quy vừa sức / Cơ sở đào tạo uy tín khu vực)",
+    desc: "Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (biên độ an toàn +1.5 đến +2.5 điểm)"
   },
   safety: {
     title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-    major: "Công tác Xã hội — Trường ĐH Nha Trang",
-    desc: "Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo"
+    major: "Nguyện vọng Bảo toàn (Hệ Cao đẳng / Chương trình đào tạo thực hành chất lượng cao)",
+    desc: "Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập và tích lũy kỹ năng nghề không bị gián đoạn"
   }
 };
 
@@ -340,178 +340,133 @@ export const CT08_COMMITMENT_DATA = {
 };
 
 /**
- * Trợ cấp phân hóa cấu trúc Bước 5 (Tam giác nguyện vọng & Ma trận ý định thực thi)
- * Chuẩn ViSEF CBAS 2026
+ * HÀM XÂY DỰNG TAM GIÁC NGUYỆN VỌNG & MA TRẬN HÀNH ĐỘNG ĐỘNG TỪ MỎ NEO T0 DUY NHẤT
+ * Toàn bộ Bước 5 (tam giác, mục tiêu sau hiệu chuẩn, ma trận hành động) suy ra từ mỏ neo T0 đã khai.
  */
-export function getAdaptiveStep5Data(student = {}) {
-  let matrix = {};
-  let triangle = {};
+export function buildAdaptiveTriadAndPlan(targetMajor = '', targetSchool = '', grade = 12) {
+  const major = (targetMajor || '').trim() || 'Ngành mục tiêu';
+  const school = (targetSchool || '').trim();
 
-  const grade = student.grade || student.gradeNum;
-  const isGrade12 = grade === "Khối 12" || grade === 12 || grade === "12" || student.id === "CT_21";
-  const isGrade11 = grade === "Khối 11" || grade === 11 || grade === "11" || student.id === "CT_13";
+  // Nấc 1: Thử thách (Stretch Goal)
+  const stretchTitle = "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)";
+  const stretchSchool = school ? `${major} — ${school}` : `${major} (Trường đại học trọng điểm / Tốp đầu)`;
+  const stretchDesc = "Mục tiêu dấn thân nỗ lực cao — Đòi hỏi bứt phá tối đa năng lực các môn thế mạnh trong tổ hợp xét tuyển.";
 
-  if (isGrade12) {
-    // Khối 12: Quản trị rủi ro điểm sàn thi TN THPT & An toàn địa phương
-    triangle = {
-      targetCore: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: ~22.0 - 23.5đ)",
-      targetCoreNote: "Đã giải trừ ảo tưởng điểm sàn vượt ngưỡng (+2.5đ) & Tối ưu hóa an toàn thực địa",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Trí tuệ Nhân tạo / CNTT — ĐH Công nghệ Thông tin - ĐHQG TP.HCM (Tham chiếu: 27.5đ)",
-      stretchDesc: "Mục tiêu nỗ lực cao — Thiếu 2.5đ sàn; yêu cầu bứt phá dải điểm tổ hợp A00 trong kỳ thi TN THPT.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: 22.0 – 23.5đ)",
-      realisticDesc: "Mục tiêu trọng tâm — Nằm trong dải an toàn của phong độ học bạ 25.0đ (+1.5 đến +3.0đ dự phòng), tối ưu chi phí đào tạo.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Kỹ thuật Phần mềm — Cao đẳng Kỹ thuật Công nghệ Khánh Hòa (Xét học bạ THPT)",
-      safetyDesc: "Vùng đệm rủi ro — Xét tuyển học bạ sớm, bảo đảm lộ trình học tập liên tục nếu kỳ thi có biến động bất khả kháng."
-    };
+  // Nấc 2: Vừa sức (Realistic Target)
+  const realisticTitle = "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)";
+  const realisticSchool = `${major} (Hệ chính quy vừa sức / Cơ sở đào tạo uy tín khu vực)`;
+  const realisticDesc = "Mục tiêu trọng tâm bảo đảm cơ hội trúng tuyển vững chắc, tối ưu hóa học phí và lộ trình việc làm sau tốt nghiệp.";
 
-    matrix = {
-      action1_title: "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Thu hẹp Δ Điểm):",
-      action1_content: "NẾU kết quả các đợt thi thử hoặc kiểm tra định kỳ 3 môn tổ hợp chưa tiệm cận ngưỡng an toàn (25.0+ điểm): THÌ tập trung phân tích danh mục lỗi sai cố hữu và ưu tiên bổ khuyết dải điểm còn thiếu, quyết tâm bảo toàn ngưỡng điểm sàn của nguyện vọng cốt lõi.",
-      action2_title: "2. Rèn luyện Năng lực Thích ứng Chuyên môn & Tài chính:",
-      action2_content: "NẾU chuẩn bị bước vào giai đoạn xác nhận hồ sơ: THÌ chủ động tìm hiểu chương trình đào tạo chuyên ngành thực tế, đồng thời lập dự toán kinh phí đào tạo 4 năm tại ĐH Nha Trang để thống nhất phương án tài chính tự chủ cùng gia đình.",
-      action3_title: "3. Vật neo Giữ vững Chiến lược (Chống hiệu ứng đám đông):",
-      action3_content: "Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc (Thử thách: ĐH CNTT TP.HCM — Vừa sức: ĐH Nha Trang — Bảo toàn: CĐ Kỹ thuật Khánh Hòa), không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh."
-    };
-  } else if (isGrade11) {
-    // Khối 11: Tích lũy học bạ & Đối chứng nghề y dược/kỹ thuật
-    triangle = {
-      targetCore: "Kỹ thuật Xét nghiệm Y học / Điều dưỡng — ĐH Yersin / CĐ Y tế Khánh Hòa",
-      targetCoreNote: "Đã hiệu chuẩn lệch năng lực tổ hợp B00; xác lập lộ trình đào tạo thực hành",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Y Đa khoa — ĐH Y Dược TP.HCM (Tham chiếu: 27.5đ+)",
-      stretchDesc: "Mục tiêu phấn đấu nỗ lực cao — Khoảng cách thiếu 3.2đ; đòi hỏi bứt phá năng lực chuyên sâu.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Y học Dự phòng / Dược học — ĐH Tây Nguyên / ĐH Nha Trang (Tham chiếu: 21.5 - 23.0đ)",
-      realisticDesc: "Mục tiêu phù hợp năng lực học bạ tích lũy, cơ hội trúng tuyển ổn định.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Cao đẳng Điều dưỡng — Cao đẳng Y tế Khánh Hòa (Xét học bạ sớm)",
-      safetyDesc: "Vùng đệm an toàn — Chủ động phương thức xét tuyển sớm, bảo đảm việc làm lâm sàng tại địa phương."
-    };
+  // Nấc 3: Bảo toàn (Safety Buffer)
+  const safetyTitle = "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)";
+  const safetySchool = `${major} (Hệ Cao đẳng / Chương trình đào tạo thực hành chất lượng cao)`;
+  const safetyDesc = "Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập và tích lũy kỹ năng nghề không bị gián đoạn.";
 
-    matrix = {
-      action1_title: "1. Kỷ luật Nâng cao Điểm bạ Tổ hợp:",
-      action1_content: "NẾU điểm tổng kết môn chuyên môn tổ hợp có xu hướng chững lại: THÌ thiết lập mục tiêu cải thiện dải điểm học bạ cả năm thêm từ +0.5 đến +0.8 điểm, tạo biên độ an toàn phục vụ phương thức xét tuyển sớm.",
-      action2_title: "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:",
-      action2_content: "NẾU có cơ hội tiếp cận môi trường làm việc thực tế: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế tại cơ sở y tế địa phương trước khi chốt định hướng chuyên ngành lâu dài.",
-      action3_title: "3. Vật neo Hành vi:",
-      action3_content: "Dán bản cam kết tại góc học tập; định kỳ đối soát phong độ học tập cùng Cố vấn để chủ động điều chỉnh chiến lược theo từng học kỳ."
-    };
-  } else {
-    // Khối 10 (Ví dụ CT_08 hoặc CT_02): Củng cố môn nền tảng & Giải trừ ảo tưởng học phí
-    triangle = {
-      targetCore: "Kỹ thuật Chế biến Món ăn / Quản trị Dịch vụ — CĐ Du lịch Nha Trang",
-      targetCoreNote: "Đã giải trừ ngộ nhận chi phí nghề tóc tự do; định hình hệ đào tạo chính quy",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Quản trị Khách sạn — Trường Đại học Nha Trang (Tham chiếu: 21.0đ)",
-      stretchDesc: "Mục tiêu đại học chính quy địa phương — Đòi hỏi củng cố điểm văn hóa THPT vững chắc.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Kỹ thuật Chế biến Món ăn / Làm đẹp — CĐ Du lịch Nha Trang (Hệ chính quy)",
-      realisticDesc: "Mục tiêu đào tạo bài bản — Học phí theo quy định nhà nước, thực hành xưởng đạt chuẩn.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Hệ Trung cấp nghề 9+ — Trường Cao đẳng Kỹ thuật Công nghệ Khánh Hòa",
-      safetyDesc: "Vùng đệm dự phòng rủi ro — Được miễn học phí nghề theo chính sách nhà nước, bảo toàn tương lai."
-    };
+  const targetCore = school ? `${major} — ${school}` : `${major} (Hệ đào tạo vừa sức)`;
+  const targetCoreNote = "Đã hiệu chuẩn bẫy nhận thức & Tối ưu hóa tính khả thi thực tế";
+  const gNum = Number(grade) || 12;
 
-    matrix = {
-      action1_title: "1. Kỷ luật Giữ vững Môn học Nền tảng:",
-      action1_content: "NẾU bước vào giai đoạn lựa chọn cụm môn học chuyên sâu: THÌ tập trung tối đa để giữ vững điểm trung bình 2 môn cốt lõi (Toán và Ngoại ngữ) trên mức khá (7.5+), bảo đảm không bị thu hẹp phổ lựa chọn nghề nghiệp về sau.",
-      action2_title: "2. Kiểm soát Chi phí & Chuẩn hóa Lộ trình Nghề:",
-      action2_content: "NẾU tiếp cận thông tin tuyển sinh hoặc các khóa đào tạo nghề tự do: THÌ luôn đối chứng dữ liệu thực tế về học phí và thời gian tập sự cùng Cố vấn, kiên quyết ưu tiên hệ đào tạo chính quy thay vì các quảng cáo ngắn hạn.",
-      action3_title: "3. Vật neo Hành vi:",
-      action3_content: "Dán bản cam kết tại góc học tập; lấy mục tiêu nghề nghiệp đã được hiệu chuẩn làm động lực duy trì nền nếp học tập suốt năm học lớp 10."
-    };
+  let action1_title = "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Cấu trúc 'Nếu... Thì...'):";
+  let action1_content = `NẾU điểm kiểm tra định kỳ hoặc thi thử 3 môn tổ hợp xét tuyển ngành ${major} chưa đạt ngưỡng an toàn: THÌ lập tức phân tích danh mục lỗi sai, tập trung bồi dưỡng dải điểm còn đuối sức để kéo tổng điểm lên.`;
+
+  let action2_title = "2. Rèn luyện Kỹ năng Thích ứng Chuyên môn & Tài chính:";
+  let action2_content = `NẾU chuẩn bị bước vào giai đoạn nộp hồ sơ xét tuyển ngành ${major}: THÌ chủ động đối chứng kỹ điều kiện thực tế (chuẩn đầu ra, kiểm tra sức khỏe/ngoại ngữ, học phí 3–4 năm) để thống nhất phương án tài chính cùng gia đình.`;
+
+  let action3_title = "3. Vật neo Giữ vững Chiến lược (Behavioral Anchor):";
+  let action3_content = `Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc của ngành ${major}, không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh.`;
+
+  if (gNum === 10) {
+    action1_title = "1. Kỷ luật Giữ vững Môn học Nền tảng:";
+    action1_content = `NẾU bước vào giai đoạn lựa chọn cụm môn học chuyên sâu hướng tới ngành ${major}: THÌ tập trung tối đa để giữ vững điểm trung bình 2 môn cốt lõi (Toán và Ngoại ngữ) trên mức khá (7.5+), bảo đảm không bị thu hẹp phổ lựa chọn về sau.`;
+    action2_title = "2. Kiểm soát Chi phí & Chuẩn hóa Lộ trình Nghề:";
+    action2_content = `NẾU tiếp cận thông tin tuyển sinh hoặc các khóa đào tạo nghề ${major}: THÌ luôn đối chứng dữ liệu thực tế về học phí và thời gian đào tạo cùng Cố vấn, kiên quyết ưu tiên hệ đào tạo chính quy.`;
+    action3_title = "3. Vật neo Hành vi (Behavioral Anchor):";
+    action3_content = `Dán bản cam kết tại góc học tập; lấy mục tiêu ngành ${major} đã được hiệu chuẩn làm động lực duy trì nền nếp học tập suốt năm học lớp 10.`;
+  } else if (gNum === 11) {
+    action1_title = "1. Kỷ luật Nâng cao Điểm bạ Tổ hợp:";
+    action1_content = `NẾU điểm tổng kết môn chuyên môn tổ hợp xét tuyển ngành ${major} có xu hướng chững lại: THÌ thiết lập mục tiêu cải thiện dải điểm học bạ cả năm thêm từ +0.5 đến +0.8 điểm, tạo biên độ an toàn phục vụ phương thức xét tuyển sớm.`;
+    action2_title = "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:";
+    action2_content = `NẾU có cơ hội tiếp cận môi trường làm việc thực tế của ngành ${major}: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế trước khi chốt định hướng chuyên ngành lâu dài.`;
+    action3_title = "3. Vật neo Hành vi (Behavioral Anchor):";
+    action3_content = `Dán bản cam kết tại góc học tập; định kỳ đối soát phong độ học tập cùng Cố vấn để chủ động điều chỉnh chiến lược theo từng học kỳ.`;
   }
 
-  return { triangle, matrix };
+  const stretch = {
+    title: stretchTitle,
+    targetScore: "Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)",
+    majorSchool: stretchSchool,
+    notes: stretchDesc
+  };
+
+  const realistic = {
+    title: realisticTitle,
+    targetScore: "Phong độ an toàn: Dải điểm 21.0 – 24.0 (Dự phòng +1.5đ đến +2.5đ)",
+    majorSchool: realisticSchool,
+    notes: realisticDesc
+  };
+
+  const safety = {
+    title: safetyTitle,
+    targetScore: "Vùng đệm an toàn (Phương thức xét học bạ sớm / Tuyển sinh thực hành)",
+    majorSchool: safetySchool,
+    notes: safetyDesc
+  };
+
+  return {
+    triangle: {
+      stretch,
+      realistic,
+      safety,
+      stretchTitle,
+      stretchSchool,
+      stretchDesc,
+      realisticTitle,
+      realisticSchool,
+      realisticDesc,
+      safetyTitle,
+      safetySchool,
+      safetyDesc,
+      targetCore,
+      targetCoreNote
+    },
+    matrix: {
+      action1_title,
+      action1_content,
+      action2_title,
+      action2_content,
+      action3_title,
+      action3_content
+    },
+    actions: [
+      { num: action1_title, text: action1_content },
+      { num: action2_title, text: action2_content },
+      { num: action3_title, text: action3_content }
+    ]
+  };
+}
+
+/**
+ * Trợ cấp phân hóa cấu trúc Bước 5 (Tam giác nguyện vọng & Ma trận ý định thực thi)
+ * Chuẩn SocraCareer KHKT 2026
+ */
+export function getAdaptiveStep5Data(student = {}) {
+  const major = student.targetMajor || student.major || student.target_career || student.targetCareer || 'Ngành mục tiêu';
+  const school = student.targetSchool || student.target_school || student.target_university || student.targetUniversity || '';
+  const grade = student.grade || student.gradeNum || 12;
+  return buildAdaptiveTriadAndPlan(major, school, grade);
 }
 
 /**
  * HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER)
- * BƯỚC 5: BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHUẨN VISEF QUỐC GIA)
+ * BƯỚC 5: BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHUẨN KHKT QUỐC GIA)
  */
 export function generateStep5Content(student = {}) {
-  // 1. Phân hóa Ma trận Ý định Thực thi (Implementation Intentions) chuẩn Thuyết Hành vi
-  let matrix = {};
-  let triangle = {};
+  const major = student.targetMajor || student.major || student.target_career || student.targetCareer || 'Ngành mục tiêu';
+  const school = student.targetSchool || student.target_school || student.target_university || student.targetUniversity || '';
+  const grade = student.grade || student.gradeNum || 12;
+  const { triangle, matrix } = buildAdaptiveTriadAndPlan(major, school, grade);
 
-  if (student.grade === "Khối 12" || student.id === "CT_21") {
-    // Khối 12: Quản trị rủi ro điểm sàn thi TN THPT & An toàn địa phương
-    triangle = {
-      targetCore: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: ~22.0 - 23.5đ)",
-      targetCoreNote: "Đã giải trừ ảo tưởng điểm sàn vượt ngưỡng (+2.5đ) & Tối ưu hóa an toàn thực địa",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Trí tuệ Nhân tạo / CNTT — ĐH Công nghệ Thông tin - ĐHQG TP.HCM (Tham chiếu: 27.5đ)",
-      stretchDesc: "Mục tiêu nỗ lực cao — Thiếu 2.5đ sàn; yêu cầu bứt phá dải điểm tổ hợp A00 trong kỳ thi TN THPT.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: 22.0 – 23.5đ)",
-      realisticDesc: "Mục tiêu trọng tâm — Nằm trong dải an toàn của phong độ học bạ 25.0đ (+1.5 đến +3.0đ dự phòng), tối ưu chi phí đào tạo.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Kỹ thuật Phần mềm — Cao đẳng Kỹ thuật Công nghệ Khánh Hòa (Xét học bạ THPT)",
-      safetyDesc: "Vùng đệm rủi ro — Xét tuyển học bạ sớm, bảo đảm lộ trình học tập liên tục nếu kỳ thi có biến động bất khả kháng."
-    };
-
-    matrix = {
-      action1_title: "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Thu hẹp Δ Điểm):",
-      action1_content: "NẾU kết quả các đợt thi thử hoặc kiểm tra định kỳ 3 môn tổ hợp chưa tiệm cận ngưỡng an toàn (25.0+ điểm): THÌ tập trung phân tích danh mục lỗi sai cố hữu và ưu tiên bổ khuyết dải điểm còn thiếu, quyết tâm bảo toàn ngưỡng điểm sàn của nguyện vọng cốt lõi.",
-      action2_title: "2. Rèn luyện Năng lực Thích ứng Chuyên môn & Tài chính:",
-      action2_content: "NẾU chuẩn bị bước vào giai đoạn xác nhận hồ sơ: THÌ chủ động tìm hiểu chương trình đào tạo chuyên ngành thực tế, đồng thời lập dự toán kinh phí đào tạo 4 năm tại ĐH Nha Trang để thống nhất phương án tài chính tự chủ cùng gia đình.",
-      action3_title: "3. Vật neo Giữ vững Chiến lược (Chống hiệu ứng đám đông):",
-      action3_content: "Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc (Thử thách: ĐH CNTT TP.HCM — Vừa sức: ĐH Nha Trang — Bảo toàn: CĐ Kỹ thuật Khánh Hòa), không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh."
-    };
-  } else if (student.grade === "Khối 11" || student.id === "CT_13") {
-    // Khối 11: Tích lũy học bạ & Đối chứng nghề y dược/kỹ thuật
-    triangle = {
-      targetCore: "Kỹ thuật Xét nghiệm Y học / Điều dưỡng — ĐH Yersin / CĐ Y tế Khánh Hòa",
-      targetCoreNote: "Đã hiệu chuẩn lệch năng lực tổ hợp B00; xác lập lộ trình đào tạo thực hành",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Y Đa khoa — ĐH Y Dược TP.HCM (Tham chiếu: 27.5đ+)",
-      stretchDesc: "Mục tiêu phấn đấu nỗ lực cao — Khoảng cách thiếu 3.2đ; đòi hỏi bứt phá năng lực chuyên sâu.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Y học Dự phòng / Dược học — ĐH Tây Nguyên / ĐH Nha Trang (Tham chiếu: 21.5 - 23.0đ)",
-      realisticDesc: "Mục tiêu phù hợp năng lực học bạ tích lũy, cơ hội trúng tuyển ổn định.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Cao đẳng Điều dưỡng — Cao đẳng Y tế Khánh Hòa (Xét học bạ sớm)",
-      safetyDesc: "Vùng đệm an toàn — Chủ động phương thức xét tuyển sớm, bảo đảm việc làm lâm sàng tại địa phương."
-    };
-
-    matrix = {
-      action1_title: "1. Kỷ luật Nâng cao Điểm bạ Tổ hợp:",
-      action1_content: "NẾU điểm tổng kết môn chuyên môn tổ hợp có xu hướng chững lại: THÌ thiết lập mục tiêu cải thiện dải điểm học bạ cả năm thêm từ +0.5 đến +0.8 điểm, tạo biên độ an toàn phục vụ phương thức xét tuyển sớm.",
-      action2_title: "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:",
-      action2_content: "NẾU có cơ hội tiếp cận môi trường làm việc thực tế: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế tại cơ sở y tế địa phương trước khi chốt định hướng chuyên ngành lâu dài.",
-      action3_title: "3. Vật neo Hành vi:",
-      action3_content: "Dán bản cam kết tại góc học tập; định kỳ đối soát phong độ học tập cùng Cố vấn để chủ động điều chỉnh chiến lược theo từng học kỳ."
-    };
-  } else {
-    // Khối 10 (Ví dụ CT_08 hoặc CT_02): Củng cố môn nền tảng & Giải trừ ảo tưởng học phí
-    triangle = {
-      targetCore: "Kỹ thuật Chế biến Món ăn / Quản trị Dịch vụ — CĐ Du lịch Nha Trang",
-      targetCoreNote: "Đã giải trừ ngộ nhận chi phí nghề tóc tự do; định hình hệ đào tạo chính quy",
-      stretchTitle: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
-      stretchSchool: "Quản trị Khách sạn — Trường Đại học Nha Trang (Tham chiếu: 21.0đ)",
-      stretchDesc: "Mục tiêu đại học chính quy địa phương — Đòi hỏi củng cố điểm văn hóa THPT vững chắc.",
-      realisticTitle: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
-      realisticSchool: "Kỹ thuật Chế biến Món ăn / Làm đẹp — CĐ Du lịch Nha Trang (Hệ chính quy)",
-      realisticDesc: "Mục tiêu đào tạo bài bản — Học phí theo quy định nhà nước, thực hành xưởng đạt chuẩn.",
-      safetyTitle: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
-      safetySchool: "Hệ Trung cấp nghề 9+ — Trường Cao đẳng Kỹ thuật Công nghệ Khánh Hòa",
-      safetyDesc: "Vùng đệm dự phòng rủi ro — Được miễn học phí nghề theo chính sách nhà nước, bảo toàn tương lai."
-    };
-
-    matrix = {
-      action1_title: "1. Kỷ luật Giữ vững Môn học Nền tảng:",
-      action1_content: "NẾU bước vào giai đoạn lựa chọn cụm môn học chuyên sâu: THÌ tập trung tối đa để giữ vững điểm trung bình 2 môn cốt lõi (Toán và Ngoại ngữ) trên mức khá (7.5+), bảo đảm không bị thu hẹp phổ lựa chọn nghề nghiệp về sau.",
-      action2_title: "2. Kiểm soát Chi phí & Chuẩn hóa Lộ trình Nghề:",
-      action2_content: "NẾU tiếp cận thông tin tuyển sinh hoặc các khóa đào tạo nghề tự do: THÌ luôn đối chứng dữ liệu thực tế về học phí và thời gian tập sự cùng Cố vấn, kiên quyết ưu tiên hệ đào tạo chính quy thay vì các quảng cáo ngắn hạn.",
-      action3_title: "3. Vật neo Hành vi:",
-      action3_content: "Dán bản cam kết tại góc học tập; lấy mục tiêu nghề nghiệp đã được hiệu chuẩn làm động lực duy trì nền nếp học tập suốt năm học lớp 10."
-    };
-  }
-
-  // 2. Trả về khối HTML giao diện chuẩn mực, sạch sẽ, không lỗi placeholder
+  // 2. Trả về khối HTML giao diện chuẩn mực, sạch sẽ, hoàn toàn ăn khớp với mỏ neo T0
   return `
   <div class="space-y-4 font-sans text-slate-200">
     <!-- KHỐI CHỈ SỐ VÀ MỤC TIÊU CỐT LÕI -->

@@ -140,56 +140,68 @@ const getStepResetDescription = (step) => {
 }
 
 /**
- * StepProgressHeader - Thanh tiến trình 5 bước can thiệp phản tư ViSEF CBAS
+ * Đọc trạng thái hoàn thành 5 bước đồng bộ từ LocalStorage
+ */
+export const getInterventionProgress = () => {
+  const status = { 1: false, 2: false, 3: false, 4: false, 5: false }
+
+  // Step 1: Holland test done or anchor set
+  try {
+    const s1 = localStorage.getItem('cbas_user_profile') || 
+               localStorage.getItem('userAnchorData') || 
+               localStorage.getItem('cbas_anchor_data') ||
+               localStorage.getItem('career_initial_anchor')
+    if (s1) status[1] = true
+  } catch (e) {}
+
+  // Step 2: Socratic chat finished
+  try {
+    const s2 = localStorage.getItem('cbas_step2_completed') || 
+               localStorage.getItem('cbas_step2_telemetry') ||
+               localStorage.getItem('cbas_step2_messages')
+    if (s2) status[2] = true
+  } catch (e) {}
+
+  // Step 3: Fact check evidence recorded
+  try {
+    const s3 = localStorage.getItem('cbas_step3_evidence') || 
+               localStorage.getItem('career_evidence_task') || 
+               localStorage.getItem('cbas_step3_triage') ||
+               localStorage.getItem('cbas_score_gap')
+    if (s3) status[3] = true
+  } catch (e) {}
+
+  // Step 4: Mentorship post-log recorded
+  try {
+    const s4 = localStorage.getItem('cbas_step4_feedback') || 
+               localStorage.getItem('mentor_feedback_record') ||
+               localStorage.getItem('cbas_step4_completed') ||
+               localStorage.getItem('cbas_step4_consultation_completed')
+    if (s4) status[4] = true
+  } catch (e) {}
+
+  // Step 5: Action plan saved
+  try {
+    const s5 = localStorage.getItem('cbas_step5_action_plan') || 
+               localStorage.getItem('cbas_full_intervention_dossier') ||
+               localStorage.getItem('cbas_step5_completed')
+    if (s5) status[5] = true
+  } catch (e) {}
+
+  return status
+}
+
+/**
+ * StepProgressHeader - Thanh tiến trình 5 bước can thiệp phản tư SocraCareer (KHKT 2026)
  * Tích hợp tính năng "Làm lại bước này" và "Khởi động lại toàn bộ 5 bước"
  */
 export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetStep }) => {
-  const [completedSteps, setCompletedSteps] = useState({})
+  const [completedSteps, setCompletedSteps] = useState(getInterventionProgress)
   const [showResetModal, setShowResetModal] = useState(false)
   const [resetMode, setResetMode] = useState('CURRENT') // 'CURRENT' | 'ALL'
 
   useEffect(() => {
-    // Đọc trạng thái hoàn thành từ localStorage
-    const status = {}
-
-    // Step 1: Holland test done or anchor set
-    try {
-      const s1 = localStorage.getItem('cbas_user_profile') || 
-                 localStorage.getItem('userAnchorData') || 
-                 localStorage.getItem('cbas_anchor_data')
-      if (s1) status[1] = true
-    } catch (e) {}
-
-    // Step 2: Socratic chat finished
-    try {
-      const s2 = localStorage.getItem('cbas_step2_completed') || 
-                 localStorage.getItem('cbas_step2_telemetry')
-      if (s2) status[2] = true
-    } catch (e) {}
-
-    // Step 3: Fact check evidence recorded
-    try {
-      const s3 = localStorage.getItem('cbas_step3_evidence') || 
-                 localStorage.getItem('career_evidence_task') || 
-                 localStorage.getItem('cbas_score_gap')
-      if (s3) status[3] = true
-    } catch (e) {}
-
-    // Step 4: Mentorship post-log recorded
-    try {
-      const s4 = localStorage.getItem('cbas_step4_feedback') || 
-                 localStorage.getItem('mentor_feedback_record')
-      if (s4) status[4] = true
-    } catch (e) {}
-
-    // Step 5: Action plan saved
-    try {
-      const s5 = localStorage.getItem('cbas_step5_action_plan') || 
-                 localStorage.getItem('cbas_full_intervention_dossier')
-      if (s5) status[5] = true
-    } catch (e) {}
-
-    setCompletedSteps(status)
+    setCompletedSteps(getInterventionProgress())
   }, [currentStep])
 
   const completedCount = Object.keys(completedSteps).length
@@ -232,7 +244,7 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
           </Link>
           <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
           <span className="text-slate-800 font-extrabold uppercase tracking-wider text-[11px] bg-slate-100 px-2.5 py-1 rounded-md">
-            Chu trình can thiệp ViSEF CBAS
+            Chu trình can thiệp KHKT SocraCareer
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
           <span className="text-indigo-700 font-black text-[11px] bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-200">

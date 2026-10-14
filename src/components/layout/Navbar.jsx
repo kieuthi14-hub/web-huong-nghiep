@@ -120,7 +120,7 @@ const Navbar = ({ onToggleSidebar }) => {
               <p className="text-xs text-slate-500 font-medium flex items-center justify-end gap-1">
                 {!isTeacherAdmin && (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                    🛡️ Ẩn danh ViSEF
+                    🛡️ Ẩn danh KHKT
                   </span>
                 )}
                 <span>{roleLabels[profile.role] || 'Thành viên'}</span>
@@ -150,7 +150,7 @@ const Navbar = ({ onToggleSidebar }) => {
         )}
       </div>
 
-      {/* Modal Đổi Mã Ẩn Danh ViSEF */}
+      {/* Modal Đổi Mã Ẩn Danh KHKT */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-reveal">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4">
@@ -169,7 +169,7 @@ const Navbar = ({ onToggleSidebar }) => {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              Theo chuẩn Đạo đức Nghiên cứu ViSEF 2026, hệ thống hiển thị mã định danh (VD: <strong className="text-indigo-600">CT_01</strong>) thay vì email cá nhân để ẩn danh hóa hoàn toàn dữ liệu.
+              Theo chuẩn Đạo đức Nghiên cứu KHKT 2026, hệ thống hiển thị mã định danh (VD: <strong className="text-indigo-600">CT_01</strong>) thay vì email cá nhân để ẩn danh hóa hoàn toàn dữ liệu.
             </p>
 
             <form onSubmit={handleSaveCode} className="space-y-3">

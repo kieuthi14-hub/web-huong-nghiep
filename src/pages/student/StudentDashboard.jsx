@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Toast from '../../components/common/Toast'
+import { getInterventionProgress } from '../../components/common/StepProgressHeader'
 import { 
   ClipboardList, 
   Brain, 
@@ -28,33 +29,45 @@ const StudentDashboard = () => {
   const location = useLocation()
   const [toast, setToast] = useState(null)
 
-  // Trạng thái & biến số thu hoạch của từng bước can thiệp
-  const [stepData, setStepData] = useState({
-    // Bước 1: Holland & Mỏ neo T0
-    step1Done: false,
-    hollandCode: null,
-    targetMajor: null,
-    targetSchool: null,
-    confidenceT0: null,
+  // Trạng thái & biến số thu hoạch của từng bước can thiệp (đồng bộ tức thì với StepProgressHeader)
+  const [stepData, setStepData] = useState(() => {
+    const progress = getInterventionProgress()
+    let initialAnchor = {}
+    try {
+      const raw = localStorage.getItem('cbas_anchor_data') || 
+                  localStorage.getItem('userAnchorData') || 
+                  localStorage.getItem('cbas_user_profile') ||
+                  localStorage.getItem('career_initial_anchor')
+      if (raw) initialAnchor = JSON.parse(raw)
+    } catch (e) {}
 
-    // Bước 2: AI Socrates
-    step2Done: false,
-    step2Triage: null,
-    step2Outcome: null,
+    return {
+      // Bước 1: Holland & Mỏ neo T0
+      step1Done: Boolean(progress[1]),
+      hollandCode: initialAnchor.hollandCode || initialAnchor.primary_code || initialAnchor.holland_code || null,
+      targetMajor: initialAnchor.targetMajor || initialAnchor.target_career || initialAnchor.target_major || null,
+      targetSchool: initialAnchor.targetSchool || initialAnchor.target_university || null,
+      confidenceT0: initialAnchor.initialConfidence || initialAnchor.confidence_score || null,
 
-    // Bước 3: Đối chứng dữ liệu
-    step3Done: false,
-    scoreGap: null,
-    cutoffScore: null,
+      // Bước 2: AI Socrates
+      step2Done: Boolean(progress[2]),
+      step2Triage: null,
+      step2Outcome: null,
 
-    // Bước 4: Tư vấn 1-1
-    step4Done: false,
-    readinessScore: null,
+      // Bước 3: Đối chứng dữ liệu
+      step3Done: Boolean(progress[3]),
+      scoreGap: null,
+      cutoffScore: null,
 
-    // Bước 5: Kế hoạch Hành động T2
-    step5Done: false,
-    confidenceT2: null,
-    hasActionPlan: false
+      // Bước 4: Tư vấn 1-1
+      step4Done: Boolean(progress[4]),
+      readinessScore: null,
+
+      // Bước 5: Kế hoạch Hành động T2
+      step5Done: Boolean(progress[5]),
+      confidenceT2: null,
+      hasActionPlan: Boolean(progress[5])
+    }
   })
 
   useEffect(() => {
@@ -65,10 +78,21 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     fetchStudentStatus()
-  }, [user])
+  }, [user, location.pathname, location.key])
 
   const fetchStudentStatus = async () => {
-    const nextState = { ...stepData }
+    const progress = getInterventionProgress()
+    const nextState = { 
+      ...stepData,
+      step1Done: Boolean(progress[1]),
+      step2Done: Boolean(progress[2]),
+      step3Done: Boolean(progress[3]),
+      step4Done: Boolean(progress[4]),
+      step5Done: Boolean(progress[5])
+    }
+
+    // Cập nhật trạng thái đồng bộ tức thì, tránh trễ 0/5
+    setStepData({ ...nextState })
 
     // ==========================================
     // 1. KIỂM TRA BƯỚC 1: HOLLAND & MỎ NEO T0
@@ -368,7 +392,7 @@ const StudentDashboard = () => {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 rounded-full flex items-center gap-1.5 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Nghiên Cứu ViSEF 2026 • Phân Ngành CBAS</span>
+                <span>Nghiên Cứu KHKT 2026 • SocraCareer</span>
               </span>
               <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
                 Mô Hình Can Thiệp Giảm Thiên Lệch Nhận Thức
@@ -442,7 +466,7 @@ const StudentDashboard = () => {
 
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-extrabold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-              Quy trình chuẩn ViSEF
+              Quy trình chuẩn KHKT
             </span>
           </div>
         </div>

@@ -260,7 +260,7 @@ export default function Step3DataVerification({
           <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full uppercase tracking-wider">
             Giai đoạn 3 / Quy trình Can thiệp 5 Bước
           </span>
-          <span className="text-xs text-slate-400">CBAS ViSEF 2026 Protocol</span>
+          <span className="text-xs text-slate-400">SocraCareer KHKT 2026 Protocol</span>
         </div>
         <h1 className="text-2xl font-extrabold text-slate-900 mb-2">
           Đối Chứng Dữ Liệu Đề Án Tuyển Sinh & Thị Trường Lao Động

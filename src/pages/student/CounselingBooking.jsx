@@ -543,9 +543,6 @@ const CounselingBooking = () => {
   const [nextStepVisible, setNextStepVisible] = useState(false)
   
   // Feedback Form State (Biên bản sau buổi gặp 4B)
-  const [feedbackIllusion, setFeedbackIllusion] = useState('reduced') // 'persisted' | 'reduced' | 'cleared'
-  const [feedbackReadiness, setFeedbackReadiness] = useState(8)
-  const [feedbackNotes, setFeedbackNotes] = useState('')
   const [feedbackSaved, setFeedbackSaved] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('mentor_feedback_record') || 'null')
@@ -553,6 +550,9 @@ const CounselingBooking = () => {
       return null
     }
   })
+  const [feedbackIllusion, setFeedbackIllusion] = useState(() => feedbackSaved?.illusion || '') // 'persisted' | 'reduced' | 'cleared'
+  const [feedbackReadiness, setFeedbackReadiness] = useState(() => feedbackSaved?.readiness ?? null)
+  const [feedbackNotes, setFeedbackNotes] = useState(() => feedbackSaved?.notes || '')
 
   const [mySessions, setMySessions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -560,6 +560,14 @@ const CounselingBooking = () => {
 
   // Lưu biên bản 4B
   const handleSaveFeedback = () => {
+    if (!feedbackIllusion) {
+      setToast({ type: 'error', message: 'Vui lòng chọn mục 1: Góc nhìn về mục tiêu nghề nghiệp!' })
+      return
+    }
+    if (feedbackReadiness === null) {
+      setToast({ type: 'error', message: 'Vui lòng điều chỉnh mục 2: Mức độ sẵn sàng vượt khó (kéo thanh trượt)!' })
+      return
+    }
     const record = {
       illusion: feedbackIllusion,
       readiness: feedbackReadiness,
@@ -580,8 +588,8 @@ const CounselingBooking = () => {
         localStorage.removeItem('cbas_step4_feedback')
         localStorage.removeItem('cbas_student_reflection_log')
       } catch (e) {}
-      setFeedbackIllusion('PARTIAL')
-      setFeedbackReadiness(7)
+      setFeedbackIllusion('')
+      setFeedbackReadiness(null)
       setFeedbackNotes('')
       setFeedbackSaved(null)
       setToast({ type: 'info', message: 'Đã đặt lại nhật ký thu hoạch. Em có thể ghi chép lại từ đầu!' })
@@ -2016,17 +2024,21 @@ const CounselingBooking = () => {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-bold text-slate-900 uppercase tracking-wide">
-                    2. Mức độ sẵn sàng vượt khó và đón nhận thực tế của em lúc này:
+                    2. Mức độ sẵn sàng vượt khó và đón nhận thực tế của em lúc này: <span className="text-rose-500">*</span>
                   </label>
-                  <span className="px-3 py-1 bg-violet-600 text-white rounded-lg font-black text-sm shadow-sm">
-                    {feedbackReadiness}/10
+                  <span className={`px-3 py-1 rounded-lg font-black text-xs md:text-sm shadow-sm transition ${
+                    feedbackReadiness !== null 
+                      ? 'bg-violet-600 text-white' 
+                      : 'bg-slate-200 text-slate-600 border border-slate-300'
+                  }`}>
+                    {feedbackReadiness !== null ? `${feedbackReadiness}/10` : 'Chưa chọn (Kéo thanh trượt)'}
                   </span>
                 </div>
                 <input
                   type="range"
                   min="1"
                   max="10"
-                  value={feedbackReadiness}
+                  value={feedbackReadiness ?? 5}
                   onChange={(e) => setFeedbackReadiness(Number(e.target.value))}
                   className="w-full accent-violet-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
                 />

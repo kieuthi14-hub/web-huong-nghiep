@@ -34,9 +34,10 @@ import {
   CT08_COMMITMENT_DATA,
   getStudentCommitmentData,
   getAdaptiveStep5Data,
-  generateStep5Content
+  generateStep5Content,
+  buildAdaptiveTriadAndPlan
 } from '../../data/adaptiveCommitments';
-export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content };
+export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content, buildAdaptiveTriadAndPlan };
 
 /**
  * BƯỚC 5: LỘ TRÌNH KẾ HOẠCH HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG
@@ -69,72 +70,85 @@ export default function DebiasMatrix() {
 
   const studentName = displayStudentCode;
 
+  // --- 0. HÀM ĐỌC MỎ NEO T0 DUY NHẤT ĐÃ KHAI BÁO ---
+  const getDeclaredAnchorData = () => {
+    try {
+      const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData');
+      const rawProfile = localStorage.getItem('cbas_user_profile');
+      const rawLegacy = localStorage.getItem('career_initial_anchor');
+      const a = rawAnchor ? JSON.parse(rawAnchor) : {};
+      const p = rawProfile ? JSON.parse(rawProfile) : {};
+      const l = rawLegacy ? JSON.parse(rawLegacy) : {};
+      const major = p.targetMajor || a.target_career || a.targetMajor || a.target_major || l.target_career || 'Tiếp viên hàng không';
+      const school = p.targetSchool || a.target_university || a.target_school || a.targetSchool || '';
+      const grade = Number(p.gradeNum || a.gradeNum || a.grade || 12) || 12;
+      const conf = Number(p.initialConfidence || a.confidence_score || a.initialConfidence || 8) || 8;
+      const holland = p.hollandCode || a.holland_code || 'RIA';
+      return { major, school, grade, conf, holland };
+    } catch (e) {
+      return { major: 'Tiếp viên hàng không', school: '', grade: 12, conf: 8, holland: 'RIA' };
+    }
+  };
+
+  const initialAnchor = getDeclaredAnchorData();
+  const initialAdaptive = buildAdaptiveTriadAndPlan(initialAnchor.major, initialAnchor.school, initialAnchor.grade);
+
   // --- 1. DỮ LIỆU ĐỐI CHỨNG CÁC BƯỚC TRƯỚC ---
   const [step1Data, setStep1Data] = useState({
-    targetMajor: 'Tâm lý học',
-    initialConfidence: 8,
-    hollandCode: 'RIA'
+    targetMajor: initialAnchor.major,
+    initialConfidence: initialAnchor.conf,
+    hollandCode: initialAnchor.holland
   });
   const [step2Data, setStep2Data] = useState(null);
   const [step3Data, setStep3Data] = useState(null);
   const [step4Data, setStep4Data] = useState(null);
 
   // --- 2. BẢNG HIỆU CHUẨN NHẬN THỨC & NGÀNH MỤC TIÊU ---
-  const [targetMajor, setTargetMajor] = useState('Tâm lý học');
+  const [targetMajor, setTargetMajor] = useState(initialAnchor.major);
+  const [targetSchool, setTargetSchool] = useState(initialAnchor.school);
   const [isEditingMajor, setIsEditingMajor] = useState(false);
   const [confidenceT2, setConfidenceT2] = useState(7);
   const [showConfidenceSlider, setShowConfidenceSlider] = useState(false);
 
-  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO - CHUẨN HÓA KHÁNH HÒA) ---
+  // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (SUY RA TỪ DUY NHẤT MỎ NEO T0) ---
   const [triadTiers, setTriadTiers] = useState({
     dream: {
-      label: DEFAULT_TRIANGLE_DATA.stretch.title,
-      targetScore: 'Tham chiếu: 26.5+',
-      majorSchool: DEFAULT_TRIANGLE_DATA.stretch.major,
-      notes: DEFAULT_TRIANGLE_DATA.stretch.desc
+      label: initialAdaptive.triangle.stretchTitle,
+      targetScore: 'Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)',
+      majorSchool: initialAdaptive.triangle.stretchSchool,
+      notes: initialAdaptive.triangle.stretchDesc
     },
     realistic: {
-      label: DEFAULT_TRIANGLE_DATA.realistic.title,
-      targetScore: 'Phong độ: 22.5 – 24.0',
-      majorSchool: DEFAULT_TRIANGLE_DATA.realistic.major,
-      notes: DEFAULT_TRIANGLE_DATA.realistic.desc
+      label: initialAdaptive.triangle.realisticTitle,
+      targetScore: 'Phong độ an toàn: Dải điểm 21.0 – 24.0',
+      majorSchool: initialAdaptive.triangle.realisticSchool,
+      notes: initialAdaptive.triangle.realisticDesc
     },
     safe: {
-      label: DEFAULT_TRIANGLE_DATA.safety.title,
+      label: initialAdaptive.triangle.safetyTitle,
       targetScore: 'Vùng đệm an toàn',
-      majorSchool: DEFAULT_TRIANGLE_DATA.safety.major,
-      notes: DEFAULT_TRIANGLE_DATA.safety.desc
+      majorSchool: initialAdaptive.triangle.safetySchool,
+      notes: initialAdaptive.triangle.safetyDesc
     }
   });
   const [isEditingTriad, setIsEditingTriad] = useState(false);
 
-  // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP ---
-  const [selectedGrade, setSelectedGrade] = useState(12);
-  const [actionPlans, setActionPlans] = useState({
-    10: {
-      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[0].text,
-      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[1].text,
-      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[2].text,
-      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[0].text,
-      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[1].text,
-      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[10].items[2].text
-    },
-    11: {
-      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[0].text,
-      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[1].text,
-      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[2].text,
-      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[0].text,
-      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[1].text,
-      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[11].items[2].text
-    },
-    12: {
-      item1: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[0].text,
-      item2: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[1].text,
-      item3: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[2].text,
-      scoreGoal: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[0].text,
-      weakSubjectsPlan: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[1].text,
-      studyTimeCommitment: ADAPTIVE_COMMITMENTS_BY_GRADE[12].items[2].text
-    }
+  // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (SUY RA TỪ MỎ NEO T0) ---
+  const [selectedGrade, setSelectedGrade] = useState(initialAnchor.grade);
+  const [actionPlans, setActionPlans] = useState(() => {
+    const plans = {};
+    [10, 11, 12].forEach(g => {
+      const gAdaptive = buildAdaptiveTriadAndPlan(initialAnchor.major, initialAnchor.school, g);
+      plans[g] = {
+        item1: gAdaptive.actions[0].text,
+        item2: gAdaptive.actions[1].text,
+        item3: gAdaptive.actions[2].text,
+        scoreGoal: gAdaptive.actions[0].text,
+        weakSubjectsPlan: gAdaptive.actions[1].text,
+        studyTimeCommitment: gAdaptive.actions[2].text
+      };
+    });
+    return plans;
   });
 
   // Trợ cấp lấy nội dung mục cam kết theo khối lớp
@@ -157,68 +171,99 @@ export default function DebiasMatrix() {
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [toast, setToast] = useState(null);
 
-  // Khởi tạo và đọc dữ liệu đã lưu
-  useEffect(() => {
-    const studentCommitment = getStudentCommitmentData(displayStudentCode);
-    if (studentCommitment) {
-      setStep1Data({
-        targetMajor: studentCommitment.triangle.stretch.majorSchool,
-        initialConfidence: parseInt(studentCommitment.calibration.confT0) || 8,
-        hollandCode: studentCommitment.studentInfo.riasec.split(' ')[0] || 'IRE'
-      });
-      setTargetMajor(studentCommitment.coreCareerGoal.major);
-      setConfidenceT2(parseInt(studentCommitment.calibration.confT2) || 8);
-      const gNum = studentCommitment.studentInfo.gradeNum || 12;
-      setSelectedGrade(gNum);
+  // Cập nhật ngành mục tiêu và đồng bộ toàn bộ Tam giác & Ma trận
+  const handleUpdateMajor = (newMajor) => {
+    setTargetMajor(newMajor);
+    setStep1Data(prev => ({ ...prev, targetMajor: newMajor }));
+    if (!isEditingTriad) {
+      const adaptive = buildAdaptiveTriadAndPlan(newMajor, targetSchool, selectedGrade);
       setTriadTiers({
         dream: {
-          label: studentCommitment.triangle.stretch.title,
-          targetScore: studentCommitment.triangle.stretch.targetScore,
-          majorSchool: studentCommitment.triangle.stretch.majorSchool,
-          notes: studentCommitment.triangle.stretch.notes
+          label: adaptive.triangle.stretchTitle,
+          targetScore: 'Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)',
+          majorSchool: adaptive.triangle.stretchSchool,
+          notes: adaptive.triangle.stretchDesc
         },
         realistic: {
-          label: studentCommitment.triangle.realistic.title,
-          targetScore: studentCommitment.triangle.realistic.targetScore,
-          majorSchool: studentCommitment.triangle.realistic.majorSchool,
-          notes: studentCommitment.triangle.realistic.notes
+          label: adaptive.triangle.realisticTitle,
+          targetScore: 'Phong độ an toàn: Dải điểm 21.0 – 24.0',
+          majorSchool: adaptive.triangle.realisticSchool,
+          notes: adaptive.triangle.realisticDesc
         },
         safe: {
-          label: studentCommitment.triangle.safety.title,
-          targetScore: studentCommitment.triangle.safety.targetScore,
-          majorSchool: studentCommitment.triangle.safety.majorSchool,
-          notes: studentCommitment.triangle.safety.notes
+          label: adaptive.triangle.safetyTitle,
+          targetScore: 'Vùng đệm an toàn',
+          majorSchool: adaptive.triangle.safetySchool,
+          notes: adaptive.triangle.safetyDesc
         }
       });
-      setActionPlans(prev => ({
-        ...prev,
-        [gNum]: {
-          item1: studentCommitment.implementationIntentions[0].text,
-          item2: studentCommitment.implementationIntentions[1].text,
-          item3: studentCommitment.implementationIntentions[2].text,
-          scoreGoal: studentCommitment.implementationIntentions[0].text,
-          weakSubjectsPlan: studentCommitment.implementationIntentions[1].text,
-          studyTimeCommitment: studentCommitment.implementationIntentions[2].text
-        }
-      }));
+      setActionPlans(prev => {
+        const next = { ...prev };
+        [10, 11, 12].forEach(g => {
+          const gAdaptive = buildAdaptiveTriadAndPlan(newMajor, targetSchool, g);
+          next[g] = {
+            item1: gAdaptive.actions[0].text,
+            item2: gAdaptive.actions[1].text,
+            item3: gAdaptive.actions[2].text,
+            scoreGoal: gAdaptive.actions[0].text,
+            weakSubjectsPlan: gAdaptive.actions[1].text,
+            studyTimeCommitment: gAdaptive.actions[2].text
+          };
+        });
+        return next;
+      });
     }
+  };
 
-    // 1. Đọc Bước 1
-    try {
-      const rawProfile = localStorage.getItem('cbas_user_profile');
-      const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData');
-      const p = rawProfile ? JSON.parse(rawProfile) : {};
-      const a = rawAnchor ? JSON.parse(rawAnchor) : {};
-      const m = p.targetMajor || a.target_career || (studentCommitment ? studentCommitment.coreCareerGoal.major : 'Tâm lý học');
-      const c = Number(p.initialConfidence || a.confidence_score || 8);
-      const h = p.hollandCode || a.holland_code || (studentCommitment ? studentCommitment.studentInfo.riasec.split(' ')[0] : 'RIA');
-      if (!studentCommitment) {
-        setStep1Data({ targetMajor: m, initialConfidence: c, hollandCode: h });
-        setTargetMajor(m);
+  // Khởi tạo và đọc dữ liệu đã lưu
+  useEffect(() => {
+    const anchor = getDeclaredAnchorData();
+    setStep1Data({
+      targetMajor: anchor.major,
+      initialConfidence: anchor.conf,
+      hollandCode: anchor.holland
+    });
+    setTargetMajor(anchor.major);
+    setTargetSchool(anchor.school);
+    setSelectedGrade(anchor.grade);
+
+    const adaptive = buildAdaptiveTriadAndPlan(anchor.major, anchor.school, anchor.grade);
+    setTriadTiers({
+      dream: {
+        label: adaptive.triangle.stretchTitle,
+        targetScore: 'Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)',
+        majorSchool: adaptive.triangle.stretchSchool,
+        notes: adaptive.triangle.stretchDesc
+      },
+      realistic: {
+        label: adaptive.triangle.realisticTitle,
+        targetScore: 'Phong độ an toàn: Dải điểm 21.0 – 24.0',
+        majorSchool: adaptive.triangle.realisticSchool,
+        notes: adaptive.triangle.realisticDesc
+      },
+      safe: {
+        label: adaptive.triangle.safetyTitle,
+        targetScore: 'Vùng đệm an toàn',
+        majorSchool: adaptive.triangle.safetySchool,
+        notes: adaptive.triangle.safetyDesc
       }
-    } catch (e) {
-      console.warn('Lỗi đọc Step 1:', e);
-    }
+    });
+
+    setActionPlans(prev => {
+      const next = { ...prev };
+      [10, 11, 12].forEach(g => {
+        const gAdaptive = buildAdaptiveTriadAndPlan(anchor.major, anchor.school, g);
+        next[g] = {
+          item1: gAdaptive.actions[0].text,
+          item2: gAdaptive.actions[1].text,
+          item3: gAdaptive.actions[2].text,
+          scoreGoal: gAdaptive.actions[0].text,
+          weakSubjectsPlan: gAdaptive.actions[1].text,
+          studyTimeCommitment: gAdaptive.actions[2].text
+        };
+      });
+      return next;
+    });
 
     // 2. Đọc Bước 2, 3, 4
     try {
@@ -396,104 +441,65 @@ export default function DebiasMatrix() {
   const handleGradeSwitch = (g) => {
     setSelectedGrade(g);
     if (!isEditingTriad) {
-      const { triangle } = getAdaptiveStep5Data({ grade: g, id: displayStudentCode });
+      const adaptive = buildAdaptiveTriadAndPlan(targetMajor, targetSchool, g);
       setTriadTiers({
         dream: {
-          label: triangle.stretchTitle,
-          targetScore: g === 10 ? '21.0 điểm' : (g === 11 ? '27.5đ+' : '27.50 điểm'),
-          majorSchool: triangle.stretchSchool,
-          notes: triangle.stretchDesc
+          label: adaptive.triangle.stretchTitle,
+          targetScore: 'Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)',
+          majorSchool: adaptive.triangle.stretchSchool,
+          notes: adaptive.triangle.stretchDesc
         },
         realistic: {
-          label: triangle.realisticTitle,
-          targetScore: g === 10 ? 'Xét tuyển học bạ THPT' : (g === 11 ? '21.5 - 23.0đ' : '22.0 - 23.5 điểm'),
-          majorSchool: triangle.realisticSchool,
-          notes: triangle.realisticDesc
+          label: adaptive.triangle.realisticTitle,
+          targetScore: 'Phong độ an toàn: Dải điểm 21.0 – 24.0',
+          majorSchool: adaptive.triangle.realisticSchool,
+          notes: adaptive.triangle.realisticDesc
         },
         safe: {
-          label: triangle.safetyTitle,
-          targetScore: g === 10 ? 'Miễn học phí theo chính sách' : (g === 11 ? 'Xét học bạ sớm' : 'Vùng đệm dự phòng rủi ro'),
-          majorSchool: triangle.safetySchool,
-          notes: triangle.safetyDesc
+          label: adaptive.triangle.safetyTitle,
+          targetScore: 'Vùng đệm an toàn',
+          majorSchool: adaptive.triangle.safetySchool,
+          notes: adaptive.triangle.safetyDesc
         }
       });
     }
   };
 
-  // Khôi phục nội dung cam kết mẫu chuẩn hóa ViSEF 2026 cho khối lớp đang chọn
+  // Khôi phục nội dung cam kết mẫu thích ứng theo mỏ neo T0 cho khối lớp đang chọn
   const handleResetToDefaultTemplate = () => {
-    const studentCommitment = getStudentCommitmentData(displayStudentCode);
-    if (studentCommitment) {
-      const gNum = studentCommitment.studentInfo.gradeNum || 12;
-      setActionPlans(prev => ({
-        ...prev,
-        [gNum]: {
-          item1: studentCommitment.implementationIntentions[0].text,
-          item2: studentCommitment.implementationIntentions[1].text,
-          item3: studentCommitment.implementationIntentions[2].text,
-          scoreGoal: studentCommitment.implementationIntentions[0].text,
-          weakSubjectsPlan: studentCommitment.implementationIntentions[1].text,
-          studyTimeCommitment: studentCommitment.implementationIntentions[2].text
-        }
-      }));
-      setTriadTiers({
-        dream: {
-          label: studentCommitment.triangle.stretch.title,
-          targetScore: studentCommitment.triangle.stretch.targetScore,
-          majorSchool: studentCommitment.triangle.stretch.majorSchool,
-          notes: studentCommitment.triangle.stretch.notes
-        },
-        realistic: {
-          label: studentCommitment.triangle.realistic.title,
-          targetScore: studentCommitment.triangle.realistic.targetScore,
-          majorSchool: studentCommitment.triangle.realistic.majorSchool,
-          notes: studentCommitment.triangle.realistic.notes
-        },
-        safe: {
-          label: studentCommitment.triangle.safety.title,
-          targetScore: studentCommitment.triangle.safety.targetScore,
-          majorSchool: studentCommitment.triangle.safety.majorSchool,
-          notes: studentCommitment.triangle.safety.notes
-        }
-      });
-      setToast({ message: `Đã khôi phục ma trận ý định thực thi chuẩn ViSEF cho ${displayStudentCode}!`, type: 'success' });
-      return;
-    }
-    const defaultGrade = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade];
-    if (!defaultGrade) return;
-    const { triangle } = getAdaptiveStep5Data({ grade: selectedGrade, id: displayStudentCode });
+    const adaptive = buildAdaptiveTriadAndPlan(targetMajor, targetSchool, selectedGrade);
     setTriadTiers({
       dream: {
-        label: triangle.stretchTitle,
-        targetScore: selectedGrade === 10 ? '21.0 điểm' : (selectedGrade === 11 ? '27.5đ+' : '27.50 điểm'),
-        majorSchool: triangle.stretchSchool,
-        notes: triangle.stretchDesc
+        label: adaptive.triangle.stretchTitle,
+        targetScore: 'Tham chiếu: 26.0+ (Ngưỡng cạnh tranh cao)',
+        majorSchool: adaptive.triangle.stretchSchool,
+        notes: adaptive.triangle.stretchDesc
       },
       realistic: {
-        label: triangle.realisticTitle,
-        targetScore: selectedGrade === 10 ? 'Xét tuyển học bạ THPT' : (selectedGrade === 11 ? '21.5 - 23.0đ' : '22.0 - 23.5 điểm'),
-        majorSchool: triangle.realisticSchool,
-        notes: triangle.realisticDesc
+        label: adaptive.triangle.realisticTitle,
+        targetScore: 'Phong độ an toàn: Dải điểm 21.0 – 24.0',
+        majorSchool: adaptive.triangle.realisticSchool,
+        notes: adaptive.triangle.realisticDesc
       },
       safe: {
-        label: triangle.safetyTitle,
-        targetScore: selectedGrade === 10 ? 'Miễn học phí theo chính sách' : (selectedGrade === 11 ? 'Xét học bạ sớm' : 'Vùng đệm dự phòng rủi ro'),
-        majorSchool: triangle.safetySchool,
-        notes: triangle.safetyDesc
+        label: adaptive.triangle.safetyTitle,
+        targetScore: 'Vùng đệm an toàn',
+        majorSchool: adaptive.triangle.safetySchool,
+        notes: adaptive.triangle.safetyDesc
       }
     });
     setActionPlans(prev => ({
       ...prev,
       [selectedGrade]: {
-        item1: defaultGrade.items[0].text,
-        item2: defaultGrade.items[1].text,
-        item3: defaultGrade.items[2].text,
-        scoreGoal: defaultGrade.items[0].text,
-        weakSubjectsPlan: defaultGrade.items[1].text,
-        studyTimeCommitment: defaultGrade.items[2].text
+        item1: adaptive.actions[0].text,
+        item2: adaptive.actions[1].text,
+        item3: adaptive.actions[2].text,
+        scoreGoal: adaptive.actions[0].text,
+        weakSubjectsPlan: adaptive.actions[1].text,
+        studyTimeCommitment: adaptive.actions[2].text
       }
     }));
-    setToast({ message: `Đã khôi phục mẫu kế hoạch hành động chuẩn hóa ViSEF cho Khối ${selectedGrade}`, type: 'success' });
+    setToast({ message: `Đã khôi phục kế hoạch hành động thích ứng cho ngành ${targetMajor}!`, type: 'success' });
   };
 
   // Cập nhật Tam giác 3 nấc
@@ -611,7 +617,7 @@ export default function DebiasMatrix() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ViSEF_CBAS_ActionTriad_${displayStudentCode}.json`;
+      a.download = `KHKT_SocraCareer_ActionTriad_${displayStudentCode}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -805,7 +811,7 @@ export default function DebiasMatrix() {
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-teal-400" />
               <span className="font-extrabold text-xs text-teal-300 uppercase tracking-wide">
-                HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER) — BƯỚC 5 CHUẨN VISEF
+                HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER) — BƯỚC 5 CHUẨN KHKT QUỐC GIA
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -820,11 +826,13 @@ export default function DebiasMatrix() {
               __html: generateStep5Content({
                 id: displayStudentCode,
                 grade: `Khối ${selectedGrade}`,
-                conf_T0: step1Data.initialConfidence || (displayStudentCode === 'CT_21' ? 8 : (displayStudentCode === 'CT_13' ? 9 : 9)),
-                conf_T2: confidenceT2 || (displayStudentCode === 'CT_21' ? 8 : (displayStudentCode === 'CT_13' ? 7 : 7.5)),
-                crs_T0: displayStudentCode === 'CT_21' ? '3.8' : (displayStudentCode === 'CT_13' ? '3.4' : '4.0'),
-                crs_T2: displayStudentCode === 'CT_21' ? '-0.2' : (displayStudentCode === 'CT_13' ? '+0.5' : '-0.3'),
-                riasec: step1Data.hollandCode || (displayStudentCode === 'CT_21' ? 'IRE' : (displayStudentCode === 'CT_13' ? 'ISR' : 'ICR'))
+                targetMajor: targetMajor,
+                targetSchool: targetSchool,
+                conf_T0: step1Data.initialConfidence || 8,
+                conf_T2: confidenceT2 || 7,
+                crs_T0: (step1Data.initialConfidence - 5.0).toFixed(1),
+                crs_T2: (confidenceT2 - 7.5).toFixed(1),
+                riasec: step1Data.hollandCode || 'RIA'
               }) 
             }} 
           />
@@ -854,7 +862,7 @@ export default function DebiasMatrix() {
               <input
                 type="text"
                 value={targetMajor}
-                onChange={(e) => setTargetMajor(e.target.value)}
+                onChange={(e) => handleUpdateMajor(e.target.value)}
                 className="w-full bg-slate-900 border border-teal-500 rounded-lg px-2 py-1 text-sm text-white font-bold focus:outline-none"
               />
             ) : (
@@ -1293,174 +1301,6 @@ export default function DebiasMatrix() {
       {/* ==================== KHUNG TRANG IN A4 THỰC TẾ ==================== */}
       <div className={`a4-container bg-white text-slate-900 flex-col justify-between ${showPrintPreview ? 'flex' : 'hidden print:flex'}`}>
         {(() => {
-          const ct21 = getStudentCommitmentData(displayStudentCode);
-          if (ct21) {
-            return (
-              <div>
-                {/* 1. PHẦN ĐẦU TRANG (HEADER TIÊU CHUẨN) */}
-                <header className="border-b-2 border-teal-700 pb-3 mb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="text-[10px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                        {ct21.header.ministry}
-                      </span>
-                      <div className="text-xs font-extrabold text-slate-800 mt-0.5">
-                        {ct21.header.project}
-                      </div>
-                      <div className="text-[9.5px] text-slate-600 font-medium">
-                        {ct21.header.field}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className="inline-block px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded font-bold uppercase text-[9.5px] tracking-wide">
-                        NHÓM CAN THIỆP (SOCRACAREER)
-                      </span>
-                    </div>
-                  </div>
-
-                  <h1 className="text-lg font-black text-center text-slate-900 mt-2.5 uppercase tracking-tight">
-                    {ct21.header.title}
-                  </h1>
-                  <p className="text-[10px] italic text-slate-500 text-center mt-0.5">
-                    {ct21.header.subtitle}
-                  </p>
-                </header>
-
-                {/* THÔNG TIN ĐỐI TƯỢNG CAN THIỆP */}
-                <section className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs mb-3 space-y-1.5">
-                  <span className="font-black text-slate-900 uppercase text-[10px] block">THÔNG TIN ĐỐI TƯỢNG CAN THIỆP:</span>
-                  <div className="grid grid-cols-3 gap-2 text-[10.5px]">
-                    <div>• Mã định danh: <strong className="text-teal-700">{ct21.studentInfo.id}</strong></div>
-                    <div>• Khối lớp: <strong>{ct21.studentInfo.grade}</strong></div>
-                    <div>• Phân tầng học lực: <strong>{ct21.studentInfo.academicRank}</strong></div>
-                    <div>• Tổ hợp xét tuyển: <strong>{ct21.studentInfo.combo}</strong></div>
-                    <div className="col-span-2">• Điểm TB học bạ 3 môn: <strong>{ct21.studentInfo.gpa3}</strong></div>
-                  </div>
-                  <div className="text-[10.5px]">• Mã hình mẫu RIASEC: <strong>{ct21.studentInfo.riasec}</strong></div>
-
-                  <div className="border-t border-dashed border-slate-200 pt-1.5 grid grid-cols-2 gap-2 text-[10.5px]">
-                    <div>
-                      <span className="text-[9.5px] font-bold text-slate-500 block uppercase">Mức độ Tự tin chủ quan (Conf):</span>
-                      <strong className="text-teal-800">{ct21.calibration.confT0} ──► {ct21.calibration.confT2}</strong>
-                      <span className="text-[9.5px] text-slate-500 block italic">({ct21.calibration.confNote})</span>
-                    </div>
-                    <div>
-                      <span className="text-[9.5px] font-bold text-slate-500 block uppercase">Chỉ số Hiệu chuẩn Nhận thức (CRS):</span>
-                      <strong className="text-cyan-800">{ct21.calibration.crsT0} ──► {ct21.calibration.crsT2}</strong>
-                      <span className="text-[9.5px] text-emerald-600 font-bold block">{ct21.calibration.crsNote}</span>
-                    </div>
-                  </div>
-                </section>
-
-                {/* MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI */}
-                <div className="p-2.5 bg-teal-50/70 border border-teal-200 rounded-lg text-xs mb-3 space-y-0.5">
-                  <span className="font-black text-teal-900 uppercase text-[10px] block">MỤC TIÊU NGHỀ NGHIỆP CỐT LÕI (SAU HIỆU CHUẨN BƯỚC 3 & 4):</span>
-                  <p className="font-black text-slate-900 text-xs">► NGÀNH: {ct21.coreCareerGoal.major}</p>
-                  <p className="text-[10px] text-slate-600 italic">{ct21.coreCareerGoal.note}</p>
-                </div>
-
-                {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
-                <div className="space-y-1 mb-3 text-xs">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-teal-900 font-bold">🔺</span>
-                      <span className="font-black text-slate-900 uppercase text-[10.5px] tracking-wide">
-                        TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
-                      </span>
-                    </div>
-                    <span className="text-[9.5px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <div className="p-2 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
-                      <div>
-                        <span className="font-extrabold text-teal-900 text-[9.5px] block uppercase tracking-wide">
-                          {ct21.triangle.stretch.title}
-                        </span>
-                        <p className="font-bold text-slate-900 mt-1 text-[11px]">{ct21.triangle.stretch.majorSchool}</p>
-                        <div className="text-[10px] font-bold text-teal-800 mt-0.5">• Điểm tham chiếu: {ct21.triangle.stretch.targetScore}</div>
-                      </div>
-                      <div className="text-[9px] text-slate-600 mt-1 pt-1 border-t border-teal-200/60 leading-normal">{ct21.triangle.stretch.notes}</div>
-                    </div>
-                    <div className="p-2 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
-                      <div>
-                        <span className="font-extrabold text-cyan-900 text-[9.5px] block uppercase tracking-wide">
-                          {ct21.triangle.realistic.title}
-                        </span>
-                        <p className="font-bold text-slate-900 mt-1 text-[11px]">{ct21.triangle.realistic.majorSchool}</p>
-                        <div className="text-[10px] font-bold text-cyan-800 mt-0.5">• {ct21.triangle.realistic.targetScore}</div>
-                      </div>
-                      <div className="text-[9px] text-slate-600 mt-1 pt-1 border-t border-cyan-200/60 leading-normal">{ct21.triangle.realistic.notes}</div>
-                    </div>
-                    <div className="p-2 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
-                      <div>
-                        <span className="font-extrabold text-slate-800 text-[9.5px] block uppercase tracking-wide">
-                          {ct21.triangle.safety.title}
-                        </span>
-                        <p className="font-bold text-slate-900 mt-1 text-[11px]">{ct21.triangle.safety.majorSchool}</p>
-                        <div className="text-[10px] font-bold text-slate-700 mt-0.5">• {ct21.triangle.safety.targetScore}</div>
-                      </div>
-                      <div className="text-[9px] text-slate-600 mt-1 pt-1 border-t border-slate-200 leading-normal">{ct21.triangle.safety.notes}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* MA TRẬN Ý ĐỊNH THỰC THI VI MÔ */}
-                <section className="border border-slate-200 rounded-lg p-2.5 mb-3 text-xs bg-white">
-                  <div className="flex justify-between items-center border-b border-slate-200 pb-1.5 mb-2">
-                    <h3 className="font-black text-slate-900 uppercase text-[10.5px]">
-                      🎯 MA TRẬN Ý ĐỊNH THỰC THI VI MÔ DÁN TẠI GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)
-                    </h3>
-                  </div>
-
-                  <div className="space-y-2">
-                    {ct21.implementationIntentions.map((item, idx) => (
-                      <div key={idx} className={idx > 0 ? "border-t border-dashed border-slate-200 pt-1.5" : ""}>
-                        <span className="font-bold text-slate-800 block text-[10.5px] mb-0.5">{item.num}</span>
-                        <div className="bg-slate-50 border border-slate-200 p-1.5 rounded text-slate-800 text-[10.5px] leading-relaxed" dangerouslySetInnerHTML={{ __html: item.text }} />
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* 5. CHỮ KÝ CAM KẾT CÁ NHÂN (3 BÊN) */}
-                <section className="border-t-2 border-slate-900 pt-2.5 page-break-inside-avoid">
-                  <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                    <div>
-                      <div className="font-bold text-slate-700 uppercase text-[10.5px]">{ct21.signatures.student.title}</div>
-                      <div className="text-[9.5px] text-slate-500 italic mb-1">{ct21.signatures.student.subtitle}</div>
-                      <div className="h-14 border border-dashed border-slate-400 rounded bg-white flex items-center justify-center mb-1 overflow-hidden">
-                        {hasSignature && signatureDataUrl ? (
-                          <img src={signatureDataUrl} alt="Chữ ký học sinh" className="max-h-12 max-w-[95%] object-contain" />
-                        ) : (
-                          <span className="text-[10px] text-slate-400 italic">{ct21.signatures.student.name}</span>
-                        )}
-                      </div>
-                      <div className="font-bold text-teal-800 text-[10px]">{ct21.signatures.student.name}</div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-700 uppercase text-[10.5px]">{ct21.signatures.mentor.title}</div>
-                      <div className="text-[9.5px] text-slate-500 italic mb-1">{ct21.signatures.mentor.subtitle}</div>
-                      <div className="h-14 border border-dashed border-slate-300 rounded bg-slate-50/50 flex items-center justify-center mb-1">
-                        <span className="text-[10px] text-emerald-700 font-bold">✓ Đã nghiệm thu</span>
-                      </div>
-                      <div className="font-bold text-slate-800 text-[10px]">{ct21.signatures.mentor.name}</div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-700 uppercase text-[10.5px]">{ct21.signatures.parent.title}</div>
-                      <div className="text-[9.5px] text-slate-500 italic mb-1">{ct21.signatures.parent.subtitle}</div>
-                      <div className="h-14 border border-dashed border-slate-300 rounded bg-slate-50/50 flex items-center justify-center mb-1">
-                        <span className="text-[10px] text-slate-500 italic">(Đã thống nhất gia đình)</span>
-                      </div>
-                      <div className="font-bold text-slate-800 text-[10px]">{ct21.signatures.parent.name}</div>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            );
-          }
-
-          // Fallback tiêu chuẩn
           return (
             <div>
               {/* 1. PHẦN ĐẦU TRANG (HEADER TIÊU CHUẨN) */}
@@ -1468,7 +1308,7 @@ export default function DebiasMatrix() {
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[11px] font-extrabold text-teal-800 tracking-wider uppercase block">
-                      DỰ ÁN NGHIÊN CỨU VISEF 2026 - PHÂN NGÀNH CBAS
+                      BỘ GIÁO DỤC VÀ ĐÀO TẠO — CUỘC THI KHKT CẤP QUỐC GIA HỌC SINH TRUNG HỌC
                     </span>
                     <div className="text-sm font-extrabold text-slate-800 mt-1">
                       MÃ ĐỊNH DANH ĐỐI TƯỢNG: <span className="text-teal-700 font-black">{displayStudentCode}</span> | KHỐI {selectedGrade} THPT
@@ -1485,7 +1325,7 @@ export default function DebiasMatrix() {
                   BẢN CAM KẾT HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG
                 </h1>
                 <p className="text-[11px] italic text-slate-500 text-center mt-0.5">
-                  "Bản kế hoạch hành động tự chủ dán tại góc học tập - Thực hiện kỷ luật mỗi ngày để bứt phá."
+                  "Bản kế hoạch hành động tự chủ dán tại góc học tập — Thực hiện kỷ luật mỗi ngày để bứt phá."
                 </p>
               </header>
 
@@ -1516,7 +1356,7 @@ export default function DebiasMatrix() {
                 </div>
               </section>
 
-              {/* 3. KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ĐÃ CHUẨN HÓA CÂU TỪ KHOA HỌC) */}
+              {/* 3. KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
               <div className="space-y-1.5 mb-3 text-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -1536,11 +1376,11 @@ export default function DebiasMatrix() {
                         {triadTiers.dream?.label || '1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)'}
                       </span>
                       <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                        {triadTiers.dream?.majorSchool || 'Tâm lý học — ĐH KHXH&NV TP.HCM'}
+                        {triadTiers.dream?.majorSchool || `${targetMajor} (Trường trọng điểm / Tốp đầu)`}
                       </p>
                     </div>
                     <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
-                      {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)'}
+                      {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)'}
                     </div>
                   </div>
 
@@ -1548,29 +1388,29 @@ export default function DebiasMatrix() {
                   <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
                     <div>
                       <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.realistic?.label || DEFAULT_TRIANGLE_DATA.realistic.title}
+                        {triadTiers.realistic?.label || '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)'}
                       </span>
                       <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                        {triadTiers.realistic?.majorSchool || DEFAULT_TRIANGLE_DATA.realistic.major}
+                        {triadTiers.realistic?.majorSchool || `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`}
                       </p>
                     </div>
                     <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
-                      {triadTiers.realistic?.notes || DEFAULT_TRIANGLE_DATA.realistic.desc}
+                      {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn (+1.5 đến +2.5 điểm)'}
                     </div>
                   </div>
 
-                  {/* Nấc 3: Bảo toàn rủi ro (ĐÃ SỬA: KHÔNG DÙNG CHỮ CHẮC CHẮN) */}
+                  {/* Nấc 3: Bảo toàn rủi ro */}
                   <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
                     <div>
                       <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.safe?.label || DEFAULT_TRIANGLE_DATA.safety.title}
+                        {triadTiers.safe?.label || '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)'}
                       </span>
                       <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                        {triadTiers.safe?.majorSchool || DEFAULT_TRIANGLE_DATA.safety.major}
+                        {triadTiers.safe?.majorSchool || `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`}
                       </p>
                     </div>
                     <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                      {triadTiers.safe?.notes || DEFAULT_TRIANGLE_DATA.safety.desc}
+                      {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập không bị gián đoạn'}
                     </div>
                   </div>
                 </div>
@@ -1581,10 +1421,10 @@ export default function DebiasMatrix() {
                 <div className="flex justify-between items-start border-b border-slate-200 pb-2 mb-2.5">
                   <div>
                     <h3 className="font-black text-slate-900 uppercase">
-                      🎯 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS)
+                      🎯 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG DÁN GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)
                     </h3>
                     <p className="text-[10px] text-slate-600 italic mt-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.note}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.note || 'Thiết lập phản xạ hành vi kỷ luật để giải trừ ngộ nhận nghề'}
                     </p>
                   </div>
                   <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-right">
@@ -1596,7 +1436,7 @@ export default function DebiasMatrix() {
                   {/* Mục 1: Trọng tâm Học vấn */}
                   <div>
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num || '1. Kỷ luật Bứt phá Tổ hợp Xét tuyển:'}
                     </span>
                     <div 
                       className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed"
@@ -1607,7 +1447,7 @@ export default function DebiasMatrix() {
                   {/* Mục 2: Kế hoạch rèn luyện kỹ năng nghề */}
                   <div className="border-t border-dashed border-slate-200 pt-2">
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num || '2. Rèn luyện Kỹ năng Thích ứng:'}
                     </span>
                     <div 
                       className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
@@ -1618,7 +1458,7 @@ export default function DebiasMatrix() {
                   {/* Mục 3: Vật neo kỷ luật */}
                   <div className="border-t border-dashed border-slate-200 pt-2">
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num || '3. Vật neo Kỷ luật Hành vi:'}
                     </span>
                     <div 
                       className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
@@ -1628,34 +1468,12 @@ export default function DebiasMatrix() {
                 </div>
               </section>
 
-              {/* 5. CHỮ KÝ CAM KẾT CÁ NHÂN (COMMITMENT DEVICE) */}
+              {/* 5. CHỮ KÝ CAM KẾT CÁ NHÂN (3 BÊN) */}
               <section className="border-t-2 border-slate-900 pt-3 page-break-inside-avoid">
-                <div className="flex justify-between items-start gap-4">
-                  {/* Lời cam kết & Định danh ẩn danh */}
-                  <div className="w-7/12 text-xs">
-                    <div className="font-black text-slate-900 mb-1 uppercase tracking-tight">
-                      LỜI CAM KẾT CỦA HỌC SINH:
-                    </div>
-                    <p className="text-[11px] text-slate-600 italic leading-relaxed mb-2">
-                      "Em cam kết thực hiện nghiêm túc kế hoạch hành động đã đề ra, kiên trì tự học có kỷ luật mỗi ngày và chịu trách nhiệm cao nhất với mục tiêu của chính mình."
-                    </p>
-                    <div className="text-[11px] font-bold text-teal-800">
-                      MÃ ĐỐI TƯỢNG CAN THIỆP: <span className="text-slate-900 font-black text-xs">{displayStudentCode}</span>
-                    </div>
-                    <div className="text-[9.5px] text-slate-400 mt-0.5">
-                      (Dữ liệu nghiên cứu được mã hóa ẩn danh tuyệt đối theo chuẩn Đạo đức Nghiên cứu ViSEF 2026)
-                    </div>
-                  </div>
-
-                  {/* Khung chữ ký số */}
-                  <div className="w-5/12 text-center text-xs">
-                    <div className="text-[10px] text-slate-500 italic">
-                      Ngày ...... tháng ...... năm 2026
-                    </div>
-                    <div className="font-black text-slate-900 uppercase text-[11px] mt-1 mb-1 tracking-wide">
-                      Học sinh ký cam kết
-                    </div>
-
+                <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                  <div>
+                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">HỌC SINH CAM KẾT</div>
+                    <div className="text-[9.5px] text-slate-500 italic mb-1">(Ký và ghi rõ họ tên)</div>
                     <div className="h-16 border border-dashed border-slate-400 rounded bg-white flex items-center justify-center mb-1 overflow-hidden">
                       {hasSignature && signatureDataUrl ? (
                         <img 
@@ -1665,14 +1483,29 @@ export default function DebiasMatrix() {
                         />
                       ) : (
                         <span className="text-[10.5px] text-slate-400 italic">
-                          (Ký và ghi rõ mã định danh {displayStudentCode})
+                          (Mã số: {displayStudentCode})
                         </span>
                       )}
                     </div>
+                    <div className="font-bold text-teal-800 text-[10px]">{displayStudentCode}</div>
+                  </div>
 
-                    <div className="text-[9px] text-slate-500 font-medium">
-                      {hasSignature ? '(Chữ ký điện tử đã được xác thực trên hệ thống)' : '(Bản ký tay thực địa lưu hồ sơ nghiên cứu ViSEF)'}
+                  <div>
+                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">CỐ VẤN / MENTOR</div>
+                    <div className="text-[9.5px] text-slate-500 italic mb-1">(Xác nhận nghiệm thu)</div>
+                    <div className="h-16 border border-dashed border-slate-300 rounded bg-slate-50/50 flex items-center justify-center mb-1">
+                      <span className="text-[10px] text-emerald-700 font-bold">✓ Đã nghiệm thu</span>
                     </div>
+                    <div className="font-bold text-slate-800 text-[10px]">Cố vấn Định hướng</div>
+                  </div>
+
+                  <div>
+                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">ĐẠI DIỆN PHỤ HUYNH</div>
+                    <div className="text-[9.5px] text-slate-500 italic mb-1">(Ký chứng kiến hỗ trợ)</div>
+                    <div className="h-16 border border-dashed border-slate-300 rounded bg-slate-50/50 flex items-center justify-center mb-1">
+                      <span className="text-[10px] text-slate-500 italic">(Đã thống nhất gia đình)</span>
+                    </div>
+                    <div className="font-bold text-slate-800 text-[10px]">Đại diện Gia đình</div>
                   </div>
                 </div>
               </section>
@@ -1683,7 +1516,7 @@ export default function DebiasMatrix() {
         {/* CHÂN TRANG A4 */}
         <footer className="border-t border-slate-200 pt-2 text-[9.5px] text-slate-400 flex justify-between items-center mt-3">
           <span>SocraCareer — Hệ thống Can thiệp Phản tư & Hiệu chuẩn Nhận thức</span>
-          <span>Hội đồng Khoa học ViSEF 2026 • CBAS Model</span>
+          <span>Hội đồng Khoa học KHKT 2026 • SocraCareer Model</span>
         </footer>
       </div>
 
