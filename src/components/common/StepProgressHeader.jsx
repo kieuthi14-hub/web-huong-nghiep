@@ -101,6 +101,17 @@ export const resetStepData = (stepNumber) => {
         localStorage.removeItem('cbas_step4_active_stage')
         localStorage.removeItem('cbas_step4_consultation_completed')
         localStorage.removeItem('cbas_student_reflection_log')
+        localStorage.removeItem('cbas_fast_track_checklist')
+        localStorage.removeItem('cbas_fast_track_reflection')
+        localStorage.removeItem('counseling_sessions_local')
+        localStorage.removeItem('counseling_sessions')
+        try {
+          Object.keys(localStorage).forEach(k => {
+            if (k && (k.startsWith('counseling_sessions_local_') || k.startsWith('cbas_step4_'))) {
+              localStorage.removeItem(k)
+            }
+          })
+        } catch (e) {}
         break
       case 5:
         localStorage.removeItem('cbas_step5_action_plan')
@@ -208,16 +219,19 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
   const progressPercent = Math.round((completedCount / 5) * 100)
 
   // Xử lý xác nhận làm lại
-  const handleConfirmReset = () => {
+  const handleConfirmReset = async () => {
     if (resetMode === 'ALL') {
       resetAllStepsData()
       setShowResetModal(false)
+      if (typeof onResetStep === 'function') {
+        await onResetStep('ALL')
+      }
       window.location.href = '/student/holland'
     } else {
       resetStepData(currentStep)
       setShowResetModal(false)
       if (typeof onResetStep === 'function') {
-        onResetStep(currentStep)
+        await onResetStep(currentStep)
       } else {
         const targetPath = STEPS[currentStep - 1]?.to || '/student/dashboard'
         if (window.location.pathname === targetPath) {

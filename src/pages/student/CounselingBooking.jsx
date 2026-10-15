@@ -633,6 +633,86 @@ const CounselingBooking = () => {
     }
   }
 
+  // Làm lại TOÀN BỘ Bước 4: Hủy lịch hẹn trên DB/Local và đặt lại từ đầu
+  const handleResetEntireStep4 = async () => {
+    const studentId = user?.id || profile?.id || '738d7200-cf50-444d-94e3-6afb1352e0f0'
+    setIsLoading(true)
+
+    // 1. Đồng bộ hủy / xóa trên Supabase DB
+    try {
+      if (studentId) {
+        const { error: delErr } = await supabase
+          .from('counseling_sessions')
+          .delete()
+          .eq('student_id', studentId)
+
+        if (delErr) {
+          // Fallback nếu RLS không cho delete: cập nhật status thành 'cancelled'
+          await supabase
+            .from('counseling_sessions')
+            .update({ status: 'cancelled' })
+            .eq('student_id', studentId)
+        }
+      }
+    } catch (dbErr) {
+      console.warn('Lỗi hủy lịch trên Supabase:', dbErr)
+    }
+
+    // 2. Dọn sạch toàn bộ cache LocalStorage Bước 4
+    try {
+      localStorage.removeItem('cbas_step4_booking')
+      localStorage.removeItem('cbas_step4_completed')
+      localStorage.removeItem('cbas_step4_active_stage')
+      localStorage.removeItem('cbas_step4_consultation_completed')
+      localStorage.removeItem('cbas_step4_feedback')
+      localStorage.removeItem('mentor_feedback_record')
+      localStorage.removeItem('cbas_student_reflection_log')
+      localStorage.removeItem('cbas_fast_track_checklist')
+      localStorage.removeItem('cbas_fast_track_reflection')
+      localStorage.removeItem('counseling_sessions_local')
+      localStorage.removeItem('counseling_sessions')
+      if (studentId) {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_PREFIX + studentId)
+      }
+      Object.keys(localStorage).forEach(k => {
+        if (k && (k.startsWith('counseling_sessions_local_') || k.startsWith('cbas_step4_'))) {
+          localStorage.removeItem(k)
+        }
+      })
+    } catch (e) {
+      console.warn('Lỗi dọn dẹp localStorage:', e)
+    }
+
+    // 3. Đặt lại toàn bộ State trong React
+    setBooking(null)
+    setMySessions([])
+    setCurrentStage('4A')
+    setIsEditingBooking(false)
+    setNextStepVisible(false)
+    setFeedbackSaved(null)
+    setFeedbackIllusion('')
+    setFeedbackReadiness(null)
+    setFeedbackNotes('')
+    setSelectedMentor('')
+    setAppointmentTime('')
+    setStudentQuestions('')
+    setFastTrackChecklist({ c1: false, c2: false, c3: false, c4: false, c5: false })
+    setFastTrackReflection('')
+    setIsLoading(false)
+
+    setToast({
+      type: 'success',
+      message: '🔄 Đã làm lại Bước 4 thành công! Toàn bộ lịch hẹn cũ đã được hủy, em có thể chọn Mentor và đăng ký lịch mới.'
+    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const confirmResetEntireStep4 = async () => {
+    if (window.confirm("Em có chắc chắn muốn làm lại Bước 4 (Hủy toàn bộ lịch hẹn / trạng thái hoàn thành hiện tại để đặt lại từ đầu) không?")) {
+      await handleResetEntireStep4()
+    }
+  }
+
   // --- THUẬT TOÁN PHÂN LUỒNG THÍCH ỨNG (ADAPTIVE TRIAGE) ---
   const autoTriageDecision = useMemo(() => {
     try {
@@ -846,12 +926,19 @@ const CounselingBooking = () => {
         .order('created_at', { ascending: false })
 
       let targetSession = null
-      if (!error && Array.isArray(data) && data.length > 0) {
-        setMySessions(data)
-        targetSession = data[0]
-      } else if (localItems.length > 0) {
-        setMySessions(localItems)
-        targetSession = localItems[0]
+      // Chỉ lấy các lịch hẹn còn hiệu lực, loại bỏ lịch hẹn đã bị hủy (cancelled) hoặc đã bị xóa
+      const validDbSessions = (!error && Array.isArray(data))
+        ? data.filter(s => s && s.status !== 'cancelled' && s.status !== 'deleted')
+        : []
+      const validLocalSessions = (localItems || [])
+        .filter(s => s && s.status !== 'cancelled' && s.status !== 'deleted')
+
+      if (validDbSessions.length > 0) {
+        setMySessions(validDbSessions)
+        targetSession = validDbSessions[0]
+      } else if (validLocalSessions.length > 0) {
+        setMySessions(validLocalSessions)
+        targetSession = validLocalSessions[0]
       }
 
       if (targetSession) {
@@ -898,23 +985,23 @@ const CounselingBooking = () => {
           localStorage.setItem('cbas_step4_booking', JSON.stringify(updatedBooking))
         } catch (e) {}
       } else {
-        // Kiểm tra xem trong localStorage có booking lưu sẵn không
+        // Hoàn toàn không có lịch hẹn hợp lệ: đặt booking về null và dọn cbas_step4_booking
+        setBooking(null)
+        setMySessions([])
         try {
-          const s = localStorage.getItem('cbas_step4_booking')
-          if (s) {
-            const pb = JSON.parse(s)
-            setBooking(pb)
-            if (pb.status === 'completed') {
-              localStorage.setItem('cbas_step4_completed', 'true')
-              localStorage.setItem('cbas_step4_consultation_completed', 'true')
-            }
-          }
+          localStorage.removeItem('cbas_step4_booking')
+          localStorage.removeItem('cbas_step4_completed')
+          localStorage.removeItem('cbas_step4_consultation_completed')
         } catch (e) {}
       }
     } catch (error) {
       console.warn('Lỗi fetch lịch hẹn:', error)
-      if (localItems.length > 0) {
-        setMySessions(localItems)
+      const validLocal = (localItems || []).filter(s => s && s.status !== 'cancelled' && s.status !== 'deleted')
+      if (validLocal.length > 0) {
+        setMySessions(validLocal)
+      } else {
+        setBooking(null)
+        setMySessions([])
       }
     }
   }
@@ -1108,6 +1195,7 @@ const CounselingBooking = () => {
           currentStep={4} 
           title="Bước 4: Đặt Lịch & Tham Vấn 1-1 Đối Chất Thực Tế" 
           subtitle="Đặt lịch hẹn với Mentor/Cố vấn, xuất Hồ sơ đối chất mang theo và ghi lại Nhật ký thu hoạch sau buổi đối thoại." 
+          onResetStep={handleResetEntireStep4}
         />
       </div>
 
@@ -1367,6 +1455,15 @@ const CounselingBooking = () => {
                         >
                           <span>Sửa thông tin</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={confirmResetEntireStep4}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                          title="Hủy yêu cầu đặt lịch để chọn lại từ đầu"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Hủy & Đặt lại</span>
+                        </button>
                       </div>
                     </div>
 
@@ -1508,9 +1605,20 @@ const CounselingBooking = () => {
                         Sau khi kết thúc phiên đối chất, Mentor hoặc Admin sẽ xác nhận hoàn thành để mở khóa Bước 5 cho em!
                       </p>
                       <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-[11px] text-emerald-800 italic">
-                          (Nếu em và Mentor đã trao đổi trực tiếp xong, em cũng có thể chủ động chuyển sang viết Nhật ký thu hoạch)
-                        </span>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-[11px] text-emerald-800 italic">
+                            (Nếu em và Mentor đã trao đổi trực tiếp xong, em cũng có thể chủ động chuyển sang viết Nhật ký thu hoạch)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={confirmResetEntireStep4}
+                            className="px-2.5 py-1 text-rose-700 hover:text-rose-900 bg-white hover:bg-rose-50 rounded border border-rose-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                            title="Hủy lịch hẹn đã xác nhận để chọn lại Mentor hoặc giờ khác"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Hủy lịch & Làm lại Bước 4</span>
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={handleComplete4A}
@@ -1555,13 +1663,23 @@ const CounselingBooking = () => {
                       </button>
                     </div>
 
-                    <div className="pt-2">
+                    <div className="pt-2 flex items-center justify-center gap-4 flex-wrap">
                       <button
                         type="button"
                         onClick={handleComplete4A}
                         className="text-xs text-indigo-700 hover:underline font-bold"
                       >
                         Xem lại hoặc ghi chép thêm vào Nhật ký thu hoạch (Giai đoạn 4B)
+                      </button>
+                      <span className="text-slate-300">|</span>
+                      <button
+                        type="button"
+                        onClick={confirmResetEntireStep4}
+                        className="text-xs text-rose-600 hover:text-rose-800 font-bold cursor-pointer inline-flex items-center gap-1 hover:underline"
+                        title="Xóa trạng thái hoàn thành để đặt lại lịch tham vấn từ đầu"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Làm lại Bước 4 (Xóa hoàn thành & đặt lại từ đầu)</span>
                       </button>
                     </div>
                   </div>
@@ -2158,6 +2276,15 @@ const CounselingBooking = () => {
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Làm lại Bước 4B</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={confirmResetEntireStep4}
+                  className="px-4 py-3 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 font-bold rounded-xl transition text-xs md:text-sm cursor-pointer flex items-center gap-1.5"
+                  title="Hủy lịch hẹn và xóa toàn bộ dữ liệu Bước 4 để đặt lại từ đầu"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Làm lại toàn bộ Bước 4</span>
+                </button>
               </div>
 
               <button
@@ -2420,13 +2547,25 @@ const CounselingBooking = () => {
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => handleSelectTriage('PHAN_LUONG_1')}
-                className="text-xs text-indigo-700 hover:text-indigo-900 font-semibold underline cursor-pointer"
-              >
-                ← Nếu em vẫn còn áp lực tâm lý hoặc muốn đối chất trực tiếp 1-1, bấm vào đây
-              </button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => handleSelectTriage('PHAN_LUONG_1')}
+                  className="text-xs text-indigo-700 hover:text-indigo-900 font-semibold underline cursor-pointer"
+                >
+                  ← Nếu em vẫn còn áp lực tâm lý hoặc muốn đối chất trực tiếp 1-1, bấm vào đây
+                </button>
+                <span className="text-slate-300">|</span>
+                <button
+                  type="button"
+                  onClick={confirmResetEntireStep4}
+                  className="text-xs text-rose-600 hover:text-rose-800 font-bold cursor-pointer inline-flex items-center gap-1"
+                  title="Xóa toàn bộ dữ liệu Bước 4 để bắt đầu lại"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Làm lại Bước 4</span>
+                </button>
+              </div>
 
               <button
                 type="button"
