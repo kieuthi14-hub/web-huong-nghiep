@@ -165,21 +165,51 @@ const FactCheckHub = () => {
   const handleVocationalComplete = async (vocationalResult) => {
     localStorage.setItem("cbas_step3_vocational", JSON.stringify(vocationalResult));
     
+    const isFormal = vocationalResult.trainingType === 'formal';
+    const trainingTypeLabel = vocationalResult.trainingTypeLabel || (isFormal ? 'Trường Cao đẳng/Trung cấp chính quy' : 'Cơ sở đào tạo tư nhân/Salon');
+    const deficitText = vocationalResult.deficit > 0 ? `Thâm hụt: -${vocationalResult.deficit} triệu VNĐ (Nguy cơ đứt gãy việc học)` : 'Đủ vốn an toàn';
+
+    const profileSummary = [
+      `[HỒ SƠ THẨM ĐỊNH NGHỀ THỰC CHIẾN - BƯỚC 3]`,
+      `• Loại hình: ${trainingTypeLabel}`,
+      `• Cơ sở/Trường: ${vocationalResult.academyName}`,
+      `• Chi phí GĐ1: Học phí ${vocationalResult.tuitionFee}tr + Đồ nghề ${vocationalResult.toolkitCost}tr + Ăn ở ${vocationalResult.livingCost6Months}tr = Tổng ${vocationalResult.totalPhase1Cost}tr (Vốn có: ${vocationalResult.userSavings}tr | ${deficitText})`,
+      `• Tiến độ thực hành: ${vocationalResult.weeksUntilRealHaircut} tuần | Hợp đồng: ${vocationalResult.hasWrittenContract ? 'Có văn bản' : 'Chưa có'}`,
+      `• Khảo sát thị trường: Lương thợ phụ khởi điểm ${vocationalResult.startingSalary}tr/tháng | Tích lũy kinh nghiệm ${vocationalResult.experienceYearsBeforeOpening} trước khi mở tiệm | Vốn mở tiệm: ${vocationalResult.startupBudgetEstimate}tr`
+    ].join('\n');
+
     const step3Evidence = {
-      cutoff_score: 'Học nghề thực chiến (Không xét điểm chuẩn)',
+      cutoff_score: isFormal 
+        ? 'Xét tuyển học bạ THPT (Trường CĐ/TC chính quy)' 
+        : 'Học nghề thực chiến (Không xét điểm chuẩn)',
       tuition: `${vocationalResult.tuitionFee} triệu (Tổng GĐ1: ${vocationalResult.totalPhase1Cost} triệu)`,
-      employment_rate: `Thực hành khách sau ${vocationalResult.weeksUntilRealHaircut} tuần | Dự toán mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
+      employment_rate: `Lương khởi điểm: ${vocationalResult.startingSalary || '--'} tr/tháng | Tích lũy: ${vocationalResult.experienceYearsBeforeOpening || '--'} | Vốn mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
       vocational: vocationalResult,
+      triage: {
+        reflectionText: profileSummary,
+        pathway: 'vocational',
+        triage_code: 'PHAN_LUONG_1'
+      },
       timestamp: new Date().toLocaleString(),
       verified_at: new Date().toISOString()
     };
 
     localStorage.setItem("cbas_step3_evidence", JSON.stringify(step3Evidence));
+    localStorage.setItem("cbas_step3_reflection", profileSummary);
     localStorage.setItem("career_evidence_task", JSON.stringify({
       cutoffScores: step3Evidence.cutoff_score,
       tuitionFees: step3Evidence.tuition,
       admissionQuota: step3Evidence.employment_rate,
       completedAt: step3Evidence.timestamp
+    }));
+    localStorage.setItem("cbas_step3_triage", JSON.stringify({
+      triageResult: 'In-depth (20 phút)',
+      triage_code: 'PHAN_LUONG_1',
+      pathway: 'vocational',
+      targetMajor: vocationalResult.academyName,
+      targetSchool: trainingTypeLabel,
+      reflectionText: profileSummary,
+      vocationalData: vocationalResult
     }));
 
     if (user?.id) {
@@ -187,11 +217,13 @@ const FactCheckHub = () => {
         await supabase.from('metacognitive_matrix').insert([
           {
             student_id: user.id,
-            target_major: targetCareerDisplay || vocationalResult.academyName || 'Học nghề tư nhân',
-            evidence: `[BƯỚC 3 ĐỐI CHỨNG HỌC NGHỀ THỰC CHIẾN]\n1. Cơ sở/Salon: ${vocationalResult.academyName}\n2. Tổng chi phí GĐ1: ${vocationalResult.totalPhase1Cost} triệu (Vốn gia đình: ${vocationalResult.userSavings} triệu)\n3. Hợp đồng đào tạo văn bản: ${vocationalResult.hasWrittenContract ? 'Có' : 'Không'}\n4. Thời gian thực hành mẫu thật: ${vocationalResult.weeksUntilRealHaircut} tuần\n5. Dự toán vốn mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
-            verified_sources: 'Khảo sát cơ sở đào tạo tư nhân & Thẩm định bài toán kinh tế mở tiệm',
-            risk_analysis: 'Đã hoàn thành kiểm toán chi phí giai đoạn 1, pháp lý hợp đồng đào tạo và tính khả thi thị trường.',
-            bias_check: 'Hóa giải ảo tưởng học nghề nhanh giàu, minh bạch hóa bài toán tài chính & cạnh tranh.',
+            target_major: targetCareerDisplay || vocationalResult.academyName || 'Học nghề thực chiến',
+            evidence: profileSummary,
+            verified_sources: `Thẩm định ${trainingTypeLabel} & Kiểm toán kinh tế thực tế`,
+            risk_analysis: vocationalResult.deficit > 0 
+              ? `Cảnh báo thâm hụt tài chính -${vocationalResult.deficit} triệu VNĐ (Nguy cơ đứt gãy việc học). Cần phương án vừa học vừa làm hoặc giãn tiến độ đóng học phí.` 
+              : 'Ngân sách học tập cân đối an toàn trong hạn mức vốn hiện có của gia đình.',
+            bias_check: 'Hóa giải ảo tưởng học nghề nhanh giàu, minh bạch hóa bài toán tài chính, lương thợ phụ & cạnh tranh.',
             detected_bias: 'DEBIASED_SYSTEM_2',
             final_decision: 'VOCATIONAL_CALIBRATED'
           }
@@ -205,8 +237,8 @@ const FactCheckHub = () => {
       localStorage.setItem('cbas_step4_active_stage', '4A');
       localStorage.setItem('cbas_step4_active_triage', 'PHAN_LUONG_1');
     } catch (e) {}
-    alert("🎉 Hồ sơ thẩm định học nghề thực chiến đã được hiệu chỉnh thành công! Chuẩn bị chuyển sang Bước 4.");
-    navigate('/student/booking');
+    alert("🎉 Hồ sơ thẩm định học nghề thực chiến đã được xác thực thành công! Đang chuyển sang Bước 4 (Tham vấn 1-1).");
+    navigate('/student/counseling');
   };
 
   // Mở tìm kiếm Đề án tuyển sinh kèm học phí

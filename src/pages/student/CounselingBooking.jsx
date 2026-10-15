@@ -464,18 +464,34 @@ const CounselingBooking = () => {
       if (telem) telemetry = JSON.parse(telem)
     } catch (e) {}
 
-    const rawMajor = userProf?.targetMajor || anchor?.target_career || anchor?.targetMajor || telemetry?.target_major || ''
-    const rawSchool = userProf?.targetSchool || anchor?.target_university || anchor?.targetSchool || telemetry?.target_school || ''
+    let vocational = null
+    try {
+      const voc = localStorage.getItem('cbas_step3_vocational')
+      if (voc) vocational = JSON.parse(voc)
+    } catch (e) {}
+
+    const isVoc = Boolean(vocational || triage?.pathway === 'vocational' || evidence?.vocational)
+    const rawMajor = vocational?.academyName || userProf?.targetMajor || anchor?.target_career || anchor?.targetMajor || telemetry?.target_major || ''
+    const rawSchool = vocational?.trainingTypeLabel || (vocational?.trainingType === 'formal' ? 'Trường Cao đẳng/Trung cấp chính quy' : 'Cơ sở đào tạo tư nhân/Salon') || userProf?.targetSchool || anchor?.target_university || anchor?.targetSchool || telemetry?.target_school || ''
     const targetMajor = (rawMajor && rawMajor !== 'Chưa xác định') ? rawMajor : 'Chưa xác định'
     const targetSchool = (rawSchool && rawSchool !== 'Chưa xác định') ? rawSchool : 'Chưa xác định'
     
     const hollandCode = userProf?.hollandCode || userProf?.holland_code || anchor?.holland_code || anchor?.hollandCode || telemetry?.holland_code || localStorage.getItem('holland_code') || 'RIA'
     const initialConfidence = userProf?.initialConfidence != null ? userProf.initialConfidence : (anchor?.initial_confidence != null ? anchor.initial_confidence : (anchor?.initialConfidence != null ? anchor.initialConfidence : 8))
     
-    const targetCombination = triage?.targetCombination || (evidence?.cutoff_score ? evidence.cutoff_score.split(':')[0] : 'A00') || 'A00'
-    const totalStudentScore = triage?.totalStudentScore != null ? triage.totalStudentScore : (triage?.scoreSubject1 ? (Number(triage.scoreSubject1) + Number(triage.scoreSubject2) + Number(triage.scoreSubject3)).toFixed(1) : '--')
-    const avgCutoff = triage?.avgCutoff != null ? triage.avgCutoff : '--'
-    const scoreGap = triage?.scoreGap != null ? triage.scoreGap : null
+    const targetCombination = isVoc 
+      ? (vocational?.trainingType === 'formal' ? 'Xét tuyển học bạ THPT' : 'Đào tạo thực hành nghề')
+      : (triage?.targetCombination || (evidence?.cutoff_score ? evidence.cutoff_score.split(':')[0] : 'A00') || 'A00')
+
+    const totalStudentScore = isVoc
+      ? (vocational?.trainingType === 'formal' ? 'Đạt chuẩn TN THPT' : 'Thực hành tay nghề')
+      : (triage?.totalStudentScore != null ? triage.totalStudentScore : (triage?.scoreSubject1 ? (Number(triage.scoreSubject1) + Number(triage.scoreSubject2) + Number(triage.scoreSubject3)).toFixed(1) : '--'))
+
+    const avgCutoff = isVoc
+      ? (vocational?.trainingType === 'formal' ? 'Xét học bạ' : 'Tuyển sinh trực tiếp')
+      : (triage?.avgCutoff != null ? triage.avgCutoff : '--')
+
+    const scoreGap = isVoc ? 0 : (triage?.scoreGap != null ? triage.scoreGap : null)
 
     let reflectionText = triage?.reflectionText || localStorage.getItem('cbas_step3_reflection') || evidence?.triage?.reflectionText
     if (!reflectionText && triage?.unemploymentReasons?.length) {
@@ -497,7 +513,9 @@ const CounselingBooking = () => {
       totalStudentScore,
       avgCutoff,
       scoreGap,
-      reflectionText
+      reflectionText,
+      isVocational: isVoc,
+      vocational
     }
   }, [])
 
@@ -1822,40 +1840,61 @@ const CounselingBooking = () => {
                 </div>
               </div>
 
-              {/* Tổ hợp & Học bạ */}
+              {/* Tổ hợp & Học bạ / Phương thức tuyển sinh nghề */}
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  📚 Tổ Hợp Xét Tuyển & Năng Lực Học Bạ:
+                  {dossierData.isVocational ? '📚 Phương Thức Tuyển Sinh & Chuẩn Đầu Vào Nghề:' : '📚 Tổ Hợp Xét Tuyển & Năng Lực Học Bạ:'}
                 </span>
                 <div className="flex items-center gap-3">
                   <span className="font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded border border-blue-200 text-xs">
-                    Tổ hợp: {dossierData.targetCombination}
+                    {dossierData.isVocational ? 'Hệ đào tạo: ' : 'Tổ hợp: '}{dossierData.targetCombination}
                   </span>
                   <span className="text-slate-400 text-xs">|</span>
                   <span className="text-slate-700 font-semibold text-xs">
-                    Điểm học bạ: <strong className="text-emerald-700 text-sm">{dossierData.totalStudentScore}đ</strong>
+                    {dossierData.isVocational ? 'Chuẩn đầu vào: ' : 'Điểm học bạ: '}
+                    <strong className="text-emerald-700 text-sm">
+                      {dossierData.totalStudentScore}{!dossierData.isVocational && 'đ'}
+                    </strong>
                   </span>
                 </div>
               </div>
 
-              {/* Điểm chuẩn 2 năm & Chênh lệch */}
+              {/* Điểm chuẩn 2 năm & Chênh lệch / Thẩm định chi phí nghề */}
               <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                  ⚖️ Điểm Chuẩn Thực Tế 2 Năm & Độ Lệch:
+                  {dossierData.isVocational ? '💰 Kiểm Toán Chi Phí & Thâm Hụt Tài Chính GĐ1:' : '⚖️ Điểm Chuẩn Thực Tế 2 Năm & Độ Lệch:'}
                 </span>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-slate-800 font-semibold text-xs">
-                    Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
-                  </span>
-                  <span className="text-slate-400 text-xs">•</span>
-                  <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
-                    isPositiveGap 
-                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
-                      : 'bg-rose-50 border-rose-300 text-rose-800'
-                  }`}>
-                    Chênh lệch: {formattedScoreGap}
-                  </span>
-                </div>
+                {dossierData.isVocational ? (
+                  <div className="flex items-center gap-3 flex-wrap text-xs">
+                    <span className="text-slate-800 font-semibold">
+                      Tổng GĐ1: <strong className="text-slate-900 text-sm">{dossierData.vocational?.totalPhase1Cost || '--'} triệu</strong>
+                    </span>
+                    <span className="text-slate-400">•</span>
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
+                      dossierData.vocational?.deficit > 0 
+                        ? 'bg-rose-50 border-rose-300 text-rose-800' 
+                        : 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    }`}>
+                      {dossierData.vocational?.deficit > 0 
+                        ? `Thâm hụt: -${dossierData.vocational.deficit} tr (Cảnh báo đứt gãy)` 
+                        : 'Đủ vốn an toàn'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-slate-800 font-semibold text-xs">
+                      Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
+                    </span>
+                    <span className="text-slate-400 text-xs">•</span>
+                    <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
+                      isPositiveGap 
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+                        : 'bg-rose-50 border-rose-300 text-rose-800'
+                    }`}>
+                      Chênh lệch: {formattedScoreGap}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
