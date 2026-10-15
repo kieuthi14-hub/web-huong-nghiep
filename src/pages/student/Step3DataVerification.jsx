@@ -204,12 +204,16 @@ export default function Step3DataVerification({
       unemploymentReasons,
       reflectionText: reflectionText.trim(),
       triageDecision: requiresInDepth ? 'In-depth' : 'Fast-Track',
+      pathway: 'academic',
+      targetMajor: userProfile.targetMajor || 'Chưa xác định',
+      targetSchool: userProfile.targetSchool || 'Chưa xác định',
       timestamp: new Date().toISOString()
     };
 
     // Tự động lưu cache cho bước 4 / bước 5 và tương thích ngược
     try {
       localStorage.setItem('cbas_step3_triage', JSON.stringify(resultData));
+      localStorage.removeItem('cbas_step3_vocational');
       localStorage.setItem('cbas_step3_reflection', reflectionText.trim());
       const step3Evidence = {
         cutoff_score: `${resultData.targetCombination}: ${resultData.totalStudentScore}đ vs Chuẩn TB ${resultData.avgCutoff}đ (Lệch: ${resultData.scoreGap > 0 ? `+${resultData.scoreGap}` : resultData.scoreGap}đ)`,

@@ -470,9 +470,75 @@ const CounselingBooking = () => {
       if (voc) vocational = JSON.parse(voc)
     } catch (e) {}
 
-    const isVoc = Boolean(vocational || triage?.pathway === 'vocational' || evidence?.vocational)
-    const rawMajor = vocational?.academyName || userProf?.targetMajor || anchor?.target_career || anchor?.targetMajor || telemetry?.target_major || ''
-    const rawSchool = vocational?.trainingTypeLabel || (vocational?.trainingType === 'formal' ? 'Trường Cao đẳng/Trung cấp chính quy' : 'Cơ sở đào tạo tư nhân/Salon') || userProf?.targetSchool || anchor?.target_university || anchor?.targetSchool || telemetry?.target_school || ''
+    // Helper chuẩn hóa tiếng Việt để kiểm tra trường Đại học
+    const removeVietnameseTones = (str) => {
+      if (!str || typeof str !== 'string') return ''
+      return str
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'd')
+        .toLowerCase()
+        .trim()
+    }
+
+    // Xác định tên trường / đại học mà học sinh đã đăng ký từ Bước 1 / Bước 2
+    const declaredSchool = (
+      userProf?.targetSchool || 
+      anchor?.target_university || 
+      anchor?.targetSchool || 
+      telemetry?.target_school || 
+      triage?.targetSchool || 
+      ''
+    ).trim()
+
+    // Kiểm tra xem trường học sinh đăng ký có phải là Đại học / Học viện / Bách khoa... hay không
+    const sNorm = removeVietnameseTones(declaredSchool)
+    const isUniSchool = Boolean(
+      sNorm.startsWith('dh') || 
+      sNorm.startsWith('truong dh') || 
+      sNorm.startsWith('dai hoc') || 
+      sNorm.startsWith('truong dai hoc') ||
+      sNorm.includes('dai hoc') || 
+      sNorm.includes('hoc vien') || 
+      sNorm.includes('university') || 
+      sNorm.includes('bach khoa') || 
+      sNorm.includes('dhqg') ||
+      sNorm.includes('dhdn') ||
+      sNorm.includes('dhh')
+    )
+
+    // Xác định xem có thực sự là phân hệ học nghề hay không (nếu là trường Đại học hoặc phân hệ academic thì TUYỆT ĐỐI không phải Salon/học nghề)
+    const isVoc = !isUniSchool && triage?.pathway !== 'academic' && Boolean(
+      triage?.pathway === 'vocational' || 
+      evidence?.vocational || 
+      vocational
+    )
+
+    // Xác định ngành mục tiêu (Ngành / Nghề - KHÔNG lấy nhầm tên trường/cơ sở)
+    const rawMajor = (
+      userProf?.targetMajor || 
+      anchor?.target_career || 
+      anchor?.targetMajor || 
+      telemetry?.target_major || 
+      (triage?.targetMajor && !triage.targetMajor.includes('Salon') ? triage.targetMajor : '') || 
+      ''
+    ).trim()
+
+    // Xác định trường / cơ sở đào tạo mục tiêu
+    let rawSchool = ''
+    if (declaredSchool && !declaredSchool.toLowerCase().includes('chưa xác định') && !declaredSchool.toLowerCase().includes('salon')) {
+      rawSchool = declaredSchool
+    } else if (isVoc) {
+      rawSchool = vocational?.academyName || 
+                  vocational?.trainingTypeLabel || 
+                  (vocational?.trainingType === 'formal' ? 'Trường Cao đẳng/Trung cấp chính quy' : 'Cơ sở đào tạo thực hành nghề')
+    } else {
+      rawSchool = declaredSchool || 
+                  (triage?.targetSchool && !triage.targetSchool.includes('Salon') ? triage.targetSchool : '') || 
+                  'Đại học mục tiêu'
+    }
+
     const targetMajor = (rawMajor && rawMajor !== 'Chưa xác định') ? rawMajor : 'Chưa xác định'
     const targetSchool = (rawSchool && rawSchool !== 'Chưa xác định') ? rawSchool : 'Chưa xác định'
     

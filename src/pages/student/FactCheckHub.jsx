@@ -14,6 +14,7 @@ import {
   GraduationCap,
   Scissors
 } from 'lucide-react'
+import { removeVietnameseTones } from './Step2SocraticAgent'
 
 // Danh sách Cổng dữ liệu khách quan & Link Đề án Tuyển sinh 3 Công Khai
 const VERIFICATION_LINKS = [
@@ -151,11 +152,32 @@ const FactCheckHub = () => {
   // Phân hệ kiểm chứng: 'academic' (Đại học/CĐ) hoặc 'vocational' (Học nghề thực chiến)
   const [pathwayMode, setPathwayMode] = useState(() => {
     try {
+      const uniText = (anchor?.target_university || '').toLowerCase().trim();
+      const uniNorm = removeVietnameseTones(uniText);
+      const isUni = Boolean(
+        uniNorm.startsWith('dh') || 
+        uniNorm.startsWith('truong dh') || 
+        uniNorm.startsWith('dai hoc') || 
+        uniNorm.startsWith('truong dai hoc') ||
+        uniNorm.includes('dai hoc') || 
+        uniNorm.includes('hoc vien') || 
+        uniNorm.includes('university') || 
+        uniNorm.includes('bach khoa') || 
+        uniNorm.includes('dhqg') ||
+        uniNorm.includes('dhdn') ||
+        uniNorm.includes('dhh')
+      );
+
+      // Nếu học sinh đã đăng ký trường Đại học -> Mặc định phân hệ Academic
+      if (isUni) return 'academic';
+
       const storedVocational = localStorage.getItem('cbas_step3_vocational');
       if (storedVocational) return 'vocational';
+
       const text = `${anchor?.target_career || ''} ${anchor?.target_university || ''}`.toLowerCase();
-      const vocationalKeywords = ['tóc', 'cắt tóc', 'barber', 'salon', 'spa', 'nail', 'móng', 'học nghề', 'nghề', 'thợ', 'pha chế', 'barista', 'đầu bếp', 'nấu ăn', 'sửa xe', 'sửa chữa ô tô', 'trang điểm', 'makeup', 'lái xe'];
-      return vocationalKeywords.some(kw => text.includes(kw)) ? 'vocational' : 'academic';
+      const textNorm = removeVietnameseTones(text);
+      const vocationalKeywords = ['toc', 'cat toc', 'barber', 'salon', 'spa', 'nail', 'mong', 'hoc nghe', 'day nghe', 'tho han', 'tho tien', 'pha che', 'barista', 'dau bep', 'nau an', 'sua xe', 'sua o to', 'trang diem', 'makeup', 'lai xe'];
+      return vocationalKeywords.some(kw => textNorm.includes(kw)) ? 'vocational' : 'academic';
     } catch (e) {
       return 'academic';
     }
@@ -202,12 +224,14 @@ const FactCheckHub = () => {
       admissionQuota: step3Evidence.employment_rate,
       completedAt: step3Evidence.timestamp
     }));
+    const targetMajor = targetCareerDisplay || anchor?.target_career || 'Học nghề thực chiến';
+    const targetSchool = vocationalResult.academyName || anchor?.target_university || trainingTypeLabel;
     localStorage.setItem("cbas_step3_triage", JSON.stringify({
       triageResult: 'In-depth (20 phút)',
       triage_code: 'PHAN_LUONG_1',
       pathway: 'vocational',
-      targetMajor: vocationalResult.academyName,
-      targetSchool: trainingTypeLabel,
+      targetMajor: targetMajor,
+      targetSchool: targetSchool,
       reflectionText: profileSummary,
       vocationalData: vocationalResult
     }));

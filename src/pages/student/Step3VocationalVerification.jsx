@@ -34,6 +34,8 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
     return 20.0;
   })();
 
+  const fallbackSchoolName = (profile?.target_university || profile?.targetSchool || '').trim();
+
   const [data, setData] = useState(() => {
     try {
       const saved = localStorage.getItem('cbas_step3_vocational');
@@ -41,7 +43,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
         const p = JSON.parse(saved);
         return {
           trainingType: p.trainingType || 'formal',
-          academyName: p.academyName || '',
+          academyName: p.academyName || fallbackSchoolName || '',
           tuitionFee: p.tuitionFee || '',
           toolkitCost: p.toolkitCost || '',
           livingCost6Months: p.livingCost6Months || '',
@@ -57,7 +59,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
     } catch (e) {}
     return {
       trainingType: 'formal', // 'formal': Trường CĐ/TC chính quy | 'private': Cơ sở tư nhân/Salon
-      academyName: '',
+      academyName: fallbackSchoolName || '',
       tuitionFee: '',
       toolkitCost: '',
       livingCost6Months: '',
@@ -236,12 +238,14 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
           admissionQuota: step3Evidence.employment_rate,
           completedAt: step3Evidence.timestamp
         }));
+        const currentMajor = profile?.target_career || profile?.targetMajor || 'Học nghề thực chiến';
+        const currentSchool = verifiedResult.academyName || profile?.target_university || profile?.targetSchool || trainingTypeLabel;
         localStorage.setItem("cbas_step3_triage", JSON.stringify({
           triageResult: 'In-depth (20 phút)',
           triage_code: 'PHAN_LUONG_1',
           pathway: 'vocational',
-          targetMajor: verifiedResult.academyName,
-          targetSchool: trainingTypeLabel,
+          targetMajor: currentMajor,
+          targetSchool: currentSchool,
           reflectionText: profileSummary,
           vocationalData: verifiedResult
         }));
