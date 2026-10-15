@@ -8,6 +8,17 @@ import { RotateCcw } from 'lucide-react';
  * Cơ chế: Guided Empirical Grounding + Algorithmic Cognitive Triage
  */
 
+// Helper làm sạch và chuẩn hóa số liệu người dùng nhập (hỗ trợ số thực, dấu phẩy, chuỗi kèm đơn vị 'triệu', 'tr', '/năm')
+const parseNumericInput = (val) => {
+  if (val == null) return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  const str = String(val).trim();
+  if (!str) return 0;
+  const cleaned = str.replace(/,/g, '.').replace(/[^\d.-]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : Number(parsed.toFixed(2));
+};
+
 export default function Step3DataVerification({ 
   userProfile: propUserProfile = {}, 
   step2Summary: propStep2Summary = { turningPoint: false }, 
@@ -54,50 +65,41 @@ export default function Step3DataVerification({
     } catch (e) {}
     return propStep2Summary || { turningPoint: false };
   }, [propStep2Summary]);
-  // 1. STATE DỮ LIỆU KHỐI 1: TỔ HỢP MÔN & ĐIỂM CHUẨN
-  const [targetCombination, setTargetCombination] = useState('A00');
-  const [customCombination, setCustomCombination] = useState('');
-  const [scoreSubject1, setScoreSubject1] = useState('');
-  const [scoreSubject2, setScoreSubject2] = useState('');
-  const [scoreSubject3, setScoreSubject3] = useState('');
-  const [cutoff2025, setCutoff2025] = useState('');
-  const [cutoff2026, setCutoff2026] = useState('');
-  const [tuitionFee, setTuitionFee] = useState('');
 
-  // Tự động khôi phục dữ liệu đã lưu nếu học sinh quay lại
-  React.useEffect(() => {
+  // Đọc đồng bộ dữ liệu đã lưu từ cbas_step3_triage nếu học sinh quay lại hoặc tải lại trang
+  const initialSavedData = useMemo(() => {
     try {
       const stored = localStorage.getItem('cbas_step3_triage');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.targetCombination) setTargetCombination(parsed.targetCombination);
-        if (parsed.scoreSubject1 != null) setScoreSubject1(String(parsed.scoreSubject1));
-        if (parsed.scoreSubject2 != null) setScoreSubject2(String(parsed.scoreSubject2));
-        if (parsed.scoreSubject3 != null) setScoreSubject3(String(parsed.scoreSubject3));
-        if (parsed.cutoff2025 != null) setCutoff2025(String(parsed.cutoff2025));
-        else if (parsed.cutoff2024 != null) setCutoff2025(String(parsed.cutoff2024));
-        if (parsed.cutoff2026 != null) setCutoff2026(String(parsed.cutoff2026));
-        else if (parsed.cutoff2025 != null && parsed.cutoff2024 != null) setCutoff2026(String(parsed.cutoff2025));
-        if (parsed.tuitionFee != null) setTuitionFee(String(parsed.tuitionFee));
-        if (parsed.employmentRate != null) setEmploymentRate(String(parsed.employmentRate));
-        if (parsed.laborMarketTrend) setLaborMarketTrend(parsed.laborMarketTrend);
-        if (Array.isArray(parsed.unemploymentReasons)) setUnemploymentReasons(parsed.unemploymentReasons);
-        if (parsed.reflectionText) setReflectionText(parsed.reflectionText);
-      }
+      if (stored) return JSON.parse(stored);
     } catch (e) {}
+    return null;
   }, []);
 
+  // 1. STATE DỮ LIỆU KHỐI 1: TỔ HỢP MÔN & ĐIỂM CHUẨN (Khởi tạo trực tiếp từ cache tránh race condition)
+  const [targetCombination, setTargetCombination] = useState(() => initialSavedData?.targetCombination || 'A00');
+  const [customCombination, setCustomCombination] = useState('');
+  const [scoreSubject1, setScoreSubject1] = useState(() => initialSavedData?.scoreSubject1 != null ? String(initialSavedData.scoreSubject1) : '');
+  const [scoreSubject2, setScoreSubject2] = useState(() => initialSavedData?.scoreSubject2 != null ? String(initialSavedData.scoreSubject2) : '');
+  const [scoreSubject3, setScoreSubject3] = useState(() => initialSavedData?.scoreSubject3 != null ? String(initialSavedData.scoreSubject3) : '');
+  const [cutoff2025, setCutoff2025] = useState(() => {
+    if (initialSavedData?.cutoff2025 != null) return String(initialSavedData.cutoff2025);
+    if (initialSavedData?.cutoff2024 != null) return String(initialSavedData.cutoff2024);
+    return '';
+  });
+  const [cutoff2026, setCutoff2026] = useState(() => initialSavedData?.cutoff2026 != null ? String(initialSavedData.cutoff2026) : '');
+  const [tuitionFee, setTuitionFee] = useState(() => initialSavedData?.tuitionFee != null ? String(initialSavedData.tuitionFee) : '');
+
   // 2. STATE DỮ LIỆU KHỐI 2: THỊ TRƯỜNG VIỆC LÀM
-  const [employmentRate, setEmploymentRate] = useState('');
-  const [laborMarketTrend, setLaborMarketTrend] = useState('balanced');
+  const [employmentRate, setEmploymentRate] = useState(() => initialSavedData?.employmentRate != null ? String(initialSavedData.employmentRate) : '');
+  const [laborMarketTrend, setLaborMarketTrend] = useState(() => initialSavedData?.laborMarketTrend || 'balanced');
 
   // 3. STATE DỮ LIỆU KHỐI 3: NGUYÊN NHÂN THẤT NGHIỆP & PHẢN TƯ
-  const [unemploymentReasons, setUnemploymentReasons] = useState([]);
-  const [reflectionText, setReflectionText] = useState('');
+  const [unemploymentReasons, setUnemploymentReasons] = useState(() => Array.isArray(initialSavedData?.unemploymentReasons) ? initialSavedData.unemploymentReasons : []);
+  const [reflectionText, setReflectionText] = useState(() => initialSavedData?.reflectionText || '');
 
   // 4. STATE ĐIỀU KHIỂN GIAO DIỆN KẾT QUẢ PHÂN LUỒNG
-  const [triageResult, setTriageResult] = useState(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [triageResult, setTriageResult] = useState(() => initialSavedData?.triageDecision ? initialSavedData : null);
+  const [submitted, setSubmitted] = useState(() => Boolean(initialSavedData?.triageDecision));
 
   // DANH MỤC TỔ HỢP PHỔ BIẾN THEO CHƯƠNG TRÌNH GDPT 2018
   const combinationOptions = [
@@ -117,15 +119,15 @@ export default function Step3DataVerification({
 
   // TÍNH TOÁN ĐỘNG CÁC CHỈ SỐ ĐIỂM SỐ
   const totalStudentScore = useMemo(() => {
-    const s1 = parseFloat(scoreSubject1) || 0;
-    const s2 = parseFloat(scoreSubject2) || 0;
-    const s3 = parseFloat(scoreSubject3) || 0;
+    const s1 = parseNumericInput(scoreSubject1);
+    const s2 = parseNumericInput(scoreSubject2);
+    const s3 = parseNumericInput(scoreSubject3);
     return Number((s1 + s2 + s3).toFixed(2));
   }, [scoreSubject1, scoreSubject2, scoreSubject3]);
 
   const avgCutoff = useMemo(() => {
-    const c25 = parseFloat(cutoff2025) || 0;
-    const c26 = parseFloat(cutoff2026) || 0;
+    const c25 = parseNumericInput(cutoff2025);
+    const c26 = parseNumericInput(cutoff2026);
     if (c25 > 0 && c26 > 0) return Number(((c25 + c26) / 2).toFixed(2));
     if (c25 > 0) return c25;
     if (c26 > 0) return c26;
@@ -153,9 +155,17 @@ export default function Step3DataVerification({
   const handleProcessTriage = (e) => {
     e.preventDefault();
 
-    // 1. Kiểm tra validation tối thiểu
-    if (!cutoff2025 || !cutoff2026 || !scoreSubject1 || !scoreSubject2 || !scoreSubject3 || !reflectionText.trim()) {
-      alert("Vui lòng tra cứu và điền đầy đủ các thông tin đối chứng bắt buộc để hệ thống phân tích.");
+    const c25 = parseNumericInput(cutoff2025);
+    const c26 = parseNumericInput(cutoff2026);
+    const s1 = parseNumericInput(scoreSubject1);
+    const s2 = parseNumericInput(scoreSubject2);
+    const s3 = parseNumericInput(scoreSubject3);
+    const cleanedTuition = parseNumericInput(tuitionFee);
+    const cleanedEmployment = parseNumericInput(employmentRate);
+
+    // 1. Kiểm tra validation tối thiểu (bao gồm cả học phí ước tính)
+    if (!c25 || !c26 || !s1 || !s2 || !s3 || cleanedTuition <= 0 || !reflectionText.trim()) {
+      alert("Vui lòng tra cứu và điền đầy đủ các thông tin đối chứng bắt buộc (Điểm chuẩn 2 năm, Điểm 3 môn học bạ, Học phí ước tính > 0 và Tự phản tư) để hệ thống phân tích.");
       return;
     }
 
@@ -179,17 +189,17 @@ export default function Step3DataVerification({
 
     const resultData = {
       targetCombination: targetCombination === 'OTHER' ? customCombination : targetCombination,
-      scoreSubject1: parseFloat(scoreSubject1),
-      scoreSubject2: parseFloat(scoreSubject2),
-      scoreSubject3: parseFloat(scoreSubject3),
+      scoreSubject1: s1,
+      scoreSubject2: s2,
+      scoreSubject3: s3,
       totalStudentScore,
-      cutoff2025: parseFloat(cutoff2025),
-      cutoff2026: parseFloat(cutoff2026),
-      cutoff2024: parseFloat(cutoff2025), // Tương thích ngược với các module cũ
+      cutoff2025: c25,
+      cutoff2026: c26,
+      cutoff2024: c25, // Tương thích ngược với các module cũ
       avgCutoff,
       scoreGap: actualGap,
-      tuitionFee: parseFloat(tuitionFee) || 0,
-      employmentRate: parseFloat(employmentRate) || 0,
+      tuitionFee: cleanedTuition,
+      employmentRate: cleanedEmployment,
       laborMarketTrend,
       unemploymentReasons,
       reflectionText: reflectionText.trim(),
@@ -202,7 +212,7 @@ export default function Step3DataVerification({
       localStorage.setItem('cbas_step3_triage', JSON.stringify(resultData));
       localStorage.setItem('cbas_step3_reflection', reflectionText.trim());
       const step3Evidence = {
-        cutoff_score: `${resultData.targetCombination}: ${resultData.totalStudentScore}đ vs Chuẩn TB ${resultData.avgCutoff}đ (Lệch: ${resultData.scoreGap}đ)`,
+        cutoff_score: `${resultData.targetCombination}: ${resultData.totalStudentScore}đ vs Chuẩn TB ${resultData.avgCutoff}đ (Lệch: ${resultData.scoreGap > 0 ? `+${resultData.scoreGap}` : resultData.scoreGap}đ)`,
         tuition: `${resultData.tuitionFee} triệu/năm`,
         employment_rate: `${resultData.employmentRate}% (Xu thế: ${resultData.laborMarketTrend})`,
         triage: resultData,
@@ -410,7 +420,7 @@ export default function Step3DataVerification({
                   <span className="text-[11px] text-slate-500 font-medium">Môn 1:</span>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     max="10"
                     placeholder="VD: 7.5"
@@ -424,7 +434,7 @@ export default function Step3DataVerification({
                   <span className="text-[11px] text-slate-500 font-medium">Môn 2:</span>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     max="10"
                     placeholder="VD: 6.5"
@@ -438,7 +448,7 @@ export default function Step3DataVerification({
                   <span className="text-[11px] text-slate-500 font-medium">Môn 3:</span>
                   <input
                     type="number"
-                    step="0.1"
+                    step="any"
                     min="0"
                     max="10"
                     placeholder="VD: 6.0"
@@ -465,7 +475,7 @@ export default function Step3DataVerification({
                 </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="any"
                   min="0"
                   max="30"
                   placeholder="VD: 25.5"
@@ -482,7 +492,7 @@ export default function Step3DataVerification({
                 </label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="any"
                   min="0"
                   max="30"
                   placeholder="VD: 26.0"
@@ -497,16 +507,20 @@ export default function Step3DataVerification({
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Học phí ước tính (Triệu VNĐ/năm):
                 </label>
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  placeholder="VD: 18"
-                  value={tuitionFee}
-                  onChange={(e) => setTuitionFee(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="VD: 30"
+                    value={tuitionFee}
+                    onChange={(e) => setTuitionFee(e.target.value)}
+                    className="w-full p-2.5 pr-20 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    required
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 pointer-events-none">
+                    triệu/năm
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -698,6 +712,17 @@ export default function Step3DataVerification({
                   Dữ liệu đối chứng ghi nhận: Năng lực học bạ và hồ sơ thiên hướng của em đang <strong>tương thích tốt với ngưỡng tham chiếu</strong> của ngành mục tiêu. Hệ thống chuyển tiếp em sang <strong>Bước 4 để Đăng ký lịch hẹn xác nhận cùng Mentor</strong> và rà soát hồ sơ đối chất thực tế trước khi hoàn thiện cam kết hành động.
                 </p>
 
+                {/* DỮ LIỆU TÓM TẮT PHỤC VỤ THAM VẤN BƯỚC 4 (FAST-TRACK) */}
+                <div className="bg-white/90 p-4 rounded-xl border border-teal-200 text-left text-xs text-slate-700 space-y-1.5 shadow-xs">
+                  <div className="font-bold text-teal-900 mb-1">Dữ liệu tóm tắt phục vụ tham vấn Bước 4:</div>
+                  <div>• Tổ hợp môn: <span className="font-bold text-slate-900">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}đ)</div>
+                  <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold text-slate-900">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
+                  <div>• Học phí: <span className="font-bold text-slate-900">{triageResult.tuitionFee} triệu/năm</span></div>
+                  {triageResult.employmentRate > 0 && (
+                    <div>• Tỷ lệ việc làm sau 1 năm: <span className="font-bold text-slate-900">{triageResult.employmentRate}%</span></div>
+                  )}
+                </div>
+
                 <div className="pt-1">
                   <button
                     type="button"
@@ -741,7 +766,7 @@ export default function Step3DataVerification({
                 Phát Hiện Khoảng Cách Nhận Thức Cần Tháo Gỡ!
               </h2>
               <p className="text-sm text-slate-600 max-w-xl mx-auto mb-6 leading-relaxed">
-                Số liệu đối chứng cho thấy điểm số hiện tại đang có khoảng cách (<span className="font-bold text-rose-600">{triageResult.scoreGap} điểm</span>) 
+                Số liệu đối chứng cho thấy điểm số hiện tại đang có khoảng cách (<span className="font-bold text-rose-600">{triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap} điểm</span>) 
                 so với điểm chuẩn thực tế, hoặc có sự băn khoăn lớn về nguy cơ việc làm/áp lực chọn ngành (độ lệch nhận thức CRS lớn). 
                 Hệ thống kích hoạt <strong>Phân luồng 1</strong>: bắt buộc tham gia phiên đối chất 1-1 trực tiếp cùng Mentor (20 - 30 phút) 
                 để bóc tách các rào cản tâm lý, áp lực định kiến và tái cấu trúc mục tiêu an toàn.
@@ -750,7 +775,7 @@ export default function Step3DataVerification({
               <div className="bg-slate-50 p-4 rounded-xl max-w-md mx-auto mb-6 text-left text-xs text-slate-600 space-y-1.5 border border-slate-200">
                 <div className="font-bold text-slate-700 mb-1">Dữ liệu tóm tắt phục vụ tham vấn Bước 4:</div>
                 <div>• Tổ hợp môn: <span className="font-bold">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}đ)</div>
-                <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap}đ)</div>
+                <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
                 <div>• Học phí: <span className="font-bold">{triageResult.tuitionFee} triệu/năm</span></div>
                 {triageResult.employmentRate > 0 && (
                   <div>• Tỷ lệ việc làm sau 1 năm: <span className="font-bold">{triageResult.employmentRate}%</span></div>

@@ -493,6 +493,14 @@ const CounselingBooking = () => {
 
     const scoreGap = isVoc ? 0 : (triage?.scoreGap != null ? triage.scoreGap : null)
 
+    const tuitionFee = isVoc
+      ? (vocational?.tuitionFee != null ? `${vocational.tuitionFee} triệu` : '--')
+      : (triage?.tuitionFee != null ? `${triage.tuitionFee} triệu/năm` : (evidence?.tuition || '--'))
+
+    const employmentRate = isVoc
+      ? (vocational?.startingSalary != null ? `Lương khởi điểm: ${vocational.startingSalary} tr/tháng` : '--')
+      : (triage?.employmentRate != null ? `${triage.employmentRate}%` : (evidence?.employment_rate || '--'))
+
     let reflectionText = triage?.reflectionText || localStorage.getItem('cbas_step3_reflection') || evidence?.triage?.reflectionText
     if (!reflectionText && triage?.unemploymentReasons?.length) {
       reflectionText = `Quan ngại về rủi ro tuyển sinh & thị trường việc làm: ${triage.unemploymentReasons.join(', ')}`
@@ -513,6 +521,8 @@ const CounselingBooking = () => {
       totalStudentScore,
       avgCutoff,
       scoreGap,
+      tuitionFee,
+      employmentRate,
       reflectionText,
       isVocational: isVoc,
       vocational
@@ -1881,11 +1891,11 @@ const CounselingBooking = () => {
                     </span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="text-slate-800 font-semibold text-xs">
+                  <div className="flex items-center gap-3 flex-wrap text-xs">
+                    <span className="text-slate-800 font-semibold">
                       Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
                     </span>
-                    <span className="text-slate-400 text-xs">•</span>
+                    <span className="text-slate-400">•</span>
                     <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
                       isPositiveGap 
                         ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
@@ -1893,6 +1903,22 @@ const CounselingBooking = () => {
                     }`}>
                       Chênh lệch: {formattedScoreGap}
                     </span>
+                    {dossierData.tuitionFee && dossierData.tuitionFee !== '--' && (
+                      <>
+                        <span className="text-slate-400">•</span>
+                        <span className="text-slate-700 font-medium">
+                          Học phí: <strong className="text-slate-900">{dossierData.tuitionFee}</strong>
+                        </span>
+                      </>
+                    )}
+                    {dossierData.employmentRate && dossierData.employmentRate !== '--' && (
+                      <>
+                        <span className="text-slate-400">•</span>
+                        <span className="text-slate-700 font-medium">
+                          Việc làm 1 năm: <strong className="text-slate-900">{dossierData.employmentRate}</strong>
+                        </span>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
