@@ -264,17 +264,91 @@ export function formatSchoolName(school, isVocational = false) {
 }
 
 // QUY TẮC 2: PHÂN HÓA HƯỚNG ĐI: ĐẠI HỌC VS. HỌC NGHỀ / THỰC HÀNH
-export function isVocationalTrack(career, userText = '') {
-  const text = `${career || ''} ${userText || ''}`.toLowerCase();
-  const vocationalKeywords = [
-    'nấu ăn', 'đầu bếp', 'pha chế', 'barista', 'bếp', 'làm bánh', 'ẩm thực',
-    'sửa xe', 'sửa chữa ô tô', 'sửa ô tô', 'cơ khí', 'điện lạnh', 'sửa điện thoại', 'thợ hàn', 'thợ tiện', 'thợ máy', 'thợ',
-    'làm đẹp', 'spa', 'nail', 'móng', 'cắt tóc', 'tóc', 'barber', 'trang điểm', 'makeup', 'phun xăm',
-    'lái xe', 'lái máy', 'may mặc', 'may thời trang',
-    'học nghề', 'trung cấp nghề', 'trường nghề', 'cao đẳng nghề', 'học nghề ngắn hạn', 'nghề thực hành',
-    'ngán kiến thức', 'ngán học', 'ngán lý thuyết', 'chán học', 'học dở', 'học dở các môn', 'sợ học', 'học không vô', 'không thích học chữ', 'chỉ thích thực hành', 'ngại học lý thuyết'
+export function removeVietnameseTones(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'd')
+    .toLowerCase()
+    .trim();
+}
+
+export function hasUniversityClarification(userText = '') {
+  if (!userText || typeof userText !== 'string') return false;
+  const uNorm = removeVietnameseTones(userText);
+  const patterns = [
+    'hoc dai hoc', 'hoc dh', 'thi dai hoc', 'thi dh', 'vao dai hoc', 'vao dh',
+    'chon dai hoc', 'chon dh', 'bac dai hoc', 'he dai hoc', 'do dai hoc', 'truong dai hoc',
+    'khong hoc nghe', 'khong phai hoc nghe', 'khong hoc truong nghe', 'khong phai truong nghe',
+    'chu khong hoc nghe', 'chu khong hoc truong nghe', 'khong di hoc nghe', 'em hoc dai hoc',
+    'em thi dai hoc', 'em vao dai hoc', 'khong co hoc nghe', 'hoc truong dai hoc'
   ];
-  return vocationalKeywords.some(k => text.includes(k));
+  return patterns.some(p => uNorm.includes(p));
+}
+
+export function isVocationalTrack(career = '', userText = '', school = '') {
+  const c = (career || '').toLowerCase().trim();
+  const u = (userText || '').toLowerCase().trim();
+  const s = (school || '').toLowerCase().trim();
+
+  const cNorm = removeVietnameseTones(c);
+  const uNorm = removeVietnameseTones(u);
+  const sNorm = removeVietnameseTones(s);
+
+  // 1. Phủ định mạnh mẽ: Nếu học sinh nêu rõ học Đại học / Không học nghề -> TUYỆT ĐỐI KHÔNG PHẢI HỌC NGHỀ
+  if (hasUniversityClarification(u)) {
+    return false;
+  }
+
+  // 2. Kiểm tra tên trường đào tạo (school):
+  const isExplicitVocationalSchool = ['nghe', 'trung cap', 'salon', 'day nghe', 'co so dao tao tu nhan'].some(k => sNorm.includes(k));
+
+  const isUniSchool = sNorm.startsWith('dh') || 
+                      sNorm.startsWith('truong dh') || 
+                      sNorm.startsWith('dai hoc') || 
+                      sNorm.startsWith('truong dai hoc') ||
+                      sNorm.includes('dai hoc') || 
+                      sNorm.includes('hoc vien') || 
+                      sNorm.includes('university') || 
+                      sNorm.includes('bach khoa') || 
+                      sNorm.includes('dhqg') ||
+                      sNorm.includes('dhdn') ||
+                      sNorm.includes('dhh');
+
+  if (isUniSchool && !isExplicitVocationalSchool) {
+    // Nếu nhắm vào trường Đại học (như ĐH Nha Trang, ĐH Bách Khoa, ĐH Sư phạm Kỹ thuật...),
+    // đây là bậc đào tạo Kỹ sư / Cử nhân đại học chính quy, TUYỆT ĐỐI KHÔNG ĐƯỢC COI LÀ HỌC NGHỀ!
+    return false;
+  }
+
+  if (isExplicitVocationalSchool) {
+    return true;
+  }
+
+  // 3. Từ khóa nghề thủ công / dịch vụ phi đại học rõ ràng (không đào tạo cử nhân đại học):
+  const pureVocationalKeywords = [
+    'pha che', 'barista', 'lam banh', 'tho han', 'tho tien', 'tho may', 'tho dien dan dung',
+    'spa', 'nail', 'mong', 'cat toc', 'barber', 'trang diem', 'makeup', 'phun xam',
+    'lai may xuc', 'lai xe tai', 'lai cau', 'sua xe may',
+    'hoc nghe', 'trung cap nghe', 'truong nghe', 'cao dang nghe', 'hoc nghe ngan han', 'nghe thuc hanh',
+    'ngan kien thuc', 'ngan hoc', 'ngan ly thuyet', 'chan hoc ly thuyet', 'hoc khong vo chu', 'khong thich hoc chu', 'chi thich thuc hanh', 'ngai hoc ly thuyet', 'ngan hoc van hoa'
+  ];
+  if (pureVocationalKeywords.some(k => cNorm.includes(k) || uNorm.includes(k))) {
+    return true;
+  }
+
+  // 4. Các ngành kỹ thuật / ứng dụng (cơ khí, điện lạnh, sửa ô tô, đầu bếp, nấu ăn, may mặc):
+  // Chỉ coi là học nghề khi KHÔNG có trường đại học và có dấu hiệu học nghề hoặc học sinh bộc lộ ngán lý thuyết
+  const technicalKeywords = ['dien lanh', 'co khi', 'sua o to', 'sua xe', 'nau an', 'dau bep', 'may mac', 'may thoi trang', 'sua dien thoai'];
+  if (technicalKeywords.some(k => cNorm.includes(k) || uNorm.includes(k))) {
+    if (uNorm.includes('nghe') || uNorm.includes('thuc hanh') || cNorm.includes('tho') || cNorm.includes('sua')) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC KHỐI CŨ)
@@ -347,7 +421,8 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   });
 
   // 4. QUY TẮC 1: XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO (CHỐNG LỖI HIỂN THỊ CHUỖI RỖNG / "tại [chưa biết]")
-  const isVocational = isVocationalTrack(effectiveCareer, userText);
+  const isVocational = isVocationalTrack(effectiveCareer, userText, targetSchool);
+  const isUniClarification = hasUniversityClarification(userText);
   const cleanSchoolClause = formatSchoolClause(targetSchool, isVocational, 'tại ');
   const cleanSchoolName = formatSchoolName(targetSchool, isVocational);
 
@@ -376,9 +451,21 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     // Loại bỏ các câu điều hướng cũ nếu có
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
+    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
+    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề" trong câu nhận định!
+    if (!isVocational || isUniClarification) {
+      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.trim();
+    }
+
     const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
     let intro = '';
-    if (sentences.length > 0) {
+    if (isUniClarification) {
+      intro = `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${major} ${cleanSchoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn.`;
+    } else if (sentences.length > 0) {
       intro = sentences.slice(0, 2).join(' ').trim();
     } else {
       if (isVocational) {
@@ -395,7 +482,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     }
 
     // QUY TẮC 2: PHÂN HÓA HƯỚNG ĐI ĐẠI HỌC VS HỌC NGHỀ
-    const standardDirective = isVocational
+    const standardDirective = (isVocational && !isUniClarification)
       ? `Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${cleanSchoolName} để đối chiếu với hồ sơ của mình.`
       : `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
 
@@ -403,6 +490,16 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   } else {
     // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
+
+    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
+    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề"
+    if (!isVocational || isUniClarification) {
+      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
+      cleaned = cleaned.trim();
+    }
 
     // QUY TẮC 6: CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG KHI HỌC SINH NÊU ĐỘNG CƠ CẢM XÚC/GIA ĐÌNH/ƯỚC MƠ
     const isFamilyOrAltruisticUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
@@ -417,7 +514,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     }
 
     if (!cleaned.endsWith('?')) {
-      if (isVocational) {
+      if (isVocational && !isUniClarification) {
         if (round === 1) {
           cleaned += ` Thầy hiểu học nghề là lựa chọn thực tế và có lộ trình việc làm rõ ràng. Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
         } else if (round === 2) {
@@ -691,7 +788,7 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
   const goalShift = detectGoalShift(userText);
   const isShifted = profShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = profEffective || (goalShift ? goalShift.newMajor : targetCareer);
-  const isVocational = isVocationalTrack(effectiveCareer, userText);
+  const isVocational = isVocationalTrack(effectiveCareer, userText, rawSchool);
   const targetSchool = formatSchoolName(rawSchool, isVocational);
   const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
   const askingCombo = isAskingAboutSubjectsOrCombos(userText);
@@ -701,10 +798,21 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
   const isMedicalCareer = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'dược học', 'nha khoa', 'răng hàm mặt'].some(k => careerLower.includes(k) || lowerUser.includes(k));
   const isVagueOrUncertain = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerUser.includes(k));
   const isSalaryFocused = ['tiền', 'lương', 'thu nhập', 'giàu', 'kiếm tiền', 'kinh tế', 'triệu', 'ổn định'].some(k => lowerUser.includes(k));
+  const isUniClarification = hasUniversityClarification(userText);
 
   // Chỉ thị thích ứng mục tiêu
   let adaptiveDirective = '';
-  if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
+  if (isUniClarification) {
+    adaptiveDirective = `
+[CHỈ DẪN KHI HỌC SINH ĐÍNH CHÍNH HỌC ĐẠI HỌC CHỨ KHÔNG HỌC NGHỀ]:
+- Học sinh vừa khẳng định rõ: Em chọn học Đại học (tại ${targetSchool}) chứ không học trường nghề.
+- Thầy Socrates PHẢI GHI NHẬN NGAY sự đính chính này một cách điềm đạm và tích cực: Ghi nhận em đang hướng tới bậc Đại học chính quy tại ${targetSchool}.
+- Nhắc nhở rằng ở bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn thi THPT.
+- Ở Lượt 3: Hỏi về môn tự tin nhất và môn lo lắng nhất trong tổ hợp môn xét tuyển học bạ/thi THPT.
+- Ở Lượt 4: RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi nhất từ học bạ để đối chứng điểm chuẩn của ${targetSchool}.
+- TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại "Học nghề là một hướng đi thực tế...", không nhắc đến cổng trường nghề hay rèn luyện thể lực của học nghề.
+`;
+  } else if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
     adaptiveDirective = `
 [CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
 - Ngành học sinh đang hướng tới: "${effectiveCareer}".
@@ -968,9 +1076,22 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   const goalShift = detectGoalShift(trimmedMsg);
   const isShifted = propShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = propEffective || (goalShift ? goalShift.newMajor : targetCareer);
-  const isVocational = isVocationalTrack(effectiveCareer, trimmedMsg);
+  const isVocational = isVocationalTrack(effectiveCareer, trimmedMsg, rawSchool);
+  const isUniClarification = hasUniversityClarification(trimmedMsg);
   const targetSchool = formatSchoolName(rawSchool, isVocational);
   const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
+
+  if (isUniClarification) {
+    if (stage === 4) {
+      return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
+    }
+    if (stage === 3) {
+      return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Để xét tuyển vào trường, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
+    }
+    if (stage === 2) {
+      return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Em kỳ vọng mức thu nhập ${expectedIncome} sau khi tốt nghiệp. Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập đó ngay khi ra trường?`;
+    }
+  }
 
   if (isVocational) {
     if (stage === 1) {
