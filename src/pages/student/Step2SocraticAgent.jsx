@@ -484,6 +484,18 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
+    // QUY TẮC 6: CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG KHI HỌC SINH NÊU ĐỘNG CƠ CẢM XÚC/GIA ĐÌNH/ƯỚC MƠ
+    const isFamilyOrAltruisticUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
+    const isMedicalCareerUser = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược'].some(k => major.toLowerCase().includes(k) || lowerUser.includes(k));
+
+    if (round === 2 && isFamilyOrAltruisticUser && (cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('mức thu nhập') || cleaned.includes('khởi điểm 15') || cleaned.includes('15 - 20 triệu'))) {
+      if (isMedicalCareerUser) {
+        cleaned = `Thầy hiểu tình cảm và mong muốn hiếu thảo muốn chữa bệnh cho ba mẹ là động lực rất thiêng liêng của em. Tuy nhiên, ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?`;
+      } else {
+        cleaned = `Thầy hiểu ước mơ và tình cảm dành cho gia đình là động lực rất đáng trân trọng của em. Tuy nhiên, việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành này, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
+      }
+    }
+
     if (!cleaned.endsWith('?')) {
       if (isVocational) {
         if (round === 1) {
@@ -497,7 +509,15 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
         if (round === 1) {
           cleaned += ` Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
         } else if (round === 2) {
-          cleaned += ` Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập kỳ vọng đó ngay khi em vừa tốt nghiệp?`;
+          if (isFamilyOrAltruisticUser) {
+            if (isMedicalCareerUser) {
+              cleaned += ` Nhìn vào chặng đường 6 năm đại học và 18 tháng thực hành lâm sàng đầy áp lực của ngành Y, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
+            } else {
+              cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
+            }
+          } else {
+            cleaned += ` Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập kỳ vọng đó ngay khi em vừa tốt nghiệp?`;
+          }
         } else if (round === 3) {
           cleaned += ` Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
         }
@@ -675,6 +695,17 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
 
 5. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
    - Ở lượt cuối cùng (Lượt 4), TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi (không có dấu ?), ra lệnh dứt khoát chuyển sang Bước 3.
+
+6. QUY TẮC CẦU NỐI TỰ NHIÊN & CHỐNG "QUAY XE" ĐỘT NGỘT (ANTI-ABRUPT PIVOT & SEAMLESS BRIDGE):
+   - Phản hồi của Thầy Socrates BẮT BUỘC phải tiếp nối mạch suy nghĩ trực tiếp của học sinh (Follow-the-lead). TUYỆT ĐỐI KHÔNG được gật đầu chiếu lệ rồi bẻ lái 180 độ sang tra khảo chủ đề khác (đặc biệt là tiền lương / nhà tuyển dụng khi học sinh chưa hề nhắc tới).
+   - Khi học sinh chia sẻ về TÌNH CẢM GIA ĐÌNH / ƯỚC MƠ TỪ NHỎ / GIÁ TRỊ NHÂN VĂN (như "chữa bệnh cho ba mẹ", "thích từ bé", "muốn giúp người", "yêu trẻ", "đam mê"):
+     + TUYỆT ĐỐI CẤM: Không được hỏi câu hỏi tiền lương hay "nhà tuyển dụng trả bao nhiêu tiền ngay khi tốt nghiệp".
+     + CẦU NỐI PHẢN TƯ: Công nhận sự thiêng liêng/đẹp đẽ của tình cảm đó, nhưng đối chất ngay vào TÍNH KHỐC LIỆT CỦA THỰC TẾ ĐÀO TẠO & SỨC BỀN:
+       * Với ngành Y/Bác sĩ: 6 năm học đại học áp lực lớn, trực đêm liên tục và 18 tháng thực hành lâm sàng áp lực sinh tử trước khi được cấp chứng chỉ hành nghề. Hỏi xem em đã chuẩn bị tâm lý và sức bền thế nào cho chặng đường dài nhiều hy sinh này.
+       * Với các ngành khác: Đối chất giữa "thích cảm giác làm nghề" và "chịu đựng được áp lực, kỷ luật và khó khăn thực tế hàng ngày".
+   - Khi học sinh thừa nhận "EM CŨNG KHÔNG RÕ" / "CHƯA RÕ" / CẢM TÍNH:
+     + Khen ngợi sự trung thực, đối chất vào rủi ro "vỡ mộng" khi chọn nghề bằng cảm tính mà thiếu dữ liệu thực tế.
+   - Chỉ khi học sinh NÓI RÕ VỀ MỨC LƯƠNG / LÀM GIÀU thì mới hỏi về mức thu nhập cạnh tranh trên thị trường.
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
@@ -695,7 +726,13 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
     const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
     const askingCombo = isAskingAboutSubjectsOrCombos(userText);
     const lowerUser = (userText || '').toLowerCase();
+    const careerLower = (effectiveCareer || '').toLowerCase();
     const recommendedCombo = getRecommendedComboForMajor(effectiveCareer, userText);
+
+    const isFamilyOrAltruistic = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'người thân', 'ông bà', 'hiếu thảo'].some(k => lowerUser.includes(k));
+    const isMedicalCareer = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'dược học', 'nha khoa', 'răng hàm mặt'].some(k => careerLower.includes(k) || lowerUser.includes(k));
+    const isVagueOrUncertain = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerUser.includes(k));
+    const isSalaryFocused = ['tiền', 'lương', 'thu nhập', 'giàu', 'kiếm tiền', 'kinh tế', 'triệu', 'ổn định'].some(k => lowerUser.includes(k));
 
     let adaptiveDirective = '';
     if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
@@ -804,6 +841,59 @@ BỐI CẢNH VÒNG 1 (ĐỐI CHIẾU MÃ HOLLAND & ĐỘNG CƠ CHỌN NGÀNH):
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates xưng "Thầy" gọi "em", tối đa 2-3 câu văn.`;
 
           case 2:
+            if (isMedicalCareer && isFamilyOrAltruistic) {
+              return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 2 (NGÀNH Y/BÁC SĨ - ĐỐI CHẤT ƯỚC MƠ HIẾU THẢO VỚI HIỆN THỰC ĐÀO TẠO KHỐC LIỆT):
+- Ngành: ${career}, trường: ${uni}.
+- Học sinh vừa chia sẻ động cơ tình cảm/gia đình: "${userText}".
+
+[NHIỆM VỤ LƯỢT 2 - CẦU NỐI TỰ NHIÊN, TUYỆT ĐỐI KHÔNG QUAY XE SANG TIỀN LƯƠNG]:
+1. Đồng cảm chân thành với tấm lòng hiếu thảo/ước mơ từ nhỏ muốn chữa bệnh cho ba mẹ.
+2. TUYỆT ĐỐI KHÔNG hỏi về tiền lương khởi điểm hay "nhà tuyển dụng trả 15-20 triệu ngay khi ra trường" (vì ngành Y đào tạo 6 năm + 18 tháng thực hành lâm sàng, áp lực không nằm ở lương khởi điểm của nhà tuyển dụng tư nhân).
+3. ĐỐI CHẤT VỚI HIỆN THỰC ĐÀO TẠO & SỨC BỀN: Ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng áp lực sinh tử trước khi được cấp chứng chỉ hành nghề.
+4. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+"Ước mơ chữa bệnh cho ba mẹ là một tấm lòng rất đáng quý. Nhưng ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG quay xe sang hỏi tiền lương hay nhà tuyển dụng.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+            }
+
+            if (isFamilyOrAltruistic) {
+              return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 2 (ĐỐI CHẤT ƯỚC MƠ CẢM XÚC VỚI HIỆN THỰC KHẮC NGHIỆT CỦA NGHỀ):
+- Ngành: ${career}, trường: ${uni}.
+- Học sinh vừa chia sẻ động cơ cảm xúc/gia đình/ước mơ từ nhỏ: "${userText}".
+
+[NHIỆM VỤ LƯỢT 2 - CẦU NỐI TỰ NHIÊN, TUYỆT ĐỐI KHÔNG QUAY XE SANG TIỀN LƯƠNG]:
+1. Công nhận vẻ đẹp của ước mơ/tình cảm đó một cách chân thành và điềm đạm.
+2. TUYỆT ĐỐI KHÔNG quay xe đột ngột sang hỏi chuyện tiền bạc/nhà tuyển dụng trả bao nhiêu tiền.
+3. Tạo cầu nối sang thực tế: Việc yêu thích cảm giác làm nghề rất khác với việc chịu đựng được những áp lực, góc khuất và tính kỷ luật khắt khe của công việc hàng ngày.
+4. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+"Ước mơ từ nhỏ là một điểm tựa đẹp, nhưng việc yêu thích nghề rất khác với việc chịu đựng được những áp lực và góc khuất thực tế của công việc hàng ngày. Em đã tìm hiểu xem những khó khăn lớn nhất mà một người làm ngành này phải đối mặt là gì chưa?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG đổi chủ đề sang tiền bạc một cách đột ngột.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+            }
+
+            if (isVagueOrUncertain) {
+              return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 2 (ĐỐI CHẤT SỰ MƠ HỒ CẢM TÍNH VỚI NHU CẦU DỮ LIỆU THỰC TẾ):
+- Ngành: ${career}, trường: ${uni}.
+- Học sinh vừa thừa nhận sự mơ hồ/chưa rõ: "${userText}".
+
+[NHIỆM VỤ LƯỢT 2 - CẦU NỐI MỀM MẠI]:
+1. Ghi nhận sự thẳng thắn: Thừa nhận "chưa rõ" là một khởi đầu tốt để bắt đầu tìm hiểu nghiêm túc.
+2. Tạo cầu nối: Nếu chọn nghề chỉ dựa vào cảm tính mà chưa từng tìm hiểu công việc thực tế hay hỏi người trong nghề, rủi ro vỡ mộng khi bước vào trường đại học sẽ rất lớn.
+3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+"Sự thẳng thắn thừa nhận 'chưa rõ' là một khởi đầu tốt. Nhưng nếu chọn nghề chỉ theo cảm tính mà chưa từng đối chiếu với công việc thực tế hay hỏi chuyện người trong nghề, rủi ro vỡ mộng sẽ rất lớn. Em nghĩ điều gì đang cản trở em tìm hiểu sâu hơn về ngành này?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG dùng từ ngữ phán xét.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+            }
+
             return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN GIỮA KỲ VỌNG THU NHẬP & NĂNG LỰC THỰC TẾ):
 - Ngành: ${career}, trường: ${uni}.
@@ -811,7 +901,7 @@ BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN GIỮA KỲ VỌNG THU NHẬP & N�
 - Học sinh vừa trả lời: "${userText}".
 
 [NHIỆM VỤ LƯỢT 2 - QUY TẮC CÂU HỎI ĐƠN]:
-1. Phản hồi ngắn gọn (tối đa 1-2 câu), tập trung vào sự chênh lệch giữa kỳ vọng thu nhập và năng lực thực tế bằng kỹ thuật Tái định khung.
+1. Phản hồi ngắn gọn (tối đa 1-2 câu), bắt nhịp tự nhiên từ câu trả lời của học sinh rồi mới chuyển tiếp sang yêu cầu năng lực thực tế để đạt mức thu nhập ${expectedIncome}.
 2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN (TUYỆT ĐỐI KHÔNG HỎI KÉP):
 "Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập ${expectedIncome} ngay khi em vừa tốt nghiệp?"
 
@@ -952,8 +1042,22 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           case 1:
             return `Em đã chọn ngành ${effectiveCareer} ${schoolClause} với lý do: '${reason}'. Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
 
-          case 2:
+          case 2: {
+            const isFamily = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
+            const isMed = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược'].some(k => effectiveCareer.toLowerCase().includes(k) || lowerUser.includes(k));
+            const isVague = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerUser.includes(k));
+
+            if (isMed && isFamily) {
+              return `Thầy hiểu tình cảm và mong muốn hiếu thảo muốn chữa bệnh cho ba mẹ là động lực rất thiêng liêng của em. Tuy nhiên, ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?`;
+            }
+            if (isFamily) {
+              return `Thầy hiểu ước mơ và tình cảm dành cho gia đình là động lực rất đáng trân trọng của em. Tuy nhiên, việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành này, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
+            }
+            if (isVague) {
+              return `Sự thẳng thắn thừa nhận 'chưa rõ' là một khởi đầu tốt để nhìn lại. Nhưng nếu chỉ chọn nghề theo cảm tính từ nhỏ mà chưa từng đối chiếu với công việc thực tế hay hỏi chuyện người trong nghề, rủi ro vỡ mộng sẽ rất lớn. Em nghĩ điều gì đang cản trở em tìm hiểu thực tế về ngành này?`;
+            }
             return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập đó ngay khi em vừa tốt nghiệp?`;
+          }
 
           case 3:
             return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
