@@ -1193,66 +1193,92 @@ const HollandTest = () => {
 
   // Chuyển sang Bước 2 (AI Tham vấn phản tư Socrates)
   const saveStep1DataAndNext = (customRedirectUrl = '/student/debias-agent') => {
-    const { scores, primaryCode } = calculateRiasecCode()
-    const effectiveCode = primaryCode || calculatedRiasecCode || result?.primaryCode || "AEI"
-    const finalMajor = targetMajor.trim() || "Sư phạm"
-    const finalSchool = (targetSchool || targetUniversity || "ĐH Quy Nhơn").trim()
-    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
-    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
-    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
-    const anchorReason = classifyAnchorReason(finalReason, Number(confidenceScore), compatStatus)
-    const anchorQuote = finalReason
+    try {
+      const hasAnsweredQuiz = Object.values(answers || {}).some(val => val !== null && val > 0)
+      let effectiveCode = calculatedRiasecCode || result?.primaryCode || "AEI"
+      let effectiveScores = result?.scores || { R: 0, I: 0, A: 0, S: 0, E: 0, C: 0 }
 
-    const userProfile = {
-      hollandCode: effectiveCode,
-      targetMajor: finalMajor,
-      targetSchool: finalSchool,
-      reason: finalReason,
-      anchorReason,
-      anchorQuote,
-      initialConfidence: Number(confidenceScore),
-      expectedIncome: expectedIncome || "15 - 20 triệu/tháng"
-    }
+      if (hasAnsweredQuiz) {
+        const computed = calculateRiasecCode()
+        if (computed?.primaryCode) effectiveCode = computed.primaryCode
+        if (computed?.scores) effectiveScores = computed.scores
+      }
 
-    const userAnchorData = {
-      target_career: finalMajor,
-      target_university: finalSchool,
-      source_of_influence: finalReason,
-      anchorReason,
-      anchorQuote,
-      confidence_score: String(userProfile.initialConfidence),
-      expected_income: userProfile.expectedIncome,
-      holland_codes: rawCodes,
-      holland_code: effectiveCode,
-      compatibility_status: compatStatus,
-      holland_analysis: analysisText
-    }
+      const finalMajor = (targetMajor || '').trim() || (result?.anchorData?.target_major || result?.anchorData?.targetMajor || '').trim() || "Sư phạm"
+      const finalSchool = (targetSchool || targetUniversity || result?.anchorData?.target_university || "ĐH Quy Nhơn").trim()
+      const finalReason = (reason || '').trim() || (result?.anchorData?.choice_source || result?.anchorData?.reason || '').trim() || "Mong muốn có việc làm và thu nhập ổn định"
+      const finalConfidence = Number(confidenceScore) || Number(result?.anchorData?.confidence_score_initial) || 5
+      const finalExpectedIncome = expectedIncome || result?.anchorData?.expected_income || "15 - 20 triệu/tháng"
 
-    // Lưu đồng bộ các key LocalStorage cho Bước 2 và toàn hệ thống
-    localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
-    localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
-    localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
-    localStorage.setItem("career_initial_anchor", JSON.stringify({
-      ...userProfile,
-      target_major: finalMajor,
-      target_university: finalSchool,
-      choice_source: finalReason,
-      anchorReason,
-      anchorQuote,
-      confidence_score_initial: userProfile.initialConfidence,
-      expected_income: userProfile.expectedIncome,
-      holland_codes: rawCodes,
-      holland_code: effectiveCode,
-      primary_code: effectiveCode,
-      scores: result?.scores || scores,
-      compatibility_status: compatStatus,
-      holland_analysis: analysisText
-    }))
+      const rawCodes = String(effectiveCode).split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+      const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
+      const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
+      const anchorReason = classifyAnchorReason(finalReason, finalConfidence, compatStatus)
+      const anchorQuote = finalReason
 
-    if (customRedirectUrl.startsWith('http')) {
-      window.location.href = customRedirectUrl
-    } else {
-      navigate(customRedirectUrl)
+      const userProfile = {
+        hollandCode: effectiveCode,
+        targetMajor: finalMajor,
+        targetSchool: finalSchool,
+        reason: finalReason,
+        anchorReason,
+        anchorQuote,
+        initialConfidence: finalConfidence,
+        expectedIncome: finalExpectedIncome
+      }
+
+      const userAnchorData = {
+        target_career: finalMajor,
+        target_university: finalSchool,
+        source_of_influence: finalReason,
+        anchorReason,
+        anchorQuote,
+        confidence_score: String(finalConfidence),
+        expected_income: finalExpectedIncome,
+        holland_codes: rawCodes,
+        holland_code: effectiveCode,
+        compatibility_status: compatStatus,
+        holland_analysis: analysisText
+      }
+
+      // Lưu đồng bộ các key LocalStorage cho Bước 2 và toàn hệ thống
+      try {
+        localStorage.setItem("cbas_user_profile", JSON.stringify(userProfile))
+        localStorage.setItem("userAnchorData", JSON.stringify(userAnchorData))
+        localStorage.setItem("cbas_anchor_data", JSON.stringify(userAnchorData))
+        localStorage.setItem("career_initial_anchor", JSON.stringify({
+          ...userProfile,
+          target_major: finalMajor,
+          target_university: finalSchool,
+          choice_source: finalReason,
+          anchorReason,
+          anchorQuote,
+          confidence_score_initial: finalConfidence,
+          expected_income: finalExpectedIncome,
+          holland_codes: rawCodes,
+          holland_code: effectiveCode,
+          primary_code: effectiveCode,
+          scores: effectiveScores,
+          compatibility_status: compatStatus,
+          holland_analysis: analysisText
+        }))
+      } catch (storageErr) {
+        console.warn("Storage warning in saveStep1DataAndNext:", storageErr)
+      }
+
+      if (customRedirectUrl && customRedirectUrl.startsWith('http')) {
+        window.location.href = customRedirectUrl
+      } else {
+        navigate(customRedirectUrl || '/student/debias-agent')
+      }
+    } catch (err) {
+      console.error("Lỗi khi chuyển sang Bước 2:", err)
+      // Đảm bảo luôn chuyển trang thành công
+      try {
+        navigate(customRedirectUrl || '/student/debias-agent')
+      } catch (navErr) {
+        window.location.href = customRedirectUrl || '/student/debias-agent'
+      }
     }
   }
 
