@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, Link } from 'react-router-dom'
 import { AuthProvider, useAuth, ADMIN_EMAILS } from './context/AuthContext'
+import Toast from './components/common/Toast'
+import { getInterventionProgress, isStepUnlocked, getStepLockReason } from './utils/interventionProgress'
 
 // Layouts
 import Navbar from './components/layout/Navbar'
@@ -57,6 +59,41 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children
 }
 
+// Route Bảo vệ Tuần tự 5 Bước Can thiệp Phản tư ViSEF CBAS 2026
+// Học sinh bắt buộc phải hoàn thành Bước N-1 trước khi mở khóa Bước N (tránh làm tắt)
+const StepGateRoute = ({ children, requiredStep }) => {
+  const { user, profile, isAdminVerified } = useAuth()
+  const location = useLocation()
+
+  // Giáo viên, Quản trị viên và Chuyên viên tư vấn được thanh tra toàn bộ các bước mà không bị chặn
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  const isPrivileged = userRole === 'admin' || userRole === 'teacher' || userRole === 'counselor' || isAdminVerified
+
+  if (isPrivileged) {
+    return children
+  }
+
+  const progress = getInterventionProgress()
+  const isUnlocked = isStepUnlocked(requiredStep, progress)
+
+  if (!isUnlocked) {
+    const lockInfo = getStepLockReason(requiredStep, progress)
+    const redirectPath = lockInfo?.redirectPath || '/student/holland'
+    return (
+      <Navigate 
+        to={redirectPath} 
+        replace 
+        state={{ 
+          from: location,
+          stepGateNotice: lockInfo?.message || 'Em cần hoàn thành các bước trước đó theo đúng quy trình can thiệp khoa học!'
+        }} 
+      />
+    )
+  }
+
+  return children
+}
+
 // Guard cho trang Admin Dashboard: BẢO MẬT BẰNG MẬT KHẨU QUẢN TRỊ VIÊN
 const AdminProtectedRoute = ({ children }) => {
   const { loading, isAdminVerified } = useAuth()
@@ -93,6 +130,16 @@ const AdminProtectedRoute = ({ children }) => {
 // Wrapper Layout cho các trang Dashboard
 const MainLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const location = useLocation()
+  const [gateNotice, setGateNotice] = useState(null)
+
+  useEffect(() => {
+    if (location.state?.stepGateNotice) {
+      setGateNotice(location.state.stepGateNotice)
+      // Dọn dẹp state để không lặp lại thông báo khi re-render
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans">
@@ -100,6 +147,13 @@ const MainLayout = ({ children }) => {
       <div className="flex-1 flex overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className="flex-1 overflow-y-auto h-[calc(100vh-4rem)]">
+          {gateNotice && (
+            <Toast 
+              message={gateNotice} 
+              type="warning" 
+              onClose={() => setGateNotice(null)} 
+            />
+          )}
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
@@ -190,14 +244,16 @@ const App = () => {
             } 
           />
 
-          {/* 3. AI Tham vấn Phản tư */}
+          {/* 3. AI Tham vấn Phản tư (BƯỚC 2 - YÊU CẦU HOÀN THÀNH BƯỚC 1) */}
           <Route 
             path="/student/debias-agent" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasAgent />
-                </MainLayout>
+                <StepGateRoute requiredStep={2}>
+                  <MainLayout>
+                    <DebiasAgent />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -205,9 +261,11 @@ const App = () => {
             path="/ai-tham-van" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasAgent />
-                </MainLayout>
+                <StepGateRoute requiredStep={2}>
+                  <MainLayout>
+                    <DebiasAgent />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -215,9 +273,11 @@ const App = () => {
             path="/student/ai-tham-van" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasAgent />
-                </MainLayout>
+                <StepGateRoute requiredStep={2}>
+                  <MainLayout>
+                    <DebiasAgent />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -225,9 +285,11 @@ const App = () => {
             path="/student/step2-socratic-chat" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasAgent />
-                </MainLayout>
+                <StepGateRoute requiredStep={2}>
+                  <MainLayout>
+                    <DebiasAgent />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -235,21 +297,25 @@ const App = () => {
             path="/student/socratic-agent" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasAgent />
-                </MainLayout>
+                <StepGateRoute requiredStep={2}>
+                  <MainLayout>
+                    <DebiasAgent />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
 
-          {/* 4. Đối chứng Dữ liệu Khách quan */}
+          {/* 4. Đối chứng Dữ liệu Khách quan (BƯỚC 3 - YÊU CẦU HOÀN THÀNH BƯỚC 1 & 2) */}
           <Route 
             path="/student/fact-check" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <FactCheckHub />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -257,9 +323,11 @@ const App = () => {
             path="/student/evidence-check" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <FactCheckHub />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -289,9 +357,11 @@ const App = () => {
             path="/doi-chung-du-lieu" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <FactCheckHub />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -299,19 +369,11 @@ const App = () => {
             path="/student/doi-chung-du-lieu" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/student/evidence-check" 
-            element={
-              <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <FactCheckHub />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -319,9 +381,11 @@ const App = () => {
             path="/evidence-check" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <FactCheckHub />
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <FactCheckHub />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -329,11 +393,13 @@ const App = () => {
             path="/student/vocational-verification" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <div className="py-8 px-4 bg-slate-950 min-h-screen">
-                    <Step3VocationalVerification />
-                  </div>
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <div className="py-8 px-4 bg-slate-950 min-h-screen">
+                      <Step3VocationalVerification />
+                    </div>
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -341,11 +407,13 @@ const App = () => {
             path="/student/tham-dinh-nghe" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <div className="py-8 px-4 bg-slate-950 min-h-screen">
-                    <Step3VocationalVerification />
-                  </div>
-                </MainLayout>
+                <StepGateRoute requiredStep={3}>
+                  <MainLayout>
+                    <div className="py-8 px-4 bg-slate-950 min-h-screen">
+                      <Step3VocationalVerification />
+                    </div>
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -353,9 +421,11 @@ const App = () => {
             path="/tu-van-1-1" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <CounselingBooking />
-                </MainLayout>
+                <StepGateRoute requiredStep={4}>
+                  <MainLayout>
+                    <CounselingBooking />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -363,21 +433,25 @@ const App = () => {
             path="/student/tu-van-1-1" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <CounselingBooking />
-                </MainLayout>
+                <StepGateRoute requiredStep={4}>
+                  <MainLayout>
+                    <CounselingBooking />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
 
-          {/* 5. Tư vấn 1-1 Đối chứng Thực tế */}
+          {/* 5. Tư vấn 1-1 Đối chứng Thực tế (BƯỚC 4 - YÊU CẦU HOÀN THÀNH BƯỚC 1, 2, 3) */}
           <Route 
             path="/student/booking" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <CounselingBooking />
-                </MainLayout>
+                <StepGateRoute requiredStep={4}>
+                  <MainLayout>
+                    <CounselingBooking />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -385,21 +459,25 @@ const App = () => {
             path="/student/counseling" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <CounselingBooking />
-                </MainLayout>
+                <StepGateRoute requiredStep={4}>
+                  <MainLayout>
+                    <CounselingBooking />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
 
-          {/* 6. Bảng Nhật ký Phản tư Ra Quyết định & Lộ trình */}
+          {/* 6. Bảng Nhật ký Phản tư Ra Quyết định & Lộ trình (BƯỚC 5 - YÊU CẦU HOÀN THÀNH BƯỚC 1, 2, 3, 4) */}
           <Route 
             path="/nhat-ky-ra-quyet-dinh" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <DebiasMatrix />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -407,9 +485,11 @@ const App = () => {
             path="/student/nhat-ky-ra-quyet-dinh" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <DebiasMatrix />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -417,9 +497,11 @@ const App = () => {
             path="/student/reflection" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <DebiasMatrix />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -427,9 +509,11 @@ const App = () => {
             path="/student/my-path" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <DebiasMatrix />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -437,9 +521,11 @@ const App = () => {
             path="/student/debias-matrix" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <DebiasMatrix />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <DebiasMatrix />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />
@@ -447,9 +533,11 @@ const App = () => {
             path="/student/roadmap" 
             element={
               <ProtectedRoute>
-                <MainLayout>
-                  <RoadmapBuilder />
-                </MainLayout>
+                <StepGateRoute requiredStep={5}>
+                  <MainLayout>
+                    <RoadmapBuilder />
+                  </MainLayout>
+                </StepGateRoute>
               </ProtectedRoute>
             } 
           />

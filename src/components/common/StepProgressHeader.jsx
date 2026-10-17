@@ -13,8 +13,29 @@ import {
   RotateCcw,
   AlertTriangle,
   X,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react'
+import {
+  getInterventionProgress,
+  resetStepData,
+  resetAllStepsData,
+  isStepUnlocked,
+  getHighestUnlockedStep,
+  getStepLockReason,
+  STEPS_META
+} from '../../utils/interventionProgress'
+
+// Re-export để đảm bảo tương thích 100% với các component cũ
+export { 
+  getInterventionProgress, 
+  resetStepData, 
+  resetAllStepsData, 
+  isStepUnlocked, 
+  getHighestUnlockedStep, 
+  getStepLockReason,
+  STEPS_META 
+}
 
 /**
  * Danh mục 5 bước can thiệp phản tư ViSEF CBAS
@@ -67,72 +88,6 @@ export const STEPS = [
   }
 ]
 
-/**
- * Hàm xóa dữ liệu của từng bước riêng biệt trong localStorage
- */
-export const resetStepData = (stepNumber) => {
-  try {
-    switch (Number(stepNumber)) {
-      case 1:
-        localStorage.removeItem('cbas_user_profile')
-        localStorage.removeItem('userAnchorData')
-        localStorage.removeItem('cbas_anchor_data')
-        localStorage.removeItem('career_initial_anchor')
-        break
-      case 2:
-        localStorage.removeItem('cbas_step2_messages')
-        localStorage.removeItem('cbas_step2_round')
-        localStorage.removeItem('cbas_step2_completed')
-        localStorage.removeItem('cbas_step2_telemetry')
-        break
-      case 3:
-        localStorage.removeItem('cbas_step3_evidence')
-        localStorage.removeItem('career_evidence_task')
-        localStorage.removeItem('cbas_step3_triage')
-        localStorage.removeItem('cbas_score_gap')
-        localStorage.removeItem('cbas_step3_vocational')
-        localStorage.removeItem('cbas_step3_reflection')
-        break
-      case 4:
-        localStorage.removeItem('cbas_step4_feedback')
-        localStorage.removeItem('mentor_feedback_record')
-        localStorage.removeItem('cbas_step4_booking')
-        localStorage.removeItem('cbas_step4_completed')
-        localStorage.removeItem('cbas_step4_active_stage')
-        localStorage.removeItem('cbas_step4_consultation_completed')
-        localStorage.removeItem('cbas_student_reflection_log')
-        localStorage.removeItem('cbas_fast_track_checklist')
-        localStorage.removeItem('cbas_fast_track_reflection')
-        localStorage.removeItem('counseling_sessions_local')
-        localStorage.removeItem('counseling_sessions')
-        try {
-          Object.keys(localStorage).forEach(k => {
-            if (k && (k.startsWith('counseling_sessions_local_') || k.startsWith('cbas_step4_'))) {
-              localStorage.removeItem(k)
-            }
-          })
-        } catch (e) {}
-        break
-      case 5:
-        localStorage.removeItem('cbas_step5_action_plan')
-        localStorage.removeItem('cbas_full_intervention_dossier')
-        localStorage.removeItem('cbas_step5_completed')
-        break
-      default:
-        break
-    }
-  } catch (e) {
-    console.error('Lỗi khi xóa dữ liệu bước:', e)
-  }
-}
-
-/**
- * Hàm xóa toàn bộ dữ liệu cả 5 bước (Khởi động lại từ đầu)
- */
-export const resetAllStepsData = () => {
-  [1, 2, 3, 4, 5].forEach(s => resetStepData(s))
-}
-
 const getStepResetDescription = (step) => {
   switch (step) {
     case 1:
@@ -150,57 +105,6 @@ const getStepResetDescription = (step) => {
   }
 }
 
-/**
- * Đọc trạng thái hoàn thành 5 bước đồng bộ từ LocalStorage
- */
-export const getInterventionProgress = () => {
-  const status = { 1: false, 2: false, 3: false, 4: false, 5: false }
-
-  // Step 1: Holland test done or anchor set
-  try {
-    const s1 = localStorage.getItem('cbas_user_profile') || 
-               localStorage.getItem('userAnchorData') || 
-               localStorage.getItem('cbas_anchor_data') ||
-               localStorage.getItem('career_initial_anchor')
-    if (s1) status[1] = true
-  } catch (e) {}
-
-  // Step 2: Socratic chat finished
-  try {
-    const s2 = localStorage.getItem('cbas_step2_completed') || 
-               localStorage.getItem('cbas_step2_telemetry') ||
-               localStorage.getItem('cbas_step2_messages')
-    if (s2) status[2] = true
-  } catch (e) {}
-
-  // Step 3: Fact check evidence recorded
-  try {
-    const s3 = localStorage.getItem('cbas_step3_evidence') || 
-               localStorage.getItem('career_evidence_task') || 
-               localStorage.getItem('cbas_step3_triage') ||
-               localStorage.getItem('cbas_score_gap')
-    if (s3) status[3] = true
-  } catch (e) {}
-
-  // Step 4: Mentorship post-log recorded
-  try {
-    const s4 = localStorage.getItem('cbas_step4_feedback') || 
-               localStorage.getItem('mentor_feedback_record') ||
-               localStorage.getItem('cbas_step4_completed') ||
-               localStorage.getItem('cbas_step4_consultation_completed')
-    if (s4) status[4] = true
-  } catch (e) {}
-
-  // Step 5: Action plan saved
-  try {
-    const s5 = localStorage.getItem('cbas_step5_action_plan') || 
-               localStorage.getItem('cbas_full_intervention_dossier') ||
-               localStorage.getItem('cbas_step5_completed')
-    if (s5) status[5] = true
-  } catch (e) {}
-
-  return status
-}
 
 /**
  * StepProgressHeader - Thanh tiến trình 5 bước can thiệp phản tư SocraCareer (KHKT 2026)
@@ -210,12 +114,13 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
   const [completedSteps, setCompletedSteps] = useState(getInterventionProgress)
   const [showResetModal, setShowResetModal] = useState(false)
   const [resetMode, setResetMode] = useState('CURRENT') // 'CURRENT' | 'ALL'
+  const [lockedNotice, setLockedNotice] = useState(null)
 
   useEffect(() => {
     setCompletedSteps(getInterventionProgress())
   }, [currentStep])
 
-  const completedCount = Object.keys(completedSteps).length
+  const completedCount = Object.values(completedSteps).filter(Boolean).length
   const progressPercent = Math.round((completedCount / 5) * 100)
 
   // Xử lý xác nhận làm lại
@@ -298,11 +203,30 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
         </div>
       </div>
 
+      {/* Thông báo cảnh báo khi bấm vào bước bị khóa */}
+      {lockedNotice && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-xl flex items-center justify-between text-xs text-amber-900 animate-reveal">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span className="font-semibold">{lockedNotice}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setLockedNotice(null)} 
+            className="text-amber-700 hover:text-amber-900 p-1 cursor-pointer"
+            title="Đóng thông báo"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Hàng giữa: 5 Nút Tiến trình (Stepper Bar) */}
       <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5 pt-4">
         {STEPS.map((s) => {
           const isCurrent = s.step === currentStep
           const isDone = Boolean(completedSteps[s.step])
+          const isUnlocked = isStepUnlocked(s.step, completedSteps)
           const Icon = s.icon
 
           // Phối màu cho từng bước khi Active
@@ -313,6 +237,42 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
           if (s.color === 'violet') activeBg = 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-200'
           if (s.color === 'rose') activeBg = 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-200'
 
+          // NẾU BƯỚC BỊ KHÓA (CHƯA HOÀN THÀNH BƯỚC TRƯỚC ĐÓ)
+          if (!isUnlocked) {
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  const lockInfo = getStepLockReason(s.step, completedSteps)
+                  setLockedNotice(lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`)
+                }}
+                className="group relative flex flex-col items-center text-center p-2 sm:p-2.5 rounded-xl border transition-all duration-200 bg-slate-100/70 border-slate-200 text-slate-400 cursor-not-allowed opacity-60 hover:opacity-90 select-none"
+                title={`Chưa mở khóa - Cần hoàn thành Bước ${s.step - 1} trước`}
+              >
+                {/* Icon & Số thứ tự có khóa */}
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black bg-slate-200 text-slate-500">
+                    <Lock className="w-3 h-3 text-slate-500" />
+                  </span>
+                  <Icon className="w-3.5 h-3.5 hidden sm:inline text-slate-400" />
+                </div>
+
+                {/* Tên bước */}
+                <span className="text-[10px] sm:text-xs font-semibold leading-tight line-clamp-1 text-slate-500">
+                  {s.shortLabel}
+                </span>
+
+                {/* Badge phụ hiển thị trên màn hình lớn */}
+                <span className="hidden md:flex items-center gap-0.5 text-[9px] mt-0.5 truncate max-w-full font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
+                  <Lock className="w-2.5 h-2.5 text-amber-600 shrink-0" />
+                  <span>Khóa (xong B{s.step - 1})</span>
+                </span>
+              </button>
+            )
+          }
+
+          // NẾU BƯỚC ĐÃ ĐƯỢC MỞ KHÓA -> CHO PHÉP TRUY CẬP BÌNH THƯỜNG
           return (
             <Link
               key={s.step}

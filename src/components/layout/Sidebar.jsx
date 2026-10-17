@@ -5,24 +5,27 @@ import AdminPasswordModal from '../admin/AdminPasswordModal'
 import { 
   LayoutDashboard, 
   ClipboardList, 
-  Brain,
-  Sparkles,
+  Brain, 
+  Sparkles, 
   GraduationCap, 
   School, 
   Milestone, 
   CalendarDays, 
   Settings, 
-  UserSquare2,
-  ChevronRight,
-  BarChart3,
-  Lock
+  UserSquare2, 
+  ChevronRight, 
+  BarChart3, 
+  Lock,
+  AlertTriangle
 } from 'lucide-react'
+import { getInterventionProgress, isStepUnlocked, getStepLockReason } from '../../utils/interventionProgress'
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user, profile, displayName, studentCode, isAdminVerified } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false)
+  const [sidebarNotice, setSidebarNotice] = useState(null)
 
   const userEmail = (user?.email || profile?.email || '').toLowerCase().trim()
   const userRole = profile?.role || user?.user_metadata?.role || 'student'
@@ -31,14 +34,17 @@ const Sidebar = ({ isOpen, onClose }) => {
   const isTeacherAdmin = Boolean(ADMIN_EMAILS && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(userEmail)) || profile?.role === 'admin' || profile?.role === 'teacher' || user?.user_metadata?.role === 'admin'
   const isInAdminView = location.pathname.startsWith('/admin')
 
+  const progress = getInterventionProgress()
+
   const studentLinks = [
     { to: '/student/dashboard', label: '📊 Tổng quan Lộ trình', icon: <LayoutDashboard className="w-4 h-4 text-sky-400" /> },
-    { to: '/student/holland', label: '1️⃣ Trắc nghiệm Thiên hướng (RIASEC)', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
-    { to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư Socrates', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
-    { to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu Tuyển sinh', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
-    { to: '/student/booking', label: '4️⃣ Tham vấn 1-1 Thực tế (Mentor)', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
-    { to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động & Tam giác NV', icon: <Brain className="w-4 h-4 text-teal-400" /> },
+    { step: 1, to: '/student/holland', label: '1️⃣ Trắc nghiệm RIASEC & Mỏ neo', icon: <ClipboardList className="w-4 h-4 text-emerald-400" /> },
+    { step: 2, to: '/student/debias-agent', label: '2️⃣ AI Tham vấn Phản tư Socrates', icon: <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" /> },
+    { step: 3, to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu Tuyển sinh', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
+    { step: 4, to: '/student/booking', label: '4️⃣ Tham vấn 1-1 Thực tế (Mentor)', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
+    { step: 5, to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động & Thang đo T2', icon: <Brain className="w-4 h-4 text-teal-400" /> },
   ]
+
 
   const counselorLinks = [
     { to: '/counselor/dashboard', label: 'Quản lý Tư vấn', icon: <UserSquare2 className="w-4 h-4" /> },
@@ -137,18 +143,69 @@ const Sidebar = ({ isOpen, onClose }) => {
 
         {/* Navigation links */}
         <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
-          {links.map((link, idx) => (
-            <NavLink 
-              key={idx} 
-              to={link.to}
-              className={({ isActive }) => isActive ? linkActiveStyle : linkInactiveStyle}
-              onClick={onClose}
-            >
-              {link.icon}
-              <span className="truncate">{link.label}</span>
-            </NavLink>
-          ))}
+          {links.map((link, idx) => {
+            // Kiểm tra trạng thái khóa nếu là liên kết bước học sinh
+            const isStepLink = typeof link.step === 'number'
+            const isUnlocked = !isStepLink || isTeacherAdmin || isStepUnlocked(link.step, progress)
+
+            if (!isUnlocked) {
+              return (
+                <button 
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    const lockInfo = getStepLockReason(link.step, progress)
+                    setSidebarNotice(lockInfo?.message || `Bước ${link.step} chưa mở khóa! Em cần hoàn thành Bước ${link.step - 1} trước theo đúng quy chuẩn can thiệp KHKT.`)
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-slate-500 text-sm font-medium border-l-2 border-transparent cursor-not-allowed opacity-55 hover:opacity-85 hover:bg-slate-800/40 transition-all text-left group"
+                  title={`Chưa mở khóa - Cần hoàn thành Bước ${link.step - 1} trước`}
+                >
+                  <div className="flex items-center gap-3 truncate">
+                    <span className="opacity-50 grayscale">{link.icon}</span>
+                    <span className="truncate text-slate-400 group-hover:text-slate-300">{link.label}</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-400/90 bg-amber-950/70 border border-amber-800/70 px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0 ml-1">
+                    <Lock className="w-2.5 h-2.5 text-amber-400" />
+                    <span>Khóa</span>
+                  </span>
+                </button>
+              )
+            }
+
+            return (
+              <NavLink 
+                key={idx} 
+                to={link.to}
+                className={({ isActive }) => isActive ? linkActiveStyle : linkInactiveStyle}
+                onClick={onClose}
+              >
+                {link.icon}
+                <span className="truncate">{link.label}</span>
+              </NavLink>
+            )
+          })}
         </nav>
+
+        {/* Thông báo nếu bấm vào mục bị khóa trong sidebar */}
+        {sidebarNotice && (
+          <div className="mx-3 mb-3 p-3 bg-amber-950/90 border border-amber-700/80 rounded-xl text-xs text-amber-200 animate-reveal relative shadow-lg">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="font-bold text-amber-300 block mb-0.5">Yêu cầu tuần tự:</span>
+                <p className="text-[11px] leading-relaxed text-amber-200/90">{sidebarNotice}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSidebarNotice(null)}
+              className="absolute top-2 right-2 text-amber-400 hover:text-white p-0.5 text-xs font-bold cursor-pointer"
+              title="Đóng"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Nút chuyển đổi giao diện linh hoạt giữa Cổng Học Sinh và Bảng Quản Trị Admin */}
         <div className="p-3 border-t border-slate-800 bg-slate-950/60">

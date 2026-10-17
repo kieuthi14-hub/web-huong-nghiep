@@ -3,7 +3,12 @@ import { Link, useLocation } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import Toast from '../../components/common/Toast'
-import { getInterventionProgress } from '../../components/common/StepProgressHeader'
+import { 
+  getInterventionProgress, 
+  isStepUnlocked, 
+  getStepLockReason, 
+  getHighestUnlockedStep 
+} from '../../utils/interventionProgress'
 import { 
   ClipboardList, 
   Brain, 
@@ -21,7 +26,8 @@ import {
   Check,
   ChevronRight,
   ShieldCheck,
-  FileText
+  FileText,
+  Lock
 } from 'lucide-react'
 
 const StudentDashboard = () => {
@@ -248,18 +254,20 @@ const StudentDashboard = () => {
   const progressPercent = Math.round((completedCount / 5) * 100)
 
   // Xác định bước tiếp theo cần thực hiện (1 -> 5)
-  const getNextActiveStep = () => {
-    if (!stepData.step1Done) return 1
-    if (!stepData.step2Done) return 2
-    if (!stepData.step3Done) return 3
-    if (!stepData.step4Done) return 4
-    if (!stepData.step5Done) return 5
-    return 5 // Đã làm hết
+  const currentProgress = {
+    1: stepData.step1Done,
+    2: stepData.step2Done,
+    3: stepData.step3Done,
+    4: stepData.step4Done,
+    5: stepData.step5Done
   }
-  const nextActiveStep = getNextActiveStep()
+  const nextActiveStep = getHighestUnlockedStep(currentProgress)
   const isAllCompleted = completedCount === 5
 
-  // Cấu hình dữ liệu chi tiết cho 5 thẻ bước
+  const userRole = profile?.role || user?.user_metadata?.role || 'student'
+  const isTeacherAdmin = userRole === 'admin' || userRole === 'teacher' || userRole === 'counselor'
+
+  // Cấu hình dữ liệu chi tiết cho 5 thẻ bước kèm trạng thái khóa tuần tự
   const stepsConfig = [
     {
       step: 1,
@@ -276,6 +284,7 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-emerald-100 text-emerald-800 border-emerald-200',
       numeral: '01',
       isDone: stepData.step1Done,
+      isUnlocked: true,
       isActive: nextActiveStep === 1,
       metrics: stepData.step1Done ? [
         { label: 'Mã RIASEC', value: stepData.hollandCode || 'Đã hoàn thành' },
@@ -299,12 +308,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-amber-100 text-amber-800 border-amber-200',
       numeral: '02',
       isDone: stepData.step2Done,
+      isUnlocked: isTeacherAdmin || isStepUnlocked(2, currentProgress),
       isActive: nextActiveStep === 2,
       metrics: stepData.step2Done ? [
         { label: 'Hội thoại Socratic', value: '4 Giai đoạn hoàn tất' },
         { label: 'Phân luồng tư vấn', value: stepData.step2Triage || 'Đã sàng lọc' }
       ] : null,
-      ctaText: stepData.step2Done ? 'Xem Lại Biên Bản Phản Tư' : 'Bắt Đầu Đối Thoại Cùng AI'
+      ctaText: stepData.step2Done ? 'Xem Lại Biên Bản Phản Tư' : (isTeacherAdmin || isStepUnlocked(2, currentProgress) ? 'Bắt Đầu Đối Thoại Cùng AI' : '🔒 Khóa - Cần xong Bước 1')
     },
     {
       step: 3,
@@ -321,12 +331,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-blue-100 text-blue-800 border-blue-200',
       numeral: '03',
       isDone: stepData.step3Done,
+      isUnlocked: isTeacherAdmin || isStepUnlocked(3, currentProgress),
       isActive: nextActiveStep === 3,
       metrics: stepData.step3Done ? [
         { label: 'Chênh lệch điểm', value: stepData.scoreGap !== null ? `${stepData.scoreGap > 0 ? '+' : ''}${stepData.scoreGap}đ` : 'Đã tính' },
         { label: 'Điểm chuẩn 2 năm', value: stepData.cutoffScore ? `${stepData.cutoffScore}đ` : 'Đã đối chứng' }
       ] : null,
-      ctaText: stepData.step3Done ? 'Xem Lại Dữ Liệu Điểm Số' : 'Tra Cứu & Đối Chứng Dữ Liệu'
+      ctaText: stepData.step3Done ? 'Xem Lại Dữ Liệu Điểm Số' : (isTeacherAdmin || isStepUnlocked(3, currentProgress) ? 'Tra Cứu & Đối Chứng Dữ Liệu' : '🔒 Khóa - Cần xong Bước 2')
     },
     {
       step: 4,
@@ -343,12 +354,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-violet-100 text-violet-800 border-violet-200',
       numeral: '04',
       isDone: stepData.step4Done,
+      isUnlocked: isTeacherAdmin || isStepUnlocked(4, currentProgress),
       isActive: nextActiveStep === 4,
       metrics: stepData.step4Done ? [
         { label: 'Hồ sơ đối chất 4A', value: 'Đã sẵn sàng in/lưu' },
         { label: 'Nhật ký thu hoạch 4B', value: 'Đã hoàn tất đúc kết' }
       ] : null,
-      ctaText: stepData.step4Done ? 'Xem Hồ Sơ & Nhật Ký 4B' : 'Chuẩn Bị Gặp Cố Vấn 1-1'
+      ctaText: stepData.step4Done ? 'Xem Hồ Sơ & Nhật Ký 4B' : (isTeacherAdmin || isStepUnlocked(4, currentProgress) ? 'Chuẩn Bị Gặp Cố Vấn 1-1' : '🔒 Khóa - Cần xong Bước 3')
     },
     {
       step: 5,
@@ -365,13 +377,14 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-rose-100 text-rose-800 border-rose-200',
       numeral: '05',
       isDone: stepData.step5Done,
+      isUnlocked: isTeacherAdmin || isStepUnlocked(5, currentProgress),
       isActive: nextActiveStep === 5,
       metrics: stepData.step5Done ? [
         { label: 'Tự tin thực tế T2', value: stepData.confidenceT2 ? `${stepData.confidenceT2}/10` : 'Đã đo lường' },
         { label: 'Tam giác hành động', value: 'Đã cam kết thực hiện' },
         { label: 'Hồ sơ tổng thể A4', value: 'Sẵn sàng in/tải' }
       ] : null,
-      ctaText: stepData.step5Done ? 'Xem Hồ Sơ Toàn Diện 5 Bước' : 'Thiết Lập Kế Hoạch Bứt Phá'
+      ctaText: stepData.step5Done ? 'Xem Hồ Sơ Toàn Diện 5 Bước' : (isTeacherAdmin || isStepUnlocked(5, currentProgress) ? 'Thiết Lập Kế Hoạch Bứt Phá' : '🔒 Khóa - Cần xong Bước 4')
     }
   ]
 
@@ -479,6 +492,41 @@ const StudentDashboard = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 relative z-10">
             {stepsConfig.map((s) => {
               const Icon = s.icon
+
+              if (!s.isUnlocked) {
+                return (
+                  <button
+                    key={s.step}
+                    id={`step${s.step}`}
+                    type="button"
+                    onClick={() => {
+                      const lockInfo = getStepLockReason(s.step, currentProgress)
+                      setToast({
+                        type: 'warning',
+                        message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`
+                      })
+                    }}
+                    className="flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl border transition-all duration-300 relative group bg-slate-100/70 border-slate-200 text-slate-400 cursor-not-allowed opacity-65 hover:opacity-85 select-none"
+                    title={`Chưa mở khóa - Cần hoàn thành Bước ${s.step - 1} trước`}
+                  >
+                    {/* Vòng tròn số thứ tự có khóa */}
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm mb-2 shadow-xs bg-slate-200 text-slate-500">
+                      <Lock className="w-4 h-4 text-slate-500" />
+                    </div>
+
+                    <span className="text-xs font-semibold leading-tight line-clamp-1 mb-1 text-slate-500">
+                      {s.shortTitle}
+                    </span>
+
+                    {/* Badge trạng thái thu nhỏ */}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-0.5">
+                      <Lock className="w-2.5 h-2.5 text-amber-600" />
+                      <span>Khóa</span>
+                    </span>
+                  </button>
+                )
+              }
+
               return (
                 <Link
                   key={s.step}
@@ -550,6 +598,73 @@ const StudentDashboard = () => {
           {stepsConfig.map((s, index) => {
             const Icon = s.icon
             const isSpanFull = index === 4 // Cho thẻ Bước 5 trải rộng trên layout hoặc canh chỉnh đẹp mắt
+
+            if (!s.isUnlocked) {
+              return (
+                <div 
+                  key={s.step}
+                  onClick={() => {
+                    const lockInfo = getStepLockReason(s.step, currentProgress)
+                    setToast({
+                      type: 'warning',
+                      message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`
+                    })
+                  }}
+                  className={`
+                    group relative bg-slate-50/70 rounded-3xl p-6 sm:p-7 border border-slate-200 transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-not-allowed opacity-60 hover:opacity-85 select-none
+                    ${isSpanFull ? 'md:col-span-2 lg:col-span-1' : ''}
+                  `}
+                  title={`Chưa mở khóa - Cần hoàn thành Bước ${s.step - 1} trước`}
+                >
+                  {/* Số thứ tự chìm nghệ thuật góc trên bên phải */}
+                  <span className="absolute -top-3 -right-2 text-7xl font-black text-slate-200 select-none pointer-events-none">
+                    {s.numeral}
+                  </span>
+
+                  <div className="relative z-10 space-y-4">
+                    {/* Hàng Header thẻ: Icon & Badge Trạng thái Khóa */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-500 bg-slate-200 shadow-xs">
+                        <Lock className="w-6 h-6 text-slate-500" />
+                      </div>
+
+                      {/* Badge trạng thái */}
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 shadow-2xs">
+                          <Lock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>CHƯA MỞ KHÓA</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tiêu đề & Diễn giải */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">
+                        CHẶNG {s.step} / 5
+                      </span>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-600 leading-snug">
+                        {s.title}
+                      </h3>
+                      <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                        {s.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Hàng Footer thẻ: Nút bấm Khóa */}
+                  <div className="relative z-10 pt-5 mt-4 border-t border-slate-200 flex items-center justify-between text-slate-400">
+                    <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{s.ctaText}</span>
+                    </span>
+                    
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-200 text-slate-400">
+                      <Lock className="w-4 h-4 text-slate-400" />
+                    </div>
+                  </div>
+                </div>
+              )
+            }
 
             return (
               <Link 
