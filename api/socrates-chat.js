@@ -351,6 +351,99 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
   return false;
 }
 
+// HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
+export function isUndecidedOrVague(career) {
+  if (!career || typeof career !== 'string') return true;
+  const clean = career.toLowerCase().trim();
+  const vagueKeywords = ['chưa biết', 'chưa rõ', 'chưa có', 'mơ hồ', 'phân vân', 'chưa xác định', 'tùy', 'không biết', 'chua biet', 'chua ro', 'mo ho'];
+  return clean.length === 0 || vagueKeywords.some(k => clean.includes(k));
+}
+
+/**
+ * SOCRACAREER - DYNAMIC ADAPTIVE TRIGGER (BƯỚC 2: AI SOCRATES)
+ * Thuật toán kích hoạt Vòng 1 linh hoạt dựa trên 4 Thiên lệch nhận thức cốt lõi
+ */
+export function generateSocraticFirstPrompt(student = {}) {
+  // 1. Thu thập các chỉ số mỏ neo từ Bước 1
+  const source = student.source || ""; // "Mạng xã hội", "Bạn bè/Người thân", "Tự tìm hiểu"
+  const conf = Number(student.conf_T0) || 5; // Độ tự tin từ 1 - 10
+  const gpa = Number(student.gpa_A00) || 25.0; // Điểm học bạ tổ hợp
+  const benchmark = Number(student.benchmark_target) || 27.5; // Điểm chuẩn trường mục tiêu
+  const deltaScore = gpa - benchmark; // Khoảng cách điểm sàn
+  const riasecMatch = student.riasec_match_pct != null ? Number(student.riasec_match_pct) : 40; // % Tương thích RIASEC
+
+  let biasType = "";
+  let biasRule = "";
+  let socraticQuestion = "";
+
+  const sLower = source.toLowerCase();
+  const sNorm = removeVietnameseTones(sLower);
+
+  const isMediaAnchoring = 
+    source.includes("mạng xã hội") || 
+    source.includes("TikTok") || 
+    source.includes("YouTube") || 
+    sLower.includes("mạng") || 
+    sLower.includes("tiktok") || 
+    sLower.includes("youtube") || 
+    sLower.includes("review") || 
+    sNorm.includes("mang xa hoi") || 
+    sNorm.includes("tren mang") || 
+    student.id === "CT_21";
+
+  const isBandwagon = 
+    source.includes("bạn bè") || 
+    source.includes("đám đông") || 
+    source.includes("nghe theo") || 
+    sLower.includes("bạn") || 
+    sLower.includes("rủ") || 
+    sNorm.includes("ban be") || 
+    sNorm.includes("dam dong") || 
+    sNorm.includes("nghe theo") ||
+    sNorm.includes("theo ban") ||
+    sNorm.includes("ru chon");
+
+  // 2. Cây quyết định thích ứng (Adaptive Decision Tree) để chọn đúng thiên lệch nổi trội
+  if (isMediaAnchoring) {
+    // THIÊN LỆCH 1: MỎ NEO TRUYỀN THÔNG (Anchoring Bias)
+    biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
+    biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc thuộc mẫu kiểm thử mỏ neo truyền thông.";
+    socraticQuestion = `Hệ thống ghi nhận em lựa chọn ngành ${student.baselineTarget} với mức kỳ vọng thu nhập hấp dẫn bắt nguồn từ các hình ảnh review trên mạng xã hội. Theo trải nghiệm của em, những nội dung này phản ánh bao nhiêu phần trăm cường độ làm việc và áp lực cạnh tranh thực tế của người làm nghề hàng ngày?`;
+
+  } else if (isBandwagon) {
+    // THIÊN LỆCH 2: TÂM LÝ ĐÁM ĐÔNG (Bandwagon Effect)
+    biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
+    biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
+    socraticQuestion = `Em chia sẻ rằng chọn ngành ${student.baselineTarget} một phần vì thấy bạn bè xung quanh và xu hướng xã hội đang rất chuộng. Nếu giả định các bạn của em đều chuyển sang một ngành khác, liệu bản thân em có còn đủ lý do nội tại để tiếp tục dấn thân vào ngành này không?`;
+
+  } else if (conf >= 8 && deltaScore <= -2.0) {
+    // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias)
+    biasType = "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)";
+    biasRule = `Kích hoạt do mức tự tin trúng tuyển rất cao (${conf}/10) trong khi điểm học bạ tổ hợp (${gpa} điểm) còn cách điểm chuẩn tham chiếu (${benchmark} điểm) một khoảng khá xa (${deltaScore.toFixed(1)} điểm).`;
+    socraticQuestion = `Em đang đặt mức tự tin tới ${conf}/10 vào khả năng trúng tuyển, trong khi điểm học bạ tổ hợp hiện tại (${gpa} điểm) còn cách điểm chuẩn tham chiếu (${benchmark} điểm) một khoảng khá xa (${deltaScore.toFixed(1)} điểm). Căn cứ cụ thể nào giúp em tin chắc mình sẽ bù đắp được khoảng cách này trong thời gian nước rút?`;
+
+  } else if (riasecMatch < 50) {
+    // THIÊN LỆCH 4: THIÊN LỆCH XÁC NHẬN (Confirmation Bias)
+    biasType = "THIÊN LỆCH XÁC NHẬN (CONFIRMATION BIAS)";
+    biasRule = `Kích hoạt do độ tương thích RIASEC thấp (${riasecMatch}%), sở trường tự nhiên nhóm [${student.riasecCode || "Xã hội"}] chưa khớp với đặc thù khắt khe của ngành mục tiêu.`;
+    socraticQuestion = `Kết quả trắc nghiệm RIASEC chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng ngành ${student.baselineTarget} lại đòi hỏi đặc tính rất khắt khe về kỹ thuật thực hành. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
+
+  } else {
+    // TRƯỜNG HỢP MẶC ĐỊNH / NHÓM THỰC CHẤT
+    biasType = "TRUY VẤN NỀN TẢNG THỰC CHẤT";
+    biasRule = "Học sinh có động cơ nội tại hài hòa; thực hiện truy vấn cơ sở thực tế và dữ liệu khách quan quan trọng nhất dẫn dắt mục tiêu.";
+    socraticQuestion = `Em hãy chia sẻ lý do cốt lõi và dữ liệu thực tế quan trọng nhất đã dẫn dắt em lựa chọn mục tiêu ngành ${student.baselineTarget}?`;
+  }
+
+  // 3. Trả về cấu trúc hiển thị Vòng 1 cho giao diện Web
+  return {
+    biasType: biasType,
+    biasRule: biasRule,
+    botGreeting: `Chào ${student.name || "em"}. Trước khi đối chứng dữ liệu tuyển sinh thực tế, chúng ta sẽ cùng thực hiện đối thoại phản tư đa chiều.`,
+    firstQuestion: socraticQuestion
+  };
+}
+
 // HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC KHỐI CŨ)
 export function getRecommendedComboForMajor(majorName, userText = '') {
   const m = (majorName || '').toLowerCase();
@@ -386,7 +479,7 @@ export function getRecommendedComboForMajor(majorName, userText = '') {
   return 'tổ hợp môn tự chọn tối ưu theo đề án tuyển sinh';
 }
 
-export function sanitizeSocraticResponse(rawText, round, effectiveCareer, targetSchool, userText = '') {
+export function sanitizeSocraticResponse(rawText, round, effectiveCareer, targetSchool, userText = '', studentProfile = {}) {
   if (!rawText || typeof rawText !== 'string') return '';
   let cleaned = rawText.trim();
 
@@ -514,18 +607,29 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     }
 
     if (!cleaned.endsWith('?')) {
-      if (isVocational && !isUniClarification) {
-        if (round === 1) {
-          cleaned += ` Thầy hiểu học nghề là lựa chọn thực tế và có lộ trình việc làm rõ ràng. Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
-        } else if (round === 2) {
+      if (round === 1) {
+        const studentObj = {
+          id: studentProfile?.studentId || studentProfile?.id || '',
+          name: studentProfile?.name || studentProfile?.studentName || 'em',
+          baselineTarget: major,
+          targetSchool: targetSchool,
+          source: studentProfile?.reason || '',
+          conf_T0: studentProfile?.initialConfidence || 5,
+          gpa_A00: studentProfile?.gpa_A00 || 25.0,
+          benchmark_target: studentProfile?.benchmark_target || 27.5,
+          riasec_match_pct: studentProfile?.riasec_match_pct ?? 40,
+          riasecCode: studentProfile?.riasecCode || 'Xã hội'
+        };
+        const firstPrompt = generateSocraticFirstPrompt(studentObj);
+        cleaned += ` ${firstPrompt.firstQuestion}`;
+      } else if (isVocational && !isUniClarification) {
+        if (round === 2) {
           cleaned += ` Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (đứng nhiều giờ, ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
         } else if (round === 3) {
           cleaned += ` Học nghề vẫn đòi hỏi điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để vào các trường nghề uy tín. Nhìn lại sức học hiện tại, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm vé tốt nghiệp này?`;
         }
       } else {
-        if (round === 1) {
-          cleaned += ` Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
-        } else if (round === 2) {
+        if (round === 2) {
           if (isFamilyOrAltruisticUser) {
             if (isMedicalCareerUser) {
               cleaned += ` Nhìn vào chặng đường 6 năm đại học và 18 tháng thực hành lâm sàng đầy áp lực của ngành Y, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
@@ -639,6 +743,12 @@ export default async function handler(req, res) {
     const reason = studentProfile?.reason || studentProfile?.careerReason || "Em thích từ nhỏ và cảm thấy phù hợp";
     const initialConfidence = studentProfile?.initialConfidence || studentProfile?.confidenceT0 || studentProfile?.confidence_score || studentProfile?.confidence || 5;
     const expectedIncome = studentProfile?.expectedIncome || studentProfile?.targetIncome || "10 - 15 triệu/tháng";
+    const gpa_A00 = studentProfile?.gpa_A00 || body?.gpa_A00;
+    const benchmark_target = studentProfile?.benchmark_target || body?.benchmark_target;
+    const riasec_match_pct = studentProfile?.riasec_match_pct != null ? studentProfile?.riasec_match_pct : body?.riasec_match_pct;
+    const riasecCode = studentProfile?.riasecCode || studentProfile?.riasec_code || body?.riasecCode;
+    const studentId = studentProfile?.studentId || studentProfile?.id || body?.studentId || body?.id || '';
+    const studentName = studentProfile?.name || studentProfile?.studentName || body?.studentName || '';
 
     // 3b. Nhận diện chuyển biến mục tiêu / thắc mắc ngành mới từ tin nhắn học sinh
     const goalShift = detectGoalShift(trimmedMsg);
@@ -661,7 +771,13 @@ export default async function handler(req, res) {
       hollandCode,
       reason,
       initialConfidence,
-      expectedIncome
+      expectedIncome,
+      studentId,
+      studentName,
+      gpa_A00,
+      benchmark_target,
+      riasec_match_pct,
+      riasecCode
     }, trimmedMsg, pastModelUtterances);
 
     // 6. Chuẩn bị nội dung gửi lên Gemini API
@@ -726,7 +842,7 @@ export default async function handler(req, res) {
             .trim();
 
           if (isCompleteSentence(cleaned)) {
-            replyText = sanitizeSocraticResponse(cleaned, currentStage, effectiveCareer, targetSchool, trimmedMsg);
+            replyText = sanitizeSocraticResponse(cleaned, currentStage, effectiveCareer, targetSchool, trimmedMsg, studentProfile);
             break;
           }
         }
@@ -747,9 +863,15 @@ export default async function handler(req, res) {
         reason,
         initialConfidence,
         expectedIncome,
-        trimmedMsg
+        trimmedMsg,
+        studentId,
+        studentName,
+        gpa_A00,
+        benchmark_target,
+        riasec_match_pct,
+        riasecCode
       });
-      replyText = sanitizeSocraticResponse(rawFallback, currentStage, effectiveCareer, targetSchool, trimmedMsg);
+      replyText = sanitizeSocraticResponse(rawFallback, currentStage, effectiveCareer, targetSchool, trimmedMsg, studentProfile);
     }
 
     const isComplete = currentStage === 4;
@@ -779,7 +901,22 @@ export default async function handler(req, res) {
 // TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP - BỘ NGUYÊN TẮC SOCRATES
 // ==============================================================================
 function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = '') {
-  const { targetCareer, effectiveCareer: profEffective, isShifted: profShifted, targetSchool: rawSchool, hollandCode, reason, initialConfidence, expectedIncome } = profile;
+  const { 
+    targetCareer, 
+    effectiveCareer: profEffective, 
+    isShifted: profShifted, 
+    targetSchool: rawSchool, 
+    hollandCode, 
+    reason, 
+    initialConfidence, 
+    expectedIncome,
+    studentId,
+    studentName,
+    gpa_A00,
+    benchmark_target,
+    riasec_match_pct,
+    riasecCode
+  } = profile;
   const avoidRepetition = pastModelUtterances
     ? `\n[CÂU THOẠI TRƯỚC ĐÓ CỦA THẦY - TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI]:\n${pastModelUtterances}\n`
     : '';
@@ -867,29 +1004,62 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
    - Chỉ khi học sinh NÓI RÕ VỀ MỨC LƯƠNG / LÀM GIÀU thì mới hỏi về mức thu nhập cạnh tranh trên thị trường.
 `;
 
+  if (stage === 1) {
+    if (isUndecidedOrVague(effectiveCareer)) {
+      return `${CORE_PROMPT}
+BỐI CẢNH VÒNG 1 (NHÁNH B: ĐỊNH HƯỚNG MỤC TIÊU CHO HỌC SINH MƠ HỒ / CHƯA CÓ NGÀNH CỤ THỂ):
+- Học sinh chưa chọn được ngành nghề cụ thể hoặc đang phân vân, mơ hồ.
+- Thầy Socrates áp dụng kỹ thuật Re-framing đồng cảm trước, không phán xét.
+
+[NHIỆM VỤ LƯỢT 1]:
+1. Đồng cảm: Chào em và khẳng định việc chưa chọn được ngành ở lớp 12 là điều tự nhiên.
+2. ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN:
+"Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG phán xét hay chê trách sự mơ hồ của học sinh.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+    }
+
+    const studentObj = {
+      id: studentId || profile?.id || '',
+      name: studentName || profile?.name || 'em',
+      baselineTarget: effectiveCareer,
+      targetSchool: targetSchool,
+      source: reason,
+      conf_T0: initialConfidence,
+      gpa_A00: gpa_A00 || 25.0,
+      benchmark_target: benchmark_target || 27.5,
+      riasec_match_pct: riasec_match_pct != null ? riasec_match_pct : 40,
+      riasecCode: riasecCode || hollandCode || 'Xã hội'
+    };
+    const firstPrompt = generateSocraticFirstPrompt(studentObj);
+
+    return `${CORE_PROMPT}
+BỐI CẢNH VÒNG 1 (THIÊN LỆCH NHẬN THỨC KÍCH HOẠT: ${firstPrompt.biasType}):
+- Quy tắc kích hoạt: ${firstPrompt.biasRule}
+- Ngành mục tiêu: ${effectiveCareer}
+- Cơ sở đào tạo mục tiêu: ${targetSchool}
+- Mức tự tin ban đầu (T0): ${initialConfidence}/10
+- Lý do chọn / Mỏ neo ban đầu: "${reason}"
+- Thiên hướng RIASEC: ${hollandCode}
+
+[NHIỆM VỤ LƯỢT 1 - KÍCH HOẠT PHẢN TƯ THÍCH ỨNG THEO ĐÚNG THIÊN LỆCH]:
+1. Bắt đầu bằng lời chào điềm đạm, trung tính:
+"${firstPrompt.botGreeting}"
+2. ĐẶT ĐÚNG CÂU HỎI TRUY VẤN MỎ NEO CỐT LÕI ĐÃ ĐƯỢC THIẾT KẾ:
+"${firstPrompt.firstQuestion}"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG khen ngợi quá đà, không phán xét hay chụp mũ học sinh.
+- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay bảo học sinh sang Bước 3 ở Lượt 1.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+  }
+
   if (isVocational) {
     // =========================================================================
     // KỊCH BẢN PHÂN HÓA HỌC NGHỀ / THỰC HÀNH (TUÂN THỦ 2 NẤC NHẬN THỨC)
     // =========================================================================
-    if (stage === 1) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 1 (HỌC NGHỀ / THỰC HÀNH - ĐỘNG CƠ & SỰ PHÙ HỢP THỰC TẾ):
-- Ngành nghề thực hành: ${effectiveCareer}
-- Cơ sở đào tạo mục tiêu: ${targetSchool}
-- Mức tự tin ban đầu: ${initialConfidence}/10
-- Lý do chọn: "${reason}"
-
-[NHIỆM VỤ LƯỢT 1]:
-1. Đối thoại 1-2 câu trung tính, công nhận học nghề là một lựa chọn thực tế và có định hướng việc làm rõ ràng.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Thầy hiểu học nghề là một lựa chọn thực tế và có lộ trình việc làm rõ ràng. Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG ép so sánh điểm chuẩn đại học hay xét tổ hợp môn phức tạp.
-- TUYỆT ĐỐI KHÔNG dùng từ ngữ phán xét như "ảo tưởng", "chọn vì đám đông".
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
     if (stage === 2) {
       return `${CORE_PROMPT}
 BỐI CẢNH VÒNG 2 (HỌC NGHỀ - NẤC 2: THỰC TẾ CÔNG VIỆC, KỶ LUẬT & SỨC BỀN):
@@ -942,26 +1112,6 @@ BỐI CẢNH VÒNG 4 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
   // ==========================================
   // KỊCH BẢN ĐẠI HỌC / HỌC THUẬT
   // ==========================================
-  if (stage === 1) {
-    return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 1 (ĐỐI CHIẾU MÃ HOLLAND & ĐỘNG CƠ CHỌN NGÀNH):
-- Nhóm thiên hướng Holland: ${hollandCode}
-- Ngành mong muốn: ${targetCareer}
-- Trường đại học mục tiêu: ${targetSchool}
-- Mức tự tin ban đầu: ${initialConfidence}/10
-- Lý do chọn ngành: "${reason}"
-
-[NHIỆM VỤ LƯỢT 1]:
-1. Đối thoại tối đa 2 câu văn trung tính, điềm đạm.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi quá đà, không phán xét chụp mũ.
-- TUYỆT ĐỐI KHÔNG nói về thu nhập, điểm chuẩn, tổ hợp môn hay Bước 3.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-  }
-
   if (stage === 2) {
     if (isMedicalCareer && isFamilyOrAltruistic) {
       return `${CORE_PROMPT}
@@ -1072,7 +1222,24 @@ BỐI CẢNH VÒNG 4 (BÓC TÁCH MÂU THUẪN TUYỂN SINH & ĐIỀU HƯỚNG B�
 // ==============================================================================
 // HÀM FALLBACK NHẬN THỨC CHUẨN BỘ NGUYÊN TẮC SOCRATES
 // ==============================================================================
-function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propEffective, isShifted: propShifted, targetSchool: rawSchool, hollandCode, reason, initialConfidence, expectedIncome, trimmedMsg }) {
+function generateCognitiveFallback({ 
+  stage, 
+  targetCareer, 
+  effectiveCareer: propEffective, 
+  isShifted: propShifted, 
+  targetSchool: rawSchool, 
+  hollandCode, 
+  reason, 
+  initialConfidence, 
+  expectedIncome, 
+  trimmedMsg,
+  studentId,
+  studentName,
+  gpa_A00,
+  benchmark_target,
+  riasec_match_pct,
+  riasecCode
+}) {
   const goalShift = detectGoalShift(trimmedMsg);
   const isShifted = propShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = propEffective || (goalShift ? goalShift.newMajor : targetCareer);
@@ -1080,6 +1247,26 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   const isUniClarification = hasUniversityClarification(trimmedMsg);
   const targetSchool = formatSchoolName(rawSchool, isVocational);
   const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
+
+  if (stage === 1) {
+    if (isUndecidedOrVague(effectiveCareer)) {
+      return `Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
+    }
+    const studentObj = {
+      id: studentId || '',
+      name: studentName || 'em',
+      baselineTarget: effectiveCareer,
+      targetSchool: targetSchool,
+      source: reason,
+      conf_T0: initialConfidence,
+      gpa_A00: gpa_A00 || 25.0,
+      benchmark_target: benchmark_target || 27.5,
+      riasec_match_pct: riasec_match_pct != null ? riasec_match_pct : 40,
+      riasecCode: riasecCode || hollandCode || 'Xã hội'
+    };
+    const firstPrompt = generateSocraticFirstPrompt(studentObj);
+    return `${firstPrompt.botGreeting}\n\n${firstPrompt.firstQuestion}`;
+  }
 
   if (isUniClarification) {
     if (stage === 4) {
@@ -1094,9 +1281,6 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
   }
 
   if (isVocational) {
-    if (stage === 1) {
-      return `Em đã chọn hướng ngành ${effectiveCareer} ${schoolClause} với lý do: '${reason}'. Thầy hiểu học nghề là một lựa chọn thực tế và có lộ trình việc làm rõ ràng. Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
-    }
     if (stage === 2) {
       return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
     }
@@ -1104,10 +1288,6 @@ function generateCognitiveFallback({ stage, targetCareer, effectiveCareer: propE
       return `Học nghề không đồng nghĩa với việc có thể buông xuôi việc học lớp 12, vì các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm bằng tốt nghiệp THPT làm tấm vé vào trường nghề?`;
     }
     return `Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${targetSchool} để đối chiếu với hồ sơ của mình.`;
-  }
-
-  if (stage === 1) {
-    return `Em đã chọn ngành ${effectiveCareer} ${schoolClause} với lý do: '${reason}'. Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
   }
 
   if (stage === 2) {
