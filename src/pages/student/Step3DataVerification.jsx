@@ -77,7 +77,17 @@ export default function Step3DataVerification({
 
   // 1. STATE DỮ LIỆU KHỐI 1: TỔ HỢP MÔN & ĐIỂM CHUẨN (Khởi tạo trực tiếp từ cache tránh race condition)
   const [targetCombination, setTargetCombination] = useState(() => initialSavedData?.targetCombination || 'A00');
-  const [customCombination, setCustomCombination] = useState('');
+  const [customCombination, setCustomCombination] = useState(() => initialSavedData?.customCombination || '');
+  const [customSubject1, setCustomSubject1] = useState(() => initialSavedData?.customSubject1 || '');
+  const [customSubject2, setCustomSubject2] = useState(() => initialSavedData?.customSubject2 || '');
+  const [customSubject3, setCustomSubject3] = useState(() => initialSavedData?.customSubject3 || '');
+
+  // CHẾ ĐỘ TÍNH ĐIỂM: 'standard' (Thang 30 chuẩn: M1 + M2 + M3)
+  //                   'scale40'  (Thang 40 điểm: Môn chính x 2 + 2 môn còn lại - như ĐH Nha Trang, ĐH Hà Nội...)
+  //                   'scale30_converted' (Quy đổi Thang 30: [(Môn chính x 2) + M2 + M3] * 3 / 4 chuẩn Bộ GD&ĐT)
+  const [weightMode, setWeightMode] = useState(() => initialSavedData?.weightMode || 'standard');
+  const [mainSubjectIndex, setMainSubjectIndex] = useState(() => initialSavedData?.mainSubjectIndex || 1);
+
   const [scoreSubject1, setScoreSubject1] = useState(() => initialSavedData?.scoreSubject1 != null ? String(initialSavedData.scoreSubject1) : '');
   const [scoreSubject2, setScoreSubject2] = useState(() => initialSavedData?.scoreSubject2 != null ? String(initialSavedData.scoreSubject2) : '');
   const [scoreSubject3, setScoreSubject3] = useState(() => initialSavedData?.scoreSubject3 != null ? String(initialSavedData.scoreSubject3) : '');
@@ -101,29 +111,112 @@ export default function Step3DataVerification({
   const [triageResult, setTriageResult] = useState(() => initialSavedData?.triageDecision ? initialSavedData : null);
   const [submitted, setSubmitted] = useState(() => Boolean(initialSavedData?.triageDecision));
 
-  // DANH MỤC TỔ HỢP PHỔ BIẾN THEO CHƯƠNG TRÌNH GDPT 2018
+  // DANH MỤC TỔ HỢP PHỔ BIẾN THEO CHƯƠNG TRÌNH GDPT 2018 (Bổ sung C14 Toán Văn KTPL, D14, D15)
   const combinationOptions = [
-    { code: 'A00', name: 'A00 (Toán, Vật lý, Hóa học)' },
-    { code: 'A01', name: 'A01 (Toán, Vật lý, Tiếng Anh)' },
-    { code: 'B00', name: 'B00 (Toán, Hóa học, Sinh học)' },
-    { code: 'C00', name: 'C00 (Ngữ văn, Lịch sử, Địa lý)' },
-    { code: 'C19', name: 'C19 (Ngữ văn, Lịch sử, GDKT&PL)' },
-    { code: 'C20', name: 'C20 (Ngữ văn, Địa lý, GDKT&PL)' },
-    { code: 'D01', name: 'D01 (Toán, Ngữ văn, Tiếng Anh)' },
-    { code: 'D07', name: 'D07 (Toán, Hóa học, Tiếng Anh)' },
-    { code: 'D84', name: 'D84 (Toán, GDKT&PL, Tiếng Anh)' },
-    { code: 'A10', name: 'A10 (Toán, Vật lý, GDKT&PL)' },
-    { code: 'TIN', name: 'Tổ hợp Tin học (Toán, Tin học, Ngoại ngữ / KHTN)' },
-    { code: 'OTHER', name: 'Tổ hợp tự chọn khác (Tự nhập mã)' },
+    { code: 'A00', name: 'A00 (Toán, Vật lý, Hóa học)', subjects: ['Toán', 'Vật lý', 'Hóa học'] },
+    { code: 'A01', name: 'A01 (Toán, Vật lý, Tiếng Anh)', subjects: ['Toán', 'Vật lý', 'Tiếng Anh'] },
+    { code: 'B00', name: 'B00 (Toán, Hóa học, Sinh học)', subjects: ['Toán', 'Hóa học', 'Sinh học'] },
+    { code: 'C00', name: 'C00 (Ngữ văn, Lịch sử, Địa lý)', subjects: ['Ngữ văn', 'Lịch sử', 'Địa lý'] },
+    { code: 'C14', name: 'C14 (Toán, Ngữ văn, GDKT&PL)', subjects: ['Toán', 'Ngữ văn', 'GDKT&PL'] },
+    { code: 'C19', name: 'C19 (Ngữ văn, Lịch sử, GDKT&PL)', subjects: ['Ngữ văn', 'Lịch sử', 'GDKT&PL'] },
+    { code: 'C20', name: 'C20 (Ngữ văn, Địa lý, GDKT&PL)', subjects: ['Ngữ văn', 'Địa lý', 'GDKT&PL'] },
+    { code: 'D01', name: 'D01 (Toán, Ngữ văn, Tiếng Anh)', subjects: ['Toán', 'Ngữ văn', 'Tiếng Anh'] },
+    { code: 'D07', name: 'D07 (Toán, Hóa học, Tiếng Anh)', subjects: ['Toán', 'Hóa học', 'Tiếng Anh'] },
+    { code: 'D14', name: 'D14 (Ngữ văn, Lịch sử, Tiếng Anh)', subjects: ['Ngữ văn', 'Lịch sử', 'Tiếng Anh'] },
+    { code: 'D15', name: 'D15 (Ngữ văn, Địa lý, Tiếng Anh)', subjects: ['Ngữ văn', 'Địa lý', 'Tiếng Anh'] },
+    { code: 'D84', name: 'D84 (Toán, GDKT&PL, Tiếng Anh)', subjects: ['Toán', 'GDKT&PL', 'Tiếng Anh'] },
+    { code: 'A10', name: 'A10 (Toán, Vật lý, GDKT&PL)', subjects: ['Toán', 'Vật lý', 'GDKT&PL'] },
+    { code: 'TIN', name: 'Tổ hợp Tin học (Toán, Tin học, Tiếng Anh)', subjects: ['Toán', 'Tin học', 'Tiếng Anh'] },
+    { code: 'OTHER', name: 'Tổ hợp tự chọn khác (Tự nhập mã & môn)', subjects: ['Môn 1', 'Môn 2', 'Môn 3'] },
   ];
 
-  // TÍNH TOÁN ĐỘNG CÁC CHỈ SỐ ĐIỂM SỐ
-  const totalStudentScore = useMemo(() => {
+  // TRÍCH XUẤT TÊN 3 MÔN CỦA TỔ HỢP ĐƯỢC CHỌN
+  const currentComboObj = useMemo(() => {
+    return combinationOptions.find(opt => opt.code === targetCombination) || {
+      code: targetCombination,
+      name: targetCombination,
+      subjects: ['Môn 1', 'Môn 2', 'Môn 3']
+    };
+  }, [targetCombination]);
+
+  const subjectNames = useMemo(() => {
+    if (targetCombination === 'OTHER') {
+      return [
+        customSubject1.trim() || 'Môn 1',
+        customSubject2.trim() || 'Môn 2',
+        customSubject3.trim() || 'Môn 3'
+      ];
+    }
+    return currentComboObj.subjects || ['Môn 1', 'Môn 2', 'Môn 3'];
+  }, [targetCombination, currentComboObj, customSubject1, customSubject2, customSubject3]);
+
+  // THANG ĐIỂM TỐI ĐA (40 HOẶC 30)
+  const maxScale = weightMode === 'scale40' ? 40 : 30;
+
+  // TÍNH TOÁN ĐỘNG CÁC CHỈ SỐ ĐIỂM SỐ & CHI TIẾT CÔNG THỨC
+  const { totalStudentScore, calculationDetails, mainSubjectName } = useMemo(() => {
     const s1 = parseNumericInput(scoreSubject1);
     const s2 = parseNumericInput(scoreSubject2);
     const s3 = parseNumericInput(scoreSubject3);
-    return Number((s1 + s2 + s3).toFixed(2));
-  }, [scoreSubject1, scoreSubject2, scoreSubject3]);
+
+    const m1 = subjectNames[0] || 'Môn 1';
+    const m2 = subjectNames[1] || 'Môn 2';
+    const m3 = subjectNames[2] || 'Môn 3';
+
+    if (weightMode === 'scale40') {
+      let score = 0;
+      let formula = '';
+      let chosenSubject = m1;
+      if (mainSubjectIndex === 1) {
+        score = s1 * 2 + s2 + s3;
+        formula = `(${m1} × 2) + ${m2} + ${m3} = (${s1} × 2) + ${s2} + ${s3} = ${Number(score.toFixed(2))}đ`;
+        chosenSubject = m1;
+      } else if (mainSubjectIndex === 2) {
+        score = s2 * 2 + s1 + s3;
+        formula = `${m1} + (${m2} × 2) + ${m3} = ${s1} + (${s2} × 2) + ${s3} = ${Number(score.toFixed(2))}đ`;
+        chosenSubject = m2;
+      } else {
+        score = s3 * 2 + s1 + s2;
+        formula = `${m1} + ${m2} + (${m3} × 2) = ${s1} + ${s2} + (${s3} × 2) = ${Number(score.toFixed(2))}đ`;
+        chosenSubject = m3;
+      }
+      return {
+        totalStudentScore: Number(score.toFixed(2)),
+        calculationDetails: formula,
+        mainSubjectName: chosenSubject
+      };
+    } else if (weightMode === 'scale30_converted') {
+      let weightedSum = 0;
+      let formula = '';
+      let chosenSubject = m1;
+      if (mainSubjectIndex === 1) {
+        weightedSum = s1 * 2 + s2 + s3;
+        const res = (weightedSum * 3) / 4;
+        formula = `[(${m1} × 2) + ${m2} + ${m3}] × 3 / 4 = [(${s1} × 2) + ${s2} + ${s3}] × 3 / 4 = ${Number(res.toFixed(2))}đ`;
+        chosenSubject = m1;
+        return { totalStudentScore: Number(res.toFixed(2)), calculationDetails: formula, mainSubjectName: chosenSubject };
+      } else if (mainSubjectIndex === 2) {
+        weightedSum = s2 * 2 + s1 + s3;
+        const res = (weightedSum * 3) / 4;
+        formula = `[${m1} + (${m2} × 2) + ${m3}] × 3 / 4 = [${s1} + (${s2} × 2) + ${s3}] × 3 / 4 = ${Number(res.toFixed(2))}đ`;
+        chosenSubject = m2;
+        return { totalStudentScore: Number(res.toFixed(2)), calculationDetails: formula, mainSubjectName: chosenSubject };
+      } else {
+        weightedSum = s3 * 2 + s1 + s2;
+        const res = (weightedSum * 3) / 4;
+        formula = `[${m1} + ${m2} + (${m3} × 2)] × 3 / 4 = [${s1} + ${s2} + (${s3} × 2)] × 3 / 4 = ${Number(res.toFixed(2))}đ`;
+        chosenSubject = m3;
+        return { totalStudentScore: Number(res.toFixed(2)), calculationDetails: formula, mainSubjectName: chosenSubject };
+      }
+    } else {
+      const sum = s1 + s2 + s3;
+      return {
+        totalStudentScore: Number(sum.toFixed(2)),
+        calculationDetails: `${m1} + ${m2} + ${m3} = ${s1} + ${s2} + ${s3} = ${Number(sum.toFixed(2))}đ`,
+        mainSubjectName: null
+      };
+    }
+  }, [scoreSubject1, scoreSubject2, scoreSubject3, weightMode, mainSubjectIndex, subjectNames]);
 
   const avgCutoff = useMemo(() => {
     const c25 = parseNumericInput(cutoff2025);
@@ -184,14 +277,23 @@ export default function Step3DataVerification({
       reasonText.includes('mạng');
 
     // 3. Quy tắc phân luồng can thiệp
-    // Nếu điểm thiếu hụt > 1.5 điểm HOẶC có bước ngoặt ở Bước 2 HOẶC có mâu thuẫn ngoại sinh -> Phân luồng In-depth
-    const requiresInDepth = (actualGap < -1.5) || turningPoint || hasExternalConflict;
+    // Nếu điểm thiếu hụt tương ứng ngưỡng an toàn (thang 40 là -2.0đ, thang 30 là -1.5đ) HOẶC có bước ngoặt ở Bước 2 HOẶC có mâu thuẫn ngoại sinh -> Phân luồng In-depth
+    const gapThreshold = maxScale === 40 ? -2.0 : -1.5;
+    const requiresInDepth = (actualGap < gapThreshold) || turningPoint || hasExternalConflict;
 
     const resultData = {
       targetCombination: targetCombination === 'OTHER' ? customCombination : targetCombination,
+      weightMode,
+      mainSubjectIndex,
+      mainSubjectName,
+      maxScale,
+      weightFormulaDesc: calculationDetails,
       scoreSubject1: s1,
       scoreSubject2: s2,
       scoreSubject3: s3,
+      customSubject1: targetCombination === 'OTHER' ? customSubject1 : '',
+      customSubject2: targetCombination === 'OTHER' ? customSubject2 : '',
+      customSubject3: targetCombination === 'OTHER' ? customSubject3 : '',
       totalStudentScore,
       cutoff2025: c25,
       cutoff2026: c26,
@@ -215,8 +317,10 @@ export default function Step3DataVerification({
       localStorage.setItem('cbas_step3_triage', JSON.stringify(resultData));
       localStorage.removeItem('cbas_step3_vocational');
       localStorage.setItem('cbas_step3_reflection', reflectionText.trim());
+      const scaleLabel = `/${maxScale}đ`;
+      const weightDesc = weightMode === 'scale40' ? ' (Thang 40)' : (weightMode === 'scale30_converted' ? ' (Quy đổi thang 30)' : '');
       const step3Evidence = {
-        cutoff_score: `${resultData.targetCombination}: ${resultData.totalStudentScore}đ vs Chuẩn TB ${resultData.avgCutoff}đ (Lệch: ${resultData.scoreGap > 0 ? `+${resultData.scoreGap}` : resultData.scoreGap}đ)`,
+        cutoff_score: `${resultData.targetCombination}${weightDesc}: ${resultData.totalStudentScore}${scaleLabel} vs Chuẩn TB ${resultData.avgCutoff}${scaleLabel} (Lệch: ${resultData.scoreGap > 0 ? `+${resultData.scoreGap}` : resultData.scoreGap}đ)`,
         tuition: `${resultData.tuitionFee} triệu/năm`,
         employment_rate: `${resultData.employmentRate}% (Xu thế: ${resultData.laborMarketTrend})`,
         triage: resultData,
@@ -381,7 +485,7 @@ export default function Step3DataVerification({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Tổ hợp môn xét tuyển chính thức:
@@ -389,7 +493,7 @@ export default function Step3DataVerification({
                 <select
                   value={targetCombination}
                   onChange={(e) => setTargetCombination(e.target.value)}
-                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-semibold text-slate-800"
                 >
                   {combinationOptions.map((opt) => (
                     <option key={opt.code} value={opt.code}>{opt.name}</option>
@@ -400,7 +504,7 @@ export default function Step3DataVerification({
               {targetCombination === 'OTHER' && (
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Nhập mã tổ hợp môn cụ thể:
+                    Nhập mã tổ hợp tự chọn:
                   </label>
                   <input
                     type="text"
@@ -414,6 +518,143 @@ export default function Step3DataVerification({
               )}
             </div>
 
+            {targetCombination === 'OTHER' && (
+              <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div>
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1">Tên Môn 1:</span>
+                  <input
+                    type="text"
+                    placeholder="VD: Toán"
+                    value={customSubject1}
+                    onChange={(e) => setCustomSubject1(e.target.value)}
+                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1">Tên Môn 2:</span>
+                  <input
+                    type="text"
+                    placeholder="VD: Ngữ văn"
+                    value={customSubject2}
+                    onChange={(e) => setCustomSubject2(e.target.value)}
+                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1">Tên Môn 3:</span>
+                  <input
+                    type="text"
+                    placeholder="VD: Tiếng Anh"
+                    value={customSubject3}
+                    onChange={(e) => setCustomSubject3(e.target.value)}
+                    className="w-full p-2 bg-white border border-slate-300 rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* CƠ CHẾ TÍNH ĐIỂM & MÔN TRỌNG SỐ (MÔN CHÍNH NHÂN HỆ SỐ 2) */}
+            <div className="mb-4 p-3.5 bg-slate-50/90 rounded-xl border border-slate-200 space-y-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>⚖️ Quy chế tính điểm xét tuyển của trường mục tiêu:</span>
+                </label>
+                <span className="text-[11px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                  Thang điểm hiện tại: <strong>Thang {maxScale}</strong>
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWeightMode('standard')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    weightMode === 'standard'
+                      ? 'bg-indigo-600 text-white font-bold shadow-sm ring-2 ring-indigo-300 border-indigo-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5">
+                    <span>📘 Thang 30 chuẩn</span>
+                  </div>
+                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'standard' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                    3 môn hệ số 1 (M1 + M2 + M3)
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWeightMode('scale40')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    weightMode === 'scale40'
+                      ? 'bg-amber-600 text-white font-bold shadow-sm ring-2 ring-amber-300 border-amber-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5">
+                    <span>⭐ Thang 40 điểm</span>
+                    <span className={`text-[9px] px-1 py-0.2 rounded font-bold ${
+                      weightMode === 'scale40' ? 'bg-amber-800 text-amber-100' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      ĐH Nha Trang
+                    </span>
+                  </div>
+                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'scale40' ? 'text-amber-100' : 'text-slate-500'}`}>
+                    Môn chính nhân hệ số 2 (Mchính × 2 + 2 môn)
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setWeightMode('scale30_converted')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    weightMode === 'scale30_converted'
+                      ? 'bg-sky-600 text-white font-bold shadow-sm ring-2 ring-sky-300 border-sky-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                  }`}
+                >
+                  <div className="text-xs flex items-center gap-1.5">
+                    <span>📐 Quy đổi Thang 30</span>
+                  </div>
+                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'scale30_converted' ? 'text-sky-100' : 'text-slate-500'}`}>
+                    Chuẩn Bộ GD&ĐT: (Mchính x 2 + ...) × 3 / 4
+                  </div>
+                </button>
+              </div>
+
+              {/* BỘ CHỌN MÔN CHÍNH KHI ÁP DỤNG HỆ SỐ 2 */}
+              {weightMode !== 'standard' && (
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="block text-[11px] font-bold text-slate-700 mb-1.5">
+                    👉 Bấm chọn môn trọng số nhân hệ số 2 trong tổ hợp:
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[1, 2, 3].map((idx) => {
+                      const sName = subjectNames[idx - 1] || `Môn ${idx}`;
+                      const isSelected = mainSubjectIndex === idx;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setMainSubjectIndex(idx)}
+                          className={`p-2 rounded-lg border text-center transition-all cursor-pointer text-xs ${
+                            isSelected
+                              ? 'bg-amber-500 text-slate-950 font-black border-amber-600 shadow-xs ring-2 ring-amber-300'
+                              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 font-medium'
+                          }`}
+                        >
+                          <div className="truncate font-bold">{sName}</div>
+                          <div className="text-[10px] opacity-90 mt-0.5">
+                            {isSelected ? '⭐ Hệ số 2' : 'Hệ số 1'}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* ĐIỂM 3 MÔN TRONG TỔ HỢP */}
             <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 mb-4">
               <label className="block text-xs font-bold text-indigo-900 mb-2">
@@ -421,7 +662,16 @@ export default function Step3DataVerification({
               </label>
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Môn 1:</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[11px] text-slate-700 font-bold truncate">
+                      1. {subjectNames[0] || 'Môn 1'}
+                    </span>
+                    {weightMode !== 'standard' && mainSubjectIndex === 1 && (
+                      <span className="text-[9px] font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full">
+                        x2
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="number"
                     step="any"
@@ -430,12 +680,25 @@ export default function Step3DataVerification({
                     placeholder="VD: 7.5"
                     value={scoreSubject1}
                     onChange={(e) => setScoreSubject1(e.target.value)}
-                    className="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={`w-full p-2 bg-white border rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      weightMode !== 'standard' && mainSubjectIndex === 1
+                        ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-50/20'
+                        : 'border-slate-300'
+                    }`}
                     required
                   />
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Môn 2:</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[11px] text-slate-700 font-bold truncate">
+                      2. {subjectNames[1] || 'Môn 2'}
+                    </span>
+                    {weightMode !== 'standard' && mainSubjectIndex === 2 && (
+                      <span className="text-[9px] font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full">
+                        x2
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="number"
                     step="any"
@@ -444,12 +707,25 @@ export default function Step3DataVerification({
                     placeholder="VD: 6.5"
                     value={scoreSubject2}
                     onChange={(e) => setScoreSubject2(e.target.value)}
-                    className="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={`w-full p-2 bg-white border rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      weightMode !== 'standard' && mainSubjectIndex === 2
+                        ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-50/20'
+                        : 'border-slate-300'
+                    }`}
                     required
                   />
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 font-medium">Môn 3:</span>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[11px] text-slate-700 font-bold truncate">
+                      3. {subjectNames[2] || 'Môn 3'}
+                    </span>
+                    {weightMode !== 'standard' && mainSubjectIndex === 3 && (
+                      <span className="text-[9px] font-extrabold bg-amber-500 text-white px-1.5 py-0.2 rounded-full">
+                        x2
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="number"
                     step="any"
@@ -458,16 +734,30 @@ export default function Step3DataVerification({
                     placeholder="VD: 6.0"
                     value={scoreSubject3}
                     onChange={(e) => setScoreSubject3(e.target.value)}
-                    className="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={`w-full p-2 bg-white border rounded-lg text-sm text-center font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                      weightMode !== 'standard' && mainSubjectIndex === 3
+                        ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-50/20'
+                        : 'border-slate-300'
+                    }`}
                     required
                   />
                 </div>
               </div>
 
-              {/* TỔNG ĐIỂM HỌC BẠ TỰ ĐỘNG */}
-              <div className="mt-3 flex justify-between items-center pt-2 border-t border-indigo-100 text-xs">
-                <span className="text-slate-600 font-medium">Tổng điểm tổ hợp ước tính của em:</span>
-                <span className="font-extrabold text-base text-indigo-700">{totalStudentScore} / 30 điểm</span>
+              {/* TỔNG ĐIỂM HỌC BẠ TỰ ĐỘNG & CHI TIẾT CÔNG THỨC */}
+              <div className="mt-3 pt-2 border-t border-indigo-100 text-xs space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600 font-medium">Tổng điểm tổ hợp ước tính của em:</span>
+                  <span className="font-extrabold text-base text-indigo-700">
+                    {totalStudentScore} / {maxScale} điểm
+                  </span>
+                </div>
+                {calculationDetails && (
+                  <div className="text-[11px] text-indigo-700 font-mono bg-indigo-50 p-1.5 rounded border border-indigo-100/80 flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>Công thức: <strong>{calculationDetails}</strong></span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -475,14 +765,14 @@ export default function Step3DataVerification({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm chuẩn Năm 2025:
+                  Điểm chuẩn Năm 2025 (Thang {maxScale}):
                 </label>
                 <input
                   type="number"
                   step="any"
                   min="0"
-                  max="30"
-                  placeholder="VD: 25.5"
+                  max={maxScale}
+                  placeholder={weightMode === 'scale40' ? "VD: 28.0 (Thang 40)" : "VD: 25.5"}
                   value={cutoff2025}
                   onChange={(e) => setCutoff2025(e.target.value)}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -492,14 +782,14 @@ export default function Step3DataVerification({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Điểm chuẩn Năm 2026:
+                  Điểm chuẩn Năm 2026 (Thang {maxScale}):
                 </label>
                 <input
                   type="number"
                   step="any"
                   min="0"
-                  max="30"
-                  placeholder="VD: 26.0"
+                  max={maxScale}
+                  placeholder={weightMode === 'scale40' ? "VD: 28.5 (Thang 40)" : "VD: 26.0"}
                   value={cutoff2026}
                   onChange={(e) => setCutoff2026(e.target.value)}
                   className="w-full p-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -547,25 +837,26 @@ export default function Step3DataVerification({
                       </span>
                     )}
                     <span className="font-normal text-xs text-slate-500">
-                      (Điểm chuẩn TB 2 năm (2025 - 2026): {avgCutoff} điểm)
+                      (Điểm chuẩn TB 2 năm (2025 - 2026): {avgCutoff} / {maxScale} điểm)
                     </span>
                   </div>
                   
                   <p className="leading-relaxed">
                     {scoreGap >= 0 ? (
-                      `Dữ liệu đối chứng ghi nhận em đang có lợi thế cạnh tranh rất tốt (+${scoreGap} điểm) để hiện thực hóa mục tiêu ngành học mong muốn. Tuy nhiên, đề thi tốt nghiệp THPT luôn có độ phân hóa khắt khe hơn học bạ; hãy tiếp tục duy trì kỷ luật ôn tập và rèn luyện tâm lý phòng thi vững vàng để chuyển hóa trọn vẹn ưu thế này thành điểm số thực tế!`
+                      `Dữ liệu đối chứng ghi nhận em đang có lợi thế cạnh tranh rất tốt (+${scoreGap} điểm trên thang ${maxScale}) để hiện thực hóa mục tiêu ngành học mong muốn. Tuy nhiên, đề thi tốt nghiệp THPT luôn có độ phân hóa khắt khe hơn học bạ; hãy tiếp tục duy trì kỷ luật ôn tập và rèn luyện tâm lý phòng thi vững vàng để chuyển hóa trọn vẹn ưu thế này thành điểm số thực tế!`
                     ) : (
-                      `Điểm học bạ hiện tại (${totalStudentScore} điểm) đang thấp hơn điểm chuẩn thực tế ${Math.abs(scoreGap)} điểm. Em cần tập trung bứt phá môn sở trường hoặc kích hoạt phương án nguyện vọng dự phòng vừa sức.`
+                      `Điểm học bạ hiện tại (${totalStudentScore} / ${maxScale} điểm) đang thấp hơn điểm chuẩn thực tế ${Math.abs(scoreGap)} điểm. Em cần tập trung bứt phá môn sở trường hoặc kích hoạt phương án nguyện vọng dự phòng vừa sức.`
                     )}
                   </p>
                 </div>
 
-                <div className={`font-black text-sm px-3.5 py-2 rounded-lg shrink-0 self-start md:self-center shadow-sm border ${
+                <div className={`font-black text-sm px-3.5 py-2 rounded-lg shrink-0 self-start md:self-center shadow-sm border text-center ${
                   scoreGap >= 0 
                     ? 'bg-white text-emerald-700 border-emerald-200' 
                     : 'bg-white text-rose-700 border-rose-200'
                 }`}>
-                  {scoreGap > 0 ? `+${scoreGap}` : scoreGap} điểm
+                  <div>{scoreGap > 0 ? `+${scoreGap}` : scoreGap} điểm</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Thang {maxScale}</div>
                 </div>
               </div>
             )}
@@ -719,8 +1010,8 @@ export default function Step3DataVerification({
                 {/* DỮ LIỆU TÓM TẮT PHỤC VỤ THAM VẤN BƯỚC 4 (FAST-TRACK) */}
                 <div className="bg-white/90 p-4 rounded-xl border border-teal-200 text-left text-xs text-slate-700 space-y-1.5 shadow-xs">
                   <div className="font-bold text-teal-900 mb-1">Dữ liệu tóm tắt phục vụ tham vấn Bước 4:</div>
-                  <div>• Tổ hợp môn: <span className="font-bold text-slate-900">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}đ)</div>
-                  <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold text-slate-900">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
+                  <div>• Tổ hợp môn: <span className="font-bold text-slate-900">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}/{triageResult.maxScale || 30}đ{triageResult.weightFormulaDesc ? ` [${triageResult.weightFormulaDesc}]` : ''})</div>
+                  <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold text-slate-900">{triageResult.avgCutoff}/{triageResult.maxScale || 30}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
                   <div>• Học phí: <span className="font-bold text-slate-900">{triageResult.tuitionFee} triệu/năm</span></div>
                   {triageResult.employmentRate > 0 && (
                     <div>• Tỷ lệ việc làm sau 1 năm: <span className="font-bold text-slate-900">{triageResult.employmentRate}%</span></div>
@@ -778,8 +1069,8 @@ export default function Step3DataVerification({
               
               <div className="bg-slate-50 p-4 rounded-xl max-w-md mx-auto mb-6 text-left text-xs text-slate-600 space-y-1.5 border border-slate-200">
                 <div className="font-bold text-slate-700 mb-1">Dữ liệu tóm tắt phục vụ tham vấn Bước 4:</div>
-                <div>• Tổ hợp môn: <span className="font-bold">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}đ)</div>
-                <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold">{triageResult.avgCutoff}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
+                <div>• Tổ hợp môn: <span className="font-bold">{triageResult.targetCombination}</span> (Điểm HS: {triageResult.totalStudentScore}/{triageResult.maxScale || 30}đ{triageResult.weightFormulaDesc ? ` [${triageResult.weightFormulaDesc}]` : ''})</div>
+                <div>• Điểm chuẩn TB 2 năm (2025 - 2026): <span className="font-bold">{triageResult.avgCutoff}/{triageResult.maxScale || 30}đ</span> (Chênh lệch: {triageResult.scoreGap > 0 ? `+${triageResult.scoreGap}` : triageResult.scoreGap}đ)</div>
                 <div>• Học phí: <span className="font-bold">{triageResult.tuitionFee} triệu/năm</span></div>
                 {triageResult.employmentRate > 0 && (
                   <div>• Tỷ lệ việc làm sau 1 năm: <span className="font-bold">{triageResult.employmentRate}%</span></div>

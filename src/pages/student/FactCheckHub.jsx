@@ -298,7 +298,7 @@ const FactCheckHub = () => {
           {
             student_id: user.id,
             target_major: targetCareerDisplay || 'Chưa rõ',
-            evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN & THỊ TRƯỜNG LAO ĐỘNG]\n1. Tổ hợp (${triageResult?.targetCombination}): ${triageResult?.totalStudentScore}/30 so với Điểm chuẩn TB (${triageResult?.avgCutoff})\n2. Khoảng cách: ${triageResult?.scoreGap} điểm\n3. Học phí: ${triageResult?.tuitionFee} triệu/năm\n4. Tỷ lệ việc làm: ${triageResult?.employmentRate}%\n5. Xu thế: ${triageResult?.laborMarketTrend}\n6. Lý do thất nghiệp: ${triageResult?.unemploymentReasons?.join(', ')}\n7. Phản tư: ${triageResult?.reflectionText}`,
+            evidence: `[BƯỚC 3 ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN & THỊ TRƯỜNG LAO ĐỘNG]\n1. Tổ hợp (${triageResult?.targetCombination}): ${triageResult?.totalStudentScore}/${triageResult?.maxScale || 30}đ so với Điểm chuẩn TB (${triageResult?.avgCutoff}/${triageResult?.maxScale || 30}đ)\n2. Khoảng cách: ${triageResult?.scoreGap} điểm\n3. Học phí: ${triageResult?.tuitionFee} triệu/năm\n4. Tỷ lệ việc làm: ${triageResult?.employmentRate}%\n5. Xu thế: ${triageResult?.laborMarketTrend}\n6. Lý do thất nghiệp: ${triageResult?.unemploymentReasons?.join(', ')}\n7. Phản tư: ${triageResult?.reflectionText}`,
             verified_sources: 'Đề án tuyển sinh 3 công khai & Báo cáo thị trường lao động (Bộ GD&ĐT, Bộ LĐ-TB&XH)',
             risk_analysis: `Phân luồng: ${triageResult?.triageDecision}. Chuyển tiếp Bước 4 để đăng ký lịch hẹn tham vấn cùng Mentor.`,
             bias_check: 'Empirical Grounding + Algorithmic Cognitive Triage',

@@ -578,6 +578,9 @@ const CounselingBooking = () => {
       reflectionText = 'Học sinh đang chuẩn bị câu hỏi đối chất về chênh lệch điểm chuẩn và rủi ro cạnh tranh việc làm thực tế.'
     }
 
+    const maxScale = triage?.maxScale || evidence?.triage?.maxScale || 30
+    const weightFormulaDesc = triage?.weightFormulaDesc || evidence?.triage?.weightFormulaDesc || null
+
     return {
       targetMajor,
       targetSchool,
@@ -591,7 +594,9 @@ const CounselingBooking = () => {
       employmentRate,
       reflectionText,
       isVocational: isVoc,
-      vocational
+      vocational,
+      maxScale,
+      weightFormulaDesc
     }
   }, [])
 
@@ -2047,7 +2052,7 @@ const CounselingBooking = () => {
                   <span className="text-slate-700 font-semibold text-xs">
                     {dossierData.isVocational ? 'Chuẩn đầu vào: ' : 'Điểm học bạ: '}
                     <strong className="text-emerald-700 text-sm">
-                      {dossierData.totalStudentScore}{!dossierData.isVocational && 'đ'}
+                      {dossierData.totalStudentScore}{!dossierData.isVocational && (dossierData.maxScale ? `/${dossierData.maxScale}đ` : 'đ')}
                     </strong>
                   </span>
                 </div>
@@ -2077,7 +2082,7 @@ const CounselingBooking = () => {
                 ) : (
                   <div className="flex items-center gap-3 flex-wrap text-xs">
                     <span className="text-slate-800 font-semibold">
-                      Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}đ</strong>
+                      Điểm chuẩn 2 năm: <strong className="text-slate-900 text-sm">{dossierData.avgCutoff}{dossierData.maxScale ? `/${dossierData.maxScale}đ` : 'đ'}</strong>
                     </span>
                     <span className="text-slate-400">•</span>
                     <span className={`px-2.5 py-0.5 rounded-full font-bold text-xs border ${
@@ -2431,8 +2436,8 @@ const CounselingBooking = () => {
             </div>
 
             <p className="text-xs md:text-sm text-slate-700 leading-relaxed font-medium">
-              Số liệu đối chứng tại Bước 3 cho thấy điểm học bạ ước tính của em (<strong className="text-emerald-900">{dossierData.totalStudentScore}đ</strong>) 
-              nằm trong vùng an toàn của đề án tuyển sinh (<strong className="text-slate-900">{dossierData.avgCutoff}đ</strong>, chênh lệch {formattedScoreGap}), 
+              Số liệu đối chứng tại Bước 3 cho thấy điểm học bạ ước tính của em (<strong className="text-emerald-900">{dossierData.totalStudentScore}{!dossierData.isVocational && (dossierData.maxScale ? `/${dossierData.maxScale}đ` : 'đ')}</strong>) 
+              nằm trong vùng an toàn của đề án tuyển sinh (<strong className="text-slate-900">{dossierData.avgCutoff}{!dossierData.isVocational && (dossierData.maxScale ? `/${dossierData.maxScale}đ` : 'đ')}</strong>, chênh lệch {formattedScoreGap}), 
               và mức tự tin phản ánh sát với thực tế. Em không bắt buộc phải tham gia phiên đối chất 1-1 kéo dài 20 - 30 phút, mà thực hiện 
               <strong> rà soát độc lập thông qua Hồ sơ kinh nghiệm thực tế (Case Dossier)</strong> và hoàn thành 
               <strong> Bảng kiểm phản tư góc khuất nghề nghiệp</strong> dưới sự giám sát gián tiếp của Mentor trước khi bước vào lập kế hoạch hành động.
