@@ -82,11 +82,33 @@ export default function Step3DataVerification({
   const [customSubject2, setCustomSubject2] = useState(() => initialSavedData?.customSubject2 || '');
   const [customSubject3, setCustomSubject3] = useState(() => initialSavedData?.customSubject3 || '');
 
+  // TỰ ĐỘNG NHẬN DIỆN ĐẠI HỌC NHA TRANG HOẶC TRƯỜNG THANG 40
+  const isTargetNhaTrang = useMemo(() => {
+    const s = ((userProfile?.targetSchool) || '').toLowerCase();
+    return s.includes('nha trang') || s.includes('ntu');
+  }, [userProfile?.targetSchool]);
+
   // CHẾ ĐỘ TÍNH ĐIỂM: 'standard' (Thang 30 chuẩn: M1 + M2 + M3)
   //                   'scale40'  (Thang 40 điểm: Môn chính x 2 + 2 môn còn lại - như ĐH Nha Trang, ĐH Hà Nội...)
   //                   'scale30_converted' (Quy đổi Thang 30: [(Môn chính x 2) + M2 + M3] * 3 / 4 chuẩn Bộ GD&ĐT)
-  const [weightMode, setWeightMode] = useState(() => initialSavedData?.weightMode || 'standard');
+  const [weightMode, setWeightMode] = useState(() => {
+    if (initialSavedData?.weightMode && initialSavedData.weightMode !== 'standard') {
+      return initialSavedData.weightMode;
+    }
+    const s = ((userProfile?.targetSchool) || '').toLowerCase();
+    if (s.includes('nha trang') || s.includes('ntu')) {
+      return 'scale40';
+    }
+    return initialSavedData?.weightMode || 'standard';
+  });
   const [mainSubjectIndex, setMainSubjectIndex] = useState(() => initialSavedData?.mainSubjectIndex || 1);
+
+  // TỰ ĐỘNG KÍCH HOẠT THANG 40 ĐIỂM NẾU HỌC SINH CHỌN ĐH NHA TRANG (ngay cả khi có cache cũ)
+  React.useEffect(() => {
+    if (isTargetNhaTrang && weightMode === 'standard') {
+      setWeightMode('scale40');
+    }
+  }, [isTargetNhaTrang]);
 
   const [scoreSubject1, setScoreSubject1] = useState(() => initialSavedData?.scoreSubject1 != null ? String(initialSavedData.scoreSubject1) : '');
   const [scoreSubject2, setScoreSubject2] = useState(() => initialSavedData?.scoreSubject2 != null ? String(initialSavedData.scoreSubject2) : '');
@@ -554,70 +576,122 @@ export default function Step3DataVerification({
             )}
 
             {/* CƠ CHẾ TÍNH ĐIỂM & MÔN TRỌNG SỐ (MÔN CHÍNH NHÂN HỆ SỐ 2) */}
-            <div className="mb-4 p-3.5 bg-slate-50/90 rounded-xl border border-slate-200 space-y-2.5">
+            <div className="mb-4 p-4 bg-slate-50/90 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
+              
+              {/* BANNER TỰ ĐỘNG CHO ĐẠI HỌC NHA TRANG */}
+              {isTargetNhaTrang && (
+                <div className="p-3 bg-amber-500/15 border-2 border-amber-400 rounded-xl flex items-center justify-between text-xs text-amber-950 shadow-xs flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <span className="font-extrabold text-amber-900 block text-xs">
+                        Đã kích hoạt: Thang điểm 40 cho {userProfile.targetSchool || 'ĐH Nha Trang'} (Môn chính nhân hệ số 2)
+                      </span>
+                      <span className="text-[11px] text-amber-800">
+                        Ngành Marketing & các ngành tại ĐH Nha Trang tính theo thang 40. Điểm học bạ của em sẽ được nhân hệ số 2 môn chính để đối chiếu chuẩn xác.
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setWeightMode('scale40')}
+                    className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-lg text-xs cursor-pointer shadow-xs"
+                  >
+                    {weightMode === 'scale40' ? '✓ Đang dùng Thang 40' : '👉 Bấm chuyển Thang 40'}
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center justify-between flex-wrap gap-1">
                 <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                  <span>⚖️ Quy chế tính điểm xét tuyển của trường mục tiêu:</span>
+                  <span>⚖️ Chọn quy chế tính điểm xét tuyển của trường (Bấm vào thẻ bên dưới):</span>
                 </label>
-                <span className="text-[11px] text-indigo-700 font-semibold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                  Thang điểm hiện tại: <strong>Thang {maxScale}</strong>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-extrabold border ${
+                  weightMode === 'scale40' 
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 ring-2 ring-amber-200' 
+                    : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                }`}>
+                  Đang chọn: <strong>Thang {maxScale} điểm</strong>
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {/* 1. THANG 30 CHUẨN */}
                 <button
                   type="button"
                   onClick={() => setWeightMode('standard')}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer relative ${
                     weightMode === 'standard'
-                      ? 'bg-indigo-600 text-white font-bold shadow-sm ring-2 ring-indigo-300 border-indigo-600'
-                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                      ? 'bg-indigo-600 text-white font-bold shadow-md ring-2 ring-indigo-300 border-indigo-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="text-xs flex items-center gap-1.5">
-                    <span>📘 Thang 30 chuẩn</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-black">📘 Thang 30 chuẩn</span>
+                    <span className="text-xs">{weightMode === 'standard' ? '🔘' : '⚪'}</span>
                   </div>
-                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'standard' ? 'text-indigo-100' : 'text-slate-500'}`}>
+                  <div className={`text-[11px] ${weightMode === 'standard' ? 'text-indigo-100' : 'text-slate-500'}`}>
                     3 môn hệ số 1 (M1 + M2 + M3)
+                  </div>
+                  <div className={`mt-1.5 text-[10px] font-bold inline-block px-1.5 py-0.5 rounded ${
+                    weightMode === 'standard' ? 'bg-indigo-700 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {weightMode === 'standard' ? '✓ Đang áp dụng' : 'Bấm để chọn'}
                   </div>
                 </button>
 
+                {/* 2. THANG 40 ĐIỂM (ĐH NHA TRANG) */}
                 <button
                   type="button"
                   onClick={() => setWeightMode('scale40')}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer relative ${
                     weightMode === 'scale40'
-                      ? 'bg-amber-600 text-white font-bold shadow-sm ring-2 ring-amber-300 border-amber-600'
-                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                      ? 'bg-amber-500 text-slate-950 font-black shadow-lg ring-3 ring-amber-300 border-amber-500'
+                      : 'bg-white border-amber-300 text-slate-800 hover:border-amber-500 hover:bg-amber-50/50'
                   }`}
                 >
-                  <div className="text-xs flex items-center gap-1.5">
-                    <span>⭐ Thang 40 điểm</span>
-                    <span className={`text-[9px] px-1 py-0.2 rounded font-bold ${
-                      weightMode === 'scale40' ? 'bg-amber-800 text-amber-100' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      ĐH Nha Trang
-                    </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-black">⭐ Thang 40 điểm</span>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-extrabold uppercase ${
+                        weightMode === 'scale40' ? 'bg-slate-950 text-amber-300' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                      }`}>
+                        ĐH Nha Trang
+                      </span>
+                    </div>
+                    <span className="text-xs">{weightMode === 'scale40' ? '🔘' : '⚪'}</span>
                   </div>
-                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'scale40' ? 'text-amber-100' : 'text-slate-500'}`}>
-                    Môn chính nhân hệ số 2 (Mchính × 2 + 2 môn)
+                  <div className={`text-[11px] font-medium ${weightMode === 'scale40' ? 'text-slate-900' : 'text-slate-600'}`}>
+                    Môn chính × 2 + 2 môn còn lại
+                  </div>
+                  <div className={`mt-1.5 text-[10px] font-black inline-block px-2 py-0.5 rounded ${
+                    weightMode === 'scale40' ? 'bg-slate-950 text-amber-300' : 'bg-amber-500 text-slate-950'
+                  }`}>
+                    {weightMode === 'scale40' ? '✓ ĐANG ÁP DỤNG THANG 40' : '👉 BẤM CHỌN THANG 40'}
                   </div>
                 </button>
 
+                {/* 3. QUY ĐỔI THANG 30 */}
                 <button
                   type="button"
                   onClick={() => setWeightMode('scale30_converted')}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-3 rounded-xl border-2 text-left transition-all cursor-pointer relative ${
                     weightMode === 'scale30_converted'
-                      ? 'bg-sky-600 text-white font-bold shadow-sm ring-2 ring-sky-300 border-sky-600'
-                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-100/60'
+                      ? 'bg-sky-600 text-white font-bold shadow-md ring-2 ring-sky-300 border-sky-600'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="text-xs flex items-center gap-1.5">
-                    <span>📐 Quy đổi Thang 30</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-black">📐 Quy đổi Thang 30</span>
+                    <span className="text-xs">{weightMode === 'scale30_converted' ? '🔘' : '⚪'}</span>
                   </div>
-                  <div className={`text-[10px] mt-0.5 font-normal ${weightMode === 'scale30_converted' ? 'text-sky-100' : 'text-slate-500'}`}>
+                  <div className={`text-[11px] ${weightMode === 'scale30_converted' ? 'text-sky-100' : 'text-slate-500'}`}>
                     Chuẩn Bộ GD&ĐT: (Mchính x 2 + ...) × 3 / 4
+                  </div>
+                  <div className={`mt-1.5 text-[10px] font-bold inline-block px-1.5 py-0.5 rounded ${
+                    weightMode === 'scale30_converted' ? 'bg-sky-700 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {weightMode === 'scale30_converted' ? '✓ Đang áp dụng' : 'Bấm để chọn'}
                   </div>
                 </button>
               </div>
@@ -745,12 +819,23 @@ export default function Step3DataVerification({
               </div>
 
               {/* TỔNG ĐIỂM HỌC BẠ TỰ ĐỘNG & CHI TIẾT CÔNG THỨC */}
-              <div className="mt-3 pt-2 border-t border-indigo-100 text-xs space-y-1">
+              <div className="mt-3 pt-2 border-t border-indigo-100 text-xs space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600 font-medium">Tổng điểm tổ hợp ước tính của em:</span>
-                  <span className="font-extrabold text-base text-indigo-700">
-                    {totalStudentScore} / {maxScale} điểm
-                  </span>
+                  <span className="text-slate-700 font-bold">Tổng điểm tổ hợp ước tính của em:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`font-black text-lg px-3 py-0.5 rounded-lg border shadow-xs ${
+                      weightMode === 'scale40'
+                        ? 'bg-amber-100 text-amber-950 border-amber-300 ring-2 ring-amber-200'
+                        : 'bg-indigo-100 text-indigo-900 border-indigo-300'
+                    }`}>
+                      {totalStudentScore} / {maxScale} điểm
+                    </span>
+                    {weightMode === 'scale40' && (
+                      <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-1.5 py-0.5 rounded uppercase">
+                        Thang 40
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {calculationDetails && (
                   <div className="text-[11px] text-indigo-700 font-mono bg-indigo-50 p-1.5 rounded border border-indigo-100/80 flex items-center gap-1.5">
