@@ -745,6 +745,53 @@ export function getCompatibilitySummary(targetCareer, userHollandCodes) {
   return `[${career}] Độ tương thích ${compatibilityScore}% (${levelLabel}). Thiên hướng học sinh [${userCodes.join('')}] so với chuẩn ngành [${targetCodes.join('')} - ${profile.categoryName}]. Điểm mù nhận thức: ${profile.commonBlindSpots}`;
 }
 
+// Hàm chuẩn hóa phân loại anchorReason (chuẩn ViSEF CBAS 2026)
+export function classifyAnchorReason(reasonText = '', confidence = 5, compatStatus = '') {
+  const clean = (reasonText || '').trim();
+  const lower = clean.toLowerCase();
+  const norm = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D");
+
+  if (
+    clean.includes("mạng xã hội") || 
+    clean.includes("TikTok") || 
+    clean.includes("YouTube") || 
+    lower.includes("mạng") || 
+    lower.includes("tiktok") || 
+    lower.includes("youtube") || 
+    lower.includes("review") || 
+    lower.includes("lương cao") || 
+    lower.includes("nghìn đô") ||
+    norm.includes("mang xa hoi") ||
+    norm.includes("tren mang")
+  ) {
+    return "Mạng xã hội";
+  }
+
+  if (
+    clean.includes("bạn bè") || 
+    clean.includes("đám đông") || 
+    clean.includes("nghe theo") || 
+    lower.includes("bạn") || 
+    lower.includes("rủ") || 
+    norm.includes("ban be") ||
+    norm.includes("dam dong") ||
+    norm.includes("nghe theo") ||
+    norm.includes("ru chon")
+  ) {
+    return "Đám đông";
+  }
+
+  if (Number(confidence) >= 8) {
+    return "Tự tin điểm số";
+  }
+
+  if (compatStatus && (compatStatus.includes('Mâu thuẫn') || compatStatus.includes('Lệch'))) {
+    return "Trái mã RIASEC";
+  }
+
+  return "Động cơ nội tại";
+}
+
 const HollandTest = () => {
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -962,10 +1009,16 @@ const HollandTest = () => {
     }
 
     const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
+    const trimmedReason = reason.trim()
+    const anchorReason = classifyAnchorReason(trimmedReason, Number(confidenceScore))
+    const anchorQuote = trimmedReason
+
     const tempProfile = {
       targetMajor: targetMajor.trim(),
       targetSchool: finalSchool,
-      reason: reason.trim(),
+      reason: trimmedReason,
+      anchorReason,
+      anchorQuote,
       initialConfidence: Number(confidenceScore),
       expectedIncome: expectedIncome
     }
@@ -973,6 +1026,8 @@ const HollandTest = () => {
       target_career: tempProfile.targetMajor,
       target_university: tempProfile.targetSchool,
       source_of_influence: tempProfile.reason,
+      anchorReason,
+      anchorQuote,
       confidence_score: String(tempProfile.initialConfidence),
       expected_income: tempProfile.expectedIncome
     }
@@ -1048,23 +1103,30 @@ const HollandTest = () => {
       const effectiveCode = primaryCode || calculatedRiasecCode || "AEI"
       const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
 
+      const trimmedReason = reason.trim()
+      const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+      const compatStatus = getCompatibilitySummary(targetMajor.trim(), rawCodes)
+      const analysisText = analyzeHollandCompatibility(targetMajor.trim(), rawCodes)
+      const anchorReason = classifyAnchorReason(trimmedReason, Number(confidenceScore), compatStatus)
+      const anchorQuote = trimmedReason
+
       const userProfile = {
         hollandCode: effectiveCode,
         targetMajor: targetMajor.trim(),
         targetSchool: finalSchool,
-        reason: reason.trim(),
+        reason: trimmedReason,
+        anchorReason,
+        anchorQuote,
         initialConfidence: Number(confidenceScore),
         expectedIncome: expectedIncome
       }
-
-      const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
-      const compatStatus = getCompatibilitySummary(userProfile.targetMajor, rawCodes)
-      const analysisText = analyzeHollandCompatibility(userProfile.targetMajor, rawCodes)
 
       const userAnchorData = {
         target_career: userProfile.targetMajor,
         target_university: userProfile.targetSchool,
         source_of_influence: userProfile.reason,
+        anchorReason,
+        anchorQuote,
         confidence_score: String(userProfile.initialConfidence),
         expected_income: userProfile.expectedIncome,
         holland_codes: rawCodes,
@@ -1082,6 +1144,8 @@ const HollandTest = () => {
         target_major: userProfile.targetMajor,
         target_university: userProfile.targetSchool,
         choice_source: userProfile.reason,
+        anchorReason,
+        anchorQuote,
         confidence_score_initial: userProfile.initialConfidence,
         expected_income: userProfile.expectedIncome,
         primary_code: effectiveCode,
@@ -1133,25 +1197,29 @@ const HollandTest = () => {
     const effectiveCode = primaryCode || calculatedRiasecCode || result?.primaryCode || "AEI"
     const finalMajor = targetMajor.trim() || "Sư phạm"
     const finalSchool = (targetSchool || targetUniversity || "ĐH Quy Nhơn").trim()
-    const finalReason = reason.trim() || "Em thích từ nhỏ"
+    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
+    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
+    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
+    const anchorReason = classifyAnchorReason(finalReason, Number(confidenceScore), compatStatus)
+    const anchorQuote = finalReason
 
     const userProfile = {
       hollandCode: effectiveCode,
       targetMajor: finalMajor,
       targetSchool: finalSchool,
       reason: finalReason,
+      anchorReason,
+      anchorQuote,
       initialConfidence: Number(confidenceScore),
       expectedIncome: expectedIncome || "15 - 20 triệu/tháng"
     }
-
-    const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
-    const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
-    const compatStatus = getCompatibilitySummary(finalMajor, rawCodes)
 
     const userAnchorData = {
       target_career: finalMajor,
       target_university: finalSchool,
       source_of_influence: finalReason,
+      anchorReason,
+      anchorQuote,
       confidence_score: String(userProfile.initialConfidence),
       expected_income: userProfile.expectedIncome,
       holland_codes: rawCodes,
@@ -1169,6 +1237,8 @@ const HollandTest = () => {
       target_major: finalMajor,
       target_university: finalSchool,
       choice_source: finalReason,
+      anchorReason,
+      anchorQuote,
       confidence_score_initial: userProfile.initialConfidence,
       expected_income: userProfile.expectedIncome,
       holland_codes: rawCodes,
@@ -1526,6 +1596,7 @@ const HollandTest = () => {
                 {[
                   'Em thích từ nhỏ',
                   'Mẹ định hướng',
+                  'Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.',
                   'Thấy trên mạng bảo lương cao',
                   'Bạn bè cùng rủ chọn',
                   'Mong muốn có việc làm và thu nhập ổn định'
