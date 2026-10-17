@@ -60,19 +60,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 }
 
 // Route Bảo vệ Tuần tự 5 Bước Can thiệp Phản tư ViSEF CBAS 2026
-// Học sinh bắt buộc phải hoàn thành Bước N-1 trước khi mở khóa Bước N (tránh làm tắt)
+// Bắt buộc phải hoàn thành Bước N-1 trước khi mở khóa Bước N (ngăn chặn triệt để làm tắt)
 const StepGateRoute = ({ children, requiredStep }) => {
-  const { user, profile, isAdminVerified } = useAuth()
   const location = useLocation()
-
-  // Giáo viên, Quản trị viên và Chuyên viên tư vấn được thanh tra toàn bộ các bước mà không bị chặn
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
-  const isPrivileged = userRole === 'admin' || userRole === 'teacher' || userRole === 'counselor' || isAdminVerified
-
-  if (isPrivileged) {
-    return children
-  }
-
   const progress = getInterventionProgress()
   const isUnlocked = isStepUnlocked(requiredStep, progress)
 

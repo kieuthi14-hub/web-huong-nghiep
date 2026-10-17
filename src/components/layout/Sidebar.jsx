@@ -146,7 +146,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           {links.map((link, idx) => {
             // Kiểm tra trạng thái khóa nếu là liên kết bước học sinh
             const isStepLink = typeof link.step === 'number'
-            const isUnlocked = !isStepLink || isTeacherAdmin || isStepUnlocked(link.step, progress)
+            const isUnlocked = !isStepLink || isStepUnlocked(link.step, progress)
 
             if (!isUnlocked) {
               return (

@@ -87,39 +87,30 @@ const StudentDashboard = () => {
   }, [user, location.pathname, location.key])
 
   const fetchStudentStatus = async () => {
-    const progress = getInterventionProgress()
-    const nextState = { 
-      ...stepData,
-      step1Done: Boolean(progress[1]),
-      step2Done: Boolean(progress[2]),
-      step3Done: Boolean(progress[3]),
-      step4Done: Boolean(progress[4]),
-      step5Done: Boolean(progress[5])
-    }
+    // 1. Kiểm tra xuất phát điểm Bước 1 (Holland & Mỏ neo T0)
+    let s1Done = false
+    let hollandCode = null
+    let targetMajor = null
+    let targetSchool = null
+    let confidenceT0 = null
 
-    // Cập nhật trạng thái đồng bộ tức thì, tránh trễ 0/5
-    setStepData({ ...nextState })
-
-    // ==========================================
-    // 1. KIỂM TRA BƯỚC 1: HOLLAND & MỎ NEO T0
-    // ==========================================
     try {
-      // Đọc từ LocalStorage trước
       const localAnchor = localStorage.getItem('cbas_anchor_data') || 
                           localStorage.getItem('userAnchorData') || 
                           localStorage.getItem('cbas_user_profile') ||
                           localStorage.getItem('career_initial_anchor')
       if (localAnchor) {
         const parsed = JSON.parse(localAnchor)
-        nextState.step1Done = true
-        nextState.hollandCode = parsed.hollandCode || parsed.primary_code || parsed.holland_code || 'Chưa rõ'
-        nextState.targetMajor = parsed.targetMajor || parsed.target_career || parsed.target_major
-        nextState.targetSchool = parsed.targetSchool || parsed.target_university
-        nextState.confidenceT0 = parsed.initialConfidence || parsed.confidence_score || parsed.confidence_score_initial
+        if (parsed && (parsed.targetMajor || parsed.target_career || parsed.target_major || parsed.hollandCode || parsed.primary_code || parsed.holland_code)) {
+          s1Done = true
+          hollandCode = parsed.hollandCode || parsed.primary_code || parsed.holland_code || 'Chưa rõ'
+          targetMajor = parsed.targetMajor || parsed.target_career || parsed.target_major
+          targetSchool = parsed.targetSchool || parsed.target_university
+          confidenceT0 = parsed.initialConfidence || parsed.confidence_score || parsed.confidence_score_initial
+        }
       }
 
-      // Đối chứng thêm từ Supabase DB
-      if (user) {
+      if (user && !s1Done) {
         const { data: hollandDb } = await supabase
           .from('test_results')
           .select('*')
@@ -128,118 +119,145 @@ const StudentDashboard = () => {
           .limit(1)
 
         if (hollandDb && hollandDb.length > 0) {
-          nextState.step1Done = true
-          if (!nextState.hollandCode || nextState.hollandCode === 'Chưa rõ') {
-            nextState.hollandCode = hollandDb[0].holland_code || hollandDb[0].primary_trait
-          }
+          s1Done = true
+          hollandCode = hollandDb[0].holland_code || hollandDb[0].primary_trait
         }
       }
     } catch (e) {
       console.warn('Lỗi đọc Bước 1:', e)
     }
 
-    // ==========================================
-    // 2. KIỂM TRA BƯỚC 2: AI SOCRATES
-    // ==========================================
-    try {
-      const step2Local = localStorage.getItem('cbas_step2_completed') || 
-                         localStorage.getItem('cbas_step2_telemetry')
-      if (step2Local) {
-        nextState.step2Done = true
-        try {
-          const parsed = JSON.parse(step2Local)
-          nextState.step2Triage = parsed.triage_step4
-          nextState.step2Outcome = parsed.outcome_category
-        } catch (e) {}
-      }
-
-      // Kiểm tra thêm Supabase DB
-      if (user) {
-        const { data: debiasDb } = await supabase
-          .from('metacognitive_matrix')
-          .select('id, student_arguments')
-          .eq('student_id', user.id)
-          .limit(1)
-
-        if (debiasDb && debiasDb.length > 0) {
-          nextState.step2Done = true
+    // 2. Bước 2 CHỈ Done nếu Bước 1 đã Done
+    let s2Done = false
+    let step2Triage = null
+    let step2Outcome = null
+    if (s1Done) {
+      try {
+        const step2Local = localStorage.getItem('cbas_step2_completed') || 
+                           localStorage.getItem('cbas_step2_telemetry')
+        if (step2Local) {
+          s2Done = true
+          try {
+            const parsed = JSON.parse(step2Local)
+            step2Triage = parsed.triage_step4
+            step2Outcome = parsed.outcome_category
+          } catch (e) {}
         }
-      }
-    } catch (e) {
-      console.warn('Lỗi đọc Bước 2:', e)
-    }
 
-    // ==========================================
-    // 3. KIỂM TRA BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU
-    // ==========================================
-    try {
-      const step3Local = localStorage.getItem('cbas_step3_evidence') || 
-                         localStorage.getItem('career_evidence_task') ||
-                         localStorage.getItem('cbas_score_gap')
-      if (step3Local) {
-        nextState.step3Done = true
-        try {
-          const parsed = JSON.parse(step3Local)
-          nextState.scoreGap = parsed.score_gap || parsed.scoreGap
-          nextState.cutoffScore = parsed.cutoff_score || parsed.cutoffScores
-        } catch (e) {
-          if (!isNaN(parseFloat(step3Local))) {
-            nextState.scoreGap = parseFloat(step3Local)
+        if (user && !s2Done) {
+          const { data: debiasDb } = await supabase
+            .from('metacognitive_matrix')
+            .select('id, student_arguments')
+            .eq('student_id', user.id)
+            .limit(1)
+
+          if (debiasDb && debiasDb.length > 0) {
+            s2Done = true
           }
         }
+      } catch (e) {
+        console.warn('Lỗi đọc Bước 2:', e)
       }
-    } catch (e) {
-      console.warn('Lỗi đọc Bước 3:', e)
     }
 
-    // ==========================================
-    // 4. KIỂM TRA BƯỚC 4: TƯ VẤN 1-1
-    // ==========================================
-    try {
-      const step4Local = localStorage.getItem('cbas_step4_feedback') || 
-                         localStorage.getItem('mentor_feedback_record')
-      if (step4Local) {
-        nextState.step4Done = true
-        try {
-          const parsed = JSON.parse(step4Local)
-          nextState.readinessScore = parsed.readiness || parsed.readinessScore
-        } catch (e) {}
-      }
-
-      if (user) {
-        const { data: bookingDb } = await supabase
-          .from('counseling_appointments')
-          .select('id, status')
-          .eq('student_id', user.id)
-          .limit(1)
-
-        if (bookingDb && bookingDb.length > 0) {
-          nextState.step4Done = true
+    // 3. Bước 3 CHỈ Done nếu Bước 1 & Bước 2 đã Done
+    let s3Done = false
+    let scoreGap = null
+    let cutoffScore = null
+    if (s1Done && s2Done) {
+      try {
+        const step3Local = localStorage.getItem('cbas_step3_evidence') || 
+                           localStorage.getItem('career_evidence_task') ||
+                           localStorage.getItem('cbas_score_gap') ||
+                           localStorage.getItem('cbas_step3_triage')
+        if (step3Local) {
+          s3Done = true
+          try {
+            const parsed = JSON.parse(step3Local)
+            scoreGap = parsed.score_gap || parsed.scoreGap
+            cutoffScore = parsed.cutoff_score || parsed.cutoffScores
+          } catch (e) {
+            if (!isNaN(parseFloat(step3Local))) {
+              scoreGap = parseFloat(step3Local)
+            }
+          }
         }
+      } catch (e) {
+        console.warn('Lỗi đọc Bước 3:', e)
       }
-    } catch (e) {
-      console.warn('Lỗi đọc Bước 4:', e)
     }
 
-    // ==========================================
-    // 5. KIỂM TRA BƯỚC 5: KẾ HOẠCH HÀNH ĐỘNG T2
-    // ==========================================
-    try {
-      const step5Local = localStorage.getItem('cbas_step5_action_plan') || 
-                         localStorage.getItem('cbas_full_intervention_dossier')
-      if (step5Local) {
-        nextState.step5Done = true
-        nextState.hasActionPlan = true
-        try {
-          const parsed = JSON.parse(step5Local)
-          nextState.confidenceT2 = parsed.confidenceT2 || parsed.confidence_post
-        } catch (e) {}
+    // 4. Bước 4 CHỈ Done nếu Bước 1, 2, 3 đã Done
+    let s4Done = false
+    let readinessScore = null
+    if (s1Done && s2Done && s3Done) {
+      try {
+        const step4Local = localStorage.getItem('cbas_step4_feedback') || 
+                           localStorage.getItem('mentor_feedback_record') ||
+                           localStorage.getItem('cbas_step4_completed') ||
+                           localStorage.getItem('cbas_step4_fast_track')
+        if (step4Local) {
+          s4Done = true
+          try {
+            const parsed = JSON.parse(step4Local)
+            readinessScore = parsed.readiness || parsed.readinessScore
+          } catch (e) {}
+        }
+
+        if (user && !s4Done) {
+          const { data: bookingDb } = await supabase
+            .from('counseling_appointments')
+            .select('id, status')
+            .eq('student_id', user.id)
+            .limit(1)
+
+          if (bookingDb && bookingDb.length > 0) {
+            s4Done = true
+          }
+        }
+      } catch (e) {
+        console.warn('Lỗi đọc Bước 4:', e)
       }
-    } catch (e) {
-      console.warn('Lỗi đọc Bước 5:', e)
     }
 
-    setStepData(nextState)
+    // 5. Bước 5 CHỈ Done nếu Bước 1, 2, 3, 4 đã Done
+    let s5Done = false
+    let confidenceT2 = null
+    if (s1Done && s2Done && s3Done && s4Done) {
+      try {
+        const step5Local = localStorage.getItem('cbas_step5_action_plan') || 
+                           localStorage.getItem('cbas_full_intervention_dossier') ||
+                           localStorage.getItem('cbas_step5_completed')
+        if (step5Local) {
+          s5Done = true
+          try {
+            const parsed = JSON.parse(step5Local)
+            confidenceT2 = parsed.confidenceT2 || parsed.confidence_post
+          } catch (e) {}
+        }
+      } catch (e) {
+        console.warn('Lỗi đọc Bước 5:', e)
+      }
+    }
+
+    setStepData({
+      step1Done: s1Done,
+      hollandCode,
+      targetMajor,
+      targetSchool,
+      confidenceT0,
+      step2Done: s2Done,
+      step2Triage,
+      step2Outcome,
+      step3Done: s3Done,
+      scoreGap,
+      cutoffScore,
+      step4Done: s4Done,
+      readinessScore,
+      step5Done: s5Done,
+      confidenceT2,
+      hasActionPlan: s5Done
+    })
   }
 
   // Tính số bước đã hoàn thành & tỷ lệ %
@@ -264,10 +282,7 @@ const StudentDashboard = () => {
   const nextActiveStep = getHighestUnlockedStep(currentProgress)
   const isAllCompleted = completedCount === 5
 
-  const userRole = profile?.role || user?.user_metadata?.role || 'student'
-  const isTeacherAdmin = userRole === 'admin' || userRole === 'teacher' || userRole === 'counselor'
-
-  // Cấu hình dữ liệu chi tiết cho 5 thẻ bước kèm trạng thái khóa tuần tự
+  // Cấu hình dữ liệu chi tiết cho 5 thẻ bước kèm trạng thái khóa tuần tự (KHÔNG BỎ QUA CHO BẤT KỲ AI)
   const stepsConfig = [
     {
       step: 1,
@@ -308,13 +323,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-amber-100 text-amber-800 border-amber-200',
       numeral: '02',
       isDone: stepData.step2Done,
-      isUnlocked: isTeacherAdmin || isStepUnlocked(2, currentProgress),
+      isUnlocked: isStepUnlocked(2, currentProgress),
       isActive: nextActiveStep === 2,
       metrics: stepData.step2Done ? [
         { label: 'Hội thoại Socratic', value: '4 Giai đoạn hoàn tất' },
         { label: 'Phân luồng tư vấn', value: stepData.step2Triage || 'Đã sàng lọc' }
       ] : null,
-      ctaText: stepData.step2Done ? 'Xem Lại Biên Bản Phản Tư' : (isTeacherAdmin || isStepUnlocked(2, currentProgress) ? 'Bắt Đầu Đối Thoại Cùng AI' : '🔒 Khóa - Cần xong Bước 1')
+      ctaText: stepData.step2Done ? 'Xem Lại Biên Bản Phản Tư' : (isStepUnlocked(2, currentProgress) ? 'Bắt Đầu Đối Thoại Cùng AI' : '🔒 Khóa - Cần xong Bước 1')
     },
     {
       step: 3,
@@ -331,13 +346,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-blue-100 text-blue-800 border-blue-200',
       numeral: '03',
       isDone: stepData.step3Done,
-      isUnlocked: isTeacherAdmin || isStepUnlocked(3, currentProgress),
+      isUnlocked: isStepUnlocked(3, currentProgress),
       isActive: nextActiveStep === 3,
       metrics: stepData.step3Done ? [
         { label: 'Chênh lệch điểm', value: stepData.scoreGap !== null ? `${stepData.scoreGap > 0 ? '+' : ''}${stepData.scoreGap}đ` : 'Đã tính' },
         { label: 'Điểm chuẩn 2 năm', value: stepData.cutoffScore ? `${stepData.cutoffScore}đ` : 'Đã đối chứng' }
       ] : null,
-      ctaText: stepData.step3Done ? 'Xem Lại Dữ Liệu Điểm Số' : (isTeacherAdmin || isStepUnlocked(3, currentProgress) ? 'Tra Cứu & Đối Chứng Dữ Liệu' : '🔒 Khóa - Cần xong Bước 2')
+      ctaText: stepData.step3Done ? 'Xem Lại Dữ Liệu Điểm Số' : (isStepUnlocked(3, currentProgress) ? 'Tra Cứu & Đối Chứng Dữ Liệu' : '🔒 Khóa - Cần xong Bước 2')
     },
     {
       step: 4,
@@ -354,13 +369,13 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-violet-100 text-violet-800 border-violet-200',
       numeral: '04',
       isDone: stepData.step4Done,
-      isUnlocked: isTeacherAdmin || isStepUnlocked(4, currentProgress),
+      isUnlocked: isStepUnlocked(4, currentProgress),
       isActive: nextActiveStep === 4,
       metrics: stepData.step4Done ? [
         { label: 'Hồ sơ đối chất 4A', value: 'Đã sẵn sàng in/lưu' },
         { label: 'Nhật ký thu hoạch 4B', value: 'Đã hoàn tất đúc kết' }
       ] : null,
-      ctaText: stepData.step4Done ? 'Xem Hồ Sơ & Nhật Ký 4B' : (isTeacherAdmin || isStepUnlocked(4, currentProgress) ? 'Chuẩn Bị Gặp Cố Vấn 1-1' : '🔒 Khóa - Cần xong Bước 3')
+      ctaText: stepData.step4Done ? 'Xem Hồ Sơ & Nhật Ký 4B' : (isStepUnlocked(4, currentProgress) ? 'Chuẩn Bị Gặp Cố Vấn 1-1' : '🔒 Khóa - Cần xong Bước 3')
     },
     {
       step: 5,
@@ -377,14 +392,14 @@ const StudentDashboard = () => {
       badgeAccent: 'bg-rose-100 text-rose-800 border-rose-200',
       numeral: '05',
       isDone: stepData.step5Done,
-      isUnlocked: isTeacherAdmin || isStepUnlocked(5, currentProgress),
+      isUnlocked: isStepUnlocked(5, currentProgress),
       isActive: nextActiveStep === 5,
       metrics: stepData.step5Done ? [
         { label: 'Tự tin thực tế T2', value: stepData.confidenceT2 ? `${stepData.confidenceT2}/10` : 'Đã đo lường' },
         { label: 'Tam giác hành động', value: 'Đã cam kết thực hiện' },
         { label: 'Hồ sơ tổng thể A4', value: 'Sẵn sàng in/tải' }
       ] : null,
-      ctaText: stepData.step5Done ? 'Xem Hồ Sơ Toàn Diện 5 Bước' : (isTeacherAdmin || isStepUnlocked(5, currentProgress) ? 'Thiết Lập Kế Hoạch Bứt Phá' : '🔒 Khóa - Cần xong Bước 4')
+      ctaText: stepData.step5Done ? 'Xem Hồ Sơ Toàn Diện 5 Bước' : (isStepUnlocked(5, currentProgress) ? 'Thiết Lập Kế Hoạch Bứt Phá' : '🔒 Khóa - Cần xong Bước 4')
     }
   ]
 

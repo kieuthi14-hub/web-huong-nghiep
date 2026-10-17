@@ -156,15 +156,23 @@ export const isStep5Completed = () => {
 }
 
 /**
- * Đọc trạng thái hoàn thành cả 5 bước
+ * Đọc trạng thái hoàn thành cả 5 bước (Tuần tự liên hoàn ViSEF CBAS)
+ * Bước N chỉ được tính là hoàn thành hợp lệ khi TẤT CẢ các bước từ 1 đến N-1 đã hoàn thành.
+ * Ngăn chặn tuyệt đối việc dữ liệu cũ của Bước 5 hiển thị "Đã xong" khi chưa hoàn thành Bước 1.
  */
 export const getInterventionProgress = () => {
+  const s1 = isStep1Completed()
+  const s2 = s1 && isStep2Completed()
+  const s3 = s2 && isStep3Completed()
+  const s4 = s3 && isStep4Completed()
+  const s5 = s4 && isStep5Completed()
+
   return {
-    1: isStep1Completed(),
-    2: isStep2Completed(),
-    3: isStep3Completed(),
-    4: isStep4Completed(),
-    5: isStep5Completed()
+    1: Boolean(s1),
+    2: Boolean(s2),
+    3: Boolean(s3),
+    4: Boolean(s4),
+    5: Boolean(s5)
   }
 }
 
@@ -172,15 +180,15 @@ export const getInterventionProgress = () => {
  * Kiểm tra xem một bước có được phép truy cập (đã mở khóa) hay không.
  * Quy tắc:
  * - Bước 1: luôn mở.
- * - Bước N (N > 1): chỉ mở khi TẤT CẢ các bước từ 1 đến N-1 đã hoàn thành.
+ * - Bước N (N > 1): chỉ mở khi bước N-1 đã hoàn thành hợp lệ theo chuỗi can thiệp.
  */
 export const isStepUnlocked = (stepNumber, progress = getInterventionProgress()) => {
   const step = Number(stepNumber)
   if (step <= 1) return true
   if (step === 2) return Boolean(progress[1])
-  if (step === 3) return Boolean(progress[1] && progress[2])
-  if (step === 4) return Boolean(progress[1] && progress[2] && progress[3])
-  if (step === 5) return Boolean(progress[1] && progress[2] && progress[3] && progress[4])
+  if (step === 3) return Boolean(progress[2])
+  if (step === 4) return Boolean(progress[3])
+  if (step === 5) return Boolean(progress[4])
   return false
 }
 
