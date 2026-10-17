@@ -34,7 +34,8 @@ import {
   FileText,
   Award,
   Compass,
-  RotateCcw
+  RotateCcw,
+  Info
 } from 'lucide-react'
 
 // Hàm phân tích thông tin Nền tảng Gặp gỡ (Google Meet, Zoom, Địa điểm trực tiếp) từ ghi chú chuyên viên
