@@ -206,9 +206,10 @@ const StudentDashboard = () => {
 
         if (user && !s4Done) {
           const { data: bookingDb } = await supabase
-            .from('counseling_appointments')
+            .from('counseling_sessions')
             .select('id, status')
             .eq('student_id', user.id)
+            .eq('status', 'completed')
             .limit(1)
 
           if (bookingDb && bookingDb.length > 0) {

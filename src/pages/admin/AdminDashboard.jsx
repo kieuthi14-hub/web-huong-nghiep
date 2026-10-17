@@ -48,6 +48,9 @@ import {
 import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content } from '../../data/adaptiveCommitments'
 export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content }
 
+// Kiểm tra định dạng UUID 36 ký tự hợp lệ cho Supabase PostgreSQL
+const isUuid = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim())
+
 // =========================================================================
 // 0. DỮ LIỆU ĐIỀU PHỐI THỰC NGHIỆM CBAS 2026 (N=30 CAN THIỆP)
 // =========================================================================
@@ -1261,10 +1264,12 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       return c.studentCode === studentId || s.student?.full_name?.includes(studentId)
     })
     if (matched) {
-      handleUpdateCounselingStatus(matched.id, 'confirmed', {
-        counselor_name: mentorValue,
-        counselor_notes: `[Phòng gặp: https://meet.google.com/meet-${studentId.toLowerCase()}]\nMentor phụ trách: ${mentorValue}. Em chuẩn bị sẵn câu hỏi chất vấn để đối thoại nhé!`
-      })
+      handleUpdateCounselingStatus(
+        matched.id,
+        'confirmed',
+        `[Phòng gặp: https://meet.google.com/meet-${studentId.toLowerCase()}]\nMentor phụ trách: ${mentorValue}. Em chuẩn bị sẵn câu hỏi chất vấn để đối thoại nhé!`,
+        { counselor_name: mentorValue }
+      )
     }
 
     setToastMessage(`[ĐÃ DUYỆT LỊCH] Đối tượng ${studentId} đã được gán mentor phụ trách!`)
@@ -1929,10 +1934,19 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       ...combinedCounseling,
       ...VISEF_SEED_COUNSELING.filter(seed => !combinedCounseling.some(c => c.id === seed.id || c.scheduled_at === seed.scheduled_at))
     ]
+    // Áp dụng admin overrides đã lưu (đảm bảo seed data hoặc local data đã duyệt không bị reset khi F5)
+    let adminOverrides = {}
+    try {
+      const overridesRaw = localStorage.getItem('counseling_sessions_admin_overrides')
+      if (overridesRaw) adminOverrides = JSON.parse(overridesRaw)
+    } catch (e) {}
+
     realCounseling = rawCombined.map(s => {
-      const displayMentor = getDisplayMentorName(s)
+      const override = adminOverrides[s.id]
+      const merged = override ? { ...s, ...override } : s
+      const displayMentor = getDisplayMentorName(merged)
       return {
-        ...s,
+        ...merged,
         counselor_name: displayMentor
       }
     })
@@ -1963,25 +1977,64 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const handleUpdateCounselingStatus = async (sessionId, newStatus, counselorNotes = null, extraUpdates = {}) => {
     setIsUpdatingStatus(true)
 
-    const updatePayload = { status: newStatus, ...extraUpdates }
-    if (counselorNotes !== null) {
-      updatePayload.counselor_notes = counselorNotes
+    // Chuẩn hóa counselorNotes nếu vô tình truyền object
+    let finalCounselorNotes = counselorNotes
+    if (counselorNotes && typeof counselorNotes === 'object') {
+      finalCounselorNotes = counselorNotes.counselor_notes || ''
     }
 
+    const updatePayload = { status: newStatus, ...extraUpdates }
+    if (finalCounselorNotes !== null) {
+      updatePayload.counselor_notes = finalCounselorNotes
+    }
+
+    // Cập nhật ngay React state
     setCounselingSessions(prev => 
       prev.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
     )
 
     try {
+      // 1. Cập nhật Supabase PostgreSQL CSDL
       if (supabase && typeof supabase.from === 'function') {
-        await supabase
-          .from('counseling_sessions')
-          .update(updatePayload)
-          .eq('id', sessionId)
+        const isSessionUuid = isUuid(sessionId)
+        if (isSessionUuid) {
+          const dbPayload = { status: newStatus }
+          if (finalCounselorNotes !== null) {
+            dbPayload.counselor_notes = finalCounselorNotes
+          }
+          if (extraUpdates.student_notes) {
+            dbPayload.student_notes = extraUpdates.student_notes
+          }
+          if (extraUpdates.scheduled_at) {
+            dbPayload.scheduled_at = extraUpdates.scheduled_at
+          }
+          // Chỉ truyền counselor_id vào Supabase nếu nó là UUID hợp lệ
+          if (extraUpdates.counselor_id && isUuid(extraUpdates.counselor_id)) {
+            dbPayload.counselor_id = extraUpdates.counselor_id
+          }
+
+          const { data, error } = await supabase
+            .from('counseling_sessions')
+            .update(dbPayload)
+            .eq('id', sessionId)
+            .select()
+
+          if (error) {
+            console.error('❌ [Admin] Lỗi Supabase khi cập nhật trạng thái lịch hẹn:', error)
+          } else {
+            console.log('✅ [Admin] Cập nhật thành công Supabase session:', data)
+          }
+        }
       }
 
-      // Đồng bộ toàn bộ cache local storage (hỗ trợ tức thì trên cùng thiết bị/trình duyệt)
+      // 2. Đồng bộ toàn bộ cache local storage (hỗ trợ tức thì trên cùng thiết bị/trình duyệt)
       try {
+        // Lưu override để không bị mất khi F5 (áp dụng cho cả seed session và DB session)
+        const overridesRaw = localStorage.getItem('counseling_sessions_admin_overrides')
+        const overrides = overridesRaw ? JSON.parse(overridesRaw) : {}
+        overrides[sessionId] = { ...updatePayload }
+        localStorage.setItem('counseling_sessions_admin_overrides', JSON.stringify(overrides))
+
         const localKeys = ['counseling_sessions_local', 'counseling_sessions']
         if (user?.id) localKeys.push(`counseling_sessions_local_${user.id}`)
 
@@ -1990,24 +2043,45 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
           if (raw) {
             const list = JSON.parse(raw)
             if (Array.isArray(list)) {
-              const updated = list.map(item => item.id === sessionId ? { ...item, ...updatePayload } : item)
+              let matched = false
+              const updated = list.map(item => {
+                if (item.id === sessionId) {
+                  matched = true
+                  return { ...item, ...updatePayload }
+                }
+                return item
+              })
+              if (!matched) {
+                const cur = counselingSessions.find(s => s.id === sessionId)
+                if (cur) updated.unshift({ ...cur, ...updatePayload })
+              }
               localStorage.setItem(k, JSON.stringify(updated))
             }
+          } else {
+            const cur = counselingSessions.find(s => s.id === sessionId)
+            if (cur) localStorage.setItem(k, JSON.stringify([{ ...cur, ...updatePayload }]))
           }
         })
 
+        // Đồng bộ cache cbas_step4_booking của học sinh
         const s4Raw = localStorage.getItem('cbas_step4_booking')
         if (s4Raw) {
-          const parsed = JSON.parse(s4Raw)
-          if (parsed.id === sessionId || !parsed.id) {
-            const meetingInfo = parseMeetingInfo(counselorNotes || '')
-            parsed.status = newStatus
-            if (meetingInfo.meetingUrl) parsed.meet_url = meetingInfo.meetingUrl
-            if (meetingInfo.locationText) parsed.location = meetingInfo.locationText
-            if (extraUpdates.scheduled_at) parsed.meeting_time = extraUpdates.scheduled_at
-            if (extraUpdates.counselor_id) parsed.mentor_id = extraUpdates.counselor_id
-            localStorage.setItem('cbas_step4_booking', JSON.stringify(parsed))
-          }
+          try {
+            const parsed = JSON.parse(s4Raw)
+            const contactInfo = parseStudentContact(updatePayload.student_notes || '')
+            const isMatch = parsed.id === sessionId || !parsed.id || (contactInfo.studentCode && parsed.student_code === contactInfo.studentCode)
+            if (isMatch) {
+              const notesForParse = typeof finalCounselorNotes === 'string' ? finalCounselorNotes : (updatePayload.counselor_notes || '')
+              const meetingInfo = parseMeetingInfo(notesForParse)
+              parsed.status = newStatus
+              if (meetingInfo.meetingUrl) parsed.meet_url = meetingInfo.meetingUrl
+              if (meetingInfo.locationText) parsed.location = meetingInfo.locationText
+              if (extraUpdates.scheduled_at) parsed.meeting_time = extraUpdates.scheduled_at
+              if (extraUpdates.counselor_id) parsed.mentor_id = extraUpdates.counselor_id
+              if (notesForParse) parsed.counselor_notes = notesForParse
+              localStorage.setItem('cbas_step4_booking', JSON.stringify(parsed))
+            }
+          } catch (e) {}
         }
 
         // Tự động mở khóa Bước 5 khi Admin bấm hoàn thành
@@ -2018,7 +2092,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
             sessionId: sessionId,
             status: 'completed',
             completedAt: new Date().toISOString(),
-            notes: counselorNotes || 'Mentor & Admin đã xác nhận hoàn thành phiên đối chất thực tế 1-1.'
+            notes: finalCounselorNotes || 'Mentor & Admin đã xác nhận hoàn thành phiên đối chất thực tế 1-1.'
           }
           localStorage.setItem('cbas_step4_feedback', JSON.stringify(completedRecord))
           localStorage.setItem('mentor_feedback_record', JSON.stringify(completedRecord))
@@ -2035,13 +2109,15 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       } else if (newStatus === 'confirmed' || newStatus === 'approved') {
         msg = '🟢 Đã DUYỆT & XẾP LỊCH thành công cho học sinh!'
       } else {
-        msg = '🔴 Đã TỪ CHỐI / ĐỔI LỊCH hẹn tư vấn!'
+        msg = '🔴 Đã TỪ CHỐI / HỦY lịch hẹn tư vấn!'
       }
 
       setToastMessage(msg)
       setTimeout(() => setToastMessage(null), 3500)
     } catch (err) {
       console.error('Lỗi khi thao tác duyệt lịch:', err)
+      setToastMessage('⚠️ Có lỗi xảy ra trong quá trình cập nhật lịch hẹn.')
+      setTimeout(() => setToastMessage(null), 3500)
     } finally {
       setIsUpdatingStatus(false)
     }
@@ -3940,6 +4016,22 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                                   <button
                                     type="button"
                                     disabled={isUpdatingStatus}
+                                    onClick={async () => {
+                                      const roomCode = 'meet-' + Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)
+                                      const meetUrl = 'https://meet.google.com/' + roomCode
+                                      const notes = `[Phòng gặp: ${meetUrl}]\nEm chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!`
+                                      await handleUpdateCounselingStatus(session.id, 'confirmed', notes)
+                                    }}
+                                    className="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-extrabold uppercase transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                                    title="Bấm để cấp link Google Meet và duyệt ngay trong 1 chạm"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>✔ Duyệt Nhanh (Cấp Meet)</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    disabled={isUpdatingStatus}
                                     onClick={() => {
                                       setApprovalModalSession(session)
                                       setModalMentor(session.counselor_id || 'CV_01')
@@ -3955,35 +4047,22 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                                       }
                                       setMeetingMessage(meeting.cleanMessage || 'Em chuẩn bị sẵn các câu hỏi băn khoăn về ngành để trao đổi trực tiếp cùng chuyên gia nhé!')
                                     }}
-                                    className="w-full px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-extrabold uppercase transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
-                                    title="Bấm để cấp link Google Meet và duyệt ngay"
+                                    className="w-full px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 rounded text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                    title="Bấm để đổi sang Mentor khác, đổi khung giờ hẹn hoặc địa điểm trực tiếp"
                                   >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>✔ Chấp thuận & Xếp lịch</span>
+                                    <Sliders className="w-3 h-3 text-sky-600" />
+                                    <span>⚙ Tùy Chỉnh & Đổi Giờ</span>
                                   </button>
 
                                   <button
                                     type="button"
                                     disabled={isUpdatingStatus}
                                     onClick={() => {
-                                      setApprovalModalSession(session)
-                                      setModalMentor(session.counselor_id || 'CV_01')
-                                      setModalScheduledAt(session.scheduled_at ? session.scheduled_at.slice(0, 16) : '')
-                                      const meeting = parseMeetingInfo(session.counselor_notes)
-                                      setMeetingLocation(meeting.meetingUrl || meeting.locationText || 'https://meet.google.com/new')
-                                      setMeetingMessage(meeting.cleanMessage || 'Cố vấn đề xuất điều chỉnh lại lịch để phù hợp nhất với em.')
+                                      const studentName = session.student?.full_name || 'học sinh này'
+                                      if (window.confirm(`Xác nhận từ chối lịch hẹn tư vấn của em ${studentName}?`)) {
+                                        handleUpdateCounselingStatus(session.id, 'rejected')
+                                      }
                                     }}
-                                    className="w-full px-2.5 py-1 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 rounded text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
-                                    title="Bấm để đổi sang Mentor khác hoặc đổi khung giờ hẹn"
-                                  >
-                                    <Sliders className="w-3 h-3 text-sky-600" />
-                                    <span>⚙ Đổi giờ / Mentor</span>
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    disabled={isUpdatingStatus}
-                                    onClick={() => handleUpdateCounselingStatus(session.id, 'rejected')}
                                     className="w-full px-2 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
                                   >
                                     <XCircle className="w-3 h-3" />
@@ -4304,7 +4383,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
               </button>
               <button
                 type="button"
-                disabled={isUpdatingStatus || !meetingLocation.trim()}
+                disabled={isUpdatingStatus}
                 onClick={async () => {
                   let updatedStudentNotes = approvalModalSession.student_notes || ''
                   if (modalMentor) {
@@ -4316,11 +4395,20 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     }
                   }
 
-                  const finalNotes = '[Phòng gặp: ' + meetingLocation.trim() + ']\n' + meetingMessage.trim()
+                  const loc = (meetingLocation || '').trim() || ('https://meet.google.com/meet-' + Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6))
+                  const finalNotes = '[Phòng gặp: ' + loc + ']\n' + (meetingMessage || '').trim()
                   const extraUpdates = {
-                    counselor_id: modalMentor || approvalModalSession.counselor_id,
-                    student_notes: updatedStudentNotes
+                    student_notes: updatedStudentNotes,
+                    mentor_id: modalMentor || approvalModalSession.counselor_id
                   }
+
+                  // Chỉ đặt counselor_id nếu nó là UUID hợp lệ
+                  if (isUuid(modalMentor)) {
+                    extraUpdates.counselor_id = modalMentor
+                  } else if (isUuid(approvalModalSession.counselor_id)) {
+                    extraUpdates.counselor_id = approvalModalSession.counselor_id
+                  }
+
                   if (modalScheduledAt) {
                     const d = new Date(modalScheduledAt)
                     if (!isNaN(d.getTime())) {

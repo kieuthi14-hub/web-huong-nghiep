@@ -1013,6 +1013,19 @@ const CounselingBooking = () => {
         targetSession = validLocalSessions[0]
       }
 
+      // Hỗ trợ kiểm thử trên cùng thiết bị: áp dụng admin override nếu có
+      if (targetSession) {
+        try {
+          const ovRaw = localStorage.getItem('counseling_sessions_admin_overrides')
+          if (ovRaw) {
+            const ov = JSON.parse(ovRaw)
+            if (ov[targetSession.id]) {
+              targetSession = { ...targetSession, ...ov[targetSession.id] }
+            }
+          }
+        } catch (e) {}
+      }
+
       if (targetSession) {
         const meetInfo = parseMeetingInfo(targetSession.counselor_notes)
         const contactInfo = parseStudentContact(targetSession.student_notes)
