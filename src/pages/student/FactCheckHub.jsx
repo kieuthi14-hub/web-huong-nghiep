@@ -149,7 +149,7 @@ const FactCheckHub = () => {
   )
   const targetCareerDisplay = isCareerDetermined ? anchor.target_career.trim() : ''
 
-  // Phân hệ kiểm chứng: 'academic' (Đại học/CĐ) hoặc 'vocational' (Học nghề thực chiến)
+  // Phân hệ kiểm chứng: 'academic' (Đại học/CĐ) hoặc 'vocational' (Học nghề thực hành)
   const [pathwayMode, setPathwayMode] = useState(() => {
     try {
       const uniText = (anchor?.target_university || '').toLowerCase().trim();
@@ -183,7 +183,7 @@ const FactCheckHub = () => {
     }
   });
 
-  // Xử lý hoàn thành phân hệ Học nghề thực chiến
+  // Xử lý hoàn thành phân hệ Học nghề thực hành
   const handleVocationalComplete = async (vocationalResult) => {
     localStorage.setItem("cbas_step3_vocational", JSON.stringify(vocationalResult));
     
@@ -192,7 +192,7 @@ const FactCheckHub = () => {
     const deficitText = vocationalResult.deficit > 0 ? `Thâm hụt: -${vocationalResult.deficit} triệu VNĐ (Nguy cơ đứt gãy việc học)` : 'Đủ vốn an toàn';
 
     const profileSummary = [
-      `[HỒ SƠ THẨM ĐỊNH NGHỀ THỰC CHIẾN - BƯỚC 3]`,
+      `[HỒ SƠ THẨM ĐỊNH HỌC NGHỀ THỰC HÀNH - BƯỚC 3]`,
       `• Loại hình: ${trainingTypeLabel}`,
       `• Cơ sở/Trường: ${vocationalResult.academyName}`,
       `• Chi phí GĐ1: Học phí ${vocationalResult.tuitionFee}tr + Đồ nghề ${vocationalResult.toolkitCost}tr + Ăn ở ${vocationalResult.livingCost6Months}tr = Tổng ${vocationalResult.totalPhase1Cost}tr (Vốn có: ${vocationalResult.userSavings}tr | ${deficitText})`,
@@ -203,7 +203,7 @@ const FactCheckHub = () => {
     const step3Evidence = {
       cutoff_score: isFormal 
         ? 'Xét tuyển học bạ THPT (Trường CĐ/TC chính quy)' 
-        : 'Học nghề thực chiến (Không xét điểm chuẩn)',
+        : 'Học nghề thực hành (Không xét điểm chuẩn)',
       tuition: `${vocationalResult.tuitionFee} triệu (Tổng GĐ1: ${vocationalResult.totalPhase1Cost} triệu)`,
       employment_rate: `Lương khởi điểm: ${vocationalResult.startingSalary || '--'} tr/tháng | Tích lũy: ${vocationalResult.experienceYearsBeforeOpening || '--'} | Vốn mở tiệm: ${vocationalResult.startupBudgetEstimate} triệu`,
       vocational: vocationalResult,
@@ -224,7 +224,7 @@ const FactCheckHub = () => {
       admissionQuota: step3Evidence.employment_rate,
       completedAt: step3Evidence.timestamp
     }));
-    const targetMajor = targetCareerDisplay || anchor?.target_career || 'Học nghề thực chiến';
+    const targetMajor = targetCareerDisplay || anchor?.target_career || 'Học nghề thực hành';
     const targetSchool = vocationalResult.academyName || anchor?.target_university || trainingTypeLabel;
     localStorage.setItem("cbas_step3_triage", JSON.stringify({
       triageResult: 'In-depth (20 phút)',
@@ -241,7 +241,7 @@ const FactCheckHub = () => {
         await supabase.from('metacognitive_matrix').insert([
           {
             student_id: user.id,
-            target_major: targetCareerDisplay || vocationalResult.academyName || 'Học nghề thực chiến',
+            target_major: targetCareerDisplay || vocationalResult.academyName || 'Học nghề thực hành',
             evidence: profileSummary,
             verified_sources: `Thẩm định ${trainingTypeLabel} & Kiểm toán kinh tế thực tế`,
             risk_analysis: vocationalResult.deficit > 0 
@@ -261,7 +261,7 @@ const FactCheckHub = () => {
       localStorage.setItem('cbas_step4_active_stage', '4A');
       localStorage.setItem('cbas_step4_active_triage', 'PHAN_LUONG_1');
     } catch (e) {}
-    alert("🎉 Hồ sơ thẩm định học nghề thực chiến đã được xác thực thành công! Đang chuyển sang Bước 4 (Tham vấn 1-1).");
+    alert("🎉 Hồ sơ thẩm định học nghề thực hành đã được xác thực thành công! Đang chuyển sang Bước 4 (Tham vấn 1-1).");
     navigate('/student/counseling');
   };
 
@@ -377,7 +377,7 @@ const FactCheckHub = () => {
         </div>
       )}
 
-      {/* THANH CHUYỂN PHÂN HỆ ĐÀO TẠO (ĐẠI HỌC vs HỌC NGHỀ THỰC CHIẾN) */}
+      {/* THANH CHUYỂN PHÂN HỆ ĐÀO TẠO (ĐẠI HỌC vs HỌC NGHỀ THỰC HÀNH) */}
       <div style={{ maxWidth: '850px', margin: '0 auto 16px auto', display: 'flex', gap: '8px', padding: '6px', background: '#f1f5f9', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <button
           type="button"
@@ -425,7 +425,7 @@ const FactCheckHub = () => {
           }}
         >
           <Scissors style={{ width: '18px', height: '18px' }} />
-          <span>Phân Hệ Học Nghề Thực Chiến (Bài Toán Kinh Tế)</span>
+          <span>Phân Hệ Học Nghề Thực Hành (Bài Toán Kinh Tế)</span>
         </button>
       </div>
 

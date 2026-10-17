@@ -2148,7 +2148,7 @@ const CounselingBooking = () => {
                   </p>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-3 pt-2 border-t border-indigo-100 italic">
-                  Hỏi cách phân bổ thời gian ôn tập và kỹ năng phòng thi thực chiến để tối ưu hóa điểm số môn thế mạnh.
+                  Hỏi cách phân bổ thời gian ôn tập và kỹ năng phòng thi thực tế để tối ưu hóa điểm số môn thế mạnh.
                 </p>
               </div>
 
@@ -2490,7 +2490,7 @@ const CounselingBooking = () => {
                   <span>Thực Tế Tuyển Dụng & Đãi Ngộ</span>
                 </div>
                 <p className="text-slate-700 leading-relaxed font-medium">
-                  "Mức lương khởi điểm thực tế của cử nhân mới tốt nghiệp không hào nhoáng như trên mạng. Nhà tuyển dụng đòi hỏi kỹ năng thực chiến và kinh nghiệm dự án thực tế."
+                  "Mức lương khởi điểm thực tế của cử nhân mới tốt nghiệp không hào nhoáng như trên mạng. Nhà tuyển dụng đòi hỏi kỹ năng chuyên môn thực tế và kinh nghiệm dự án cụ thể."
                 </p>
                 <p className="text-[11px] text-slate-500 italic pt-1 border-t border-slate-200">
                   ➔ Góc khuất: Cần sớm đi thực tập và tích lũy portfolio năng lực.

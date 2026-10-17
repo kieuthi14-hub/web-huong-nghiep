@@ -626,6 +626,19 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     cleaned = cleaned.replace(pattern, replace).trim();
   });
 
+  // 3b. QUY TẮC SƯ PHẠM: LOẠI BỎ BIỆT NGỮ THỊ TRƯỜNG ("THỰC CHIẾN")
+  cleaned = cleaned
+    .replace(/(?:những\s+)?yêu\s+cầu\s+khắt\s+khe\s+về\s+kỹ\s+năng\s+thực\s+chiến/gi, 'những yêu cầu khắt khe về năng lực thực hành nghề nghiệp')
+    .replace(/kỹ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
+    .replace(/kĩ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
+    .replace(/kinh\s*nghiệm\s+thực\s*chiến/gi, 'kinh nghiệm thực tế')
+    .replace(/dự\s*án\s+thực\s*chiến/gi, 'dự án thực tế')
+    .replace(/học\s+thực\s*chiến/gi, 'rèn luyện thực tế')
+    .replace(/môi\s*trường\s+thực\s*chiến/gi, 'môi trường làm việc thực tế')
+    .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
+    .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
+    .replace(/thực\s*chiến/gi, 'thực tế');
+
   // 4. QUY TẮC 1: XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO (CHỐNG LỖI HIỂN THỊ CHUỖI RỖNG / "tại [chưa biết]")
   const isVocational = isVocationalTrack(effectiveCareer, userText, targetSchool);
   const isUniClarification = hasUniversityClarification(userText);
@@ -950,7 +963,27 @@ export default function Step2SocraticAgent() {
     }
 
     if (Array.isArray(savedMessages) && savedMessages.length > 0) {
-      setMessages(savedMessages);
+      const sanitizedSaved = savedMessages.map(m => {
+        if (m.role === 'model' && m.text && /thực\s*chiến/i.test(m.text)) {
+          return {
+            ...m,
+            text: m.text
+              .replace(/(?:những\s+)?yêu\s+cầu\s+khắt\s+khe\s+về\s+kỹ\s+năng\s+thực\s+chiến/gi, 'những yêu cầu khắt khe về năng lực thực hành nghề nghiệp')
+              .replace(/kỹ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
+              .replace(/kĩ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
+              .replace(/kinh\s*nghiệm\s+thực\s*chiến/gi, 'kinh nghiệm thực tế')
+              .replace(/dự\s*án\s+thực\s*chiến/gi, 'dự án thực tế')
+              .replace(/học\s+thực\s*chiến/gi, 'rèn luyện thực tế')
+              .replace(/môi\s*trường\s+thực\s*chiến/gi, 'môi trường làm việc thực tế')
+              .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
+              .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
+              .replace(/thực\s*chiến/gi, 'thực tế')
+          };
+        }
+        return m;
+      });
+      setMessages(sanitizedSaved);
+      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(sanitizedSaved)); } catch (e) {}
       const userMsgCount = savedMessages.filter(m => m.role === 'user').length;
       const lastMsg = savedMessages[savedMessages.length - 1];
       const hasStep3InLast = Boolean(lastMsg?.role === 'model' && lastMsg?.text && (
@@ -1028,6 +1061,14 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
    - Khi học sinh thừa nhận "EM CŨNG KHÔNG RÕ" / "CHƯA RÕ" / CẢM TÍNH:
      + Khen ngợi sự trung thực, đối chất vào rủi ro "vỡ mộng" khi chọn nghề bằng cảm tính mà thiếu dữ liệu thực tế.
    - Chỉ khi học sinh NÓI RÕ VỀ MỨC LƯƠNG / LÀM GIÀU thì mới hỏi về mức thu nhập cạnh tranh trên thị trường.
+
+7. CHUẨN MỰC TỪ NGỮ SƯ PHẠM (TUYỆT ĐỐI CẤM BIỆT NGỮ THỊ TRƯỜNG "THỰC CHIẾN"):
+   - TUYỆT ĐỐI CẤM sử dụng từ "thực chiến", "kỹ năng thực chiến", "kinh nghiệm thực chiến", "dự án thực chiến" trong mọi phát ngôn của Thầy Socrates. Đây là biệt ngữ thương mại/tiếp thị của các khóa đào tạo ngắn hạn ngoài thị trường, không phù hợp với chuẩn mực học thuật, sư phạm của đề tài nghiên cứu KHKT.
+   - BẮT BUỘC thay thế bằng ngôn ngữ sư phạm chuẩn mực:
+     + Thay "kỹ năng thực chiến" bằng: "năng lực thực hành nghề nghiệp", "kỹ năng chuyên môn thực tế" hoặc "năng lực nghề nghiệp thực tế".
+     + Thay "kinh nghiệm thực chiến" bằng: "kinh nghiệm thực tế" hoặc "kinh nghiệm cọ xát thực tế".
+     + Thay "dự án thực chiến" bằng: "dự án thực tế" hoặc "sản phẩm thực tế".
+     + Thay "môi trường thực chiến" bằng: "môi trường làm việc thực tế".
 `;
 
   const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {

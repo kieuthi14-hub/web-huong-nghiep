@@ -305,7 +305,7 @@ export const CAREER_HOLLAND_PROFILES = [
       'tóc', 'tạo mẫu tóc', 'spa', 'thẩm mỹ', 'làm đẹp', 'salon', 'chăm sóc da', 'trang điểm', 'makeup'
     ],
     expectedCodes: ['A', 'R', 'E'],
-    expectedDesc: 'Nghệ thuật & Thực tế (A-R-E: Thẩm mỹ thị giác, kỹ năng khéo tay thực chiến, giao tiếp dịch vụ)',
+    expectedDesc: 'Nghệ thuật & Thực tế (A-R-E: Thẩm mỹ thị giác, kỹ năng khéo tay thực tế, giao tiếp dịch vụ)',
     workEnvironment: 'Salon, viện thẩm mỹ, spa cao cấp; đứng liên tục nhiều giờ, tiếp xúc với mỹ phẩm/hóa chất làm tóc và áp lực làm hài lòng khách hàng.',
     coreSkills: 'Đôi tay khéo léo tỉ mỉ, mắt thẩm mỹ phối màu và phom dáng, tư vấn tâm lý khách hàng, chịu áp lực phục vụ giờ cao điểm.',
     commonBlindSpots: 'Thấy nghề này kiếm tiền nhanh, hào nhoáng trên mạng; chưa lường trước đau lưng do đứng 8-10 tiếng và rủi ro hít phải hóa chất uốn/nhuộm liên tục.',
@@ -362,7 +362,7 @@ export const CAREER_HOLLAND_PROFILES = [
     expectedDesc: 'Quản lý & Xã hội (Giao tiếp thuyết phục, nhạy bén thị trường, đàm phán và chịu áp lực KPI)',
     workEnvironment: 'Môi trường cạnh tranh thương trường khốc liệt, tiếp xúc khách hàng liên tục, làm việc theo nhóm và chịu chỉ tiêu doanh số hàng tháng.',
     coreSkills: 'Kỹ năng thuyết trình, đàm phán thương lượng, nhạy cảm xu hướng tiêu dùng, chịu áp lực số liệu kinh doanh.',
-    commonBlindSpots: 'Bẫy danh xưng hào nhoáng "Giám đốc / Nhà quản trị"; chưa chuẩn bị tâm lý phải bắt đầu từ vị trí nhân viên bán hàng thực chiến chạy chỉ tiêu gắt gao.',
+    commonBlindSpots: 'Bẫy danh xưng hào nhoáng "Giám đốc / Nhà quản trị"; chưa chuẩn bị tâm lý phải bắt đầu từ vị trí nhân viên bán hàng trực tiếp chạy chỉ tiêu gắt gao.',
     socraticQuestions: [
       'Nếu trong 3 tháng liên tiếp em không đạt chỉ tiêu doanh số (KPI) và đối mặt với nguy cơ bị cắt thưởng hoặc khiển trách, em sẽ vượt qua thế nào?',
       'Em chọn Quản trị kinh doanh vì có tầm nhìn chiến lược thương mại cụ thể hay vì chưa biết chọn ngành nào nên chọn một ngành có vẻ "rộng"?'

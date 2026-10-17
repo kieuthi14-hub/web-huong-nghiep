@@ -203,7 +203,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
 
       // Bản tóm tắt hồ sơ đối chất nghề chuẩn CBAS
       const profileSummary = [
-        `[HỒ SƠ THẨM ĐỊNH NGHỀ THỰC CHIẾN - BƯỚC 3]`,
+        `[HỒ SƠ THẨM ĐỊNH HỌC NGHỀ THỰC HÀNH - BƯỚC 3]`,
         `• Loại hình đào tạo: ${trainingTypeLabel}`,
         `• Cơ sở/Trường mục tiêu: ${verifiedResult.academyName}`,
         `• Kiểm toán chi phí GĐ1: Học phí ${verifiedResult.tuitionFee}tr + Đồ nghề ${verifiedResult.toolkitCost}tr + Ăn ở ${verifiedResult.livingCost6Months}tr = Tổng ${verifiedResult.totalPhase1Cost.toFixed(1)}tr (Vốn gia đình: ${userSavings}tr | ${hasDeficit ? `Thâm hụt: -${deficit.toFixed(1)}tr - Cảnh báo nguy cơ đứt gãy việc học` : `Đủ vốn an toàn, dư +${Math.abs(deficit).toFixed(1)}tr`})`,
@@ -214,7 +214,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
       const step3Evidence = {
         cutoff_score: isFormal 
           ? 'Xét tuyển học bạ THPT (Trường CĐ/TC chính quy)' 
-          : 'Học nghề thực chiến (Không xét điểm chuẩn)',
+          : 'Học nghề thực hành (Không xét điểm chuẩn)',
         tuition: `${verifiedResult.tuitionFee} triệu (Tổng GĐ1: ${verifiedResult.totalPhase1Cost.toFixed(1)} triệu)`,
         employment_rate: `Lương khởi điểm: ${verifiedResult.startingSalary} tr/tháng | Tích lũy: ${verifiedResult.experienceYearsBeforeOpening} | Vốn mở tiệm: ${verifiedResult.startupBudgetEstimate} triệu`,
         vocational: verifiedResult,
@@ -238,7 +238,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
           admissionQuota: step3Evidence.employment_rate,
           completedAt: step3Evidence.timestamp
         }));
-        const currentMajor = profile?.target_career || profile?.targetMajor || 'Học nghề thực chiến';
+        const currentMajor = profile?.target_career || profile?.targetMajor || 'Học nghề thực hành';
         const currentSchool = verifiedResult.academyName || profile?.target_university || profile?.targetSchool || trainingTypeLabel;
         localStorage.setItem("cbas_step3_triage", JSON.stringify({
           triageResult: 'In-depth (20 phút)',
@@ -267,9 +267,9 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
           await supabase.from('metacognitive_matrix').insert([
             {
               student_id: activeUserId,
-              target_major: profile?.target_career || verifiedResult.academyName || 'Học nghề thực chiến',
+              target_major: profile?.target_career || verifiedResult.academyName || 'Học nghề thực hành',
               evidence: profileSummary,
-              verified_sources: `Thẩm định ${trainingTypeLabel} & Kiểm toán kinh tế nghề thực chiến`,
+              verified_sources: `Thẩm định ${trainingTypeLabel} & Kiểm toán kinh tế học nghề thực hành`,
               risk_analysis: hasDeficit 
                 ? `Cảnh báo thâm hụt tài chính -${deficit.toFixed(1)} triệu VNĐ (Nguy cơ đứt gãy việc học). Cần phương án vừa học vừa làm hoặc giãn tiến độ đóng học phí.` 
                 : 'Ngân sách học tập cân đối an toàn trong hạn mức vốn hiện có của gia đình.',
@@ -302,7 +302,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
       {/* Header Phân hệ */}
       <div className="flex items-center space-x-2.5 mb-2">
         <span className="px-2.5 py-1 bg-amber-500 text-slate-950 text-xs font-black rounded uppercase tracking-wide">
-          PHÂN HỆ HỌC NGHỀ THỰC CHIẾN
+          PHÂN HỆ HỌC NGHỀ THỰC HÀNH
         </span>
         <h2 className="text-xl font-bold text-amber-400">BƯỚC 3: THẨM ĐỊNH NGHỀ & BÀI TOÁN KINH TẾ</h2>
       </div>
@@ -347,7 +347,7 @@ export default function Step3VocationalVerification({ profile, onComplete }) {
             <Scissors className={`w-5 h-5 flex-shrink-0 mt-0.5 ${!isFormal ? 'text-amber-400' : 'text-slate-500'}`} />
             <div>
               <div className="font-bold text-sm text-white">Cơ sở đào tạo tư nhân / Salon</div>
-              <div className="text-xs text-slate-400 mt-0.5">Truyền nghề thực chiến • Học việc tại chỗ • Yêu cầu hợp đồng tay nghề</div>
+              <div className="text-xs text-slate-400 mt-0.5">Truyền nghề thực hành • Học việc tại chỗ • Yêu cầu hợp đồng tay nghề</div>
             </div>
           </button>
         </div>

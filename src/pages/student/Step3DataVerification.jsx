@@ -633,7 +633,7 @@ export default function Step3DataVerification({
               {[
                 { id: 'theory_only', label: 'Chương trình đào tạo nặng lý thuyết sách vở, thiếu kỹ năng nghề thực hành' },
                 { id: 'oversupply', label: 'Nhiều trường mở ngành ồ ạt dẫn đến cung vượt quá cầu thực tế của doanh nghiệp' },
-                { id: 'lacking_skills', label: 'Sinh viên thiếu ngoại ngữ và kỹ năng ứng dụng công nghệ/AI thực chiến' },
+                { id: 'lacking_skills', label: 'Sinh viên thiếu ngoại ngữ và kỹ năng ứng dụng công nghệ/AI vào thực tế' },
                 { id: 'low_adaptability', label: 'Kỳ vọng mức lương quá cao, không chấp nhận bắt đầu từ vị trí cơ bản' }
               ].map((item) => (
                 <label 
