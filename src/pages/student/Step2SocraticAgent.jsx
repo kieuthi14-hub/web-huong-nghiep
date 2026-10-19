@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import StepProgressHeader from '../../components/common/StepProgressHeader';
+import { resetStepData } from '../../utils/interventionProgress';
 
 // HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
 export function isUndecidedOrVague(career) {
@@ -361,7 +363,7 @@ export function processStudentMessage(message, chatStage, studentProfile) {
   const lowerMsg = (message || '').toLowerCase().trim();
   const cleanGreeting = lowerMsg.replace(/[!.,?~]/g, '');
 
-  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || 'Sư phạm';
+  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || '';
   const targetUniv = studentProfile?.target_university || studentProfile?.targetSchool || '';
   const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '5';
   const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'AEI';
@@ -802,6 +804,7 @@ export default function Step2SocraticAgent() {
     }
   });
 
+  const [isMissingStep1, setIsMissingStep1] = useState(false);
   const maxStages = 4;
   const isReadyForStep3 = chatStage === 4 && (isCompleted || isChatFinished);
   const messagesEndRef = useRef(null);
@@ -829,16 +832,34 @@ export default function Step2SocraticAgent() {
 
     let anchor = null;
     try {
-      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
+      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor");
       if (rawAnchor) anchor = JSON.parse(rawAnchor);
     } catch (e) {}
 
+    const rawMajor = (userProfile?.targetMajor || anchor?.target_career || anchor?.target_major || anchor?.targetMajor || "").trim();
+    const hasStep1Data = Boolean(rawMajor || userProfile?.hollandCode || anchor?.holland_code);
+
+    // NẾU HỌC SINH CHƯA LÀM HOẶC VỪA BẤM LÀM LẠI BƯỚC 1: KHÔNG TỰ BỊA ĐẶT DỮ LIỆU CŨ ("Sư phạm")
+    if (!hasStep1Data) {
+      setIsMissingStep1(true);
+      setMessages([]);
+      try {
+        localStorage.removeItem("cbas_step2_messages");
+        localStorage.removeItem("cbas_step2_round");
+        localStorage.removeItem("cbas_step2_completed");
+        localStorage.removeItem("cbas_step2_telemetry");
+        localStorage.removeItem("cbas_step2_anchor_fingerprint");
+      } catch (e) {}
+      return;
+    }
+    setIsMissingStep1(false);
+
     const hollandCode = userProfile?.hollandCode || anchor?.holland_code || anchor?.hollandCode || "AEI";
-    const targetMajor = userProfile?.targetMajor || anchor?.target_career || anchor?.targetMajor || "Sư phạm";
-    const targetSchool = userProfile?.targetSchool || anchor?.target_university || anchor?.targetSchool || "";
-    const reason = userProfile?.reason || anchor?.source_of_influence || anchor?.reason || anchor?.choice_source || "Em thích từ nhỏ";
+    const targetMajor = rawMajor;
+    const targetSchool = (userProfile?.targetSchool || anchor?.target_university || anchor?.targetSchool || "").trim();
+    const reason = (userProfile?.reason || anchor?.source_of_influence || anchor?.reason || anchor?.choice_source || "").trim();
     const initialConfidence = userProfile?.initialConfidence ?? (anchor?.confidence_score ? Number(anchor.confidence_score) : 5);
-    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || "10 - 15 triệu/tháng";
+    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || "";
 
     // Thu thập các chỉ số học bạ và điểm chuẩn để kích hoạt Dynamic Adaptive Trigger
     let gpa_A00 = 25.0;
@@ -940,12 +961,32 @@ export default function Step2SocraticAgent() {
     };
     setStudentProfile(resolvedProfile);
 
+    // KIỂM TRA FINGERPRINT ĐỂ PHÁT HIỆN SỰ THAY ĐỔI MỎ NEO TỪ BƯỚC 1
+    const currentFingerprint = `${targetMajor}|${targetSchool}|${reason}|${hollandCode}`.toLowerCase().trim();
+    const savedFingerprint = localStorage.getItem("cbas_step2_anchor_fingerprint");
+
     let savedMessages = null;
     let savedCompleted = false;
+
+    if (savedFingerprint && savedFingerprint !== currentFingerprint) {
+      // Khi học sinh đã thay đổi ngành hoặc lý do ở Bước 1, xóa toàn bộ hội thoại cũ
+      try {
+        localStorage.removeItem("cbas_step2_messages");
+        localStorage.removeItem("cbas_step2_round");
+        localStorage.removeItem("cbas_step2_completed");
+        localStorage.removeItem("cbas_step2_telemetry");
+        localStorage.removeItem("cbas_step2_reflection");
+      } catch (e) {}
+    } else {
+      try {
+        const rawMsgs = localStorage.getItem("cbas_step2_messages");
+        if (rawMsgs) savedMessages = JSON.parse(rawMsgs);
+        savedCompleted = localStorage.getItem("cbas_step2_completed") === "true";
+      } catch (e) {}
+    }
+
     try {
-      const rawMsgs = localStorage.getItem("cbas_step2_messages");
-      if (rawMsgs) savedMessages = JSON.parse(rawMsgs);
-      savedCompleted = localStorage.getItem("cbas_step2_completed") === "true";
+      localStorage.setItem("cbas_step2_anchor_fingerprint", currentFingerprint);
     } catch (e) {}
 
     const isBranchB = isUndecidedOrVague(targetMajor);
@@ -1389,10 +1430,10 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 
   // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN BỘ NGUYÊN TẮC (BẢO HIỂM 100% TUÂN THỦ NGUYÊN TẮC CÂN BẰNG)
   const generateHeuristicFallback = (round, profile, userText = '', specialInstruction = null) => {
-    const career = profile?.targetMajor || profile?.target_career || "Sư phạm";
+    const career = profile?.targetMajor || profile?.target_career || "ngành nghề mục tiêu";
     const rawSchool = profile?.targetSchool || profile?.target_university || "";
     const holland = profile?.hollandCode || profile?.holland_code || "AEI";
-    const reason = profile?.reason || profile?.source_of_influence || "Em thích từ nhỏ";
+    const reason = profile?.reason || profile?.source_of_influence || "nguyện vọng bản thân";
     const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
     const isBranchB = isUndecidedOrVague(career);
 
@@ -1522,7 +1563,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
   // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
   const callGeminiSocratic = async (historyMessages, userText, stage, specialInstruction = null) => {
     const goalShift = detectGoalShift(userText);
-    const curMajor = studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm';
+    const curMajor = studentProfile?.targetMajor || studentProfile?.target_career || 'ngành mục tiêu';
     const effectiveMajor = (goalShift && goalShift.newMajor) ? goalShift.newMajor : (studentProfile?.shiftedMajor || curMajor);
     const effectiveProfile = {
       ...studentProfile,
@@ -1714,13 +1755,13 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       if (rawAnchor) anchor = JSON.parse(rawAnchor);
     } catch (e) {}
 
-    const targetCareer = userProfile?.targetMajor || anchor?.target_career || studentProfile?.targetMajor || studentProfile?.target_career || 'Sư phạm';
+    const targetCareer = userProfile?.targetMajor || anchor?.target_career || studentProfile?.targetMajor || studentProfile?.target_career || 'Chưa xác định';
     const rawUniv = userProfile?.targetSchool || anchor?.target_university || studentProfile?.targetSchool || studentProfile?.target_university || '';
     const isVocationalExport = isVocationalTrack(targetCareer, '', rawUniv);
     const targetUniv = formatSchoolName(rawUniv, isVocationalExport);
     const confidence = userProfile?.initialConfidence ?? anchor?.confidence_score ?? studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? '5';
     const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || studentProfile?.expectedIncome || '10 - 15 triệu/tháng';
-    const reason = userProfile?.reason || anchor?.source_of_influence || studentProfile?.reason || 'Em thích từ nhỏ';
+    const reason = userProfile?.reason || anchor?.source_of_influence || studentProfile?.reason || 'Chưa ghi nhận lý do';
     const holland = userProfile?.hollandCode || anchor?.holland_code || studentProfile?.hollandCode || studentProfile?.holland_code || 'AEI';
     const dateStr = new Date().toLocaleString('vi-VN');
 
@@ -1821,12 +1862,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
   // 4.4. Bắt đầu lại cuộc trò chuyện từ đầu (Phục vụ thử nghiệm)
   const handleResetSession = () => {
     if (window.confirm("Em có muốn xóa dữ liệu phiên hiện tại và bắt đầu lại cuộc trò chuyện từ Giai đoạn 1 không?")) {
-      localStorage.removeItem("cbas_step2_messages");
-      localStorage.removeItem("cbas_step2_round");
-      localStorage.removeItem("cbas_step2_completed");
-      localStorage.removeItem("cbas_step2_telemetry");
-      localStorage.removeItem("cbas_step2_primary_bias");
-      localStorage.removeItem("cbas_step2_bias_rule");
+      resetStepData(2);
       window.location.reload();
     }
   };
@@ -2021,10 +2057,45 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     <div style={{ maxWidth: '920px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '88vh', fontFamily: 'sans-serif' }}>
       <StepProgressHeader 
         currentStep={2} 
+        onResetStep={() => { resetStepData(2); window.location.reload(); }}
         title="Bước 2: AI Tham Vấn Phản Tư (Socratic Agent)" 
         subtitle="Đối thoại phản biện cùng Trợ lý AI để bóc tách điểm mù tư duy và bẫy tâm lý chọn nghề." 
       />
       
+      {isMissingStep1 ? (
+        <div style={{ flex: 1, padding: '40px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+          <div style={{ maxWidth: '540px', width: '100%', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '36px 24px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', fontSize: '26px' }}>
+              ⚠️
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
+              Em chưa hoàn thành Bước 1
+            </h3>
+            <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
+              Để Trợ lý AI Socrates có dữ liệu bộc lộ mỏ neo và thiên hướng nghề nghiệp cá nhân hóa chính xác cho em, em cần hoàn thành <strong>Bước 1 (Trắc nghiệm Holland RIASEC & Khai báo Mỏ neo T₀)</strong> trước.
+            </p>
+            <Link
+              to="/student/holland"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '11px 26px',
+                background: '#4f46e5',
+                color: '#ffffff',
+                fontWeight: '700',
+                fontSize: '13.5px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 4px rgba(79, 70, 229, 0.2)'
+              }}
+            >
+              <span>👉 Bắt đầu Bước 1 ngay</span>
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* CSS CHO CHẾ ĐỘ IN / LƯU FILE PDF */}
       <style>{`
         @media print {
@@ -2501,6 +2572,8 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           </button>
         </form>
       </div>
+        </>
+      )}
 
     </div>
   );

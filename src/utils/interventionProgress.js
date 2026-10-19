@@ -239,12 +239,24 @@ export const resetStepData = (stepNumber) => {
         localStorage.removeItem('userAnchorData')
         localStorage.removeItem('cbas_anchor_data')
         localStorage.removeItem('career_initial_anchor')
+        localStorage.removeItem('cbas_step1_completed')
+        localStorage.removeItem('cbas_step1_initial_profile')
+        localStorage.removeItem('cbas_holland_answers')
+        localStorage.removeItem('cbas_holland_result')
+        // Khi làm lại Bước 1 (mỏ neo ban đầu), toàn bộ các bước sau (2, 3, 4, 5) phải được làm lại theo
+        resetStepData(2)
         break
       case 2:
         localStorage.removeItem('cbas_step2_messages')
         localStorage.removeItem('cbas_step2_round')
         localStorage.removeItem('cbas_step2_completed')
         localStorage.removeItem('cbas_step2_telemetry')
+        localStorage.removeItem('cbas_step2_primary_bias')
+        localStorage.removeItem('cbas_step2_bias_rule')
+        localStorage.removeItem('cbas_step2_anchor_fingerprint')
+        localStorage.removeItem('cbas_step2_reflection')
+        // Khi làm lại Bước 2 (đối thoại phản tư), toàn bộ các bước sau (3, 4, 5) phải được làm lại theo
+        resetStepData(3)
         break
       case 3:
         localStorage.removeItem('cbas_step3_evidence')
@@ -253,6 +265,8 @@ export const resetStepData = (stepNumber) => {
         localStorage.removeItem('cbas_score_gap')
         localStorage.removeItem('cbas_step3_vocational')
         localStorage.removeItem('cbas_step3_reflection')
+        // Khi làm lại Bước 3 (đối chứng số liệu), các bước sau (4, 5) phải được làm lại theo
+        resetStepData(4)
         break
       case 4:
         localStorage.removeItem('cbas_step4_feedback')
@@ -275,6 +289,8 @@ export const resetStepData = (stepNumber) => {
             }
           })
         } catch (e) {}
+        // Khi làm lại Bước 4, Bước 5 phải được làm lại theo
+        resetStepData(5)
         break
       case 5:
         localStorage.removeItem('cbas_step5_action_plan')

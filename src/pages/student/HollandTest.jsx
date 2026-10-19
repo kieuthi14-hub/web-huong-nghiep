@@ -6,6 +6,7 @@ import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import HollandChart from '../../components/common/HollandChart'
 import StepProgressHeader from '../../components/common/StepProgressHeader'
+import { resetStepData, resetAllStepsData } from '../../utils/interventionProgress'
 import { 
   ClipboardList, 
   ArrowLeft, 
@@ -808,14 +809,14 @@ const HollandTest = () => {
   const [toast, setToast] = useState(null)
 
   // Trạng thái Form Mỏ Neo Nhận thức (Initial Anchor - Chuẩn ViSEF 2026: 4 trường bắt buộc)
-  const [targetMajor, setTargetMajor] = useState('Sư phạm')
-  const [targetSchool, setTargetSchool] = useState('ĐH Quy Nhơn')
-  const [targetUniversity, setTargetUniversity] = useState('ĐH Quy Nhơn')
-  const [reason, setReason] = useState('Em thích từ nhỏ')
-  const [choiceSource, setChoiceSource] = useState('Đam mê từ nhỏ')
+  const [targetMajor, setTargetMajor] = useState('')
+  const [targetSchool, setTargetSchool] = useState('')
+  const [targetUniversity, setTargetUniversity] = useState('')
+  const [reason, setReason] = useState('')
+  const [choiceSource, setChoiceSource] = useState('')
   const [customChoiceSource, setCustomChoiceSource] = useState('')
-  const [confidenceScore, setConfidenceScore] = useState(8) // 1-10
-  const [expectedIncome, setExpectedIncome] = useState('15 - 20 triệu/tháng')
+  const [confidenceScore, setConfidenceScore] = useState(7) // 1-10
+  const [expectedIncome, setExpectedIncome] = useState('')
   const [calculatedRiasecCode, setCalculatedRiasecCode] = useState('')
   
   // Trạng thái kết quả sau khi nộp
@@ -846,7 +847,7 @@ const HollandTest = () => {
 
   // Khôi phục về ngành mục tiêu mỏ neo T0 ban đầu
   const handleResetToInitialMajor = (initialMajor) => {
-    const original = initialMajor || result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Sư phạm'
+    const original = initialMajor || result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Ngành mục tiêu'
     setActiveCompareMajor('')
     setCustomCompareInput('')
     setToast({ 
@@ -1008,7 +1009,7 @@ const HollandTest = () => {
       return
     }
 
-    const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
+    const finalSchool = (targetSchool || targetUniversity || '').trim()
     const trimmedReason = reason.trim()
     const anchorReason = classifyAnchorReason(trimmedReason, Number(confidenceScore))
     const anchorQuote = trimmedReason
@@ -1037,6 +1038,14 @@ const HollandTest = () => {
       localStorage.setItem("cbas_user_profile", JSON.stringify(tempProfile))
       localStorage.setItem("userAnchorData", JSON.stringify(tempAnchorData))
       localStorage.setItem("cbas_anchor_data", JSON.stringify(tempAnchorData))
+
+      // Kiểm tra fingerprint: Nếu anchor thay đổi, xóa hội thoại cũ ở Bước 2
+      const currentFingerprint = `${tempProfile.targetMajor}|${finalSchool}|${trimmedReason}`.toLowerCase().trim()
+      const savedFingerprint = localStorage.getItem('cbas_step2_anchor_fingerprint')
+      if (savedFingerprint && savedFingerprint !== currentFingerprint) {
+        resetStepData(2)
+      }
+      localStorage.setItem('cbas_step2_anchor_fingerprint', currentFingerprint)
     } catch(e) {}
 
     setToast({ type: 'success', message: '✓ Đã ghi nhận Mỏ neo chủ quan (T₀)! Tiếp tục thực hiện 30 câu hỏi trắc nghiệm RIASEC.' })
@@ -1101,7 +1110,7 @@ const HollandTest = () => {
     try {
       const { scores, primaryCode } = calculateRiasecCode()
       const effectiveCode = primaryCode || calculatedRiasecCode || "AEI"
-      const finalSchool = (targetSchool || targetUniversity || 'ĐH Quy Nhơn').trim()
+      const finalSchool = (targetSchool || targetUniversity || '').trim()
 
       const trimmedReason = reason.trim()
       const rawCodes = effectiveCode.split('').filter(c => ['R','I','A','S','E','C'].includes(c))
@@ -1154,6 +1163,19 @@ const HollandTest = () => {
         holland_analysis: analysisText
       }))
 
+      // Đánh dấu hoàn thành Bước 1
+      localStorage.setItem("cbas_step1_completed", "true")
+
+      // Cập nhật fingerprint mỏ neo và xóa cache cũ Bước 2 nếu thay đổi
+      try {
+        const currentFingerprint = `${userProfile.targetMajor}|${finalSchool}|${trimmedReason}|${effectiveCode}`.toLowerCase().trim()
+        const savedFingerprint = localStorage.getItem('cbas_step2_anchor_fingerprint')
+        if (savedFingerprint && savedFingerprint !== currentFingerprint) {
+          resetStepData(2)
+        }
+        localStorage.setItem('cbas_step2_anchor_fingerprint', currentFingerprint)
+      } catch (e) {}
+
       // Lưu vào CSDL Supabase (nếu có kết nối)
       try {
         if (user) {
@@ -1204,11 +1226,11 @@ const HollandTest = () => {
         if (computed?.scores) effectiveScores = computed.scores
       }
 
-      const finalMajor = (targetMajor || '').trim() || (result?.anchorData?.target_major || result?.anchorData?.targetMajor || '').trim() || "Sư phạm"
-      const finalSchool = (targetSchool || targetUniversity || result?.anchorData?.target_university || "ĐH Quy Nhơn").trim()
-      const finalReason = (reason || '').trim() || (result?.anchorData?.choice_source || result?.anchorData?.reason || '').trim() || "Mong muốn có việc làm và thu nhập ổn định"
+      const finalMajor = (targetMajor || '').trim() || (result?.anchorData?.target_major || result?.anchorData?.targetMajor || '').trim()
+      const finalSchool = (targetSchool || targetUniversity || result?.anchorData?.target_university || "").trim()
+      const finalReason = (reason || '').trim() || (result?.anchorData?.choice_source || result?.anchorData?.reason || '').trim()
       const finalConfidence = Number(confidenceScore) || Number(result?.anchorData?.confidence_score_initial) || 5
-      const finalExpectedIncome = expectedIncome || result?.anchorData?.expected_income || "15 - 20 triệu/tháng"
+      const finalExpectedIncome = expectedIncome || result?.anchorData?.expected_income || ""
 
       const rawCodes = String(effectiveCode).split('').filter(c => ['R','I','A','S','E','C'].includes(c))
       const analysisText = analyzeHollandCompatibility(finalMajor, rawCodes)
@@ -1262,6 +1284,17 @@ const HollandTest = () => {
           compatibility_status: compatStatus,
           holland_analysis: analysisText
         }))
+
+        // Đánh dấu hoàn thành bước 1
+        localStorage.setItem("cbas_step1_completed", "true")
+
+        // Kiểm tra fingerprint mỏ neo: Nếu mỏ neo thay đổi so với lần trước, xóa sạch dữ liệu hội thoại cũ ở Bước 2
+        const currentFingerprint = `${finalMajor}|${finalSchool}|${finalReason}|${effectiveCode}`.toLowerCase().trim()
+        const savedFingerprint = localStorage.getItem('cbas_step2_anchor_fingerprint')
+        if (savedFingerprint && savedFingerprint !== currentFingerprint) {
+          resetStepData(2)
+        }
+        localStorage.setItem('cbas_step2_anchor_fingerprint', currentFingerprint)
       } catch (storageErr) {
         console.warn("Storage warning in saveStep1DataAndNext:", storageErr)
       }
@@ -1301,6 +1334,7 @@ const HollandTest = () => {
 
   const handleResetAll = () => {
     try {
+      resetStepData(1)
       localStorage.removeItem('cbas_user_profile')
       localStorage.removeItem('userAnchorData')
       localStorage.removeItem('cbas_anchor_data')
@@ -1354,6 +1388,7 @@ const HollandTest = () => {
       {/* THANH TIẾN TRÌNH 5 BƯỚC VISEF CBAS */}
       <StepProgressHeader 
         currentStep={1} 
+        onResetStep={handleResetAll}
         title="Bước 1: Trắc Nghiệm Thiên Hướng (Holland RIASEC) & Mỏ Neo T0" 
         subtitle="Ghi nhận xuất phát điểm nhận thức ban đầu (Initial Anchor) để tạo nguyên liệu cho AI phản biện ở bước sau." 
       />
@@ -2016,7 +2051,7 @@ const HollandTest = () => {
 
             {/* Đánh giá độ tương thích & Cảnh báo độ vênh nhận thức (Hệ thống Khoa học Hành vi ViSEF CBAS 2026) */}
             {(() => {
-              const initialAnchorMajor = result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Sư phạm';
+              const initialAnchorMajor = result?.anchorData?.target_major || result?.anchorData?.target_career || targetMajor || 'Ngành mục tiêu';
               const effectiveMajor = activeCompareMajor || initialAnchorMajor;
               const userRiasecArray = (result?.primaryCode || calculatedRiasecCode || 'AEI').split('').filter(c => ['R','I','A','S','E','C'].includes(c));
               const evalData = evaluateHollandCompatibility(effectiveMajor, userRiasecArray);
