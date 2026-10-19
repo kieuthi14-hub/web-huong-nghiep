@@ -44,9 +44,64 @@ import {
 } from '../../data/adaptiveCommitments';
 export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, DEFAULT_TRIANGLE_DATA, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content, buildAdaptiveTriadAndPlan };
 
+// GỢI Ý NHANH CÁC MỤC TIÊU HỌC TẬP THỰC TẾ THEO KHỐI LỚP (CHO HỌC SINH BẤM CHỌN 1 CHẠM)
+const QUICK_ACTION_CHIPS = {
+  10: {
+    item1: [
+      'Học chắc Toán & Tiếng Anh từ đầu năm',
+      'Mục tiêu điểm tổng kết từ 7.5 trở lên',
+      'Hoàn thành bài tập đầy đủ trước khi lên lớp'
+    ],
+    item2: [
+      'Tìm hiểu học phí & cơ hội việc làm của ngành',
+      'Học thêm từ vựng tiếng Anh chuyên ngành',
+      'Rèn kỹ năng thuyết trình & làm việc nhóm'
+    ],
+    item3: [
+      'Tự giác ngồi vào bàn học đúng giờ mỗi tối',
+      'Làm xong bài tập mới giải trí điện thoại',
+      'Dán bản cam kết này lên góc học tập'
+    ]
+  },
+  11: {
+    item1: [
+      'Mục tiêu điểm học bạ cả năm trên 8.0',
+      'Ôn chắc kiến thức các môn trong tổ hợp',
+      'Luyện làm các câu hỏi vận dụng cuối tuần'
+    ],
+    item2: [
+      'Tìm hiểu công việc thực tế của ngành nghề',
+      'Luyện nghe nói tiếng Anh 30 phút mỗi ngày',
+      'Tham gia ngày hội tư vấn tuyển sinh'
+    ],
+    item3: [
+      'Duy trì tự học nề nếp 1.5 giờ mỗi tối',
+      'Cuối mỗi tháng kiểm tra lại tiến độ ôn tập',
+      'Dán bản cam kết này lên góc học tập'
+    ]
+  },
+  12: {
+    item1: [
+      'Dành 1.5 - 2h mỗi tối luyện đề 3 môn tổ hợp',
+      'Ghi chép câu sai sau mỗi lần thi thử để kéo điểm',
+      'Ôn kỹ phần lý thuyết còn yếu'
+    ],
+    item2: [
+      'Tự học thêm tiếng Anh & kỹ năng tin học',
+      'Trao đổi thẳng thắn cùng ba mẹ về học phí',
+      'Tìm hiểu kỹ điểm chuẩn các trường 3 năm gần nhất'
+    ],
+    item3: [
+      'Hạn chế lướt điện thoại sau 10h tối',
+      'Giữ vững 3 nấc nguyện vọng (không đổi theo bạn bè)',
+      'Dán bản cam kết này trước bàn học để tự nhắc nhở'
+    ]
+  }
+};
+
 /**
  * BƯỚC 5: LỘ TRÌNH KẾ HOẠCH HÀNH ĐỘNG & TAM GIÁC NGUYỆN VỌNG
- * Action Plan Matrix & Commitment Device (Implementation Intentions - Gollwitzer)
+ * Kế hoạch hành động học tập & Bản cam kết dán góc học tập
  * Đề tài: Hệ thống can thiệp phản tư SocraCareer (CBAS Model) - ViSEF 2026
  */
 
@@ -492,6 +547,18 @@ export default function DebiasMatrix() {
     });
   };
 
+  // Bổ sung nhanh gợi ý hành động vào ô kế hoạch
+  const handleAppendChip = (field, chipText) => {
+    const itemIndex = field === 'item1' ? 0 : field === 'item2' ? 1 : 2;
+    const current = getPlanItem(selectedGrade, itemIndex) || '';
+    const trimmed = current.trim();
+    if (!trimmed) {
+      handleUpdatePlan(field, chipText);
+    } else if (!trimmed.includes(chipText)) {
+      handleUpdatePlan(field, `${trimmed}\n- ${chipText}`);
+    }
+  };
+
   // Chuyển đổi khối lớp nhanh và đồng bộ hóa Tam giác nguyện vọng & Ma trận ý định
   const handleGradeSwitch = (g) => {
     setSelectedGrade(g);
@@ -805,12 +872,12 @@ export default function DebiasMatrix() {
         <StepProgressHeader 
           currentStep={5}
           title="Bước 5: Lộ Trình Kế Hoạch Hành Động & Tam Giác Nguyện Vọng"
-          subtitle="Chuyển hóa nhận thức phản tư thành hành động cụ thể (Implementation Intentions). Xuất bản cam kết dán ở góc học tập."
+          subtitle="Chuyển hóa nhận thức phản tư thành hành động cụ thể. Xuất bản cam kết dán ở góc học tập."
         />
       </div>
 
       {/* =========================================================================
-          HEADER BƯỚC 5 (ACTION PLAN MATRIX & COMMITMENT DEVICE)
+          HEADER BƯỚC 5 (ACTION PLAN & COMMITMENTS)
           ========================================================================= */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm no-print">
         <div className="space-y-1.5">
@@ -822,11 +889,11 @@ export default function DebiasMatrix() {
               Lộ Trình Kế Hoạch Hành Động & Tam Giác Nguyện Vọng
             </h1>
             <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 hidden sm:inline-block">
-              Action Plan Matrix & Commitment Device
+              Kế hoạch hành động & Cam kết tự học
             </span>
           </div>
           <p className="text-xs text-slate-500">
-            Chuyển hóa nhận thức phản tư thành hành động cụ thể (Implementation Intentions). Xuất bản cam kết hành động dán ở góc học tập.
+            Chuyển hóa nhận thức phản tư thành kế hoạch học tập thực tế mỗi ngày. Xuất bản cam kết hành động dán ở góc học tập.
           </p>
         </div>
 
@@ -1183,17 +1250,17 @@ export default function DebiasMatrix() {
         </div>
 
         {/* =========================================================================
-            KHỐI 2: MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (CHUẨN HÓA 2 TRỤ CỘT)
+            KHỐI 2: 3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP THEO KHỐI LỚP
             ========================================================================= */}
         <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-5 print-sheet">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h2 className="font-bold text-sm text-slate-900 flex items-center gap-2">
                 <Target className="w-4 h-4 text-teal-600" />
-                <span>BẢNG MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (ACTION PLAN MATRIX)</span>
+                <span>3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP (MỖI NGÀY)</span>
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Xác lập mục tiêu học vấn tổ hợp & hệ thống kỹ năng nghề theo thuyết Implementation Intentions
+                Kế hoạch học tập cụ thể, gần gũi giúp em nâng cao điểm số, chuẩn bị kỹ năng và kiên định với mục tiêu đã chọn.
               </p>
             </div>
 
@@ -1252,57 +1319,135 @@ export default function DebiasMatrix() {
                   type="button"
                   onClick={handleResetToDefaultTemplate}
                   className="px-2.5 py-1 text-[11px] rounded bg-white text-teal-800 hover:bg-slate-50 hover:text-teal-900 border border-slate-200 transition flex items-center gap-1 cursor-pointer no-print font-medium"
-                  title="Khôi phục lại nội dung mẫu chuẩn ViSEF cho khối này"
+                  title="Khôi phục lại nội dung gợi ý mẫu cho khối lớp này"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Khôi phục mẫu ViSEF</span>
+                  <span>Khôi phục gợi ý mẫu</span>
                 </button>
               </div>
             );
           })()}
 
-          {/* Nội dung mục tiêu chi tiết 3 Mục chuẩn hóa 2 Trụ cột */}
+          {/* Nội dung mục tiêu chi tiết 3 Mục */}
           <div className="space-y-4 text-xs">
-            {/* Mục 1: Trọng tâm Học vấn */}
+            {/* Mục 1: Điểm số / Học vấn */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-teal-600 shrink-0" />
-                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}</span>
+              <label className="font-semibold text-slate-700 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num}</span>
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal no-print">(Em có thể chỉnh sửa trực tiếp)</span>
               </label>
               <textarea
-                rows={2}
+                rows={3}
                 value={getPlanItem(selectedGrade, 0)}
                 onChange={(e) => handleUpdatePlan('item1', e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
+                placeholder="Nhập mục tiêu nâng điểm hoặc bấm gợi ý bên dưới..."
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
+              {/* Quick chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5 no-print">
+                <span className="text-[11px] text-slate-500 font-medium mr-0.5">💡 Chọn nhanh:</span>
+                {(QUICK_ACTION_CHIPS[selectedGrade]?.item1 || []).map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleAppendChip('item1', chip)}
+                    className="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 text-slate-700 rounded-lg border border-slate-200 transition-all cursor-pointer font-medium active:scale-95"
+                  >
+                    + {chip}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleUpdatePlan('item1', '')}
+                  className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
+                  title="Xóa nội dung ô này để tự viết hoàn toàn"
+                >
+                  ✕ Xóa để tự viết
+                </button>
+              </div>
             </div>
 
             {/* Mục 2: Kỹ năng nghề / Thích ứng */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}</span>
+              <label className="font-semibold text-slate-700 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num}</span>
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal no-print">(Em có thể chỉnh sửa trực tiếp)</span>
               </label>
               <textarea
-                rows={2}
+                rows={3}
                 value={getPlanItem(selectedGrade, 1)}
                 onChange={(e) => handleUpdatePlan('item2', e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
+                placeholder="Nhập kỹ năng cần chuẩn bị hoặc bấm gợi ý bên dưới..."
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
+              {/* Quick chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5 no-print">
+                <span className="text-[11px] text-slate-500 font-medium mr-0.5">💡 Chọn nhanh:</span>
+                {(QUICK_ACTION_CHIPS[selectedGrade]?.item2 || []).map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleAppendChip('item2', chip)}
+                    className="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 text-slate-700 rounded-lg border border-slate-200 transition-all cursor-pointer font-medium active:scale-95"
+                  >
+                    + {chip}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleUpdatePlan('item2', '')}
+                  className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
+                  title="Xóa nội dung ô này để tự viết hoàn toàn"
+                >
+                  ✕ Xóa để tự viết
+                </button>
+              </div>
             </div>
 
-            {/* Mục 3: Vật neo kỷ luật / Giữ vững chiến lược */}
+            {/* Mục 3: Kỷ luật tự học & Kiên định mục tiêu */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-slate-700 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0" />
-                <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}</span>
+              <label className="font-semibold text-slate-700 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-cyan-700 shrink-0" />
+                  <span>{ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num}</span>
+                </span>
+                <span className="text-[11px] text-slate-400 font-normal no-print">(Em có thể chỉnh sửa trực tiếp)</span>
               </label>
               <textarea
-                rows={2}
+                rows={3}
                 value={getPlanItem(selectedGrade, 2)}
                 onChange={(e) => handleUpdatePlan('item3', e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors"
+                placeholder="Nhập kỷ luật bản thân hoặc bấm gợi ý bên dưới..."
+                className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
+              {/* Quick chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5 no-print">
+                <span className="text-[11px] text-slate-500 font-medium mr-0.5">💡 Chọn nhanh:</span>
+                {(QUICK_ACTION_CHIPS[selectedGrade]?.item3 || []).map((chip, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleAppendChip('item3', chip)}
+                    className="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-300 text-slate-700 rounded-lg border border-slate-200 transition-all cursor-pointer font-medium active:scale-95"
+                  >
+                    + {chip}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleUpdatePlan('item3', '')}
+                  className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
+                  title="Xóa nội dung ô này để tự viết hoàn toàn"
+                >
+                  ✕ Xóa để tự viết
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1647,15 +1792,15 @@ export default function DebiasMatrix() {
                 </div>
               </div>
 
-              {/* 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG (IMPLEMENTATION INTENTIONS) */}
+              {/* 4. 3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP */}
               <section className="border border-slate-200 rounded-lg p-3.5 mb-4 text-xs bg-white">
                 <div className="flex justify-between items-start border-b border-slate-200 pb-2 mb-2.5">
                   <div>
                     <h3 className="font-black text-slate-900 uppercase">
-                      🎯 MA TRẬN KẾ HOẠCH HÀNH ĐỘNG DÁN GÓC HỌC TẬP (IMPLEMENTATION INTENTIONS)
+                      🎯 3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP DÁN GÓC HỌC TẬP
                     </h3>
                     <p className="text-[10px] text-slate-600 italic mt-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.note || 'Thiết lập phản xạ hành vi kỷ luật để giải trừ ngộ nhận nghề'}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.note || 'Kế hoạch học tập cụ thể, thực tế giúp em kiên định với mục tiêu đã chọn'}
                     </p>
                   </div>
                   <span className="text-[10.5px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-right">
@@ -1664,13 +1809,13 @@ export default function DebiasMatrix() {
                 </div>
 
                 <div className="space-y-2.5">
-                  {/* Mục 1: Trọng tâm Học vấn */}
+                  {/* Mục 1: Điểm số / Học vấn */}
                   <div>
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num || '1. Kỷ luật Bứt phá Tổ hợp Xét tuyển:'}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num || '1. Mục tiêu nâng điểm các môn thi tổ hợp xét tuyển:'}
                     </span>
                     <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed"
+                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed whitespace-pre-line"
                       dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 0) }}
                     />
                   </div>
@@ -1678,21 +1823,21 @@ export default function DebiasMatrix() {
                   {/* Mục 2: Kế hoạch rèn luyện kỹ năng nghề */}
                   <div className="border-t border-dashed border-slate-200 pt-2">
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num || '2. Rèn luyện Kỹ năng Thích ứng:'}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num || '2. Rèn luyện kỹ năng thực tế & Trao đổi tài chính cùng gia đình:'}
                     </span>
                     <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
+                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
                       dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 1) }}
                     />
                   </div>
 
-                  {/* Mục 3: Vật neo kỷ luật */}
+                  {/* Mục 3: Kỷ luật tự học & Kiên định mục tiêu */}
                   <div className="border-t border-dashed border-slate-200 pt-2">
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
-                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num || '3. Vật neo Kỷ luật Hành vi:'}
+                      {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num || '3. Kỷ luật tự học & Kiên định mục tiêu (Không lung lay):'}
                     </span>
                     <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed"
+                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
                       dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 2) }}
                     />
                   </div>

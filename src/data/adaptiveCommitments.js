@@ -1,56 +1,56 @@
-// DỮ LIỆU CAM KẾT CHUẨN HÓA 2 TRỤ CỘT: HỌC VẤN TỔ HỢP & HỆ THỐNG KỸ NĂNG NGHỀ (CHUẨN KHKT QUỐC GIA)
+// DỮ LIỆU CAM KẾT HÀNH ĐỘNG THỰC TẾ & GẦN GŨI CHO HỌC SINH THPT
 export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
   10: {
-    badge: "Phân hóa: Khối 10 THPT (Củng cố Môn nền tảng & Kiểm soát chi phí đào tạo)",
-    note: "Giai đoạn định hình hệ đào tạo chính quy, kiểm soát chi phí thực tế và giữ vững môn học cốt lõi",
+    badge: "Khối 10 THPT (Xây chắc môn nền tảng & Định hình mục tiêu)",
+    note: "Giai đoạn củng cố 2 môn nền tảng (Toán & Ngoại ngữ) và xây dựng phương pháp tự học nề nếp",
     items: [
       {
-        num: "1. Kỷ luật Giữ vững Môn học Nền tảng:",
-        text: "NẾU bước vào giai đoạn lựa chọn cụm môn học chuyên sâu: THÌ tập trung tối đa để giữ vững điểm trung bình 2 môn cốt lõi (Toán và Ngoại ngữ) trên mức khá (7.5+), bảo đảm không bị thu hẹp phổ lựa chọn nghề nghiệp về sau."
+        num: "1. Xây chắc kiến thức 2 môn nền tảng (Toán & Ngoại ngữ):",
+        text: "Tập trung học tốt môn Toán và Tiếng Anh (đặt mục tiêu đạt từ 7.5 trở lên) để làm gốc rễ vững chắc, giúp bản thân có nhiều cơ hội lựa chọn tổ hợp xét tuyển và ngành nghề về sau."
       },
       {
-        num: "2. Kiểm soát Chi phí & Chuẩn hóa Lộ trình Nghề:",
-        text: "NẾU tiếp cận thông tin tuyển sinh hoặc các khóa đào tạo nghề tự do: THÌ luôn đối chứng dữ liệu thực tế về học phí và thời gian tập sự cùng Cố vấn, kiên quyết ưu tiên hệ đào tạo chính quy thay vì các quảng cáo ngắn hạn."
+        num: "2. Tìm hiểu thông tin ngành nghề chính quy & Học phí:",
+        text: "Chủ động tra cứu thông tin tuyển sinh chính quy, tìm hiểu kỹ mức học phí và môi trường đào tạo thực tế, tránh nghe theo các quảng cáo khóa học ngắn hạn không rõ ràng."
       },
       {
-        num: "3. Vật neo Hành vi:",
-        text: "Dán bản cam kết tại góc học tập; lấy mục tiêu nghề nghiệp đã được hiệu chuẩn làm động lực duy trì nền nếp học tập suốt năm học lớp 10."
+        num: "3. Rèn luyện nề nếp và tinh thần tự giác:",
+        text: "Dán bản cam kết này tại góc học tập; rèn thói quen hoàn thành bài tập về nhà trước khi giải trí và tích cực tham gia các hoạt động hướng nghiệp của trường."
       }
     ]
   },
   11: {
-    badge: "Phân hóa: Khối 11 THPT (Tích lũy Học bạ & Đối chứng Thực tế Nghề Nghiệp)",
-    note: "Giai đoạn then chốt cải thiện dải điểm học bạ, đối chứng áp lực thực tế và giải trừ ngộ nhận nghề",
+    badge: "Khối 11 THPT (Nâng cao điểm học bạ & Tích lũy kỹ năng)",
+    note: "Giai đoạn then chốt cải thiện điểm học bạ cả năm, trau dồi ngoại ngữ và tìm hiểu thực tế ngành nghề",
     items: [
       {
-        num: "1. Kỷ luật Nâng cao Điểm bạ Tổ hợp:",
-        text: "NẾU điểm tổng kết môn chuyên môn tổ hợp có xu hướng chững lại: THÌ thiết lập mục tiêu cải thiện dải điểm học bạ cả năm thêm từ +0.5 đến +0.8 điểm, tạo biên độ an toàn phục vụ phương thức xét tuyển sớm."
+        num: "1. Cải thiện điểm số học bạ các môn chính:",
+        text: "Tập trung nâng cao điểm tổng kết học bạ của các môn trong tổ hợp xét tuyển (mục tiêu tăng từ +0.5 đến +1.0 điểm), tạo lợi thế an toàn khi dùng phương thức xét tuyển học bạ sớm."
       },
       {
-        num: "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:",
-        text: "NẾU có cơ hội tiếp cận môi trường làm việc thực tế: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế tại các cơ sở chuyên môn trước khi chốt định hướng chuyên ngành lâu dài."
+        num: "2. Tìm hiểu thực tế nghề nghiệp & Tích lũy kỹ năng:",
+        text: "Chủ động tìm hiểu công việc thực tế của ngành nghề đã chọn, tích cực trau dồi ngoại ngữ (tiếng Anh giao tiếp) và tham gia các ngày hội tư vấn tuyển sinh để hiểu rõ ngành học."
       },
       {
-        num: "3. Vật neo Hành vi:",
-        text: "Dán bản cam kết tại góc học tập; định kỳ đối soát phong độ học tập cùng Cố vấn để chủ động điều chỉnh chiến lược theo từng học kỳ."
+        num: "3. Rèn luyện thói quen tự học có kỷ luật:",
+        text: "Dán bản cam kết này tại góc học tập; duy trì việc tự học ít nhất 1.5 giờ mỗi tối và định kỳ cuối mỗi tháng xem lại kết quả để kịp thời bổ sung kiến thức còn thiếu."
       }
     ]
   },
   12: {
-    badge: "Phân hóa: Khối 12 THPT (Quản trị Rủi ro Điểm sàn Thi TN THPT & An toàn Tuyển sinh)",
-    note: "Giai đoạn nước rút bứt phá dải điểm tổ hợp xét tuyển, tối ưu hóa an toàn thực địa và giữ vững 3 nấc",
+    badge: "Khối 12 THPT (Kế hoạch bứt phá điểm thi & Tự chủ tuyển sinh)",
+    note: "Giai đoạn nước rút ôn thi tốt nghiệp, nâng điểm tổ hợp xét tuyển và giữ vững 3 nấc nguyện vọng an toàn",
     items: [
       {
-        num: "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Thu hẹp Δ Điểm):",
-        text: "NẾU kết quả các đợt thi thử hoặc kiểm tra định kỳ 3 môn tổ hợp chưa tiệm cận ngưỡng an toàn: THÌ tập trung phân tích danh mục lỗi sai cố hữu và ưu tiên bổ khuyết dải điểm còn thiếu, quyết tâm bảo toàn ngưỡng điểm sàn của nguyện vọng cốt lõi."
+        num: "1. Mục tiêu nâng điểm các môn thi tổ hợp xét tuyển:",
+        text: "Mỗi ngày em dành ít nhất 1.5 - 2 giờ để luyện đề và làm bài tập 3 môn tổ hợp xét tuyển. Sau mỗi bài kiểm tra hoặc thi thử, em sẽ ghi lại các câu sai để ôn kỹ lại phần lý thuyết còn yếu và kéo điểm lên."
       },
       {
-        num: "2. Rèn luyện Năng lực Thích ứng Chuyên môn & Tài chính:",
-        text: "NẾU chuẩn bị bước vào giai đoạn xác nhận hồ sơ: THÌ chủ động tìm hiểu chương trình đào tạo chuyên ngành thực tế, đồng thời lập dự toán kinh phí đào tạo 3–4 năm tại cơ sở đào tạo mục tiêu để thống nhất phương án tài chính tự chủ cùng gia đình."
+        num: "2. Rèn luyện kỹ năng thực tế & Trao đổi tài chính cùng gia đình:",
+        text: "Chủ động tự học thêm tiếng Anh và kỹ năng tin học để chuẩn bị cho giảng đường. Tìm hiểu rõ mức học phí từng năm của trường đại học mục tiêu và trao đổi thẳng thắn cùng ba mẹ để chuẩn bị tài chính vững vàng."
       },
       {
-        num: "3. Vật neo Giữ vững Chiến lược (Chống hiệu ứng đám đông):",
-        text: "Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc (Thử thách — Vừa sức — Bảo toàn), không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh."
+        num: "3. Kỷ luật tự học & Kiên định mục tiêu (Không lung lay):",
+        text: "Dán bản cam kết này trước bàn học để tự nhắc nhở bản thân mỗi ngày; hạn chế lướt điện thoại sau 10h tối. Kiên định giữ vững 3 nấc nguyện vọng đã chọn, không tự ý đổi ngành theo bạn bè vào phút chót."
       }
     ]
   }
@@ -366,29 +366,29 @@ export function buildAdaptiveTriadAndPlan(targetMajor = '', targetSchool = '', g
   const targetCoreNote = "Đã hiệu chuẩn bẫy nhận thức & Tối ưu hóa tính khả thi thực tế";
   const gNum = Number(grade) || 12;
 
-  let action1_title = "1. Kỷ luật Bứt phá Tổ hợp Xét tuyển (Cấu trúc 'Nếu... Thì...'):";
-  let action1_content = `NẾU điểm kiểm tra định kỳ hoặc thi thử 3 môn tổ hợp xét tuyển ngành ${major} chưa đạt ngưỡng an toàn: THÌ lập tức phân tích danh mục lỗi sai, tập trung bồi dưỡng dải điểm còn đuối sức để kéo tổng điểm lên.`;
+  let action1_title = "1. Mục tiêu nâng điểm các môn thi tổ hợp xét tuyển:";
+  let action1_content = `Mỗi ngày em dành ít nhất 1.5 - 2 giờ để luyện đề và làm bài tập 3 môn tổ hợp xét tuyển ngành ${major}. Sau mỗi bài kiểm tra hoặc thi thử, em sẽ ghi lại các câu sai để ôn kỹ lại phần lý thuyết còn yếu và kéo điểm lên.`;
 
-  let action2_title = "2. Rèn luyện Kỹ năng Thích ứng Chuyên môn & Tài chính:";
-  let action2_content = `NẾU chuẩn bị bước vào giai đoạn nộp hồ sơ xét tuyển ngành ${major}: THÌ chủ động đối chứng kỹ điều kiện thực tế (chuẩn đầu ra, kiểm tra sức khỏe/ngoại ngữ, học phí 3–4 năm) để thống nhất phương án tài chính cùng gia đình.`;
+  let action2_title = "2. Rèn luyện kỹ năng thực tế & Trao đổi tài chính cùng gia đình:";
+  let action2_content = `Chủ động tự học thêm tiếng Anh và kỹ năng tin học để chuẩn bị cho giảng đường. Tìm hiểu rõ mức học phí từng năm của trường đại học mục tiêu và trao đổi thẳng thắn cùng ba mẹ để chuẩn bị tài chính vững vàng.`;
 
-  let action3_title = "3. Vật neo Giữ vững Chiến lược (Behavioral Anchor):";
-  let action3_content = `Dán bản cam kết này ngang tầm mắt tại góc học tập; kiên quyết giữ vững cấu trúc Tam giác nguyện vọng 3 nấc của ngành ${major}, không tự ý hoán đổi theo tâm lý đám đông trước ngày khóa cổng tuyển sinh.`;
+  let action3_title = "3. Kỷ luật tự học & Kiên định mục tiêu (Không lung lay):";
+  let action3_content = `Dán bản cam kết này trước bàn học để tự nhắc nhở bản thân mỗi ngày; hạn chế lướt điện thoại sau 10h tối. Kiên định giữ vững 3 nấc nguyện vọng đã chọn, không tự ý đổi ngành theo bạn bè vào phút chót.`;
 
   if (gNum === 10) {
-    action1_title = "1. Kỷ luật Giữ vững Môn học Nền tảng:";
-    action1_content = `NẾU bước vào giai đoạn lựa chọn cụm môn học chuyên sâu hướng tới ngành ${major}: THÌ tập trung tối đa để giữ vững điểm trung bình 2 môn cốt lõi (Toán và Ngoại ngữ) trên mức khá (7.5+), bảo đảm không bị thu hẹp phổ lựa chọn về sau.`;
-    action2_title = "2. Kiểm soát Chi phí & Chuẩn hóa Lộ trình Nghề:";
-    action2_content = `NẾU tiếp cận thông tin tuyển sinh hoặc các khóa đào tạo nghề ${major}: THÌ luôn đối chứng dữ liệu thực tế về học phí và thời gian đào tạo cùng Cố vấn, kiên quyết ưu tiên hệ đào tạo chính quy.`;
-    action3_title = "3. Vật neo Hành vi (Behavioral Anchor):";
-    action3_content = `Dán bản cam kết tại góc học tập; lấy mục tiêu ngành ${major} đã được hiệu chuẩn làm động lực duy trì nền nếp học tập suốt năm học lớp 10.`;
+    action1_title = "1. Xây chắc kiến thức 2 môn nền tảng (Toán & Ngoại ngữ):";
+    action1_content = `Tập trung học tốt môn Toán và Tiếng Anh (đặt mục tiêu đạt từ 7.5 trở lên) để làm gốc rễ vững chắc, giúp bản thân có nhiều cơ hội lựa chọn tổ hợp xét tuyển và ngành ${major} về sau.`;
+    action2_title = "2. Tìm hiểu thông tin ngành nghề chính quy & Học phí:";
+    action2_content = `Chủ động tra cứu thông tin tuyển sinh chính quy ngành ${major}, tìm hiểu kỹ mức học phí và môi trường đào tạo thực tế, tránh nghe theo các quảng cáo khóa học ngắn hạn không rõ ràng.`;
+    action3_title = "3. Rèn luyện nề nếp và tinh thần tự giác:";
+    action3_content = `Dán bản cam kết này tại góc học tập; rèn thói quen hoàn thành bài tập về nhà trước khi giải trí và tích cực tham gia các hoạt động hướng nghiệp của trường.`;
   } else if (gNum === 11) {
-    action1_title = "1. Kỷ luật Nâng cao Điểm bạ Tổ hợp:";
-    action1_content = `NẾU điểm tổng kết môn chuyên môn tổ hợp xét tuyển ngành ${major} có xu hướng chững lại: THÌ thiết lập mục tiêu cải thiện dải điểm học bạ cả năm thêm từ +0.5 đến +0.8 điểm, tạo biên độ an toàn phục vụ phương thức xét tuyển sớm.`;
-    action2_title = "2. Trải nghiệm Thực địa & Giải trừ Ngộ nhận Nghề:";
-    action2_content = `NẾU có cơ hội tiếp cận môi trường làm việc thực tế của ngành ${major}: THÌ chủ động quan sát và đối chứng áp lực nghề nghiệp thực tế trước khi chốt định hướng chuyên ngành lâu dài.`;
-    action3_title = "3. Vật neo Hành vi (Behavioral Anchor):";
-    action3_content = `Dán bản cam kết tại góc học tập; định kỳ đối soát phong độ học tập cùng Cố vấn để chủ động điều chỉnh chiến lược theo từng học kỳ.`;
+    action1_title = "1. Cải thiện điểm số học bạ các môn chính:";
+    action1_content = `Tập trung nâng cao điểm tổng kết học bạ của các môn trong tổ hợp xét tuyển ngành ${major} (mục tiêu tăng từ +0.5 đến +1.0 điểm), tạo lợi thế an toàn khi dùng phương thức xét tuyển học bạ sớm.`;
+    action2_title = "2. Tìm hiểu thực tế nghề nghiệp & Tích lũy kỹ năng:";
+    action2_content = `Chủ động tìm hiểu công việc thực tế của ngành ${major}, tích cực trau dồi ngoại ngữ (tiếng Anh giao tiếp) và tham gia các ngày hội tư vấn tuyển sinh để hiểu rõ ngành học.`;
+    action3_title = "3. Rèn luyện thói quen tự học có kỷ luật:";
+    action3_content = `Dán bản cam kết này tại góc học tập; duy trì việc tự học ít nhất 1.5 giờ mỗi tối và định kỳ cuối mỗi tháng xem lại kết quả để kịp thời bổ sung kiến thức còn thiếu.`;
   }
 
   const stretch = {
