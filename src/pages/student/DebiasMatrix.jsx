@@ -23,7 +23,12 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Type,
+  Edit3,
+  Trash2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { 
   ADAPTIVE_COMMITMENTS_BY_GRADE, 
@@ -106,9 +111,10 @@ export default function DebiasMatrix() {
   // --- 2. BẢNG HIỆU CHUẨN NHẬN THỨC & NGÀNH MỤC TIÊU ---
   const [targetMajor, setTargetMajor] = useState(initialAnchor.major);
   const [targetSchool, setTargetSchool] = useState(initialAnchor.school);
-  const [isEditingMajor, setIsEditingMajor] = useState(false);
+  const [isEditingMajor, setIsEditingMajor] = useState(true);
   const [confidenceT2, setConfidenceT2] = useState(7);
-  const [showConfidenceSlider, setShowConfidenceSlider] = useState(false);
+  const [showConfidenceSlider, setShowConfidenceSlider] = useState(true);
+  const [showAiSummary, setShowAiSummary] = useState(false);
 
   // --- 3. TAM GIÁC NGUYỆN VỌNG 3 NẤC THÍCH ỨNG (SUY RA TỪ DUY NHẤT MỎ NEO T0) ---
   const [triadTiers, setTriadTiers] = useState({
@@ -131,7 +137,7 @@ export default function DebiasMatrix() {
       notes: initialAdaptive.triangle.safetyDesc
     }
   });
-  const [isEditingTriad, setIsEditingTriad] = useState(false);
+  const [isEditingTriad, setIsEditingTriad] = useState(true);
 
   // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (SUY RA TỪ MỎ NEO T0) ---
   const [selectedGrade, setSelectedGrade] = useState(initialAnchor.grade);
@@ -163,13 +169,62 @@ export default function DebiasMatrix() {
     return defaultText;
   };
 
-  // --- 5. CHỮ KÝ CAM KẾT ĐIỆN TỬ (CANVAS) ---
+  // --- 5. LỜI CAM KẾT HÀNH ĐỘNG CÁ NHÂN (VĂN BẢN HỌC SINH TỰ GÕ) ---
+  const [personalPledge, setPersonalPledge] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cbas_step5_personal_pledge');
+      if (saved) return saved;
+    } catch (e) {}
+    return 'Em xin cam kết nỗ lực học tập có kỷ luật mỗi ngày, tập trung cải thiện các môn tổ hợp còn yếu và giữ vững cấu trúc 3 nấc nguyện vọng đã xác lập.';
+  });
+
+  const handleUpdatePledge = (text) => {
+    setPersonalPledge(text);
+    try {
+      localStorage.setItem('cbas_step5_personal_pledge', text);
+    } catch (e) {}
+  };
+
+  // --- 6. CHỮ KÝ CAM KẾT ĐIỆN TỬ (CANVAS & GÕ HỌ TÊN) ---
   const canvasRef = useRef(null);
   const isDrawingRef = useRef(false);
   const [hasSignature, setHasSignature] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState('');
+  const [signatureMode, setSignatureMode] = useState('draw'); // 'draw' hoặc 'type'
+  const [typedSignatureName, setTypedSignatureName] = useState(() => {
+    return studentName || displayStudentCode || '';
+  });
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Áp dụng chữ ký nghệ thuật khi học sinh gõ họ tên
+  const applyTypedSignature = (name) => {
+    setTypedSignatureName(name);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!name.trim()) {
+      setHasSignature(false);
+      setSignatureDataUrl('');
+      try {
+        localStorage.removeItem('cbas_step5_signature');
+      } catch (e) {}
+      return;
+    }
+    // Vẽ chữ ký phong cách viết tay nghệ thuật
+    ctx.font = 'italic bold 28px "Segoe Script", "Dancing Script", "Brush Script MT", cursive, sans-serif';
+    ctx.fillStyle = '#0f766e'; // teal-700
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name.trim(), canvas.width / 2, canvas.height / 2);
+    try {
+      const url = canvas.toDataURL();
+      setSignatureDataUrl(url);
+      setHasSignature(true);
+      localStorage.setItem('cbas_step5_signature', url);
+    } catch (e) {}
+  };
 
   // Cập nhật ngành mục tiêu và đồng bộ toàn bộ Tam giác & Ma trận
   const handleUpdateMajor = (newMajor) => {
@@ -530,7 +585,9 @@ export default function DebiasMatrix() {
       triadTiers,
       selectedGrade,
       actionPlans,
+      personalPledge,
       hasSignature: Boolean(hasSignature || sigDataUrl),
+      signatureDataUrl: sigDataUrl,
       completedAt: timestamp
     };
 
@@ -546,6 +603,7 @@ export default function DebiasMatrix() {
       step3_DataVerification: step3Data,
       step4_Mentorship: step4Data,
       step5_ActionTriad_T2: step5Payload,
+      personalPledge,
       summaryMetrics: {
         t0_confidence: step1Data.initialConfidence,
         t2_confidence: confidenceT2,
@@ -558,6 +616,7 @@ export default function DebiasMatrix() {
     localStorage.setItem('cbas_step5_action_plan', JSON.stringify(step5Payload));
     localStorage.setItem('cbas_full_intervention_dossier', JSON.stringify(fullDossier));
     localStorage.setItem('cbas_step5_completed', 'true');
+    localStorage.setItem('cbas_step5_personal_pledge', personalPledge);
 
     setToast({
       type: 'success',
@@ -572,7 +631,7 @@ export default function DebiasMatrix() {
           target_major: targetMajor,
           evidence: `[Tam giác 3 Nấc]: Nấc 1: ${triadTiers.dream.majorSchool} | Nấc 2: ${triadTiers.realistic.majorSchool} | Nấc 3: ${triadTiers.safe.majorSchool}`,
           verified_sources: `[Kế hoạch K${selectedGrade}]: ${getPlanItem(selectedGrade, 0)}`,
-          risk_analysis: `[Kỹ năng nghề]: ${getPlanItem(selectedGrade, 1)} | [Vật neo]: ${getPlanItem(selectedGrade, 2)}`,
+          risk_analysis: `[Kỹ năng nghề]: ${getPlanItem(selectedGrade, 1)} | [Vật neo]: ${getPlanItem(selectedGrade, 2)} | [Cam kết]: ${personalPledge}`,
           bias_check: `T0=${step1Data.initialConfidence} -> T2=${confidenceT2} | Ký cam kết: Đã ký`,
           detected_bias: 'DEBIASED_SUCCESS',
           final_decision: 'CONFIRMED'
@@ -594,7 +653,9 @@ export default function DebiasMatrix() {
       localStorage.removeItem('cbas_full_intervention_dossier');
       localStorage.removeItem('cbas_step5_completed');
       localStorage.removeItem('cbas_step5_signature');
+      localStorage.removeItem('cbas_step5_personal_pledge');
       handleClearSignature();
+      setPersonalPledge('Em xin cam kết nỗ lực học tập có kỷ luật mỗi ngày, tập trung cải thiện các môn tổ hợp còn yếu và giữ vững cấu trúc 3 nấc nguyện vọng đã xác lập.');
       setConfidenceT2(7);
       setToast({ type: 'info', message: 'Đã đặt lại Bước 5 về trạng thái ban đầu.' });
     }
@@ -819,38 +880,70 @@ export default function DebiasMatrix() {
       <div className="space-y-6 no-print">
 
         {/* =========================================================================
-            KHỐI GIAO DIỆN CHUẨN VISEF QUỐC GIA (THEO QUY CHUẨN HÀNH VI CBAS)
+            BẢN ĐỐI CHIẾU & GỢI Ý KHOA HỌC HÀNH VI (CBAS VISEF 2026) - THU GỌN / MỞ RỘNG
             ========================================================================= */}
-        <div className="rounded-2xl border border-teal-200 overflow-hidden shadow-sm bg-white">
-          <div className="bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 px-5 py-3 border-b border-teal-100 flex flex-wrap justify-between items-center gap-2">
+        <div className="rounded-2xl border border-teal-200 overflow-hidden shadow-xs bg-white">
+          <button
+            type="button"
+            onClick={() => setShowAiSummary(!showAiSummary)}
+            className="w-full bg-gradient-to-r from-teal-50 via-slate-50 to-teal-50 px-5 py-3 border-b border-teal-100 flex flex-wrap justify-between items-center gap-2 text-left cursor-pointer hover:bg-teal-100/50 transition"
+          >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-600" />
-              <span className="font-extrabold text-xs text-teal-900 uppercase tracking-wide">
-                HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER) — BƯỚC 5 CHUẨN KHKT QUỐC GIA
-              </span>
+              <Sparkles className="w-4 h-4 text-teal-600 shrink-0" />
+              <div>
+                <span className="font-extrabold text-xs text-teal-950 uppercase tracking-wide block">
+                  💡 BẢNG ĐỐI CHIẾU THỰC CHỨNG & GỢI Ý TỪ HỆ THỐNG AI (ViSEF 2026)
+                </span>
+                <span className="text-[11px] text-slate-500 font-normal">
+                  Hệ thống tự động phân tích từ Bước 1 - 4. Bấm để {showAiSummary ? 'thu gọn' : 'xem gợi ý tham khảo'}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] bg-teal-100/70 text-teal-800 border border-teal-200 px-2.5 py-0.5 rounded font-bold">
-                {displayStudentCode} • Khối {selectedGrade} THPT
+              <span className="text-[10px] bg-teal-100 text-teal-800 border border-teal-200 px-2.5 py-0.5 rounded font-bold">
+                {displayStudentCode} • Khối {selectedGrade}
+              </span>
+              <span className="text-xs text-teal-700 font-bold flex items-center gap-1">
+                {showAiSummary ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                <span>{showAiSummary ? 'Thu gọn' : 'Xem gợi ý'}</span>
               </span>
             </div>
+          </button>
+          
+          {showAiSummary && (
+            <div 
+              className="p-5 border-t border-slate-100" 
+              dangerouslySetInnerHTML={{ 
+                __html: generateStep5Content({
+                  id: displayStudentCode,
+                  grade: `Khối ${selectedGrade}`,
+                  targetMajor: targetMajor,
+                  targetSchool: targetSchool,
+                  conf_T0: step1Data.initialConfidence || 8,
+                  conf_T2: confidenceT2 || 7,
+                  crs_T0: (step1Data.initialConfidence - 5.0).toFixed(1),
+                  crs_T2: (confidenceT2 - 7.5).toFixed(1),
+                  riasec: step1Data.hollandCode || 'RIA'
+                }) 
+              }} 
+            />
+          )}
+        </div>
+
+        {/* BANNER HƯỚNG DẪN HỌC SINH TỰ CHỦ LẬP KẾ HOẠCH */}
+        <div className="bg-gradient-to-r from-teal-50 via-emerald-50 to-teal-50 border border-teal-200 rounded-2xl p-4 flex items-start gap-3 shadow-xs">
+          <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+            <Edit3 className="w-4.5 h-4.5" />
           </div>
-          <div 
-            className="p-5" 
-            dangerouslySetInnerHTML={{ 
-              __html: generateStep5Content({
-                id: displayStudentCode,
-                grade: `Khối ${selectedGrade}`,
-                targetMajor: targetMajor,
-                targetSchool: targetSchool,
-                conf_T0: step1Data.initialConfidence || 8,
-                conf_T2: confidenceT2 || 7,
-                crs_T0: (step1Data.initialConfidence - 5.0).toFixed(1),
-                crs_T2: (confidenceT2 - 7.5).toFixed(1),
-                riasec: step1Data.hollandCode || 'RIA'
-              }) 
-            }} 
-          />
+          <div className="space-y-1">
+            <h3 className="text-xs md:text-sm font-black text-slate-900 uppercase tracking-wide">
+              BÀN LẬP KẾ HOẠCH HÀNH ĐỘNG CỦA EM (EM TRỰC TIẾP TỰ ĐIỀN & TỰ KÝ)
+            </h3>
+            <p className="text-[11px] md:text-xs text-slate-600 leading-relaxed font-medium">
+              Các thông tin dưới đây đã được hệ thống đề xuất sẵn dựa trên mỏ neo của em ở Bước 1 & 3. 
+              <strong> Em hoàn toàn có quyền tự tay chỉnh sửa lại ngành học, kéo chọn độ tự tin thực tế, điều chỉnh 3 nấc nguyện vọng, viết lời cam kết và ký tên của mình</strong> trước khi xuất bản in dán góc học tập!
+            </p>
+          </div>
         </div>
 
         {/* =========================================================================
@@ -859,97 +952,78 @@ export default function DebiasMatrix() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* Box 1: Ngành mục tiêu */}
-          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2 print-badge">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                NGÀNH MỤC TIÊU CHỐT LẠI
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-teal-600" />
+                <span>1. NGÀNH MỤC TIÊU CHỐT LẠI:</span>
               </span>
-              <button
-                type="button"
-                onClick={() => setIsEditingMajor(!isEditingMajor)}
-                className="text-[10px] text-teal-600 hover:text-teal-700 font-semibold hover:underline no-print"
-              >
-                {isEditingMajor ? 'Xong' : '✎ Đổi ngành'}
-              </button>
             </div>
 
-            {isEditingMajor ? (
+            <div>
               <input
                 type="text"
                 value={targetMajor}
                 onChange={(e) => handleUpdateMajor(e.target.value)}
-                className="w-full bg-slate-50 border border-teal-500 rounded-lg px-2 py-1 text-sm text-slate-900 font-bold focus:outline-none focus:bg-white"
+                placeholder="Nhập ngành học mục tiêu của em..."
+                className="w-full bg-slate-50 border border-teal-300 focus:border-teal-600 rounded-lg px-2.5 py-1.5 text-sm text-slate-900 font-extrabold focus:outline-none focus:bg-white transition"
               />
-            ) : (
-              <div className="flex items-center gap-2 pt-1">
-                <Crosshair className="w-5 h-5 text-rose-500 shrink-0" />
-                <span className="font-bold text-base text-slate-900 tracking-wide">{targetMajor}</span>
-              </div>
-            )}
+            </div>
 
-            <p className="text-xs text-emerald-700 font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Đã đối chứng & Cam kết dấn thân</span>
+            <p className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>Em có thể tự sửa lại theo nguyện vọng thực tế</span>
             </p>
           </div>
 
           {/* Box 2: Chỉ số hiệu chuẩn nhận thức (CRS) */}
-          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2 print-badge">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                ĐỘ TỰ TIN (TRƯỚC VS SAU CAN THIỆP)
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-teal-600" />
+                <span>2. ĐỘ TỰ TIN THỰC TẾ (T2):</span>
               </span>
-              <button
-                type="button"
-                onClick={() => setShowConfidenceSlider(!showConfidenceSlider)}
-                className="text-[10px] text-teal-600 hover:text-teal-700 font-semibold hover:underline no-print"
-              >
-                {showConfidenceSlider ? 'Đóng' : '✎ Chỉnh T2'}
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3 pt-1">
-              <span className="text-xs text-slate-400 line-through">
-                Trước: {step1Data.initialConfidence}/10
-              </span>
-              <ArrowRight className="w-4 h-4 text-teal-600" />
-              <span className="font-bold text-base text-teal-800">
-                Sau: {confidenceT2}/10
+              <span className="font-black text-sm text-teal-800 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                {confidenceT2}/10 điểm
               </span>
             </div>
 
-            {showConfidenceSlider && (
-              <div className="pt-2 no-print">
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={confidenceT2}
-                  onChange={(e) => setConfidenceT2(Number(e.target.value))}
-                  className="w-full accent-teal-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
-                />
+            <div className="pt-1 space-y-1">
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={confidenceT2}
+                onChange={(e) => setConfidenceT2(Number(e.target.value))}
+                className="w-full accent-teal-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+              />
+              <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                <span>T0 ban đầu: {step1Data.initialConfidence}/10</span>
+                <span>Kéo chọn mức tự tin thực tế</span>
               </div>
-            )}
+            </div>
 
-            <p className="text-xs text-cyan-800 font-medium">
-              Tự tin thực chứng ({crsDelta === 0 ? 'Hiệu chuẩn CRS tiệm cận 0' : `Hiệu chuẩn CRS: ${crsDelta > 0 ? `+${crsDelta}` : crsDelta}`})
+            <p className="text-[11px] text-cyan-800 font-medium">
+              Độ lệch nhận thức CRS: {crsDelta === 0 ? 'Tiệm cận 0 (Cân bằng)' : `${crsDelta > 0 ? `+${crsDelta}` : crsDelta}`}
             </p>
           </div>
 
           {/* Box 3: Trạng thái ràng buộc */}
-          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1 print-badge">
-            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-              TRẠNG THÁI RÀNG BUỘC (COMMITMENT)
-            </span>
-            <div className="flex items-center gap-2 pt-1">
-              <PenTool className="w-5 h-5 text-amber-500 shrink-0" />
-              <span className="font-bold text-base text-slate-900">
-                {hasSignature ? 'Đã ký cam kết điện tử' : 'Sẵn sàng ký cam kết'}
+          <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-2 print-badge flex flex-col justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                3. TRẠNG THÁI RÀNG BUỘC:
               </span>
+              <div className="flex items-center gap-2 pt-0.5">
+                <PenTool className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="font-bold text-sm text-slate-900">
+                  {hasSignature ? '✓ Đã ký cam kết điện tử' : 'Chưa ký cam kết'}
+                </span>
+              </div>
             </div>
-            <p className="text-xs text-slate-500">
-              Bước 5/5 trong Mô hình Can thiệp SocraCareer
+            <p className="text-[11px] text-slate-500">
+              Ký tên ở Khung cam kết phía dưới để hoàn tất Bước 5
             </p>
           </div>
 
@@ -1234,31 +1308,145 @@ export default function DebiasMatrix() {
         </div>
 
         {/* =========================================================================
-            KHỐI 3: KHUNG KÝ CAM KẾT ĐIỆN TỬ (COMMITMENT DEVICE)
+            KHỐI CAM KẾT: LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH (HỌC SINH TỰ GÕ BẰNG BÀN PHÍM)
+            ========================================================================= */}
+        <div className="p-6 rounded-2xl bg-white border-2 border-teal-300 shadow-sm space-y-3.5 print-sheet">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
+            <div className="flex items-center gap-2">
+              <PenTool className="w-5 h-5 text-teal-600" />
+              <h2 className="font-extrabold text-sm text-slate-900 uppercase tracking-wide">
+                ✍️ LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH (EM TỰ GÕ NỘI DUNG VÀO ĐÂY)
+              </h2>
+            </div>
+            <span className="text-[11px] text-teal-800 font-bold bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
+              Trách nhiệm cá nhân
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            Em hãy trực tiếp gõ lời hứa và quyết tâm hành động của mình vào ô bên dưới (ví dụ: mục tiêu tự học mỗi ngày, quyết tâm cải thiện điểm số, lời dặn bản thân). 
+            Nội dung này sẽ được in trang trọng lên Bản cam kết dán góc học tập!
+          </p>
+
+          <div>
+            <textarea
+              rows={3}
+              value={personalPledge}
+              onChange={(e) => handleUpdatePledge(e.target.value)}
+              placeholder="VD: Em xin cam kết mỗi tối dành 2 giờ tự học và giải đề Toán, hạn chế dùng điện thoại, quyết tâm đỗ nguyện vọng 1..."
+              className="w-full p-3.5 bg-slate-50 border-2 border-teal-200 hover:border-teal-300 focus:border-teal-600 focus:bg-white rounded-xl text-xs md:text-sm text-slate-900 font-semibold leading-relaxed focus:outline-none transition shadow-2xs"
+            />
+          </div>
+
+          {/* Chips gợi ý nhanh lời cam kết */}
+          <div className="space-y-1.5 pt-1">
+            <span className="text-[11px] font-bold text-slate-500 block">💡 Bấm để thêm nhanh lời cam kết mẫu:</span>
+            <div className="flex flex-wrap gap-1.5 text-xs">
+              {[
+                "Dành 2 giờ tự học mỗi tối có kỷ luật",
+                "Tập trung cải thiện điểm môn yếu trong tổ hợp",
+                "Kiên quyết giữ vững 3 nấc an toàn, không đổi theo đám đông",
+                "Chủ động hỏi Thầy/Cô khi gặp bài khó",
+                "Quyết tâm chinh phục mục tiêu đã hiệu chuẩn"
+              ].map((chip, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleUpdatePledge(personalPledge ? `${personalPledge}. ${chip}` : chip)}
+                  className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg text-[11px] font-bold border border-teal-200 transition cursor-pointer"
+                >
+                  + {chip}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => handleUpdatePledge('')}
+                className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-[11px] font-bold border border-rose-200 transition cursor-pointer"
+                title="Xóa trắng để em tự gõ từ đầu"
+              >
+                ✕ Xóa để tự viết
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* =========================================================================
+            KHỐI 4: CHỮ KÝ CAM KẾT ĐIỆN TỬ (VẼ TAY HOẶC GÕ TÊN ĐỀU ĐƯỢC)
             ========================================================================= */}
         <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4 print-sheet">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div className="flex items-center gap-2">
               <PenTool className="w-4 h-4 text-teal-600" />
               <h2 className="font-bold text-sm text-slate-900 uppercase tracking-wide">
                 CHỮ KÝ CAM KẾT CÁ NHÂN (COMMITMENT DEVICE)
               </h2>
             </div>
-            <button
-              type="button"
-              onClick={handleClearSignature}
-              className="text-xs text-rose-600 hover:text-rose-700 transition cursor-pointer no-print font-medium"
-            >
-              Xóa chữ ký vẽ lại
-            </button>
+
+            {/* TAB CHUYỂN ĐỔI CHẾ ĐỘ KÝ: VẼ TAY HOẶC GÕ BÀN PHÍM */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl no-print text-xs">
+              <button
+                type="button"
+                onClick={() => setSignatureMode('draw')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  signatureMode === 'draw'
+                    ? 'bg-white text-teal-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Vẽ chữ ký tay</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSignatureMode('type');
+                  applyTypedSignature(typedSignatureName || studentName || displayStudentCode);
+                }}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  signatureMode === 'type'
+                    ? 'bg-white text-teal-800 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Type className="w-3.5 h-3.5" />
+                <span>Gõ họ tên để ký</span>
+              </button>
+            </div>
           </div>
 
           <p className="text-xs text-slate-500">
-            Em ký tên xác nhận chịu trách nhiệm với mục tiêu của chính mình, in bản kế hoạch này dán tại góc học tập để nhắc nhở bản thân mỗi ngày.
+            {signatureMode === 'draw'
+              ? 'Dùng chuột kéo vẽ, hoặc dùng ngón tay vuốt trên màn hình cảm ứng để tạo chữ ký của em.'
+              : 'Gõ họ tên của em vào ô bên dưới, hệ thống sẽ tự động tạo chữ ký nghệ thuật lên khung.'}
           </p>
 
-          {/* Vùng vẽ canvas */}
-          <div className="border border-dashed border-slate-300 rounded-xl bg-slate-50/70 p-2 flex justify-center print-canvas">
+          {/* NẾU CHẾ ĐỘ GÕ TÊN */}
+          {signatureMode === 'type' && (
+            <div className="no-print space-y-2 p-3 bg-teal-50/60 rounded-xl border border-teal-200">
+              <label className="block text-xs font-bold text-teal-900">
+                ⌨️ Nhập họ và tên của em để tạo chữ ký tự động:
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={typedSignatureName}
+                  onChange={(e) => applyTypedSignature(e.target.value)}
+                  placeholder="Ví dụ: Nguyễn Văn A..."
+                  className="w-full p-2.5 bg-white border border-teal-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => applyTypedSignature(typedSignatureName)}
+                  className="px-3.5 py-2.5 bg-teal-600 text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-xs hover:bg-teal-700 cursor-pointer"
+                >
+                  Áp dụng
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Vùng vẽ / hiển thị chữ ký canvas */}
+          <div className="relative border-2 border-dashed border-teal-300 rounded-xl bg-slate-50/70 p-3 flex flex-col items-center justify-center print-canvas">
             <canvas
               ref={canvasRef}
               width={500}
@@ -1267,19 +1455,39 @@ export default function DebiasMatrix() {
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="cursor-crosshair bg-slate-50 rounded-lg max-w-full touch-none"
+              className={`bg-white rounded-lg max-w-full shadow-2xs border border-slate-200 ${
+                signatureMode === 'draw' ? 'cursor-crosshair' : 'cursor-default'
+              }`}
             />
+            {!hasSignature && (
+              <span className="absolute text-slate-400 text-xs italic pointer-events-none">
+                {signatureMode === 'draw' ? '✍️ Ký tên vào đây bằng chuột hoặc ngón tay' : '⌨️ Chữ ký sẽ hiển thị tại đây khi em gõ tên'}
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-600">
             <div className="flex items-center gap-2">
               <span className="font-bold text-slate-700">Học sinh cam kết:</span>
               <span className="px-2 py-0.5 rounded bg-slate-100 text-teal-800 font-bold border border-slate-200">
-                Mã định danh: {displayStudentCode}
+                {typedSignatureName || displayStudentCode}
               </span>
+              {hasSignature && (
+                <span className="text-emerald-600 font-bold text-xs flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Đã ghi nhận chữ ký</span>
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 no-print">
+              <button
+                type="button"
+                onClick={handleClearSignature}
+                className="px-3 py-1.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition border border-rose-200 cursor-pointer font-medium"
+              >
+                Xóa chữ ký làm lại
+              </button>
               <button
                 type="button"
                 onClick={handleSaveAndPrint}
@@ -1491,6 +1699,18 @@ export default function DebiasMatrix() {
                 </div>
               </section>
 
+              {/* LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH TRÊN BẢN IN */}
+              {personalPledge && (
+                <div className="border border-teal-200 bg-teal-50/60 rounded-lg p-2.5 mb-3 text-xs">
+                  <span className="font-black text-teal-900 uppercase text-[10px] block mb-0.5">
+                    ✍️ LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH:
+                  </span>
+                  <p className="italic text-slate-800 text-[11px] leading-relaxed">
+                    "{personalPledge}"
+                  </p>
+                </div>
+              )}
+
               {/* 5. CHỮ KÝ CAM KẾT CÁ NHÂN (3 BÊN) */}
               <section className="border-t-2 border-slate-900 pt-3 page-break-inside-avoid">
                 <div className="grid grid-cols-3 gap-3 text-center text-xs">
@@ -1506,11 +1726,11 @@ export default function DebiasMatrix() {
                         />
                       ) : (
                         <span className="text-[10.5px] text-slate-400 italic">
-                          (Mã số: {displayStudentCode})
+                          (Mã số: {typedSignatureName || displayStudentCode})
                         </span>
                       )}
                     </div>
-                    <div className="font-bold text-teal-800 text-[10px]">{displayStudentCode}</div>
+                    <div className="font-bold text-teal-800 text-[10px]">{typedSignatureName || displayStudentCode}</div>
                   </div>
 
                   <div>
