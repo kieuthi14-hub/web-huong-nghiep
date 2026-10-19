@@ -924,6 +924,111 @@ const CounselingBooking = () => {
     }, 1000)
   }
 
+  // 1. Xác nhận đã hoàn thành buổi tham vấn 1-1 trực tiếp (Mở khóa Bước 5)
+  const handleConfirmConsultationCompleted = async () => {
+    try {
+      const timestamp = new Date().toISOString()
+      const payload = {
+        triage: 'PHAN_LUONG_1_IN_DEPTH',
+        status: 'completed',
+        illusion: 'cleared',
+        readiness: 9,
+        notes: 'Học sinh xác nhận đã hoàn thành phiên trao đổi đối chất 1-1 cùng Thầy/Cô / Mentor.',
+        savedAt: timestamp
+      }
+
+      localStorage.setItem('mentor_feedback_record', JSON.stringify(payload))
+      localStorage.setItem('cbas_step4_feedback', JSON.stringify(payload))
+      localStorage.setItem('cbas_step4_completed', 'true')
+      localStorage.setItem('cbas_step4_consultation_completed', 'true')
+
+      // Nếu có booking hiện tại, cập nhật trạng thái completed
+      if (booking) {
+        const updatedBooking = { ...booking, status: 'completed' }
+        setBooking(updatedBooking)
+        try {
+          localStorage.setItem('cbas_step4_booking', JSON.stringify(updatedBooking))
+        } catch (e) {}
+
+        if (user?.id && booking.id) {
+          try {
+            await supabase
+              .from('counseling_sessions')
+              .update({
+                status: 'completed',
+                counselor_notes: (booking.counselor_notes ? booking.counselor_notes + '\n' : '') + '[Học sinh xác nhận]: Đã hoàn thành phiên tham vấn 1-1 trực tiếp.'
+              })
+              .eq('id', booking.id)
+          } catch (dbErr) {
+            console.warn('Lỗi update status completed trên Supabase:', dbErr)
+          }
+        }
+      }
+
+      setToast({
+        type: 'success',
+        message: '🎉 Tuyệt vời! Đã xác nhận hoàn thành phiên tư vấn 1-1. Đang mở khóa và chuyển sang Bước 5...'
+      })
+
+      setTimeout(() => {
+        navigate('/student/reflection')
+      }, 1000)
+    } catch (err) {
+      console.error('Lỗi xác nhận hoàn thành tư vấn 1-1:', err)
+      goToStep5()
+    }
+  }
+
+  // 2. Trong trường hợp KHÔNG CẦN tư vấn 1-1 (tự chủ nhận thức từ Bước 3 -> Chuyển thẳng sang Bước 5)
+  const handleConfirmNoNeedConsultation = async () => {
+    if (window.confirm("Em xác nhận đã nắm vững các số liệu thực tế ở Bước 3 (Điểm chuẩn, Học phí, Rủi ro việc làm) và tự tin chuyển sang Bước 5: Thiết lập Kế hoạch hành động mà không cần thêm phiên tham vấn 1-1?")) {
+      try {
+        const timestamp = new Date().toISOString()
+        const payload = {
+          triage: 'PHAN_LUONG_2_FAST_TRACK',
+          status: 'completed',
+          self_directed: true,
+          illusion: 'cleared',
+          readiness: 10,
+          notes: 'Học sinh xác nhận tự chủ nhận thức, đã nắm rõ dữ liệu thực tế tại Bước 3 và không cần thêm phiên tham vấn 1-1.',
+          savedAt: timestamp
+        }
+
+        localStorage.setItem('mentor_feedback_record', JSON.stringify(payload))
+        localStorage.setItem('cbas_step4_feedback', JSON.stringify(payload))
+        localStorage.setItem('cbas_step4_completed', 'true')
+        localStorage.setItem('cbas_step4_fast_track', 'true')
+        localStorage.setItem('cbas_step4_consultation_completed', 'true')
+
+        if (booking?.id) {
+          try {
+            if (user?.id) {
+              await supabase
+                .from('counseling_sessions')
+                .update({
+                  status: 'completed',
+                  student_notes: (booking.student_notes || '') + '\n[Ghi chú]: Học sinh xác nhận tự chủ nhận thức, chuyển thẳng sang Bước 5.'
+                })
+                .eq('id', booking.id)
+            }
+          } catch (e) {}
+        }
+
+        setToast({
+          type: 'success',
+          message: '✨ Đã ghi nhận lựa chọn Tự chủ nhận thức! Đang mở khóa và chuyển sang Bước 5...'
+        })
+
+        setTimeout(() => {
+          navigate('/student/reflection')
+        }, 1000)
+      } catch (err) {
+        console.error('Lỗi xác nhận không cần tư vấn:', err)
+        goToStep5()
+      }
+    }
+  }
+
   // Khởi tạo và đọc dữ liệu đã lưu + Đăng ký Realtime & Polling
   useEffect(() => {
     try {
@@ -1325,6 +1430,46 @@ const CounselingBooking = () => {
           </p>
         </div>
 
+        {/* CỤM ĐIỀU HƯỚNG NHANH CHUYỂN BƯỚC 5 */}
+        <div className="bg-gradient-to-r from-emerald-50/90 via-teal-50/50 to-indigo-50/90 border border-emerald-200 rounded-2xl p-4 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-xs md:text-sm font-extrabold text-slate-900">
+                  Lối tắt chuyển tiếp Bước 5: Kế hoạch Hành động
+                </h4>
+                <p className="text-[11px] md:text-xs text-slate-600">
+                  Nếu em đã trao đổi xong với Thầy/Cô hoặc tự chủ nắm vững dữ liệu Bước 3, hãy chọn một trong hai phương án bên dưới để mở khóa Bước 5:
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleConfirmNoNeedConsultation}
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 hover:border-indigo-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Tự chủ nhận thức từ Bước 3, không cần phiên tham vấn 1-1"
+              >
+                <span>Không cần tư vấn 1-1 (Tự chủ)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmConsultationCompleted}
+                className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs hover:shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Xác nhận đã hoàn thành phiên tham vấn 1-1 để chuyển tiếp Bước 5"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Đã tư vấn 1-1 xong ➔ Mở Bước 5</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* CỤM TAB CHUYỂN ĐỔI 2 PHÂN LUỒNG */}
         <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-xl">
@@ -1592,6 +1737,47 @@ const CounselingBooking = () => {
                         đường link Google Meet hoặc phòng gặp trực tiếp sẽ <strong>tự động xuất hiện tại đây mà không cần tải lại trang</strong>!
                       </span>
                     </div>
+
+                    {/* HÀNH ĐỘNG DÀNH CHO HỌC SINH KHI ĐANG CHỜ DUYỆT */}
+                    <div className="p-3.5 bg-white/90 rounded-xl border border-amber-300 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-slate-800">
+                          ⚡ Tùy chọn chuyển tiếp dành cho em:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={confirmResetEntireStep4}
+                          className="px-2.5 py-1 text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 rounded border border-rose-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                          title="Hủy lịch hẹn đang chờ để chọn lại Mentor hoặc giờ khác"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Hủy lịch hẹn</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={handleConfirmNoNeedConsultation}
+                          className="w-full py-2.5 px-3 bg-slate-50 hover:bg-indigo-50 text-indigo-700 hover:text-indigo-900 border border-slate-200 hover:border-indigo-200 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                          title="Tự chủ nhận thức, không cần thêm phiên tham vấn 1-1"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span>Không cần tư vấn ➔ Sang Bước 5</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleConfirmConsultationCompleted}
+                          className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs hover:shadow transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                          title="Xác nhận đã gặp gỡ và trao đổi trực tiếp xong cùng Mentor"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span>Đã tư vấn 1-1 xong ➔ Mở Bước 5</span>
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1689,11 +1875,8 @@ const CounselingBooking = () => {
                         📌 <strong>Hướng dẫn:</strong> Em hãy tham gia đúng giờ và cầm theo Hồ sơ đối chất phía trên để trao đổi trong 20 - 30 phút. 
                         Sau khi kết thúc phiên đối chất, Mentor hoặc Admin sẽ xác nhận hoàn thành để mở khóa Bước 5 cho em!
                       </p>
-                      <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-[11px] text-emerald-800 italic">
-                            (Nếu em và Mentor đã trao đổi trực tiếp xong, em cũng có thể chủ động chuyển sang viết Nhật ký thu hoạch)
-                          </span>
+                      <div className="pt-2 border-t border-emerald-200 flex flex-wrap items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <button
                             type="button"
                             onClick={confirmResetEntireStep4}
@@ -1701,16 +1884,37 @@ const CounselingBooking = () => {
                             title="Hủy lịch hẹn đã xác nhận để chọn lại Mentor hoặc giờ khác"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Hủy lịch & Làm lại Bước 4</span>
+                            <span>Hủy lịch</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleConfirmNoNeedConsultation}
+                            className="px-3 py-1.5 bg-white hover:bg-slate-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                            title="Tự chủ nhận thức, không cần tư vấn 1-1"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Không cần tư vấn ➔ Sang Bước 5</span>
                           </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={handleComplete4A}
-                          className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shadow-xs cursor-pointer"
-                        >
-                          Tôi đã trao đổi xong ➔ Viết nhật ký thu hoạch (4B)
-                        </button>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={handleComplete4A}
+                            className="px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs rounded-lg transition shadow-2xs cursor-pointer"
+                          >
+                            Viết nhật ký thu hoạch (4B)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleConfirmConsultationCompleted}
+                            className="px-3.5 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center gap-1 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Xác nhận đã tư vấn xong ➔ Mở Bước 5</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1983,6 +2187,30 @@ const CounselingBooking = () => {
                       <CalendarDays className="w-4.5 h-4.5" />
                       <span>XÁC NHẬN ĐẶT LỊCH HẸN ONLINE</span>
                     </button>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-slate-200 text-center space-y-2">
+                    <p className="text-xs text-slate-500 font-medium">
+                      Hoặc nếu em đã nắm vững các số liệu thực chứng hoặc đã trao đổi riêng cùng Thầy/Cô:
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleConfirmNoNeedConsultation}
+                        className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-indigo-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Không cần tư vấn 1-1 (Tự chủ nhận thức) ➔ Sang Bước 5</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleConfirmConsultationCompleted}
+                        className="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đã hoàn thành tư vấn 1-1 ➔ Mở Bước 5</span>
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -2693,6 +2921,31 @@ const CounselingBooking = () => {
                 </div>
               )
             })}
+          </div>
+
+          {/* Cụm nút xác nhận chuyển bước 5 nhanh */}
+          <div className="mt-3 pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="text-xs text-slate-700">
+              <span className="font-bold text-slate-900 block">Chuyển tiếp sang Bước 5:</span>
+              <span className="text-slate-500 text-[11px]">Em đã trao đổi trực tiếp xong với Mentor hoặc tự tin tự chủ nhận thức?</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleConfirmNoNeedConsultation}
+                className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition cursor-pointer shadow-2xs"
+              >
+                Không cần tư vấn 1-1 ➔ Sang Bước 5
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmConsultationCompleted}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Xác nhận đã tư vấn 1-1 xong ➔ Sang Bước 5</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
