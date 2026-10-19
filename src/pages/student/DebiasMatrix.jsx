@@ -387,7 +387,7 @@ export default function DebiasMatrix() {
       console.warn('Lỗi đọc Step 2,3,4:', e);
     }
 
-    // 3. Đọc Bước 5 nếu đã lưu
+    // 3. Đọc Bước 5 nếu đã lưu (kèm cơ chế tự động dọn sạch văn bản lý thuyết cũ)
     try {
       const rawStep5 = localStorage.getItem('cbas_step5_action_plan');
       if (rawStep5) {
@@ -396,7 +396,33 @@ export default function DebiasMatrix() {
         if (parsed.confidenceT2 !== undefined) setConfidenceT2(Number(parsed.confidenceT2));
         if (parsed.triadTiers) setTriadTiers(parsed.triadTiers);
         if (parsed.selectedGrade) setSelectedGrade(parsed.selectedGrade);
-        if (parsed.actionPlans) setActionPlans(parsed.actionPlans);
+
+        // Kiểm tra xem dữ liệu đã lưu có chứa văn bản lý thuyết cũ (NẾU... THÌ..., Vật neo...) hay không
+        const rawPlansStr = JSON.stringify(parsed.actionPlans || '');
+        const isLegacy = rawPlansStr.includes('NẾU') || rawPlansStr.includes('Vật neo') || rawPlansStr.includes('Implementation Intentions') || rawPlansStr.includes('Δ Điểm') || rawPlansStr.includes('Gollwitzer');
+
+        if (isLegacy) {
+          const freshPlans = {};
+          [10, 11, 12].forEach(g => {
+            const gAdaptive = buildAdaptiveTriadAndPlan(parsed.targetMajor || anchor.major, anchor.school, g);
+            freshPlans[g] = {
+              item1: gAdaptive.actions[0].text,
+              item2: gAdaptive.actions[1].text,
+              item3: gAdaptive.actions[2].text,
+              scoreGoal: gAdaptive.actions[0].text,
+              weakSubjectsPlan: gAdaptive.actions[1].text,
+              studyTimeCommitment: gAdaptive.actions[2].text
+            };
+          });
+          setActionPlans(freshPlans);
+          parsed.actionPlans = freshPlans;
+          try {
+            localStorage.setItem('cbas_step5_action_plan', JSON.stringify(parsed));
+          } catch (e) {}
+        } else if (parsed.actionPlans) {
+          setActionPlans(parsed.actionPlans);
+        }
+
         if (parsed.hasSignature) setHasSignature(true);
       }
     } catch (e) {
@@ -557,6 +583,31 @@ export default function DebiasMatrix() {
     } else if (!trimmed.includes(chipText)) {
       handleUpdatePlan(field, `${trimmed}\n- ${chipText}`);
     }
+  };
+
+  // Xóa trắng cả 3 ô kế hoạch để học sinh tự viết hoàn toàn
+  const handleClearAllPlans = () => {
+    setActionPlans(prev => ({
+      ...prev,
+      [selectedGrade]: {
+        item1: '',
+        item2: '',
+        item3: '',
+        scoreGoal: '',
+        weakSubjectsPlan: '',
+        studyTimeCommitment: ''
+      }
+    }));
+    setToast({
+      message: `Đã xóa trắng 3 ô kế hoạch Khối ${selectedGrade}. Em hãy tự viết hoặc bấm chọn nhanh nhé!`,
+      type: 'info'
+    });
+  };
+
+  // Điền câu gợi ý mẫu cho 1 mục riêng biệt
+  const handleFillSingleDefault = (itemField, itemIndex) => {
+    const defaultText = ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[itemIndex]?.text || '';
+    handleUpdatePlan(itemField, defaultText);
   };
 
   // Chuyển đổi khối lớp nhanh và đồng bộ hóa Tam giác nguyện vọng & Ma trận ý định
@@ -1315,15 +1366,26 @@ export default function DebiasMatrix() {
                     <span>{gradeInfo.note}</span>
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleResetToDefaultTemplate}
-                  className="px-2.5 py-1 text-[11px] rounded bg-white text-teal-800 hover:bg-slate-50 hover:text-teal-900 border border-slate-200 transition flex items-center gap-1 cursor-pointer no-print font-medium"
-                  title="Khôi phục lại nội dung gợi ý mẫu cho khối lớp này"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Khôi phục gợi ý mẫu</span>
-                </button>
+                <div className="flex items-center gap-2 no-print">
+                  <button
+                    type="button"
+                    onClick={handleClearAllPlans}
+                    className="px-2.5 py-1 text-[11px] rounded bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800 border border-rose-200 transition flex items-center gap-1 cursor-pointer font-medium"
+                    title="Xóa trắng cả 3 ô để học sinh tự viết kế hoạch từ đầu"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Xóa trắng 3 ô để tự viết</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetToDefaultTemplate}
+                    className="px-2.5 py-1 text-[11px] rounded bg-white text-teal-800 hover:bg-slate-50 hover:text-teal-900 border border-slate-200 transition flex items-center gap-1 cursor-pointer font-medium"
+                    title="Khôi phục lại nội dung gợi ý mẫu cho khối lớp này"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Điền gợi ý mẫu</span>
+                  </button>
+                </div>
               </div>
             );
           })()}
@@ -1361,11 +1423,19 @@ export default function DebiasMatrix() {
                 ))}
                 <button
                   type="button"
+                  onClick={() => handleFillSingleDefault('item1', 0)}
+                  className="px-2 py-1 text-[11px] bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg border border-teal-200 transition-all cursor-pointer font-medium"
+                  title="Điền câu gợi ý mẫu chuẩn vào ô này"
+                >
+                  ✨ Điền câu mẫu
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleUpdatePlan('item1', '')}
                   className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
                   title="Xóa nội dung ô này để tự viết hoàn toàn"
                 >
-                  ✕ Xóa để tự viết
+                  ✕ Xóa trắng
                 </button>
               </div>
             </div>
@@ -1401,11 +1471,19 @@ export default function DebiasMatrix() {
                 ))}
                 <button
                   type="button"
+                  onClick={() => handleFillSingleDefault('item2', 1)}
+                  className="px-2 py-1 text-[11px] bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg border border-teal-200 transition-all cursor-pointer font-medium"
+                  title="Điền câu gợi ý mẫu chuẩn vào ô này"
+                >
+                  ✨ Điền câu mẫu
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleUpdatePlan('item2', '')}
                   className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
                   title="Xóa nội dung ô này để tự viết hoàn toàn"
                 >
-                  ✕ Xóa để tự viết
+                  ✕ Xóa trắng
                 </button>
               </div>
             </div>
@@ -1441,11 +1519,19 @@ export default function DebiasMatrix() {
                 ))}
                 <button
                   type="button"
+                  onClick={() => handleFillSingleDefault('item3', 2)}
+                  className="px-2 py-1 text-[11px] bg-teal-50 hover:bg-teal-100 text-teal-800 rounded-lg border border-teal-200 transition-all cursor-pointer font-medium"
+                  title="Điền câu gợi ý mẫu chuẩn vào ô này"
+                >
+                  ✨ Điền câu mẫu
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleUpdatePlan('item3', '')}
                   className="px-2 py-1 text-[11px] bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-400 rounded-lg border border-slate-200 transition-all cursor-pointer ml-auto"
                   title="Xóa nội dung ô này để tự viết hoàn toàn"
                 >
-                  ✕ Xóa để tự viết
+                  ✕ Xóa trắng
                 </button>
               </div>
             </div>
