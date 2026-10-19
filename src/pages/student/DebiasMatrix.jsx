@@ -194,43 +194,43 @@ export default function DebiasMatrix() {
   });
   const [isEditingTriad, setIsEditingTriad] = useState(true);
 
-  // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (SUY RA TỪ MỎ NEO T0) ---
+  // --- 4. MA TRẬN KẾ HOẠCH HÀNH ĐỘNG THEO KHỐI LỚP (HỌC SINH TỰ CHỦ LẬP KẾ HOẠCH) ---
   const [selectedGrade, setSelectedGrade] = useState(initialAnchor.grade);
   const [actionPlans, setActionPlans] = useState(() => {
     const plans = {};
     [10, 11, 12].forEach(g => {
-      const gAdaptive = buildAdaptiveTriadAndPlan(initialAnchor.major, initialAnchor.school, g);
       plans[g] = {
-        item1: gAdaptive.actions[0].text,
-        item2: gAdaptive.actions[1].text,
-        item3: gAdaptive.actions[2].text,
-        scoreGoal: gAdaptive.actions[0].text,
-        weakSubjectsPlan: gAdaptive.actions[1].text,
-        studyTimeCommitment: gAdaptive.actions[2].text
+        item1: '',
+        item2: '',
+        item3: '',
+        scoreGoal: '',
+        weakSubjectsPlan: '',
+        studyTimeCommitment: ''
       };
     });
     return plans;
   });
 
-  // Trợ cấp lấy nội dung mục cam kết theo khối lớp
+  // Trợ cấp lấy nội dung mục cam kết theo khối lớp (để trống nếu học sinh chưa nhập)
   const getPlanItem = (grade, itemIndex) => {
     const g = Number(grade) || 12;
     const plan = actionPlans[g];
-    const defaultText = ADAPTIVE_COMMITMENTS_BY_GRADE[g]?.items[itemIndex]?.text || '';
-    if (!plan) return defaultText;
-    if (itemIndex === 0) return plan.item1 ?? plan.scoreGoal ?? defaultText;
-    if (itemIndex === 1) return plan.item2 ?? plan.weakSubjectsPlan ?? defaultText;
-    if (itemIndex === 2) return plan.item3 ?? plan.studyTimeCommitment ?? defaultText;
-    return defaultText;
+    if (!plan) return '';
+    if (itemIndex === 0) return plan.item1 ?? plan.scoreGoal ?? '';
+    if (itemIndex === 1) return plan.item2 ?? plan.weakSubjectsPlan ?? '';
+    if (itemIndex === 2) return plan.item3 ?? plan.studyTimeCommitment ?? '';
+    return '';
   };
 
-  // --- 5. LỜI CAM KẾT HÀNH ĐỘNG CÁ NHÂN (VĂN BẢN HỌC SINH TỰ GÕ) ---
+  // --- 5. LỜI CAM KẾT HÀNH ĐỘNG CÁ NHÂN (VĂN BẢN HỌC SINH TỰ GÕ BẰNG BÀN PHÍM) ---
   const [personalPledge, setPersonalPledge] = useState(() => {
     try {
       const saved = localStorage.getItem('cbas_step5_personal_pledge');
-      if (saved) return saved;
+      if (saved && saved !== 'Em xin cam kết nỗ lực học tập có kỷ luật mỗi ngày, tập trung cải thiện các môn tổ hợp còn yếu và giữ vững cấu trúc 3 nấc nguyện vọng đã xác lập.') {
+        return saved;
+      }
     } catch (e) {}
-    return 'Em xin cam kết nỗ lực học tập có kỷ luật mỗi ngày, tập trung cải thiện các môn tổ hợp còn yếu và giữ vững cấu trúc 3 nấc nguyện vọng đã xác lập.';
+    return '';
   });
 
   const handleUpdatePledge = (text) => {
@@ -307,21 +307,6 @@ export default function DebiasMatrix() {
           notes: adaptive.triangle.safetyDesc
         }
       });
-      setActionPlans(prev => {
-        const next = { ...prev };
-        [10, 11, 12].forEach(g => {
-          const gAdaptive = buildAdaptiveTriadAndPlan(newMajor, targetSchool, g);
-          next[g] = {
-            item1: gAdaptive.actions[0].text,
-            item2: gAdaptive.actions[1].text,
-            item3: gAdaptive.actions[2].text,
-            scoreGoal: gAdaptive.actions[0].text,
-            weakSubjectsPlan: gAdaptive.actions[1].text,
-            studyTimeCommitment: gAdaptive.actions[2].text
-          };
-        });
-        return next;
-      });
     }
   };
 
@@ -359,22 +344,6 @@ export default function DebiasMatrix() {
       }
     });
 
-    setActionPlans(prev => {
-      const next = { ...prev };
-      [10, 11, 12].forEach(g => {
-        const gAdaptive = buildAdaptiveTriadAndPlan(anchor.major, anchor.school, g);
-        next[g] = {
-          item1: gAdaptive.actions[0].text,
-          item2: gAdaptive.actions[1].text,
-          item3: gAdaptive.actions[2].text,
-          scoreGoal: gAdaptive.actions[0].text,
-          weakSubjectsPlan: gAdaptive.actions[1].text,
-          studyTimeCommitment: gAdaptive.actions[2].text
-        };
-      });
-      return next;
-    });
-
     // 2. Đọc Bước 2, 3, 4
     try {
       const rawStep2 = localStorage.getItem('cbas_step2_telemetry');
@@ -387,7 +356,7 @@ export default function DebiasMatrix() {
       console.warn('Lỗi đọc Step 2,3,4:', e);
     }
 
-    // 3. Đọc Bước 5 nếu đã lưu (kèm cơ chế tự động dọn sạch văn bản lý thuyết cũ)
+    // 3. Đọc Bước 5 nếu đã lưu (dọn sạch các câu tự điền sẵn để ô trống cho học sinh tự viết)
     try {
       const rawStep5 = localStorage.getItem('cbas_step5_action_plan');
       if (rawStep5) {
@@ -397,25 +366,26 @@ export default function DebiasMatrix() {
         if (parsed.triadTiers) setTriadTiers(parsed.triadTiers);
         if (parsed.selectedGrade) setSelectedGrade(parsed.selectedGrade);
 
-        // Kiểm tra xem dữ liệu đã lưu có chứa văn bản lý thuyết cũ (NẾU... THÌ..., Vật neo...) hay không
+        // Kiểm tra xem dữ liệu đã lưu có phải câu tự điền sẵn mẫu / lý thuyết cũ hay không
         const rawPlansStr = JSON.stringify(parsed.actionPlans || '');
-        const isLegacy = rawPlansStr.includes('NẾU') || rawPlansStr.includes('Vật neo') || rawPlansStr.includes('Implementation Intentions') || rawPlansStr.includes('Δ Điểm') || rawPlansStr.includes('Gollwitzer');
+        const isLegacyOrAutoFilled = rawPlansStr.includes('NẾU') 
+          || rawPlansStr.includes('Vật neo') 
+          || rawPlansStr.includes('Implementation Intentions') 
+          || rawPlansStr.includes('Δ Điểm') 
+          || rawPlansStr.includes('Gollwitzer')
+          || rawPlansStr.includes('Sau mỗi bài kiểm tra hoặc thi thử, em sẽ ghi lại các câu sai')
+          || rawPlansStr.includes('Mỗi ngày em dành ít nhất 1.5 - 2 giờ để luyện đề')
+          || rawPlansStr.includes('rèn thói quen hoàn thành bài tập về nhà trước khi giải trí')
+          || rawPlansStr.includes('tạo lợi thế an toàn khi dùng phương thức xét tuyển học bạ sớm');
 
-        if (isLegacy) {
-          const freshPlans = {};
+        if (isLegacyOrAutoFilled) {
+          // Xóa câu tự điền sẵn để các ô trống hoàn toàn cho học sinh tự gõ
+          const cleanEmptyPlans = {};
           [10, 11, 12].forEach(g => {
-            const gAdaptive = buildAdaptiveTriadAndPlan(parsed.targetMajor || anchor.major, anchor.school, g);
-            freshPlans[g] = {
-              item1: gAdaptive.actions[0].text,
-              item2: gAdaptive.actions[1].text,
-              item3: gAdaptive.actions[2].text,
-              scoreGoal: gAdaptive.actions[0].text,
-              weakSubjectsPlan: gAdaptive.actions[1].text,
-              studyTimeCommitment: gAdaptive.actions[2].text
-            };
+            cleanEmptyPlans[g] = { item1: '', item2: '', item3: '', scoreGoal: '', weakSubjectsPlan: '', studyTimeCommitment: '' };
           });
-          setActionPlans(freshPlans);
-          parsed.actionPlans = freshPlans;
+          setActionPlans(cleanEmptyPlans);
+          parsed.actionPlans = cleanEmptyPlans;
           try {
             localStorage.setItem('cbas_step5_action_plan', JSON.stringify(parsed));
           } catch (e) {}
@@ -579,9 +549,9 @@ export default function DebiasMatrix() {
     const current = getPlanItem(selectedGrade, itemIndex) || '';
     const trimmed = current.trim();
     if (!trimmed) {
-      handleUpdatePlan(field, chipText);
+      handleUpdatePlan(field, `• ${chipText}`);
     } else if (!trimmed.includes(chipText)) {
-      handleUpdatePlan(field, `${trimmed}\n- ${chipText}`);
+      handleUpdatePlan(field, `${trimmed}\n• ${chipText}`);
     }
   };
 
@@ -1405,7 +1375,7 @@ export default function DebiasMatrix() {
                 rows={3}
                 value={getPlanItem(selectedGrade, 0)}
                 onChange={(e) => handleUpdatePlan('item1', e.target.value)}
-                placeholder="Nhập mục tiêu nâng điểm hoặc bấm gợi ý bên dưới..."
+                placeholder="Ô này để trống để em tự lập kế hoạch. Em hãy tự gõ mục tiêu điểm số hoặc bấm các nút chọn nhanh bên dưới..."
                 className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
               {/* Quick chips */}
@@ -1453,7 +1423,7 @@ export default function DebiasMatrix() {
                 rows={3}
                 value={getPlanItem(selectedGrade, 1)}
                 onChange={(e) => handleUpdatePlan('item2', e.target.value)}
-                placeholder="Nhập kỹ năng cần chuẩn bị hoặc bấm gợi ý bên dưới..."
+                placeholder="Ô này để trống để em tự lập kế hoạch. Em hãy tự gõ kỹ năng thực tế cần rèn luyện hoặc bấm các nút chọn nhanh bên dưới..."
                 className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
               {/* Quick chips */}
@@ -1501,7 +1471,7 @@ export default function DebiasMatrix() {
                 rows={3}
                 value={getPlanItem(selectedGrade, 2)}
                 onChange={(e) => handleUpdatePlan('item3', e.target.value)}
-                placeholder="Nhập kỷ luật bản thân hoặc bấm gợi ý bên dưới..."
+                placeholder="Ô này để trống để em tự lập kế hoạch. Em hãy tự gõ kỷ luật tự học của mình hoặc bấm các nút chọn nhanh bên dưới..."
                 className="w-full bg-slate-50 border border-slate-300 hover:border-slate-400 focus:bg-white focus:border-teal-600 rounded-xl p-3 text-slate-900 font-medium focus:outline-none text-xs leading-relaxed transition-colors shadow-2xs"
               />
               {/* Quick chips */}
@@ -1900,10 +1870,16 @@ export default function DebiasMatrix() {
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
                       {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[0]?.num || '1. Mục tiêu nâng điểm các môn thi tổ hợp xét tuyển:'}
                     </span>
-                    <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 0) }}
-                    />
+                    {getPlanItem(selectedGrade, 0) ? (
+                      <div 
+                        className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-800 text-[11px] leading-relaxed whitespace-pre-line"
+                        dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 0) }}
+                      />
+                    ) : (
+                      <div className="border border-dashed border-slate-300 p-2 rounded text-slate-400 italic text-[10.5px]">
+                        (Học sinh tự ghi mục tiêu nâng điểm hoặc hoàn thành sau khi in)
+                      </div>
+                    )}
                   </div>
 
                   {/* Mục 2: Kế hoạch rèn luyện kỹ năng nghề */}
@@ -1911,10 +1887,16 @@ export default function DebiasMatrix() {
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
                       {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[1]?.num || '2. Rèn luyện kỹ năng thực tế & Trao đổi tài chính cùng gia đình:'}
                     </span>
-                    <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 1) }}
-                    />
+                    {getPlanItem(selectedGrade, 1) ? (
+                      <div 
+                        className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
+                        dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 1) }}
+                      />
+                    ) : (
+                      <div className="border border-dashed border-slate-300 p-2 rounded text-slate-400 italic text-[10.5px]">
+                        (Học sinh tự ghi kỹ năng cần rèn luyện hoặc hoàn thành sau khi in)
+                      </div>
+                    )}
                   </div>
 
                   {/* Mục 3: Kỷ luật tự học & Kiên định mục tiêu */}
@@ -1922,22 +1904,37 @@ export default function DebiasMatrix() {
                     <span className="font-bold text-slate-800 block text-[11px] mb-0.5">
                       {ADAPTIVE_COMMITMENTS_BY_GRADE[selectedGrade]?.items[2]?.num || '3. Kỷ luật tự học & Kiên định mục tiêu (Không lung lay):'}
                     </span>
-                    <div 
-                      className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
-                      dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 2) }}
-                    />
+                    {getPlanItem(selectedGrade, 2) ? (
+                      <div 
+                        className="bg-slate-50 border border-slate-200 p-2 rounded text-slate-700 text-[11px] leading-relaxed whitespace-pre-line"
+                        dangerouslySetInnerHTML={{ __html: getPlanItem(selectedGrade, 2) }}
+                      />
+                    ) : (
+                      <div className="border border-dashed border-slate-300 p-2 rounded text-slate-400 italic text-[10.5px]">
+                        (Học sinh tự ghi kỷ luật học tập hoặc hoàn thành sau khi in)
+                      </div>
+                    )}
                   </div>
                 </div>
               </section>
 
               {/* LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH TRÊN BẢN IN */}
-              {personalPledge && (
+              {personalPledge ? (
                 <div className="border border-teal-200 bg-teal-50/60 rounded-lg p-2.5 mb-3 text-xs">
                   <span className="font-black text-teal-900 uppercase text-[10px] block mb-0.5">
                     ✍️ LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH:
                   </span>
                   <p className="italic text-slate-800 text-[11px] leading-relaxed">
                     "{personalPledge}"
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-dashed border-slate-300 rounded-lg p-2.5 mb-3 text-xs bg-slate-50/40">
+                  <span className="font-bold text-slate-500 uppercase text-[10px] block mb-0.5">
+                    ✍️ LỜI CAM KẾT HÀNH ĐỘNG CỦA HỌC SINH:
+                  </span>
+                  <p className="italic text-slate-400 text-[10.5px]">
+                    ........................................................................................................................................................................
                   </p>
                 </div>
               )}
