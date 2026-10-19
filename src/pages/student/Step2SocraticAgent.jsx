@@ -2346,7 +2346,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
               boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
               <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
               <div style={{ flex: 1 }}>
                 <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
@@ -2357,86 +2357,6 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
                 </p>
               </div>
             </div>
-
-            {sessionTelemetry ? (
-              <div style={{ marginTop: '12px', marginBottom: '14px', paddingTop: '12px', borderTop: '1px dashed #a7f3d0' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#047857', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                  📊 KẾT QUẢ ĐO LƯỜNG & GẮN NHÃN HÀNH VI (QUY CHUẨN THỰC NGHIỆM KHKT):
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px' }}>
-                  <div style={{ 
-                    background: (sessionTelemetry.primary_bias || activeBiasType || '').includes('MỎ NEO TRUYỀN THÔNG') ? '#fffbeb' :
-                                (sessionTelemetry.primary_bias || activeBiasType || '').includes('TÂM LÝ ĐÁM ĐÔNG') ? '#faf5ff' :
-                                (sessionTelemetry.primary_bias || activeBiasType || '').includes('TỰ TIN THÁI QUÁ') ? '#fef2f2' :
-                                (sessionTelemetry.primary_bias || activeBiasType || '').includes('THIÊN LỆCH XÁC NHẬN') ? '#f0f9ff' : '#f8fafc',
-                    border: `1px solid ${
-                      (sessionTelemetry.primary_bias || activeBiasType || '').includes('MỎ NEO TRUYỀN THÔNG') ? '#fde68a' :
-                      (sessionTelemetry.primary_bias || activeBiasType || '').includes('TÂM LÝ ĐÁM ĐÔNG') ? '#e9d5ff' :
-                      (sessionTelemetry.primary_bias || activeBiasType || '').includes('TỰ TIN THÁI QUÁ') ? '#fecaca' :
-                      (sessionTelemetry.primary_bias || activeBiasType || '').includes('THIÊN LỆCH XÁC NHẬN') ? '#bae6fd' : '#e2e8f0'
-                    }`, 
-                    borderRadius: '8px', 
-                    padding: '9px 12px' 
-                  }}>
-                    <div style={{ 
-                      fontSize: '12.5px', 
-                      fontWeight: '700', 
-                      color: (sessionTelemetry.primary_bias || activeBiasType || '').includes('MỎ NEO TRUYỀN THÔNG') ? '#92400e' :
-                             (sessionTelemetry.primary_bias || activeBiasType || '').includes('TÂM LÝ ĐÁM ĐÔNG') ? '#6b21a8' :
-                             (sessionTelemetry.primary_bias || activeBiasType || '').includes('TỰ TIN THÁI QUÁ') ? '#991b1b' :
-                             (sessionTelemetry.primary_bias || activeBiasType || '').includes('THIÊN LỆCH XÁC NHẬN') ? '#075985' : '#1e293b', 
-                      marginBottom: '3px' 
-                    }}>
-                      ⚡ Thiên lệch Vòng 1: {sessionTelemetry.primary_bias || activeBiasType || 'TRUY VẤN NỀN TẢNG'}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#334155', lineHeight: '1.4' }}>
-                      <strong>Tiêu chí kích hoạt:</strong> {sessionTelemetry.primary_bias_rule || activeBiasRule || 'Phát hiện thiên lệch nhận thức chi phối mỏ neo ban đầu.'}
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '9px 12px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#1e40af', marginBottom: '3px' }}>
-                      📌 Turning Point: {sessionTelemetry.turning_point_detected}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#1e3a8a', lineHeight: '1.4' }}>
-                      <strong>Tiêu chí kích hoạt:</strong> {sessionTelemetry.turning_point_rule || 'Phát hiện khi học sinh bộc lộ động cơ ngoại tại (áp lực gia đình, tài chính), tự ti năng lực môn học, hoặc có tín hiệu dịch chuyển mục tiêu ngành.'}
-                    </div>
-                  </div>
-
-                  <div style={{ 
-                    background: sessionTelemetry.outcome_category === 'Adaptive_Shift' ? '#f0fdf4' : (sessionTelemetry.outcome_category === 'Resistance_Observed' ? '#fffbeb' : '#eff6ff'), 
-                    border: `1px solid ${sessionTelemetry.outcome_category === 'Adaptive_Shift' ? '#bbf7d0' : (sessionTelemetry.outcome_category === 'Resistance_Observed' ? '#fde68a' : '#bfdbfe')}`, 
-                    borderRadius: '8px', 
-                    padding: '9px 12px' 
-                  }}>
-                    <div style={{ 
-                      fontSize: '12.5px', 
-                      fontWeight: '700', 
-                      color: sessionTelemetry.outcome_category === 'Adaptive_Shift' ? '#166534' : (sessionTelemetry.outcome_category === 'Resistance_Observed' ? '#92400e' : '#1e40af'), 
-                      marginBottom: '3px' 
-                    }}>
-                      🏷️ Phân loại: {sessionTelemetry.outcome_category}
-                    </div>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      color: sessionTelemetry.outcome_category === 'Adaptive_Shift' ? '#14532d' : (sessionTelemetry.outcome_category === 'Resistance_Observed' ? '#78350f' : '#1e3a8a'), 
-                      lineHeight: '1.4' 
-                    }}>
-                      <strong>Tiêu chí kích hoạt:</strong> {sessionTelemetry.outcome_rule || (sessionTelemetry.outcome_category === 'Adaptive_Shift' ? 'Học sinh thực sự có chuyển biến nhận thức, nhận ra rủi ro hoặc điều chỉnh mục tiêu/phương án xét tuyển.' : 'Học sinh kiên định với mục tiêu sau khi đã đối diện với thách thức và điều chuẩn nhận thức.')}
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: '8px', padding: '9px 12px' }}>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#6b21a8', marginBottom: '3px' }}>
-                      ⏱️ Phân luồng Bước 4: {sessionTelemetry.triage_step4}
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#581c87', lineHeight: '1.4' }}>
-                      <strong>Tiêu chí kích hoạt:</strong> {sessionTelemetry.triage_rule || (sessionTelemetry.triage_step4?.includes('In-depth') ? 'Chỉ định tham vấn sâu 20 phút do có biến động nhận thức (Turning Point) hoặc dịch chuyển mục tiêu cần cố vấn can thiệp.' : 'Chỉ định phiên định hướng nhanh 5 phút do nhận thức thực tế đã tương đối vững vàng.')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
               <button 
