@@ -6,6 +6,7 @@ import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import HollandChart from '../../components/common/HollandChart'
 import StepProgressHeader from '../../components/common/StepProgressHeader'
+import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard'
 import { resetStepData, resetAllStepsData } from '../../utils/interventionProgress'
 import { 
   ClipboardList, 
@@ -29,7 +30,8 @@ import {
   Scale,
   Target,
   Search,
-  Check
+  Check,
+  BookOpen
 } from 'lucide-react'
 
 // BỘ 30 CÂU HỎI RIASEC CHUẨN KHOA HỌC HÀNH VI (5 CÂU / NHÓM)
@@ -1545,12 +1547,26 @@ const HollandTest = () => {
             <span>3. Mâu thuẫn nhận thức & Kết quả</span>
             {result && <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.2 rounded font-black">✓ Có sẵn</span>}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setStepPhase('journal')}
+            className={`px-3 py-1.5 rounded-sm text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              stepPhase === 'journal'
+                ? 'bg-teal-700 text-white shadow-xs'
+                : 'bg-teal-50 text-teal-800 border border-teal-300 hover:bg-teal-100'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5 text-teal-600" />
+            <span>4. 📝 Nhật ký & Sản phẩm Vòng 1</span>
+          </button>
         </div>
 
         <div className="text-right text-[11px] font-bold text-slate-500 px-2">
           {stepPhase === 'anchor' && '🎯 Chặng 1/3: Khai báo mỏ neo T₀'}
           {stepPhase === 'quiz' && `📋 Chặng 2/3: Câu ${currentPage * 5 + 1} - ${Math.min((currentPage + 1) * 5, 30)}/30`}
           {stepPhase === 'result' && '⚡ Chặng 3/3: Đối chiếu & Chuyển tiếp'}
+          {stepPhase === 'journal' && '📝 Chặng 4: Nhật ký & Sản phẩm phản tư'}
         </div>
       </div>
 
@@ -2389,6 +2405,16 @@ const HollandTest = () => {
             })()}
           </div>
 
+          {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 1 */}
+          <ReflectionJournalCard 
+            round={1} 
+            contextData={{
+              targetMajor: result?.anchorData?.target_major || targetMajor || '',
+              reason: result?.anchorData?.choice_source || '',
+              confidence: result?.anchorData?.confidence_score_initial || result?.anchorData?.initialConfidence || confidenceScore || 7
+            }}
+          />
+
           {/* NÚT HÀNH ĐỘNG TIẾP THEO: SANG BƯỚC 2 */}
           <div className="p-5 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white rounded-xl border border-slate-700/80 shadow-xl space-y-5">
             {/* Hàng trên: Tiêu đề & Thông điệp chuyển bước (Full Width) */}
@@ -2457,6 +2483,22 @@ const HollandTest = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* GIAI ĐOẠN 4: NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 1                             */}
+      {/* ========================================================================= */}
+      {stepPhase === 'journal' && (
+        <div className="space-y-4 animate-reveal">
+          <ReflectionJournalCard 
+            round={1} 
+            contextData={{
+              targetMajor: result?.anchorData?.target_major || targetMajor || '',
+              reason: result?.anchorData?.choice_source || reason || '',
+              confidence: result?.anchorData?.confidence_score_initial || result?.anchorData?.initialConfidence || confidenceScore || 7
+            }}
+          />
         </div>
       )}
 

@@ -16,7 +16,8 @@ import {
   ChevronRight, 
   BarChart3, 
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  BookOpen
 } from 'lucide-react'
 import { getInterventionProgress, isStepUnlocked, getStepLockReason } from '../../utils/interventionProgress'
 
@@ -43,6 +44,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { step: 3, to: '/student/fact-check', label: '3️⃣ Đối chứng Dữ liệu Tuyển sinh', icon: <GraduationCap className="w-4 h-4 text-blue-400" /> },
     { step: 4, to: '/student/booking', label: '4️⃣ Tham vấn 1-1 Thực tế (Mentor)', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
     { step: 5, to: '/student/reflection', label: '5️⃣ Kế hoạch Hành động & Thang đo T2', icon: <Brain className="w-4 h-4 text-teal-400" /> },
+    { to: '/student/reflection-dossier', label: '📁 Hồ Sơ Phản Tư Của Em', icon: <BookOpen className="w-4 h-4 text-teal-300" /> },
   ]
 
 
@@ -53,6 +55,7 @@ const Sidebar = ({ isOpen, onClose }) => {
   const adminLinks = [
     { to: '/admin/dashboard', label: '⚙️ Bảng Quản trị KHKT (SocraCareer)', icon: <Settings className="w-4 h-4 text-amber-400" /> },
     { to: '/admin/experiment', label: '📊 Báo Cáo Nhóm Can Thiệp (N=30)', icon: <BarChart3 className="w-4 h-4 text-indigo-400" /> },
+    { to: '/admin/journal-management', label: '📚 Quản Lý Nhật Ký 5 Vòng', icon: <BookOpen className="w-4 h-4 text-teal-400" /> },
     { to: '/admin/reflections', label: '📝 Nhật Ký Phản Tư (Socrates)', icon: <Brain className="w-4 h-4 text-emerald-400" /> },
     { to: '/admin/counseling', label: '📅 Duyệt Lịch Tư vấn 1-1', icon: <CalendarDays className="w-4 h-4 text-violet-400" /> },
   ]

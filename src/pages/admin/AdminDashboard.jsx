@@ -43,7 +43,8 @@ import {
   Table,
   RotateCcw,
   Lock,
-  X
+  X,
+  BookOpen
 } from 'lucide-react'
 import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content } from '../../data/adaptiveCommitments'
 export { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content }
@@ -2381,6 +2382,16 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                 {pendingCount} chờ duyệt
               </span>
             )}
+          </button>
+
+          {/* TAB 5 - NHẬT KÝ VÀ SẢN PHẨM 5 VÒNG */}
+          <button
+            onClick={() => navigate('/admin/journal-management')}
+            className="pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 flex-shrink-0 cursor-pointer border-transparent text-emerald-600 hover:text-emerald-700 hover:border-emerald-500"
+            title="Quản lý hồ sơ nhật ký và sản phẩm phản tư 5 vòng của học sinh"
+          >
+            <BookOpen className="w-4 h-4 text-emerald-600" />
+            <span>📚 5. Hồ Sơ Nhật Ký 5 Vòng</span>
           </button>
         </div>
       </div>

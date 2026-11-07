@@ -479,6 +479,41 @@ const StudentDashboard = () => {
       </div>
 
       {/* ======================================================== */}
+      {/* KHỐI NỔI BẬT: HỒ SƠ NHẬT KÝ & SẢN PHẨM PHẢN TƯ 5 VÒNG    */}
+      {/* ======================================================== */}
+      <div className="bg-gradient-to-r from-teal-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 sm:p-6 shadow-xl border-2 border-teal-500/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/40 text-teal-300 flex items-center justify-center font-bold text-2xl shrink-0 shadow-xs">
+            📝
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-black uppercase tracking-wider text-teal-300 bg-teal-400/10 px-2.5 py-0.5 rounded-full border border-teal-400/20">
+                Hồ sơ phản tư KHKT 2026
+              </span>
+              <span className="text-xs text-teal-200 font-semibold">
+                Đầy đủ cả 5 vòng can thiệp
+              </span>
+            </div>
+            <h3 className="text-base sm:text-lg font-black text-white">
+              Hồ Sơ Nhật Ký & Sản Phẩm Phản Tư Của Em
+            </h3>
+            <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+              Sau mỗi vòng, em ghi lại nhật ký ngắn (4 câu hỏi) và đính kèm sản phẩm/minh chứng để tạo thành hồ sơ ra quyết định nghề nghiệp vững chắc.
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/student/reflection-dossier"
+          className="px-5 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-slate-950 font-black text-xs sm:text-sm rounded-xl transition shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 flex items-center gap-2 shrink-0 self-stretch md:self-auto justify-center"
+        >
+          <span>Mở Hồ Sơ Phản Tư 5 Vòng</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* ======================================================== */}
       {/* 2. THANH LỘ TRÌNH LIÊN KẾT 5 BƯỚC (CONNECTED ROADMAP PIPELINE) */}
       {/* ======================================================== */}
       <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 shadow-sm">

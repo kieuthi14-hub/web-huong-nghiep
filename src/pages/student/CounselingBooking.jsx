@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
 import StepProgressHeader from '../../components/common/StepProgressHeader'
+import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard'
 import { 
   CalendarDays, 
   UserCheck, 
@@ -2949,6 +2950,18 @@ const CounselingBooking = () => {
           </div>
         </div>
       )}
+
+      {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 4 */}
+      <div className="mt-8 mb-6">
+        <ReflectionJournalCard 
+          round={4}
+          contextData={{
+            targetMajor: dossierData?.targetMajor || '',
+            activeTriage: activeTriage,
+            hasSession: mySessions.length > 0
+          }}
+        />
+      </div>
 
       {toast && (
         <Toast

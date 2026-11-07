@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import StepProgressHeader from '../../components/common/StepProgressHeader';
+import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard';
 import { resetStepData } from '../../utils/interventionProgress';
 
 // HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
@@ -2491,6 +2492,18 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
             GỬI ➔
           </button>
         </form>
+      </div>
+
+      {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 2 */}
+      <div style={{ padding: '12px 16px 28px 16px' }} className="no-print">
+        <ReflectionJournalCard 
+          round={2}
+          contextData={{
+            targetMajor: studentProfile?.targetMajor || '',
+            activeBiasType: activeBiasType || '',
+            conversationExcerpt: (messages || []).filter(m => m.role === 'model').slice(-1)[0]?.text || ''
+          }}
+        />
       </div>
         </>
       )}

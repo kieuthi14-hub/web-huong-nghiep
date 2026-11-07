@@ -25,12 +25,14 @@ import MajorExplorer from './pages/student/MajorExplorer'
 import UniversityExplorer from './pages/student/UniversityExplorer'
 import RoadmapBuilder from './pages/student/RoadmapBuilder'
 import CounselingBooking from './pages/student/CounselingBooking'
+import StudentReflectionDossier from './pages/student/StudentReflectionDossier'
 
 // Counselor Pages
 import CounselorDashboard from './pages/counselor/CounselorDashboard'
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard'
+import JournalManagement from './pages/admin/JournalManagement'
 
 // Route Bảo vệ chung dựa trên phân quyền
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -532,6 +534,28 @@ const App = () => {
             } 
           />
 
+          {/* 7. Hồ sơ phản tư của em (Đủ 5 vòng - Không khóa tiến độ) */}
+          <Route 
+            path="/student/reflection-dossier" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <StudentReflectionDossier />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/ho-so-phan-tu" 
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <StudentReflectionDossier />
+                </MainLayout>
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Counselor Routes */}
           <Route 
             path="/counselor/dashboard" 
@@ -592,6 +616,26 @@ const App = () => {
               <AdminProtectedRoute>
                 <MainLayout>
                   <AdminDashboard activeTabDefault="counseling" />
+                </MainLayout>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/journal-management" 
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <JournalManagement />
+                </MainLayout>
+              </AdminProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/nhat-ky-5-vong" 
+            element={
+              <AdminProtectedRoute>
+                <MainLayout>
+                  <JournalManagement />
                 </MainLayout>
               </AdminProtectedRoute>
             } 

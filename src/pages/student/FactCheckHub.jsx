@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import Step3VocationalVerification from './Step3VocationalVerification'
 import Step3DataVerification from './Step3DataVerification'
+import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard'
 import StepProgressHeader from '../../components/common/StepProgressHeader'
 import { 
   FileCheck2, 
@@ -449,6 +450,18 @@ const FactCheckHub = () => {
           />
         </div>
       )}
+
+      {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 3 */}
+      <div style={{ maxWidth: '850px', margin: '24px auto 0 auto' }}>
+        <ReflectionJournalCard 
+          round={3}
+          contextData={{
+            targetMajor: targetCareerDisplay,
+            targetSchool: targetUniDisplay,
+            pathwayMode: pathwayMode
+          }}
+        />
+      </div>
     </div>
   )
 }

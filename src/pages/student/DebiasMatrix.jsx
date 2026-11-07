@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import Toast from '../../components/common/Toast';
 import StepProgressHeader from '../../components/common/StepProgressHeader';
+import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard';
 import {
   Crosshair,
   CheckCircle2,
@@ -1701,6 +1702,18 @@ export default function DebiasMatrix() {
           </div>
         </div>
 
+      </div>
+
+      {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 5 (KẾT QUẢ VÀ LỘ TRÌNH ĐÍCH) */}
+      <div className="no-print mt-8 mb-6 max-w-5xl mx-auto px-4">
+        <ReflectionJournalCard 
+          round={5}
+          contextData={{
+            targetMajor: selectedMajor || '',
+            backupPlan: backupPlan || '',
+            decisionRationale: ''
+          }}
+        />
       </div>
 
       {/* =========================================================================
