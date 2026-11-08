@@ -597,16 +597,16 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
 
   const major = effectiveCareer || 'ngành mục tiêu';
 
-  if (round === 4) {
-    // Ở LƯỢT CUỐI CÙNG, RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
+  if (round === 5) {
+    // Ở LƯỢT KẾT THÚC (SAU KHI TRẢ LỜI ĐỦ 4 CÂU HỎI), RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
     cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
     cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
     cleaned = cleaned.trim();
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
-    return `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
+    return `Để biết kế hoạch học tập và năng lực thực tế có đáp ứng được ngưỡng tuyển sinh của ngành ${major} tại ${cleanSchoolName} hay không, em cần đối chứng trực tiếp với số liệu. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
   } else {
-    // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
+    // VÒNG 1, 2, 3, 4: ĐẢM BẢO TỐI ĐA 2 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
     const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
@@ -614,6 +614,9 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
       const lastQ = sentences[sentences.length - 1];
       const prev = sentences[0];
       cleaned = `${prev} ${lastQ}`;
+    }
+    if (round === 4 && !/\?\s*$/.test(cleaned)) {
+      cleaned = `Việc chỉ nói "sẽ đi học thêm" hay "cố gắng hơn" vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
     }
     return cleaned.trim();
   }
@@ -701,15 +704,15 @@ export default async function handler(req, res) {
 
     let currentStage = 1;
     if (body?.currentStage && Number(body.currentStage) >= 1) {
-      currentStage = Math.min(Math.max(Number(body.currentStage), 1), 4);
+      currentStage = Math.min(Math.max(Number(body.currentStage), 1), 5);
     } else if (body?.stage && Number(body.stage) >= 1) {
-      currentStage = Math.min(Math.max(Number(body.stage), 1), 4);
+      currentStage = Math.min(Math.max(Number(body.stage), 1), 5);
     } else if (body?.chatStage && Number(body.chatStage) >= 1) {
-      currentStage = Math.min(Math.max(Number(body.chatStage), 1), 4);
+      currentStage = Math.min(Math.max(Number(body.chatStage), 1), 5);
     } else if (body?.round && Number(body.round) >= 1) {
-      currentStage = Math.min(Math.max(Number(body.round), 1), 4);
+      currentStage = Math.min(Math.max(Number(body.round), 1), 5);
     } else {
-      currentStage = Math.min(Math.max(substantiveUserMsgs.length + 1, 1), 4);
+      currentStage = Math.min(Math.max(substantiveUserMsgs.length + 1, 1), 5);
     }
 
     const studentProfile = body?.studentProfile || body?.userProfile || body?.anchor || {};
@@ -850,8 +853,8 @@ export default async function handler(req, res) {
       replyText = sanitizeSocraticResponse(rawFallback, currentStage, effectiveCareer, targetSchool, trimmedMsg, studentProfile);
     }
 
-    const isComplete = currentStage === 4;
-    const progressStr = `${currentStage}/4`;
+    const isComplete = currentStage === 5;
+    const progressStr = `${Math.min(currentStage, 4)}/4`;
 
     return res.status(200).json({
       success: true,
@@ -1033,14 +1036,30 @@ BỐI CẢNH GIAI ĐOẠN 3 (CHẤT VẤN SỨC HỌC & TỔ HỢP MÔN):
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
   }
 
-  // Stage 4
-  return `${CORE_PROMPT}${adaptiveDirective}
-BỐI CẢNH GIAI ĐOẠN 4 (CHUYỂN TIẾP PHẢN TƯ SANG BƯỚC 3):
+  if (stage === 4) {
+    return `${CORE_PROMPT}${adaptiveDirective}
+BỐI CẢNH GIAI ĐOẠN 4 (CÂU HỎI DẪN DẮT THỨ 4: CHẤT VẤN TÍNH KHẢ THI CỦA KẾ HOẠCH HỌC TẬP & PHƯƠNG ÁN DỰ PHÒNG):
 - Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
-- Học sinh vừa trả lời về môn học và kế hoạch: "${userText}".
+- Học sinh vừa trả lời về môn học lo lắng và kế hoạch: "${userText}".
 
-[NHIỆM VỤ GIAI ĐOẠN 4 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
-1. Tóm tắt ngắn gọn lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ qua 3 lượt đối thoại (về kỳ vọng thu nhập chưa gắn với kỹ năng vượt trội, hoặc môn xét tuyển còn yếu chưa có giải pháp cụ thể).
+[NHIỆM VỤ GIAI ĐOẠN 4 - ĐÀO SÂU KẾ HOẠCH HÀNH ĐỘNG & PHƯƠNG ÁN DỰ PHÒNG]:
+1. Phản biện ngắn gọn câu trả lời "${userText}" của học sinh (chỉ ra rằng nói "đi học thêm" hoặc "cố gắng" vẫn còn cảm tính nếu không có định lượng thời gian tự học và lộ trình cụ thể).
+2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI DẪN DẮT SẮC BÉN:
+"Việc chỉ nói 'sẽ đi học thêm' hay 'cố gắng hơn' vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này (để học sinh trả lời câu hỏi thứ 4 này trước).
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
+  }
+
+  // Stage 5
+  return `${CORE_PROMPT}${adaptiveDirective}
+BỐI CẢNH GIAI ĐOẠN 5 (KẾT THÚC 4 CÂU HỎI PHẢN TƯ & CHUYỂN TIẾP SANG BƯỚC 3):
+- Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
+- Học sinh vừa trả lời Câu hỏi 4 về cam kết tự học và phương án dự phòng: "${userText}".
+
+[NHIỆM VỤ GIAI ĐOẠN 5 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
+1. Tóm tắt ngắn gọn nhận thức của học sinh sau 4 câu hỏi đối thoại.
 2. MỜI HỌC SINH BƯỚC SANG BƯỚC 3 ĐỂ TỰ TAY TRA CỨU SỐ LIỆU ĐỀ ÁN TUYỂN SINH THỰC TẾ:
 "Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu."
 
@@ -1110,6 +1129,10 @@ function generateCognitiveFallback({
     return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
   }
 
-  // Stage 4
-  return `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
+  if (stage === 4) {
+    return `Việc chỉ nói "sẽ đi học thêm" hay "cố gắng hơn" vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
+  }
+
+  // Stage 5
+  return `Để biết kế hoạch học tập và năng lực thực tế có đáp ứng được ngưỡng tuyển sinh của ngành ${effectiveCareer} tại ${targetSchool} hay không, em cần đối chứng trực tiếp với số liệu. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
 }

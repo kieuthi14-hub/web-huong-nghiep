@@ -697,8 +697,8 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
   const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
 
-  if (round === 4) {
-    // Ở LƯỢT CUỐI CÙNG, RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
+  if (round === 5) {
+    // Ở LƯỢT 5 (KẾT THÚC 4 CÂU HỎI PHẢN TƯ), TỔNG KẾT & RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
     // Cắt bỏ dấu ? ở cuối câu
     cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
     cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
@@ -730,10 +730,12 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
         intro = `Học đều các môn là một nền tảng tốt, nhưng điểm chuẩn vào ngành ${major} ${cleanSchoolClause} đòi hỏi điểm số bứt phá ở tổ hợp xét tuyển.`;
       } else if (strongSubject && weakSubject) {
         intro = `Thế mạnh ở môn ${strongSubject} là điểm tựa tốt, nhưng môn ${weakSubject} nếu chưa đạt yêu cầu sẽ là rào cản khi xét tuyển vào ngành ${major} ${cleanSchoolClause}.`;
+      } else if (weakSubject) {
+        intro = `Việc em nhận diện được điểm yếu ở môn ${weakSubject} là bước đầu quan trọng, nhưng để biến kế hoạch học tập thành điểm số trúng tuyển vào ngành ${major} ${cleanSchoolClause}, em cần biết chính xác ngưỡng điểm mình phải vượt qua.`;
       } else if (strongSubject) {
         intro = `Môn ${strongSubject} là một điểm tựa, nhưng điểm chuẩn ngành ${major} ${cleanSchoolClause} đòi hỏi cả tổ hợp xét tuyển phải đạt ngưỡng an toàn.`;
       } else {
-        intro = `Để biết năng lực thực tế có đáp ứng được ngưỡng tuyển sinh của ngành ${major} ${cleanSchoolClause} hay không, em cần đối chứng với dữ liệu thực tế.`;
+        intro = `Để biết kế hoạch ôn tập và năng lực thực tế của em có đáp ứng được ngưỡng tuyển sinh của ngành ${major} ${cleanSchoolClause} hay không, em cần đối chứng ngay với số liệu chính thống.`;
       }
     }
 
@@ -744,7 +746,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
 
     return `${intro} ${standardDirective}`.trim();
   } else {
-    // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
+    // VÒNG 1, 2, 3, 4: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN DẪN DẮT
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
     // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
@@ -772,11 +774,13 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     if (!cleaned.endsWith('?')) {
       if (isVocational && !isUniClarification) {
         if (round === 1) {
-          cleaned += ` Thầy hiểu học nghề là lựa chọn thực tế và có lộ trình việc làm rõ ràng. Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
+          cleaned += ` Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
         } else if (round === 2) {
-          cleaned += ` Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (đứng nhiều giờ, ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
+          cleaned += ` Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc. Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
         } else if (round === 3) {
-          cleaned += ` Học nghề vẫn đòi hỏi điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để vào các trường nghề uy tín. Nhìn lại sức học hiện tại, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm vé tốt nghiệp này?`;
+          cleaned += ` Học nghề vẫn đòi hỏi điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để vào các trường nghề uy tín. Nhìn lại sức học hiện tại, môn nào khiến em lo lắng nhất cho kỳ thi tốt nghiệp này?`;
+        } else if (round === 4) {
+          cleaned += ` Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${cleanSchoolName}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?`;
         }
       } else {
         if (round === 1) {
@@ -793,6 +797,9 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
           }
         } else if (round === 3) {
           cleaned += ` Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
+        } else if (round === 4) {
+          const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học còn yếu đó';
+          cleaned += ` Việc nhận ra nỗi lo ở ${weakMention} mới chỉ là bước đầu, bởi chỉ nói "sẽ đi học thêm" hay "sẽ cố gắng" vẫn còn rất cảm tính. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để kéo điểm ${weakMention}, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
         }
       }
     }
@@ -841,30 +848,31 @@ export default function Step2SocraticAgent() {
 
   const [isMissingStep1, setIsMissingStep1] = useState(false);
   const maxStages = 4;
-  const isReadyForStep3 = chatStage === 4 && (isCompleted || isChatFinished);
+  const isReadyForStep3 = chatStage >= 5 && (isCompleted || isChatFinished);
   const messagesEndRef = useRef(null);
   const step3CtaRef = useRef(null);
   const lastAiMsgRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const inputFieldRef = useRef(null);
   const isInitialMountRef = useRef(true);
 
-  // Tự động cuộn mượt mà NỘI BỘ trong khung chat khi có tin nhắn mới (KHÔNG làm nhảy màn hình trang web)
+  // Tự động cuộn tức thì NỘI BỘ trong khung chat khi có tin nhắn mới (KHÔNG dùng smooth scroll chồng chéo làm giật màn hình)
   useEffect(() => {
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
       return;
     }
-    const timer = setTimeout(() => {
+    const rafId = requestAnimationFrame(() => {
       const container = chatContainerRef.current;
       if (container) {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: 'smooth'
-        });
+        container.scrollTop = container.scrollHeight;
       }
-    }, 80);
-    return () => clearTimeout(timer);
-  }, [messages.length, isLoading]);
+      if (!isReadyForStep3) {
+        inputFieldRef.current?.focus({ preventScroll: true });
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [messages.length, isLoading, isReadyForStep3]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -1094,10 +1102,10 @@ export default function Step2SocraticAgent() {
         lastMsg.text.includes("Bước 3") || 
         lastMsg.text.includes("bước 3")
       ));
-      if (userMsgCount >= 3 && (savedCompleted || hasStep3InLast)) {
+      if (userMsgCount >= 4 && (savedCompleted || hasStep3InLast)) {
         setIsCompleted(true);
         setIsChatFinished(true);
-        setChatStage(4);
+        setChatStage(5);
         // Tự động tính lại và chuẩn hóa sessionTelemetry theo quy tắc phương pháp luận mới nhất
         const outcomeAnalysis = evaluateOutcomeCategory(sanitizedSaved, resolvedProfile, '', null);
         const outcome = outcomeAnalysis.category;
@@ -1125,6 +1133,26 @@ export default function Step2SocraticAgent() {
         setSessionTelemetry(refreshedTelemetry);
         try { localStorage.setItem('cbas_step2_telemetry', JSON.stringify(refreshedTelemetry)); } catch (e) {}
       } else {
+        // Nếu phiên cũ kết thúc sớm ở lượt 3 (chỉ có 3 câu hỏi), tự động gỡ câu chốt Bước 3 cuối để học sinh trả lời thêm Câu hỏi 4 dẫn dắt
+        let cleanedSaved = sanitizedSaved;
+        if (userMsgCount === 3 && hasStep3InLast) {
+          const prevUserText = sanitizedSaved.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
+          const { weakSubject } = extractSubjectsFeedback(prevUserText);
+          const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học mình còn lo lắng';
+          const followUpQ4 = `Việc em nhận diện được nỗi lo ở ${weakMention} mới chỉ là bước đầu, bởi nếu chỉ dừng ở dự định "sẽ đi học thêm" hay "sẽ cố gắng" thì vẫn còn rất cảm tính. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá điểm số ${weakMention}, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
+          cleanedSaved = [
+            ...sanitizedSaved.slice(0, -1),
+            {
+              ...lastMsg,
+              text: followUpQ4
+            }
+          ];
+          setMessages(cleanedSaved);
+          try {
+            localStorage.setItem("cbas_step2_messages", JSON.stringify(cleanedSaved));
+            localStorage.removeItem("cbas_step2_completed");
+          } catch (e) {}
+        }
         const resolvedStage = Math.min(userMsgCount + 1, 4);
         setChatStage(resolvedStage);
         setIsCompleted(false);
@@ -1313,13 +1341,28 @@ BỐI CẢNH VÒNG 3 (HỌC NGHỀ - NẤC 1: ĐIỀU KIỆN PHÁP LÝ & BẰNG 
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
 
           case 4:
-          default:
             return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
+BỐI CẢNH VÒNG 4 (HỌC NGHỀ - CHẤT VẤN KẾ HOẠCH HÀNH ĐỘNG CỤ THỂ & PHƯƠNG ÁN DỰ PHÒNG):
 - Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
 - Học sinh vừa trả lời: "${userText}".
 
-[NHIỆM VỤ LƯỢT 4 - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ CHO HỌC NGHỀ]:
+[NHIỆM VỤ LƯỢT 4 - BÓC TÁCH CAM KẾT HÀNH ĐỘNG & PHƯƠNG ÁN DỰ PHÒNG]:
+1. Phản biện ngắn gọn: Chỉ nói "sẽ cố gắng" hay "sẽ ôn tập" vẫn còn chung chung.
+2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI DẪN DẮT SÂU HƠN:
+"Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${uni}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
+
+          case 5:
+          default:
+            return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 5 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
+- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
+- Học sinh vừa trả lời: "${userText}".
+
+[NHIỆM VỤ LƯỢT 5 - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ CHO HỌC NGHỀ]:
 1. Đưa ra đúng 1 câu nhận định trung tính: Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết.
 2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC (TUYỆT ĐỐI KHÔNG CÓ DẤU ? VÀ KHÔNG NHẮC ĐẾN HỌC PHÍ):
 "Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự chuẩn bị về thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${uni} để đối chiếu với hồ sơ của mình."
@@ -1330,7 +1373,7 @@ BỐI CẢNH VÒNG 4 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         }
       } else {
         // ==========================================
-        // KỊCH BẢN 4 GIAI ĐOẠN TRUY VẤN TỰ NHIÊN SOCRACAREER
+        // KỊCH BẢN 4 CÂU HỎI TRUY VẤN + 1 LƯỢT CHỐT BƯỚC 3 SOCRACAREER
         // ==========================================
         switch (round) {
           case 2:
@@ -1370,14 +1413,30 @@ BỐI CẢNH GIAI ĐOẠN 3 (CHẤT VẤN SỨC HỌC & TỔ HỢP MÔN):
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
 
           case 4:
+            return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
+BỐI CẢNH GIAI ĐOẠN 4 (CÂU HỎI DẪN DẮT SÂU VỀ TÍNH KHẢ THI CỦA GIẢI PHÁP & PHƯƠNG ÁN DỰ PHÒNG):
+- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
+- Học sinh vừa chia sẻ về môn học lo lắng và dự định học tập: "${userText}".
+
+[NHIỆM VỤ GIAI ĐOẠN 4 - ĐẶT CÂU HỎI DẪN DẮT BÓC TÁCH SỰ CẢM TÍNH TRONG GIẢI PHÁP]:
+1. Đi thẳng vào nhận định sắc bén: Nếu học sinh chỉ nói "sẽ đi học thêm", "sẽ cố gắng", hoặc khẳng định không lo môn nào, hãy chỉ ra rằng dự định chung chung đó rất dễ rơi vào bẫy trì hoãn nếu không có cam kết định lượng.
+2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN DẪN DẮT:
+"Việc nhận diện môn học còn lo lắng hay dự định đi học thêm mới chỉ là bước đầu. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để lấp lỗ hổng kiến thức môn đó, và nếu điểm chuẩn thực tế của ${uni} cao hơn mức điểm hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn giả định.
+- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này (để học sinh trả lời xong câu hỏi thứ 4 này mới chuyển bước).
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
+
+          case 5:
           default:
             return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
-BỐI CẢNH GIAI ĐOẠN 4 (CHUYỂN TIẾP PHẢN TƯ SANG BƯỚC 3):
+BỐI CẢNH GIAI ĐOẠN 5 (TỔNG KẾT PHẢN TƯ & CHUYỂN TIẾP SANG BƯỚC 3):
 - Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa trả lời về môn học và kế hoạch ôn tập: "${userText}".
+- Học sinh vừa trả lời câu hỏi thứ 4 về cam kết tự học và phương án dự phòng: "${userText}".
 
-[NHIỆM VỤ GIAI ĐOẠN 4 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
-1. Tóm tắt ngắn gọn lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ qua 3 lượt đối thoại (về kỳ vọng thu nhập chưa gắn với kỹ năng vượt trội, hoặc môn xét tuyển còn yếu chưa có giải pháp cụ thể).
+[NHIỆM VỤ GIAI ĐOẠN 5 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
+1. Tóm tắt ngắn gọn chuyển biến hoặc lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ qua 4 câu hỏi phản tư.
 2. MỜI HỌC SINH BƯỚC SANG BƯỚC 3 ĐỂ TỰ TAY TRA CỨU SỐ LIỆU ĐỀ ÁN TUYỂN SINH THỰC TẾ:
 "Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất, chỉ tiêu và đề án tuyển sinh thực tế của ${uni} xem độ chênh lệch thực tế là bao nhiêu."
 
@@ -1423,12 +1482,22 @@ BỐI CẢNH VÒNG 3 (BÓC TÁCH HỌC THUẬT VS THỰC HÀNH NGHỀ):
 "Từ thế mạnh đó, giữa hướng đi đại học học thuật và hướng đi kỹ thuật/dịch vụ thực hành, đâu là hướng đi em thấy phù hợp hơn với sức học hiện tại của mình?"`;
 
         case 4:
-        default:
           return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
+BỐI CẢNH VÒNG 4 (CHẤT VẤN MÔN HỌC THẾ MẠNH & RÀO CẢN TRƯỚC KHI TRA CỨU):
 - Học sinh vừa chọn hướng đi: "${userText}".
 
 [NHIỆM VỤ LƯỢT 4]:
+1. Tối đa 1 câu ghi nhận hướng đi sơ bộ của học sinh.
+2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN DẪN DẮT:
+"Với hướng đi đó, nhìn lại bảng điểm học bạ hiện tại của mình, đâu là môn học em có điểm số tốt nhất để làm trụ cột xét tuyển và môn nào em cần phải cải thiện gấp?"`;
+
+        case 5:
+        default:
+          return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
+- Học sinh vừa chia sẻ về môn học: "${userText}".
+
+[NHIỆM VỤ LƯỢT 5]:
 1. Đúng 1 câu xác nhận lựa chọn sơ bộ của học sinh.
 2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ:
 "Em hãy bước sang Bước 3, tự tay tra cứu Đề án tuyển sinh và tiêu chuẩn đầu vào của các cơ sở đào tạo phù hợp với hướng đi em vừa chọn để đối chiếu với học bạ của mình."
@@ -1454,15 +1523,19 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     const uni = formatSchoolName(rawSchool, isVocational);
     const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
     const lowerUser = (userText || '').toLowerCase();
-    const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
+    const { weakSubject } = extractSubjectsFeedback(userText);
 
     if (specialInstruction) {
       return `Rào cản về kỹ năng hay tâm lý hoàn toàn có thể cải thiện được nếu có phương pháp phù hợp. Nếu phải đối diện với tình huống này thường xuyên trong thực tế nghề nghiệp, em dựa vào năng lực gì để khắc phục và vượt qua?`;
     }
 
     if (isUniClarification) {
-      if (round === 4) {
+      if (round === 5) {
         return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${uni} xem độ chênh lệch thực tế là bao nhiêu.`;
+      }
+      if (round === 4) {
+        const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học còn lo lắng';
+        return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Việc nhận ra nỗi lo ở ${weakMention} mới chỉ là bước đầu; em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn đó, và nếu điểm chuẩn vượt tầm với hiện tại thì phương án dự phòng của em là gì?`;
       }
       if (round === 3) {
         return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Để xét tuyển vào trường, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
@@ -1478,14 +1551,14 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       }
       const studentObj = {
         id: profile?.studentId || profile?.id || localStorage.getItem('cbas_student_id') || '',
-        name: profile?.studentName || profile?.name || userProfile?.name || 'em',
+        name: profile?.studentName || profile?.name || 'em',
         baselineTarget: effectiveCareer,
         targetCareer: effectiveCareer,
         targetSchool: uni,
         source: reason,
         anchorReason: profile?.anchorReason || '',
         anchorQuote: profile?.anchorQuote || reason || '',
-        conf_T0: score,
+        conf_T0: profile?.initialConfidence ?? 5,
         gpa_A00: profile?.gpa_A00 || null,
         benchmark_target: profile?.benchmark_target || null,
         riasec_match_pct: profile?.riasec_match_pct ?? 40,
@@ -1503,14 +1576,17 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
             return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
 
           case 3:
-            return `Học nghề không đồng nghĩa với việc có thể buông xuôi việc học lớp 12, vì các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm bằng tốt nghiệp THPT làm tấm vé vào trường nghề?`;
+            return `Học nghề không đồng nghĩa với việc có thể buông xuôi việc học lớp 12, vì các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, môn học nào khiến em cảm thấy lo lắng nhất trong kỳ thi tốt nghiệp THPT?`;
 
           case 4:
+            return `Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${uni}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?`;
+
+          case 5:
           default:
             return `Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${uni} để đối chiếu với hồ sơ của mình.`;
         }
       } else {
-        // Fallback cho hướng Đại học / Học thuật (Chuẩn 4 Giai đoạn SocraCareer)
+        // Fallback cho hướng Đại học / Học thuật (Đủ 4 câu hỏi phản tư + Lượt 5 chốt sang Bước 3)
         switch (round) {
           case 2:
             return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. So với mức lương khởi điểm bình quân của một cử nhân mới tốt nghiệp, em có bằng chứng hay kỹ năng chuyên môn vượt trội nào để tin rằng nhà tuyển dụng sẵn sàng chi trả mức thu nhập này?`;
@@ -1518,9 +1594,14 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           case 3:
             return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
 
-          case 4:
+          case 4: {
+            const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học mình còn lo lắng';
+            return `Việc nhận diện nỗi lo ở ${weakMention} mới chỉ là bước đầu, bởi nếu chỉ dừng ở dự định "sẽ đi học thêm" hay "sẽ cố gắng" thì vẫn còn rất cảm tính. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá điểm số ${weakMention}, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
+          }
+
+          case 5:
           default:
-            return `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${uni} xem độ chênh lệch thực tế là bao nhiêu.`;
+            return `Để biết kế hoạch ôn tập và năng lực thực tế của em có đáp ứng được ngưỡng tuyển sinh của ngành ${effectiveCareer} ${schoolClause} hay không, em cần đối chứng ngay với số liệu chính thống. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${uni} xem độ chênh lệch thực tế là bao nhiêu.`;
         }
       }
     } else {
@@ -1535,6 +1616,9 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           return `Từ nhóm thế mạnh ${holland}, thị trường nghề nghiệp thường mở ra hai ngã rẽ: học thuật đại học và kỹ thuật/dịch vụ thực hành. Giữa hai hướng đi này, đâu là hướng đi em thấy phù hợp hơn với sức học hiện tại của mình?`;
 
         case 4:
+          return `Với hướng đi đó, nhìn lại bảng điểm học bạ hiện tại của mình, đâu là môn học em có điểm số tốt nhất để làm trụ cột xét tuyển và môn nào em cần phải cải thiện gấp?`;
+
+        case 5:
         default:
           return `Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân sau các vòng phản tư. Em hãy bước sang Bước 3, tự tay tra cứu Đề án tuyển sinh và tiêu chuẩn đầu vào của các cơ sở đào tạo phù hợp với hướng đi em vừa chọn để đối chiếu với học bạ của mình.`;
       }
@@ -1603,7 +1687,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       specialInstruction: specialInstruction
     };
 
-    const isStage4 = stage === 4;
+    const isStage5 = stage === 5;
 
     for (const ep of endpointsToTry) {
       try {
@@ -1622,12 +1706,12 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           const sData = await serverlessRes.json();
           let replyText = sData?.response || sData?.reply;
           if (replyText && replyText.trim().length >= 15) {
-            const isReallyComplete = isStage4 && (sData?.isComplete === true || sData?.isCompleted === true || sData?.stage === 4);
+            const isReallyComplete = isStage5 && (sData?.isComplete === true || sData?.isCompleted === true || sData?.stage === 5);
             const sanitized = sanitizeSocraticResponse(replyText, stage, effectiveMajor, studentProfile?.targetSchool, userText);
 
             return {
               replyText: sanitized,
-              chatStage: isReallyComplete ? 4 : stage,
+              chatStage: isReallyComplete ? 5 : stage,
               isCompleted: isReallyComplete,
               isComplete: isReallyComplete,
               shiftedMajor: sData?.shiftedMajor || (goalShift ? goalShift.newMajor : null)
@@ -1691,12 +1775,12 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
             text = parts[0]?.text?.trim();
           }
           if (text) {
-            const isReallyComplete = isStage4;
+            const isReallyComplete = isStage5;
             const sanitized = sanitizeSocraticResponse(text, stage, effectiveMajor, studentProfile?.targetSchool, userText);
 
             return {
               replyText: sanitized,
-              chatStage: isReallyComplete ? 4 : stage,
+              chatStage: isReallyComplete ? 5 : stage,
               isCompleted: isReallyComplete,
               isComplete: isReallyComplete,
               shiftedMajor: goalShift ? goalShift.newMajor : null
@@ -1710,12 +1794,12 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 
     // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
     let fallbackText = generateHeuristicFallback(stage, effectiveProfile, userText, specialInstruction);
-    const isReallyComplete = isStage4;
+    const isReallyComplete = isStage5;
     const sanitizedFallback = sanitizeSocraticResponse(fallbackText, stage, effectiveMajor, studentProfile?.targetSchool, userText);
 
     return {
       replyText: sanitizedFallback,
-      chatStage: isReallyComplete ? 4 : stage,
+      chatStage: isReallyComplete ? 5 : stage,
       isCompleted: isReallyComplete,
       isComplete: isReallyComplete,
       shiftedMajor: goalShift ? goalShift.newMajor : null
@@ -1758,7 +1842,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     content += `💵 Kỳ vọng thu nhập (Bước 1): ${expectedIncome}\n`;
     content += `📝 Lý do chọn ban đầu: ${reason}\n`;
     const isSessionDone = isReadyForStep3;
-    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, 3)} / ${maxStages} giai đoạn phản tư`}\n\n`;
+    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, 4)} / ${maxStages} câu hỏi phản tư`}\n\n`;
 
     const effectiveBias = activeBiasType || sessionTelemetry?.primary_bias || localStorage.getItem('cbas_step2_primary_bias') || 'TRUY VẤN NỀN TẢNG THỰC CHẤT';
     const effectiveBiasRule = activeBiasRule || sessionTelemetry?.primary_bias_rule || localStorage.getItem('cbas_step2_bias_rule') || 'Kích hoạt Vòng 1 thích ứng dựa trên phân tích mỏ neo lý do lựa chọn, độ tự tin T0, khoảng cách điểm học bạ và độ tương thích RIASEC.';
@@ -1851,6 +1935,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
   // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH & ĐIỀU PHỐI GIAI ĐOẠN PHẢN TƯ
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    if (isLoading || isReadyForStep3) return;
     const cleanText = inputValue.trim();
     if (cleanText.length === 0) return;
 
@@ -1899,7 +1984,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     setInputValue('');
     setIsLoading(true);
 
-    const targetStage = Math.min(chatStage + 1, 4);
+    const targetStage = Math.min(chatStage + 1, 5);
 
     try {
       let aiResult = null;
@@ -1945,8 +2030,8 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       }
       
       const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
-      const isFinished = targetStage === 4 && (aiResult?.isComplete === true || aiResult?.isCompleted === true);
-      const nextStage = isFinished ? 4 : targetStage;
+      const isFinished = targetStage === 5 && (aiResult?.isComplete === true || aiResult?.isCompleted === true);
+      const nextStage = isFinished ? 5 : targetStage;
 
       const aiMsg = {
         role: 'model',
@@ -2113,11 +2198,11 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
             <span>Tiến trình:</span>
-            <span style={{ color: '#2563eb' }}>{isReadyForStep3 ? 4 : Math.min(chatStage, 3)}</span>
-            <span>/ {maxStages} giai đoạn</span>
+            <span style={{ color: '#2563eb' }}>{isReadyForStep3 ? 4 : Math.min(chatStage, 4)}</span>
+            <span>/ {maxStages} câu hỏi phản tư</span>
             {isReadyForStep3 ? (
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
-                ✓ Đã hoàn thành 4 giai đoạn phản tư
+                ✓ Đã hoàn thành 4 câu hỏi phản tư
               </span>
             ) : null}
           </div>
@@ -2216,10 +2301,11 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         id="socratic-chat-export-area"
         ref={chatContainerRef}
         style={{
-          flex: 1,
-          maxHeight: '64vh',
-          minHeight: '380px',
+          height: '58vh',
+          minHeight: '400px',
+          maxHeight: '560px',
           overflowY: 'auto',
+          overflowAnchor: 'none',
           padding: '20px',
           background: '#f8fafc',
           display: 'flex',
@@ -2513,11 +2599,15 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           style={{ display: 'flex', gap: '10px' }}
         >
           <input
+            ref={inputFieldRef}
             type="text"
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || isReadyForStep3}
-            placeholder={isReadyForStep3 ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : "Tự tay nhập câu trả lời phản biện của em..."}
+            onChange={(e) => {
+              if (!isLoading && !isReadyForStep3) setInputValue(e.target.value);
+            }}
+            readOnly={isLoading}
+            disabled={isReadyForStep3}
+            placeholder={isReadyForStep3 ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : isLoading ? "Thầy Socrates đang phân tích câu trả lời của em..." : "Tự tay nhập câu trả lời phản biện của em..."}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -2525,7 +2615,7 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
               borderRadius: '8px',
               fontSize: '14px',
               outline: 'none',
-              backgroundColor: isReadyForStep3 ? '#f1f5f9' : '#ffffff',
+              backgroundColor: isReadyForStep3 ? '#f1f5f9' : isLoading ? '#f8fafc' : '#ffffff',
               color: isReadyForStep3 ? '#64748b' : '#0f172a',
               cursor: isReadyForStep3 ? 'not-allowed' : 'text'
             }}
