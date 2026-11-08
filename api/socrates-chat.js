@@ -574,6 +574,11 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
     .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
     .replace(/thực\s*chiến/gi, 'thực tế')
+    .replace(/đàm\s*phán\s*lương/gi, 'đạt mức thu nhập kỳ vọng')
+    .replace(/báo\s*cáo\s*tài\s*chính/gi, 'công việc chuyên môn')
+    .replace(/(?:năng\s*lực|giá\s*trị)\s*thương\s*mại/gi, 'năng lực nghề nghiệp thực tế')
+    .replace(/tạo\s+ra\s+doanh\s+thu\s+hay\s+giá\s+trị\s+thương\s+mại/gi, 'đáp ứng khối lượng công việc thực tế')
+    .replace(/tạo\s+ra\s+doanh\s+thu/gi, 'đáp ứng yêu cầu công việc')
     .replace(/^Thầy\s+(?:rất\s+)?(?:hiểu|thấu hiểu|đồng cảm|thấy rằng)[^.!?\n]*[.!?]\s*/gi, '')
     .replace(/Ước mơ của em (?:thật|rất) tuyệt vời[^.!?\n]*[.!?]?/gi, '')
     .replace(/Em rất có tiềm năng[^.!?\n]*[.!?]?/gi, '')
@@ -935,11 +940,24 @@ Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tín
    - Mỗi lượt đối thoại CHỈ ĐƯỢC ĐẶT ĐÚNG 01 CÂU HỎI TRUY VẤN. Câu hỏi phải ngắn gọn, sắc bén, đánh thẳng vào giả định của học sinh.
    - Tuyệt đối không khen ngợi, không tán dương dễ dãi (Anti-Sycophancy). Không bao giờ nói: "Ước mơ của em thật tuyệt vời", "Em rất có tiềm năng".
 
-# LỘ TRÌNH 4 GIAI ĐOẠN TRUY VẤN TỰ NHIÊN (4 PHIÊN HỘI THOẠI)
-- Giai đoạn 1 (Chất vấn Mỏ neo & Đám đông): Dựa vào lý do ban đầu của học sinh để bóc tách. Nếu học sinh nói "thích vì được đi nhiều nơi" hoặc "xem mạng xã hội", hãy hỏi về mặt trái, cường độ lao động hoặc trách nhiệm thực tế mà học sinh chưa từng nghĩ tới.
-- Giai đoạn 2 (Chất vấn Kỳ vọng thu nhập): So sánh mức lương kỳ vọng học sinh khai với năng lực khởi điểm thực tế của một cử nhân mới ra trường. Hỏi xem học sinh có bằng chứng hay kỹ năng vượt trội nào để nhà tuyển dụng trả mức lương đó.
-- Giai đoạn 3 (Chất vấn Sức học & Tổ hợp môn): Hỏi học sinh về môn học trong tổ hợp mà em cảm thấy lo lắng nhất, và kế hoạch học tập thực tế để vượt qua rào cản đó.
-- Giai đoạn 4 (Chuyển tiếp phản tư sang Bước 3): Tóm tắt lại lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ, và mời học sinh bước sang Bước 3 để tự tay tra cứu số liệu đề án tuyển sinh thực tế.
+# NGUYÊN TẮC TIẾP CẬN TÂM LÝ LỨA TUỔI HỌC SINH THPT (ĐẶC BIỆT LƯU Ý VỀ MỨC LƯƠNG):
+1. Học sinh THPT chưa có kinh nghiệm việc làm; các kỳ vọng về thu nhập (như 15 - 20 triệu) thường là "mỏ neo ảo" do mạng xã hội (TikTok, Facebook, Youtube) tạo ra.
+2. TUYỆT ĐỐI KHÔNG dùng các thuật ngữ công sở như: "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "giá trị thương mại", "tạo ra doanh thu".
+3. Hãy truy vấn vào NGUỒN GỐC THÔNG TIN và THỰC TẾ ĐÁNH ĐỔI:
+   - Thay vì hỏi: "Em lấy gì để đàm phán mức lương đó?" hay "nhà tuyển dụng sẵn sàng chi trả",
+   - HÃY HỎI: "Con số [Mức thu nhập] này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành [Ngành] thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
+
+# QUY TẮC "BẮT CẦU LẬP LUẬN" (LIÊN KẾT TỰ NHIÊN, KHÔNG HỜI HỢT):
+- Khi học sinh nêu đặc điểm cá nhân (như "ngoại hình ưa nhìn", "giỏi tiếng Anh", "giao tiếp tốt", "thích đi đây đi đó"):
+  -> BẮT BUỘC phải dùng chính đặc điểm đó để phản biện trước khi hỏi câu tiếp theo.
+  -> Ví dụ: "Ngoại hình và ngoại ngữ là lợi thế giao tiếp, nhưng ngành Du lịch đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và làm việc ngày lễ Tết. Ngoài việc được đi nhiều nơi, em đã chuẩn bị tâm lý thế nào cho những ngày phải phục vụ khách suốt 14-16 tiếng?"
+
+# LỘ TRÌNH 4 CÂU HỎI TRUY VẤN TỰ NHIÊN + 1 LƯỢT ĐÚC KẾT
+- Câu hỏi 1 (Chất vấn Mỏ neo & Đám đông): Dựa vào lý do ban đầu của học sinh để bóc tách. Nếu học sinh nói "thích vì được đi nhiều nơi" hoặc "xem mạng xã hội", hãy hỏi về mặt trái, cường độ lao động hoặc trách nhiệm thực tế mà học sinh chưa từng nghĩ tới.
+- Câu hỏi 2 (Chất vấn Nguồn gốc kỳ vọng thu nhập & Thực tế đánh đổi): Bắt cầu từ câu trả lời của học sinh ở Câu 1, sau đó hỏi xem con số thu nhập kỳ vọng em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng) và mất bao nhiêu năm trong nghề cùng điều kiện thời gian thế nào để đạt được.
+- Câu hỏi 3 (Chất vấn Sức học & Tổ hợp môn): Bắt cầu từ câu trả lời của học sinh ở Câu 2, sau đó hỏi học sinh về môn học trong tổ hợp mà em cảm thấy lo lắng nhất và kế hoạch học tập thực tế để vượt qua rào cản đó.
+- Câu hỏi 4 (Chất vấn Tính khả thi của kế hoạch học tập & Phương án dự phòng): Đào sâu vào kế hoạch học tập vừa nêu, hỏi số giờ tự học cụ thể mỗi ngày và phương án dự phòng nếu điểm chuẩn vượt tầm với.
+- Lượt 5 (Chuyển tiếp phản tư sang Bước 3): Tóm tắt lại lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ, và mời học sinh bước sang Bước 3 để tự tay tra cứu số liệu đề án tuyển sinh thực tế.
 
 # XỬ LÝ CÁC TÌNH HUỐNG HỌC SINH NÉ TRÁNH HOẶC BÔNG ĐÙA
 - Nếu học sinh trả lời cộc lốc, né tránh hoặc trêu đùa (ví dụ: "Em thấy thầy là em lo", "Thầy hỏi khó quá"):
@@ -1008,9 +1026,9 @@ BỐI CẢNH GIAI ĐOẠN 2 (CHẤT VẤN KỲ VỌNG THU NHẬP):
 [NHIỆM VỤ GIAI ĐOẠN 2 - QUY TẮC PHÁT NGÔN SẮC BÉN]:
 1. Đi thẳng vào vấn đề, KHÔNG bắt đầu bằng các cụm rập khuôn như: "Thầy hiểu...", "Thầy đồng cảm...", "Thầy thấy rằng...".
 2. Tuyệt đối không khen ngợi tán dương (Không nói "Ước mơ thật tuyệt vời", "Em rất có tiềm năng").
-3. So sánh mức lương kỳ vọng "${expectedIncome}" với năng lực khởi điểm thực tế của một cử nhân mới ra trường.
+3. BẮT CẦU LẬP LUẬN: Dùng chính đặc điểm cá nhân hoặc lý do học sinh vừa nêu trong "${userText}" (như ngoại hình, tiếng Anh, giao tiếp, thích đi nhiều nơi) để phản biện ngắn gọn về áp lực thực tế của ngành ${effectiveCareer} (xử lý sự cố, sức khỏe bền bỉ, làm việc lễ Tết 14-16 tiếng/ngày). TUYỆT ĐỐI KHÔNG dùng thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại".
 4. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN SẮC BÉN (TUYỆT ĐỐI KHÔNG HỎI KÉP):
-"Với mức lương khởi điểm kỳ vọng là ${expectedIncome}, em có bằng chứng hoặc kỹ năng chuyên môn vượt trội nào để tin rằng nhà tuyển dụng sẵn sàng chi trả mức này cho một sinh viên mới tốt nghiệp ra trường?"
+"Con số ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng), và em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG hỏi dồn 2-3 ý.
@@ -1024,8 +1042,8 @@ BỐI CẢNH GIAI ĐOẠN 3 (CHẤT VẤN SỨC HỌC & TỔ HỢP MÔN):
 - Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
 - Học sinh vừa trả lời ở Giai đoạn 2: "${userText}".
 
-[NHIỆM VỤ GIAI ĐOẠN 3 - CHẤT VẤN RÀO CẢN MÔN HỌC & KẾ HOẠCH]:
-1. Đi thẳng vào vấn đề, KHÔNG dùng các câu rập khuôn "Thầy hiểu...", không khen ngợi dễ dãi.
+[NHIỆM VỤ GIAI ĐOẠN 3 - BẮT CẦU LẬP LUẬN & CHẤT VẤN RÀO CẢN MÔN HỌC]:
+1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Phản biện trực tiếp câu trả lời "${userText}" của học sinh (nếu học sinh nêu đặc điểm cá nhân như giao tiếp tốt, ngoại hình, ngoại ngữ, hoặc nêu nguồn mạng xã hội/tự ước lượng, hãy chỉ ra khoảng cách giữa kỳ vọng đó với thực tế rèn luyện và ngưỡng cửa tuyển sinh đại học).
 2. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ (cấm nói 27.5, cấm nói thiếu bao nhiêu điểm). Việc đối chứng số liệu thuộc về Bước 3.
 3. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN:
 "Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?"
@@ -1121,12 +1139,42 @@ function generateCognitiveFallback({
     return firstPrompt.firstQuestion;
   }
 
+  const lowerUser = String(trimmedMsg || '').toLowerCase();
+  const hasAppearance = /ngoại hình|ưa nhìn|cao ráo|dễ nhìn/i.test(lowerUser);
+  const hasLanguageOrComm = /tiếng anh|ngoại ngữ|giao tiếp|hoạt ngôn|năng động/i.test(lowerUser);
+  const hasTravel = /đi nhiều nơi|đi đây đi đó|đi du lịch|khám phá|trải nghiệm/i.test(lowerUser);
+  const isTourism = /du lịch|lữ hành|khách sạn|nhà hàng|hướng dẫn viên/i.test(effectiveCareer.toLowerCase());
+
+  let traitBridge = '';
+  if (hasAppearance || hasLanguageOrComm) {
+    const traitLabel = (hasAppearance && hasLanguageOrComm)
+      ? 'Ngoại hình và ngoại ngữ/giao tiếp'
+      : hasAppearance
+      ? 'Ngoại hình ưa nhìn'
+      : 'Khả năng giao tiếp hay ngoại ngữ';
+    traitBridge = isTourism
+      ? `${traitLabel} là lợi thế giao tiếp ban đầu, nhưng ngành ${effectiveCareer} đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và làm việc xuyên ngày lễ Tết, có những ngày phải phục vụ khách suốt 14-16 tiếng.`
+      : `${traitLabel} là lợi thế ban đầu, nhưng thực tế ngành ${effectiveCareer} đòi hỏi xử lý áp lực công việc liên tục, giải quyết sự cố phát sinh và rèn luyện chuyên môn sâu.`;
+  } else if (hasTravel) {
+    traitBridge = `Ngoài việc được đi nhiều nơi, thực tế ngành ${effectiveCareer} đòi hỏi xử lý sự cố phát sinh, sức khỏe bền bỉ và những ngày phải phục vụ khách suốt 14-16 tiếng kể cả dịp lễ Tết.`;
+  } else if (/làm được|nghĩ là|tự tin/i.test(lowerUser)) {
+    traitBridge = isTourism
+      ? `Niềm tin "mình làm được" mới chỉ là cảm giác ban đầu, bởi ngoài việc đi nhiều nơi, ngành ${effectiveCareer} đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và những ngày phục vụ khách suốt 14-16 tiếng.`
+      : `Niềm tin "mình làm được" khi chưa va chạm thực tế mới chỉ là cảm giác chủ quan, bởi ngành ${effectiveCareer} đòi hỏi thời gian rèn luyện chuyên môn và cường độ làm việc rất khắt khe.`;
+  }
+
   if (stage === 2) {
-    return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. So với mức lương khởi điểm bình quân của một cử nhân mới tốt nghiệp, em có bằng chứng hay kỹ năng chuyên môn vượt trội nào để tin rằng nhà tuyển dụng sẵn sàng chi trả mức thu nhập này?`;
+    const bridgePrefix = traitBridge ? `${traitBridge} ` : '';
+    return `${bridgePrefix}Con số ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?`;
   }
 
   if (stage === 3) {
-    return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
+    const round3Bridge = traitBridge
+      ? `${traitBridge} `
+      : /mạng|tiktok|facebook|youtube|nghe nói|tự ước|đoán|chưa tìm hiểu/i.test(lowerUser)
+      ? `Những con số thu nhập trên mạng xã hội hay tự ước lượng thường chỉ phản ánh bề nổi của những người đã có nhiều năm kinh nghiệm và chấp nhận cường độ làm việc rất vất vả. `
+      : `Để đi từ kỳ vọng hiện tại đến lúc trụ vững được với áp lực nghề nghiệp đó, trước hết em phải vượt qua ngưỡng cửa tuyển sinh đầu vào. `;
+    return `${round3Bridge}Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
   }
 
   if (stage === 4) {
