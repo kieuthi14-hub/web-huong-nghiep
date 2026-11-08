@@ -554,7 +554,7 @@ const StudentDashboard = () => {
                       const lockInfo = getStepLockReason(s.step, currentProgress)
                       setToast({
                         type: 'warning',
-                        message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`
+                        message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT SocraCareer.`
                       })
                     }}
                     className="flex flex-col items-center text-center p-3 sm:p-4 rounded-2xl border transition-all duration-300 relative group bg-slate-100/70 border-slate-200 text-slate-400 cursor-not-allowed opacity-65 hover:opacity-85 select-none"
@@ -658,7 +658,7 @@ const StudentDashboard = () => {
                     const lockInfo = getStepLockReason(s.step, currentProgress)
                     setToast({
                       type: 'warning',
-                      message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`
+                      message: lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT SocraCareer.`
                     })
                   }}
                   className={`

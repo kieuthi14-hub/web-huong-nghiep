@@ -450,31 +450,35 @@ export function generateSocraticFirstPrompt(student = {}) {
     anchorReason === "Trái mã RIASEC" || 
     (riasecMatch < 50);
 
+  const cleanSource = (source || anchorQuote || "").trim();
+  const hasExplicitReason = Boolean(cleanSource && cleanSource.length >= 2);
+  const reasonSnippet = hasExplicitReason ? ` với lý do "${cleanSource}"` : "";
+
   if (isMediaAnchoring) {
     biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
     biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc truyền thông.";
     const quoteText = anchorQuote || "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
-    socraticQuestion = `Chào em. Em vừa chia sẻ rằng chọn ngành ${targetCareer} vì "${quoteText}". Theo em, những clip review thu nhập nghìn đô đó phản ánh bao nhiêu phần trăm áp lực học tập và tỷ lệ đào thải thực tế của ngành này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em vừa chia sẻ rằng chọn ngành ${targetCareer} ${schoolClause} (tự tin ${conf}/10) vì "${quoteText}". Theo em, những hình ảnh và clip review đó phản ánh bao nhiêu phần trăm công việc và áp lực thực tế của ngành này?`;
 
   } else if (isBandwagon) {
     biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
     biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
-    socraticQuestion = `Chào em. Em cho biết chọn ngành ${targetCareer} vì thấy nhiều bạn bè cũng đang đăng ký. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em cho biết chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' vì thấy nhiều bạn bè cũng đang đăng ký'}. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
 
   } else if (isOverconfidence) {
     biasType = "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)";
     biasRule = `Kích hoạt do mức tự tin ban đầu rất cao (${conf}/10) khi chưa đối chứng dữ liệu tuyển sinh thực tế.`;
-    socraticQuestion = `Chào em. Thầy thấy em đang đặt mức tự tin tới ${conf}/10 vào lựa chọn ngành ${targetCareer} ${schoolClause}. Căn cứ hoặc trải nghiệm thực tế nào của bản thân giúp em tin chắc vào sự phù hợp của mình với ngành này trước khi đối chứng dữ liệu?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet} và đặt mức tự tin tới ${conf}/10. Căn cứ hoặc trải nghiệm thực tế nào giúp em tin chắc mình phù hợp với mặt trái và áp lực thực tế của ngành này trước khi đối chứng dữ liệu?`;
 
   } else if (isConfirmation) {
     biasType = "THIÊN LỆCH XÁC NHẬN (CONFIRMATION BIAS)";
     biasRule = `Kích hoạt do độ tương thích RIASEC thấp (${riasecMatch}%), sở trường tự nhiên nhóm [${student.riasecCode || "Xã hội"}] chưa khớp với đặc thù khắt khe của ngành mục tiêu.`;
-    socraticQuestion = `Chào em. Kết quả trắc nghiệm RIASEC chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng ngành ${targetCareer} lại đòi hỏi đặc tính rất khắt khe về kỹ thuật thực hành. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
+    socraticQuestion = `Chào em. Kết quả Bước 1 chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng em lại chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet}. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
 
   } else {
     biasType = "TRUY VẤN NỀN TẢNG THỰC CHẤT";
     biasRule = "Học sinh có động cơ nội tại hài hòa; thực hiện truy vấn cơ sở thực tế và dữ liệu khách quan quan trọng nhất dẫn dắt mục tiêu.";
-    socraticQuestion = `Chào em. Em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause} với mức tự tin ban đầu là ${conf}/10. Em hãy chia sẻ lý do cốt lõi và trải nghiệm thực tế quan trọng nhất đã dẫn dắt em lựa chọn mục tiêu này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause}${reasonSnippet} với mức tự tin ban đầu là ${conf}/10. Ngoài mong muốn đó, em đã tìm hiểu những áp lực công việc thực tế và yêu cầu khắt khe nhất của ngành này chưa?`;
   }
 
   return {

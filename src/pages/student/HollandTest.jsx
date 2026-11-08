@@ -1581,7 +1581,7 @@ const HollandTest = () => {
             </div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-800 block">
-                GIAI ĐOẠN 1: BỘC LỘ MỎ NEO CHỦ QUAN (T₀) — VISEF 2026
+                GIAI ĐOẠN 1: BỘC LỘ MỎ NEO CHỦ QUAN (T₀) — SOCRACAREER KHKT
               </span>
               <h2 className="text-base sm:text-lg font-black text-slate-900">
                 Khai báo Ngành nghề mục tiêu, Kỳ vọng thu nhập & Tự chấm điểm tự tin (Conf)
@@ -2021,7 +2021,7 @@ const HollandTest = () => {
               </div>
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-sky-800 block">
-                  TRỤ CỘT 3: CƠ SỞ DỮ LIỆU XUNG ĐỘT (CBAS VISEF 2026)
+                  TRỤ CỘT 3: CƠ SỞ DỮ LIỆU XUNG ĐỘT (SOCRACAREER KHKT)
                 </span>
                 <h3 className="font-black text-sm sm:text-base text-slate-900">
                   Phát Hiện Mâu Thuẫn Nhận Thức Giữa Mỏ Neo Chủ Quan Và Thiên Hướng Khách Quan
@@ -2192,7 +2192,7 @@ const HollandTest = () => {
                         </span>
                         <div className="space-y-0.5">
                           <span className="text-[10px] uppercase font-black tracking-wider block opacity-75">
-                            {evalData.gapCodes.length > 0 ? 'Đánh Giá Thách Thức Thích Ứng (CBAS ViSEF)' : 'Mức Độ Tương Thích Tự Nhiên (CBAS ViSEF)'}
+                            {evalData.gapCodes.length > 0 ? 'Đánh Giá Thách Thức Thích Ứng (SocraCareer KHKT)' : 'Mức Độ Tương Thích Tự Nhiên (SocraCareer KHKT)'}
                           </span>
                           <p className="leading-relaxed">
                             {evalData.conflictMessage}
@@ -2427,7 +2427,7 @@ const HollandTest = () => {
                   <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-full border border-amber-400/20">
                     Bước tiếp theo • 2 / 4
                   </span>
-                  <span className="text-[11px] text-slate-400 font-medium">Can thiệp phản tư hành vi (CBAS VISEF 2026)</span>
+                  <span className="text-[11px] text-slate-400 font-medium">Can thiệp phản tư hành vi (SocraCareer KHKT)</span>
                 </div>
                 <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
                   Sẵn sàng đối diện với phản biện Socrates từ AI?

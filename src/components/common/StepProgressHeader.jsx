@@ -245,7 +245,7 @@ export const StepProgressHeader = ({ currentStep = 1, title, subtitle, onResetSt
                 type="button"
                 onClick={() => {
                   const lockInfo = getStepLockReason(s.step, completedSteps)
-                  setLockedNotice(lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT ViSEF CBAS.`)
+                  setLockedNotice(lockInfo?.message || `Bước ${s.step} chưa mở khóa! Em cần hoàn thành Bước ${s.step - 1} trước theo đúng quy chuẩn can thiệp KHKT SocraCareer.`)
                 }}
                 className="group relative flex flex-col items-center text-center p-2 sm:p-2.5 rounded-xl border transition-all duration-200 bg-slate-100/70 border-slate-200 text-slate-400 cursor-not-allowed opacity-60 hover:opacity-90 select-none"
                 title={`Chưa mở khóa - Cần hoàn thành Bước ${s.step - 1} trước`}

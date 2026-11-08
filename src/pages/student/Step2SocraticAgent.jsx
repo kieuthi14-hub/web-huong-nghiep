@@ -198,36 +198,40 @@ export function generateSocraticFirstPrompt(student = {}) {
     (riasecMatch < 50 && student.compatibility_status && (student.compatibility_status.includes('Mâu thuẫn') || student.compatibility_status.includes('Lệch')));
 
   // 2. Cây quyết định phản tư thích ứng chuẩn mực sư phạm (KHÔNG BỊA ĐẶT ĐIỂM SỐ HỌC BẠ / ĐIỂM CHUẨN)
+  const cleanSource = (source || anchorQuote || "").trim();
+  const hasExplicitReason = Boolean(cleanSource && cleanSource.length >= 2);
+  const reasonSnippet = hasExplicitReason ? ` với lý do "${cleanSource}"` : "";
+
   if (isMediaAnchoring) {
     // THIÊN LỆCH 1: MỎ NEO TRUYỀN THÔNG (Anchoring Bias)
     biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
     biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc truyền thông.";
     const quoteText = anchorQuote || "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
-    socraticQuestion = `Chào em. Em vừa chia sẻ rằng chọn ngành ${targetCareer} ${schoolClause} vì "${quoteText}". Theo em, những hình ảnh và clip review đó phản ánh bao nhiêu phần trăm công việc và áp lực thực tế của ngành này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em vừa chia sẻ rằng chọn ngành ${targetCareer} ${schoolClause} (tự tin ${conf}/10) vì "${quoteText}". Theo em, những hình ảnh và clip review đó phản ánh bao nhiêu phần trăm công việc và áp lực thực tế của ngành này?`;
 
   } else if (isBandwagon) {
     // THIÊN LỆCH 2: TÂM LÝ ĐÁM ĐÔNG (Bandwagon Effect)
     biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
     biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
-    socraticQuestion = `Chào em. Em cho biết chọn ngành ${targetCareer} ${schoolClause} vì thấy nhiều bạn bè cũng đang đăng ký. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em cho biết chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' vì thấy nhiều bạn bè cũng đang đăng ký'}. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
 
   } else if (isHighConfidence) {
-    // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias) - PHẢN TƯ THỰC CHẤT, KHÔNG DÙNG ĐIỂM GIẢ LẬP
+    // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias) - PHẢN TƯ THỰC CHẤT, NẮM CHẮC DỮ LIỆU BƯỚC 1, KHÔNG DÙNG ĐIỂM GIẢ LẬP
     biasType = "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)";
     biasRule = `Kích hoạt do mức tự tin ban đầu rất cao (${conf}/10) khi chưa đối chứng dữ liệu tuyển sinh thực tế.`;
-    socraticQuestion = `Chào em. Thầy thấy em đang đặt mức tự tin tới ${conf}/10 vào lựa chọn ngành ${targetCareer} ${schoolClause}. Căn cứ hoặc trải nghiệm thực tế nào của bản thân giúp em tin chắc vào sự phù hợp của mình với ngành này trước khi đối chứng dữ liệu?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet} và đặt mức tự tin tới ${conf}/10. Căn cứ hoặc trải nghiệm thực tế nào giúp em tin chắc mình phù hợp với mặt trái và áp lực thực tế của ngành này trước khi đối chứng dữ liệu?`;
 
   } else if (isConfirmation) {
     // THIÊN LỆCH 4: THIÊN LỆCH XÁC NHẬN (Confirmation Bias)
     biasType = "THIÊN LỆCH XÁC NHẬN (CONFIRMATION BIAS)";
     biasRule = `Kích hoạt do độ tương thích RIASEC thấp, sở trường tự nhiên nhóm [${student.riasecCode || "Xã hội"}] chưa khớp với đặc thù khắt khe của ngành mục tiêu.`;
-    socraticQuestion = `Chào em. Kết quả trắc nghiệm RIASEC chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng ngành ${targetCareer} lại đòi hỏi đặc tính khác. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
+    socraticQuestion = `Chào em. Kết quả Bước 1 chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng em lại chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet}. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
 
   } else {
     // TRƯỜNG HỢP MẶC ĐỊNH / NHÓM THỰC CHẤT
     biasType = "TRUY VẤN NỀN TẢNG THỰC CHẤT";
     biasRule = "Học sinh có động cơ nội tại hài hòa; thực hiện truy vấn cơ sở thực tế và dữ liệu khách quan quan trọng nhất dẫn dắt mục tiêu.";
-    socraticQuestion = `Chào em. Em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause} với mức tự tin ban đầu là ${conf}/10. Em hãy chia sẻ lý do cốt lõi và trải nghiệm thực tế quan trọng nhất đã dẫn dắt em lựa chọn mục tiêu này?`;
+    socraticQuestion = `Chào em. Ở Bước 1, em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause}${reasonSnippet} với mức tự tin ban đầu là ${conf}/10. Ngoài mong muốn đó, em đã tìm hiểu những áp lực công việc thực tế và yêu cầu khắt khe nhất của ngành này chưa?`;
   }
 
   // 3. Trả về cấu trúc hiển thị Vòng 1 cho giao diện Web
@@ -247,21 +251,21 @@ export function initSocratesChat(profile = {}) {
   return promptData.firstQuestion;
 }
 
-// QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) CHUẨN KHKT SOCRACAREER
+// QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) CHUẨN PHƯƠNG PHÁP LUẬN KHKT SOCRACAREER
 export function evaluateOutcomeCategory(history = [], initialProfile = null, lastUserText = '', goalShift = null) {
   const initCareer = (initialProfile?.targetMajor || initialProfile?.target_career || '').toLowerCase().trim();
   const userMessages = history.filter(m => m.role === 'user').map(m => m.text);
   const allUserText = `${userMessages.join(' ')} ${lastUserText || ''}`.toLowerCase();
   
   // 1. Kiểm tra Turning Point rõ ràng theo đúng tiêu chuẩn đề tài:
-  // "CHỈ set thành True nếu học sinh RÕ RÀNG thừa nhận: 'Em nhận ra mình chưa tìm hiểu kỹ', 'Em thấy mức lương đó chưa thực tế', hoặc 'Em lo môn Toán của em không đủ kéo điểm'. Nếu học sinh né tránh/đùa, BẮT BUỘC là False."
+  // "CHỈ set thành True nếu học sinh RÕ RÀNG thừa nhận điểm yếu/rào cản: 'Em nhận ra mình chưa tìm hiểu kỹ', 'Em thấy mức lương đó chưa thực tế', hoặc 'Em lo môn Toán/Ngoại ngữ... của em không đủ kéo điểm'. Nếu học sinh né tránh/đùa hoặc liên tục khẳng định mình giỏi (không có môn yếu), BẮT BUỘC là False."
   const clearTurningPointPatterns = [
-    'chưa tìm hiểu kỹ', 'chua tim hieu ky', 'chưa tìm hiểu sâu',
-    'chưa thực tế', 'chua thuc te', 'chưa hợp lý', 'chưa đúng',
-    'em nhận ra', 'nghĩ lại thì', 'thầy nói đúng',
-    'không đủ kéo điểm', 'không kéo nổi điểm', 'kéo điểm không nổi',
-    'lo môn', 'sợ môn', 'đuối môn', 'kém môn', 'mất gốc môn',
-    'chưa tự tin môn', 'rủi ro', 'áp lực lớn'
+    'chưa tìm hiểu kỹ', 'chua tim hieu ky', 'chưa tìm hiểu sâu', 'chưa biết rõ',
+    'chưa thực tế', 'chua thuc te', 'chưa hợp lý', 'chưa đúng', 'ảo tưởng',
+    'em nhận ra', 'nghĩ lại thì', 'thầy nói đúng', 'em hiểu rồi',
+    'không đủ kéo điểm', 'không kéo nổi điểm', 'kéo điểm không nổi', 'sợ thiếu điểm',
+    'lo môn', 'sợ môn', 'đuối môn', 'kém môn', 'mất gốc', 'yếu môn', 'hơi yếu', 'hơi đuối', 'lo lắng nhất là môn', 'lo nhất môn', 'lo nhất là môn',
+    'chưa tự tin môn', 'rủi ro', 'áp lực lớn', 'chưa có chứng chỉ', 'chưa đủ năng lực'
   ];
 
   const avoidantOrJokingPatterns = [
@@ -269,11 +273,21 @@ export function evaluateOutcomeCategory(history = [], initialProfile = null, las
     'gắt quá', 'căng quá', 'đùa thôi', 'đùa tí', 'nói chơi thôi', 'thôi thầy', 'bó tay'
   ];
 
+  // Mẫu câu học sinh phủ nhận điểm yếu / khẳng định giỏi toàn diện / né tránh rào cản
+  const denyWeaknessPatterns = [
+    'không lo lắng môn nào', 'không lo môn nào', 'không sợ môn nào', 'môn nào cũng giỏi',
+    'học giỏi đều', 'giỏi các môn', 'tự tin hết', 'không có điểm yếu', 'chắc chắn đậu',
+    'không có gì lo', 'chẳng lo môn nào', 'môn nào em cũng tốt'
+  ];
+
   const hasClearAdmission = clearTurningPointPatterns.some(p => allUserText.includes(p));
   const hasAvoidance = avoidantOrJokingPatterns.some(p => allUserText.includes(p));
+  const hasDeniedWeakness = denyWeaknessPatterns.some(p => allUserText.includes(p));
 
-  // 2. Phân loại Outcome_Category:
-  // - "Reconsidering": Học sinh chủ động muốn xem xét lại ngành khác.
+  // Turning Point = true CHỈ KHI thừa nhận rõ điểm yếu/rào cản và không né tránh/bông đùa
+  const turningPoint = Boolean(hasClearAdmission && !hasAvoidance && !hasDeniedWeakness);
+
+  // 2. Phân loại Outcome_Category và Triage_Step4 theo chuẩn phương pháp luận:
   const reconsideringPatterns = [
     'đổi sang', 'chuyển sang', 'xem xét lại', 'cân nhắc ngành khác', 'chọn ngành khác',
     'đổi nguyện vọng', 'nghĩ lại chắc chọn', 'không học ngành này nữa'
@@ -281,38 +295,32 @@ export function evaluateOutcomeCategory(history = [], initialProfile = null, las
   const isGoalShiftTurn = Boolean(goalShift && goalShift.newMajor && goalShift.newMajor.toLowerCase() !== initCareer);
   const hasReconsidering = isGoalShiftTurn || reconsideringPatterns.some(p => allUserText.includes(p));
 
-  // - "Persistent_Calibrated": Học sinh giữ mục tiêu nhưng đã nhận thức rõ rào cản và nêu được giải pháp thực tế.
-  const realisticPlanPatterns = [
-    'kế hoạch', 'ôn tập', 'học thêm', 'cày thêm', 'luyện đề', 'khởi điểm',
-    'học việc', 'thực tập', 'cố gắng kéo điểm', 'rèn luyện', 'học bạ', 'tập trung'
-  ];
-  const hasRealisticPlan = realisticPlanPatterns.some(p => allUserText.includes(p));
-
-  // - "Uncalibrated_Avoidant": Học sinh vẫn giữ tự tin ảo, né tránh câu hỏi, không đưa ra được căn cứ.
-  const uncalibratedPatterns = [
-    'không sao đâu', 'chắc chắn làm được', 'dễ mà', 'kệ', 'mặc kệ', 'thầy cứ lo xa',
-    'chẳng cần', 'không cần học', 'vẫn thích', 'tiền nhiều là được'
-  ];
-  const hasUncalibrated = hasAvoidance || uncalibratedPatterns.some(p => allUserText.includes(p));
-
-  let category = 'Persistent_Calibrated';
+  let outcomeCategory = 'Uncalibrated_Avoidant';
+  let triageStep4 = 'In-depth (20 phút)';
   let rule = '';
 
   if (hasReconsidering) {
-    category = 'Reconsidering';
-    rule = 'Học sinh chủ động muốn xem xét lại ngành khác sau khi nhận ra rào cản hoặc sự không phù hợp.';
-  } else if (hasUncalibrated || (!hasClearAdmission && !hasRealisticPlan && userMessages.length <= 2)) {
-    category = 'Uncalibrated_Avoidant';
-    rule = 'Học sinh vẫn giữ tự tin ảo, né tránh câu hỏi hoặc không đưa ra được căn cứ thực tế.';
+    outcomeCategory = 'Reconsidering';
+    triageStep4 = 'In-depth (20 phút)';
+    rule = 'Học sinh chủ động muốn xem xét lại hoặc chuyển hướng sang ngành khác sau khi nhận diện rào cản thực tế.';
+  } else if (turningPoint === false) {
+    // ĐIỀU KIỆN CHUẨN XÁC THEO PHƯƠNG PHÁP LUẬN:
+    // Nếu học sinh không thừa nhận điểm yếu/rào cản và liên tục khẳng định mình giỏi hoặc né tránh:
+    outcomeCategory = 'Uncalibrated_Avoidant'; // Chưa hiệu chuẩn / Né tránh rào cản
+    triageStep4 = 'In-depth (20 phút)';        // BẮT BUỘC cần Mentor can thiệp sâu
+    rule = 'Học sinh chưa thừa nhận rào cản/điểm yếu cụ thể (Turning_Point = False), giữ tự tin chủ quan hoặc né tránh chất vấn; bắt buộc cần Mentor can thiệp sâu.';
   } else {
-    category = 'Persistent_Calibrated';
-    rule = 'Học sinh giữ mục tiêu nhưng đã nhận thức rõ rào cản và nêu được giải pháp thực tế.';
+    // Chỉ khi học sinh thừa nhận môn yếu/rào cản (Turning_Point = True) và có phương án thực tế:
+    outcomeCategory = 'Persistent_Calibrated';
+    triageStep4 = 'Brief (10 phút)';
+    rule = 'Học sinh kiên định với mục tiêu nhưng đã thừa nhận rõ điểm yếu/rào cản thực tế (Turning_Point = True) và nêu được phương án khắc phục.';
   }
 
   return {
-    category,
+    category: outcomeCategory,
+    triageStep4,
     rule,
-    hasClearAdmission: hasClearAdmission && !hasAvoidance
+    hasClearAdmission: turningPoint
   };
 }
 
@@ -854,7 +862,7 @@ export default function Step2SocraticAgent() {
     // Tự động quét sạch triệt để bộ nhớ đệm nếu dính câu hỏi giả định điểm số cũ (25 điểm, 27.5 điểm)
     try {
       const rawMsgs = localStorage.getItem("cbas_step2_messages");
-      if (rawMsgs && (rawMsgs.includes('27.5') || rawMsgs.includes('25 điểm') || rawMsgs.includes('khoảng cách khá xa') || rawMsgs.includes('bù đắp được khoảng cách'))) {
+      if (rawMsgs && (rawMsgs.includes('27.5') || rawMsgs.includes('25 điểm') || rawMsgs.includes('khoảng cách khá xa') || rawMsgs.includes('một khoảng khá xa') || rawMsgs.includes('điểm học bạ tổ hợp hiện tại') || rawMsgs.includes('bù đắp được khoảng cách'))) {
         localStorage.removeItem("cbas_step2_messages");
         localStorage.removeItem("cbas_step2_round");
         localStorage.removeItem("cbas_step2_completed");
@@ -1000,7 +1008,7 @@ export default function Step2SocraticAgent() {
     setStudentProfile(resolvedProfile);
 
     // KIỂM TRA FINGERPRINT ĐỂ PHÁT HIỆN SỰ THAY ĐỔI MỎ NEO TỪ BƯỚC 1
-    const currentFingerprint = `${targetMajor}|${targetSchool}|${reason}|${hollandCode}`.toLowerCase().trim();
+    const currentFingerprint = `${targetMajor}|${targetSchool}|${reason}|${hollandCode}|${initialConfidence}|${expectedIncome}`.toLowerCase().trim();
     const savedFingerprint = localStorage.getItem("cbas_step2_anchor_fingerprint");
 
     let savedMessages = null;
@@ -1081,6 +1089,32 @@ export default function Step2SocraticAgent() {
         setIsCompleted(true);
         setIsChatFinished(true);
         setChatStage(4);
+        // Tự động tính lại và chuẩn hóa sessionTelemetry theo quy tắc phương pháp luận mới nhất
+        const outcomeAnalysis = evaluateOutcomeCategory(sanitizedSaved, resolvedProfile, '', null);
+        const outcome = outcomeAnalysis.category;
+        const outcomeRule = outcomeAnalysis.rule;
+        const tpDetected = outcomeAnalysis.hasClearAdmission;
+        const triage = outcomeAnalysis.triageStep4 || (outcome === 'Persistent_Calibrated' ? 'Brief (10 phút)' : 'In-depth (20 phút)');
+        const isNeedInDepth = triage.includes('In-depth');
+        const tpRule = tpDetected
+          ? 'Học sinh thừa nhận rõ ràng rào cản năng lực thực tế (môn yếu/lo lắng) hoặc sự chưa thực tế của kỳ vọng ban đầu.'
+          : 'Không phát hiện điểm xoay nhận thức (học sinh không thừa nhận điểm yếu/rào cản, liên tục khẳng định mình giỏi hoặc né tránh chất vấn).';
+        const triageRule = isNeedInDepth
+          ? 'Chỉ định phiên Tham vấn Chuyên sâu (In-depth 20 phút): Do học sinh chưa hiệu chuẩn nhận thức / không thừa nhận điểm yếu (Uncalibrated_Avoidant) hoặc đang cân nhắc đổi ngành (Reconsidering), bắt buộc cần Mentor can thiệp sâu.'
+          : 'Chỉ định phiên Định hướng Nhanh (Brief 10 phút): Học sinh đã thừa nhận rõ môn yếu/rào cản thực tế (Turning_Point = True) và có phương án học tập khả thi (Persistent_Calibrated).';
+        const refreshedTelemetry = {
+          primary_bias: promptTrigger.biasType || 'TRUY VẤN NỀN TẢNG THỰC CHẤT',
+          primary_bias_rule: promptTrigger.biasRule || 'Kích hoạt Vòng 1 thích ứng dựa trên phân tích mỏ neo lý do lựa chọn và độ tự tin T0.',
+          turning_point_detected: tpDetected ? 'True' : 'False',
+          turning_point_rule: tpRule,
+          outcome_category: outcome,
+          outcome_rule: outcomeRule,
+          triage_step4: triage,
+          triage_rule: triageRule,
+          timestamp: new Date().toISOString()
+        };
+        setSessionTelemetry(refreshedTelemetry);
+        try { localStorage.setItem('cbas_step2_telemetry', JSON.stringify(refreshedTelemetry)); } catch (e) {}
       } else {
         const resolvedStage = Math.min(userMsgCount + 1, 4);
         setChatStage(resolvedStage);
@@ -1927,25 +1961,26 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
             step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
           }, 100);
 
-          // QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) & TELEMETRY CHUẨN KHKT SOCRACAREER
+          // QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) & TELEMETRY CHUẨN PHƯƠNG PHÁP LUẬN KHKT SOCRACAREER
           const outcomeAnalysis = evaluateOutcomeCategory(updatedHistory, studentProfile, cleanText, goalShift);
           const outcome = outcomeAnalysis.category;
           const outcomeRule = outcomeAnalysis.rule;
           const tpDetected = outcomeAnalysis.hasClearAdmission;
 
-          // Phân luồng Tham vấn Bước 4:
-          // - "In-depth (20 phút)": Dành cho học sinh có Turning Point hoặc Uncalibrated_Avoidant hoặc Reconsidering.
-          // - "Brief (10 phút)": Dành cho học sinh lập luận vững vàng, không có mâu thuẫn lớn (Persistent_Calibrated).
-          const isNeedInDepth = tpDetected || outcome === 'Uncalibrated_Avoidant' || outcome === 'Reconsidering';
-          const triage = isNeedInDepth ? 'In-depth (20 phút)' : 'Brief (10 phút)';
+          // Phân luồng Tham vấn Bước 4 theo chuẩn phương pháp luận:
+          // - Nếu turningPoint === false (không thừa nhận điểm yếu/rào cản) -> Uncalibrated_Avoidant -> BẮT BUỘC In-depth (20 phút)
+          // - Nếu Reconsidering -> In-depth (20 phút)
+          // - Chỉ khi turningPoint === true (thừa nhận môn yếu và có phương án thực tế) -> Persistent_Calibrated -> Brief (10 phút)
+          const triage = outcomeAnalysis.triageStep4 || (outcome === 'Persistent_Calibrated' ? 'Brief (10 phút)' : 'In-depth (20 phút)');
+          const isNeedInDepth = triage.includes('In-depth');
 
           const tpRule = tpDetected 
-            ? `Học sinh thừa nhận rõ ràng rào cản năng lực thực tế hoặc sự chưa thực tế của kỳ vọng ban đầu.`
-            : 'Không phát hiện điểm xoay nhận thức đột ngột (học sinh giữ lập trường tự tin hoặc né tránh câu hỏi).';
+            ? `Học sinh thừa nhận rõ ràng rào cản năng lực thực tế (môn yếu/lo lắng) hoặc sự chưa thực tế của kỳ vọng ban đầu.`
+            : 'Không phát hiện điểm xoay nhận thức (học sinh không thừa nhận điểm yếu/rào cản, liên tục khẳng định mình giỏi hoặc né tránh câu hỏi).';
 
           const triageRule = isNeedInDepth
-            ? 'Chỉ định phiên Tham vấn Chuyên sâu (In-depth 20 phút): Do có điểm xoay nhận thức (Turning Point), né tránh chất vấn (Uncalibrated Avoidant) hoặc đang cân nhắc đổi ngành (Reconsidering).'
-            : 'Chỉ định phiên Định hướng Nhanh (Brief 10 phút): Học sinh lập luận vững vàng, đã hiệu chuẩn nhận thức thực tế và có giải pháp rõ ràng (Persistent Calibrated).';
+            ? 'Chỉ định phiên Tham vấn Chuyên sâu (In-depth 20 phút): Do học sinh chưa hiệu chuẩn nhận thức / không thừa nhận điểm yếu (Uncalibrated_Avoidant) hoặc đang cân nhắc đổi ngành (Reconsidering), bắt buộc cần Mentor can thiệp sâu.'
+            : 'Chỉ định phiên Định hướng Nhanh (Brief 10 phút): Học sinh đã thừa nhận rõ môn yếu/rào cản thực tế (Turning_Point = True) và có phương án học tập khả thi (Persistent_Calibrated).';
 
           const telemetryData = {
             primary_bias: activeBiasType || localStorage.getItem('cbas_step2_primary_bias') || 'TRUY VẤN NỀN TẢNG THỰC CHẤT',
@@ -2243,117 +2278,216 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         ) : null}
 
         {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI */}
-        {/* HỘP ĐIỀU HƯỚNG CỐ ĐỊNH / THẺ NỔI BẬT NGAY DƯỚI TIN NHẮN CUỐI CÙNG */}
+        {/* HỘP ĐO LƯỜNG TELEMETRY & ĐIỀU HƯỚNG NGAY DƯỚI TIN NHẮN CUỐI CÙNG */}
         {isReadyForStep3 ? (
           <div 
             ref={step3CtaRef}
-            className="no-print"
-            style={{
-              background: '#f0fdf4',
-              border: '2px solid #10b981',
-              borderRadius: '12px',
-              padding: '18px 22px',
-              marginTop: '12px',
-              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
-            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
-                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
-                </h4>
-                <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
-                  Em hãy đọc kỹ lời phân tích và định hướng thích ứng của Thầy ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                onClick={() => window.location.href = '/student/fact-check'}
-                style={{
-                  flex: 1,
-                  minWidth: '320px',
-                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '14px 22px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-                <span style={{ fontSize: '18px' }}>➔</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResetSession}
-                title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
-                style={{
-                  background: '#fff1f2',
-                  color: '#be123c',
-                  border: '1.5px solid #fecdd3',
-                  padding: '12px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>🔄 Làm lại Bước 2</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyText}
-                title="Sao chép toàn bộ biên bản đối thoại"
-                style={{
-                  background: copySuccess ? '#059669' : '#ffffff',
-                  color: copySuccess ? '#ffffff' : '#065f46',
-                  border: '1.5px solid #a7f3d0',
-                  padding: '12px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadTxt}
-                title="Tải biên bản đối thoại (.txt)"
+            {/* BẢNG ĐO LƯỜNG VÀ GẮN NHÃN HÀNH VI (QUY CHUẨN PHƯƠNG PHÁP LUẬN KHKT) */}
+            {sessionTelemetry && (
+              <div
                 style={{
                   background: '#ffffff',
-                  color: '#334155',
                   border: '1.5px solid #cbd5e1',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
+                  borderRadius: '12px',
+                  padding: '16px 20px',
+                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)'
                 }}
               >
-                📥 Tải .TXT
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '18px' }}>📊</span>
+                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Kết quả Đo lường & Gắn nhãn Hành vi (Quy chuẩn KHKT)
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: '11.5px',
+                    fontWeight: '700',
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    background: sessionTelemetry.triage_step4?.includes('In-depth') ? '#fef2f2' : '#ecfdf5',
+                    color: sessionTelemetry.triage_step4?.includes('In-depth') ? '#dc2626' : '#059669',
+                    border: '1px solid ' + (sessionTelemetry.triage_step4?.includes('In-depth') ? '#fecaca' : '#a7f3d0')
+                  }}>
+                    Phân luồng Bước 4: {sessionTelemetry.triage_step4}
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
+                  {/* 1. Primary_Cognitive_Bias */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
+                      1. Primary_Cognitive_Bias (Thiên lệch nhận thức)
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e40af', marginBottom: '4px' }}>
+                      {sessionTelemetry.primary_bias}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
+                      {sessionTelemetry.primary_bias_rule}
+                    </div>
+                  </div>
+
+                  {/* 2. Turning_Point_Detected */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
+                      2. Turning_Point_Detected (Điểm xoay nhận thức)
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: sessionTelemetry.turning_point_detected === 'True' ? '#059669' : '#d97706', marginBottom: '4px' }}>
+                      {sessionTelemetry.turning_point_detected === 'True' ? 'True (Đã nhận diện rào cản/điểm yếu)' : 'False (Chưa thừa nhận điểm yếu/rào cản)'}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
+                      {sessionTelemetry.turning_point_rule}
+                    </div>
+                  </div>
+
+                  {/* 3. Outcome_Category */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
+                      3. Outcome_Category (Phân loại hành vi sau phản tư)
+                    </div>
+                    <div style={{
+                      fontSize: '13px',
+                      fontWeight: '800',
+                      color: sessionTelemetry.outcome_category === 'Uncalibrated_Avoidant' ? '#dc2626' : (sessionTelemetry.outcome_category === 'Reconsidering' ? '#d97706' : '#059669'),
+                      marginBottom: '4px'
+                    }}>
+                      {sessionTelemetry.outcome_category === 'Uncalibrated_Avoidant'
+                        ? 'Uncalibrated_Avoidant (Chưa hiệu chuẩn / Né tránh)'
+                        : sessionTelemetry.outcome_category === 'Reconsidering'
+                        ? 'Reconsidering (Cân nhắc điều chỉnh mục tiêu)'
+                        : 'Persistent_Calibrated (Kiên định & Đã hiệu chuẩn)'}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
+                      {sessionTelemetry.outcome_rule}
+                    </div>
+                  </div>
+
+                  {/* 4. Triage_Step4 */}
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
+                      4. Triage_Step4 (Chỉ định thời lượng Cố vấn Bước 4)
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: sessionTelemetry.triage_step4?.includes('In-depth') ? '#dc2626' : '#059669', marginBottom: '4px' }}>
+                      {sessionTelemetry.triage_step4}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
+                      {sessionTelemetry.triage_rule}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div 
+              className="no-print"
+              style={{
+                background: '#f0fdf4',
+                border: '2px solid #10b981',
+                borderRadius: '12px',
+                padding: '18px 22px',
+                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
+                    ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
+                    Em hãy đọc kỹ lời phân tích và kết quả gắn nhãn hành vi ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button 
+                  type="button"
+                  onClick={() => window.location.href = '/student/fact-check'}
+                  style={{
+                    flex: 1,
+                    minWidth: '320px',
+                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '14px 22px',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '15px',
+                    cursor: 'pointer',
+                    boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
+                  <span style={{ fontSize: '18px' }}>➔</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetSession}
+                  title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
+                  style={{
+                    background: '#fff1f2',
+                    color: '#be123c',
+                    border: '1.5px solid #fecdd3',
+                    padding: '12px 18px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>🔄 Làm lại Bước 2</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  title="Sao chép toàn bộ biên bản đối thoại"
+                  style={{
+                    background: copySuccess ? '#059669' : '#ffffff',
+                    color: copySuccess ? '#ffffff' : '#065f46',
+                    border: '1.5px solid #a7f3d0',
+                    padding: '12px 18px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadTxt}
+                  title="Tải biên bản đối thoại (.txt)"
+                  style={{
+                    background: '#ffffff',
+                    color: '#334155',
+                    border: '1.5px solid #cbd5e1',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  📥 Tải .TXT
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
