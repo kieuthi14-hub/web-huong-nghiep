@@ -42,7 +42,7 @@ const Login = () => {
     
     setIsLoading(true)
     try {
-      // Lưu phiên cục bộ theo đúng cấu trúc người dùng yêu cầu
+      // 1. Lưu phiên cục bộ lập tức để bảo đảm điều hướng ngay mà không bị chặn
       if (setLocalSession) {
         setLocalSession('guest', demoId, demoId)
       } else {
@@ -52,26 +52,26 @@ const Login = () => {
         localStorage.setItem('cbas_is_experimental_group', 'false')
       }
 
-      // Đồng bộ ngầm với Supabase Auth nếu có mạng
+      // 2. Đồng bộ ngầm không đồng bộ (fire-and-forget) với Supabase nếu có kết nối
       const cleanEmail = val.includes('@') ? val.toLowerCase() : `${val.toLowerCase().replace(/[^a-z0-9]/g, '_')}@sandbox.visef.edu.vn`
-      try {
-        const { error } = await signIn(cleanEmail, '123456')
+      signIn(cleanEmail, '123456').then(({ error }) => {
         if (error) {
-          await signUp(cleanEmail, '123456', demoId)
-          await signIn(cleanEmail, '123456')
+          signUp(cleanEmail, '123456', demoId).then(() => {
+            signIn(cleanEmail, '123456').catch(() => {})
+          }).catch(() => {})
         }
-      } catch (e) {
-        console.warn('Supabase sync info:', e)
-      }
+      }).catch(() => {})
 
       setToast({ 
         type: 'success', 
         message: `Chào mừng bạn tham gia trải nghiệm thử hệ thống SocraCareer!` 
       })
 
-      setTimeout(() => {
-        navigate('/student/dashboard')
-      }, 500)
+      // Điều hướng ngay lập tức vào dashboard
+      navigate('/student/dashboard')
+    } catch (e) {
+      console.warn('Guest login warning:', e)
+      navigate('/student/dashboard')
     } finally {
       setIsLoading(false)
     }
@@ -101,26 +101,25 @@ const Login = () => {
         localStorage.setItem('cbas_is_experimental_group', 'true')
       }
 
-      // Đồng bộ ngầm với Supabase Auth
+      // Đồng bộ ngầm Supabase không chặn trải nghiệm người dùng
       const studentEmail = `${code.toLowerCase()}@student.visef.edu.vn`
-      try {
-        const { error } = await signIn(studentEmail, '123456')
+      signIn(studentEmail, '123456').then(({ error }) => {
         if (error) {
-          await signUp(studentEmail, '123456', code)
-          await signIn(studentEmail, '123456')
+          signUp(studentEmail, '123456', code).then(() => {
+            signIn(studentEmail, '123456').catch(() => {})
+          }).catch(() => {})
         }
-      } catch (e) {
-        console.warn('Supabase sync info:', e)
-      }
+      }).catch(() => {})
 
       setToast({ 
         type: 'success', 
         message: `Xác thực thành công đối tượng nghiên cứu: ${code}. Hệ thống bắt đầu lưu vết thực nghiệm.` 
       })
 
-      setTimeout(() => {
-        navigate('/student/dashboard')
-      }, 500)
+      navigate('/student/dashboard')
+    } catch (e) {
+      console.warn('Subject login warning:', e)
+      navigate('/student/dashboard')
     } finally {
       setIsLoading(false)
     }

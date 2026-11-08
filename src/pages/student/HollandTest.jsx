@@ -2483,6 +2483,27 @@ const HollandTest = () => {
               </button>
             </div>
           </div>
+
+          {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ Ở CUỐI VÒNG 1 */}
+          <div className="mt-8 pt-6 border-t border-slate-200">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-1">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <span>📝</span>
+                <span>Nhật ký và Sản phẩm Phản tư — Vòng 1</span>
+              </h3>
+              <span className="text-[11px] text-slate-500">
+                (Sau khi xem kết quả đối chiếu, em ghi nhật ký ngắn 4 câu bên dưới để lưu hồ sơ phản tư)
+              </span>
+            </div>
+            <ReflectionJournalCard 
+              round={1} 
+              contextData={{
+                targetMajor: result?.anchorData?.target_major || targetMajor || '',
+                reason: result?.anchorData?.choice_source || reason || '',
+                confidence: result?.anchorData?.confidence_score_initial || result?.anchorData?.initialConfidence || confidenceScore || 7
+              }}
+            />
+          </div>
         </div>
       )}
 

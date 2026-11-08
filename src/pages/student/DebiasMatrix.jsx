@@ -1709,9 +1709,9 @@ export default function DebiasMatrix() {
         <ReflectionJournalCard 
           round={5}
           contextData={{
-            targetMajor: selectedMajor || '',
-            backupPlan: backupPlan || '',
-            decisionRationale: ''
+            targetMajor: targetMajor || '',
+            backupPlan: triadTiers?.safe?.majorSchool || triadTiers?.realistic?.majorSchool || '',
+            decisionRationale: personalPledge || ''
           }}
         />
       </div>

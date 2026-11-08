@@ -87,21 +87,22 @@ export const AuthProvider = ({ children }) => {
           const localId = typeof window !== 'undefined' ? localStorage.getItem('currentUserId') : null
           if (localRole && localId) {
             const isGuest = localRole === 'guest'
+            const targetCode = (localStorage.getItem('cbas_student_code') || localId || 'CT_01').toUpperCase()
             const mockUser = {
               id: localId,
               email: isGuest ? `${localId.toLowerCase()}@sandbox.visef.edu.vn` : `${localId.toLowerCase()}@student.visef.edu.vn`,
               user_metadata: {
                 role: isGuest ? 'guest' : 'student',
-                student_code: localId
+                student_code: targetCode
               }
             }
             setUser(mockUser)
             setProfile({
               id: localId,
               email: mockUser.email,
-              full_name: localId,
+              full_name: targetCode,
               role: isGuest ? 'guest' : 'student',
-              student_code: localId
+              student_code: targetCode
             })
           }
         }
@@ -121,8 +122,31 @@ export const AuthProvider = ({ children }) => {
         setUser(session.user)
         await fetchProfile(session.user.id, session.user)
       } else {
-        setUser(null)
-        setProfile(null)
+        const localRole = typeof window !== 'undefined' ? localStorage.getItem('currentUserRole') : null
+        const localId = typeof window !== 'undefined' ? localStorage.getItem('currentUserId') : null
+        if (localRole && localId) {
+          const isGuest = localRole === 'guest'
+          const targetCode = (localStorage.getItem('cbas_student_code') || localId || 'CT_01').toUpperCase()
+          const mockUser = {
+            id: localId,
+            email: isGuest ? `${localId.toLowerCase()}@sandbox.visef.edu.vn` : `${localId.toLowerCase()}@student.visef.edu.vn`,
+            user_metadata: {
+              role: isGuest ? 'guest' : 'student',
+              student_code: targetCode
+            }
+          }
+          setUser(mockUser)
+          setProfile({
+            id: localId,
+            email: mockUser.email,
+            full_name: targetCode,
+            role: isGuest ? 'guest' : 'student',
+            student_code: targetCode
+          })
+        } else {
+          setUser(null)
+          setProfile(null)
+        }
       }
       setLoading(false)
     })
@@ -249,6 +273,7 @@ export const AuthProvider = ({ children }) => {
     try {
       localStorage.removeItem('currentUserRole')
       localStorage.removeItem('currentUserId')
+      localStorage.removeItem('cbas_student_code')
       sessionStorage.removeItem('cbas_admin_verified')
     } catch (e) {}
     setIsAdminVerified(false)

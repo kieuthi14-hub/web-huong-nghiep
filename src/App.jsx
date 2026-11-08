@@ -55,6 +55,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // 1. Chưa đăng nhập -> Chuyển về login
   if (!user) {
+    const localRole = typeof window !== 'undefined' ? localStorage.getItem('currentUserRole') : null
+    const localId = typeof window !== 'undefined' ? localStorage.getItem('currentUserId') : null
+    if (localRole && localId) {
+      return children
+    }
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 

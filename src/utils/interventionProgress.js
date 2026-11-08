@@ -185,6 +185,15 @@ export const getInterventionProgress = () => {
 export const isStepUnlocked = (stepNumber, progress = getInterventionProgress()) => {
   const step = Number(stepNumber)
   if (step <= 1) return true
+
+  // Chế độ Trải nghiệm thử (Guest/Giám khảo) và Quản trị viên (Admin) được phép xem và kiểm thử tự do cả 5 bước
+  try {
+    const role = typeof window !== 'undefined' ? localStorage.getItem('currentUserRole') : null
+    if (role === 'guest' || role === 'admin') {
+      return true
+    }
+  } catch (e) {}
+
   if (step === 2) return Boolean(progress[1])
   if (step === 3) return Boolean(progress[2])
   if (step === 4) return Boolean(progress[3])

@@ -1,6 +1,6 @@
 // api/socrates-chat.js - Vercel Serverless Function & Express compatible endpoint
 // ==============================================================================
-// BACKEND CAN THIỆP AI SOCRATES - VISEF 2026 (CBAS)
+// BACKEND CAN THIỆP AI SOCRATES - VISEF 2026 (SOCRACAREER)
 // MÔ HÌNH NHẬN THỨC LINH HOẠT & TIẾN TRÌNH 4 VÒNG SƯ PHẠM BẤT BIẾN
 // ==============================================================================
 
@@ -57,6 +57,30 @@ function isTechnicalConfusion(text) {
     /^(thầy hỏi lại là sao|sao thầy lại hỏi lại|sao hỏi lại|hỏi lại là sao)(\s+ạ|\s+a)?$/i
   ];
   return confusionPatterns.some(p => p.test(clean));
+}
+
+function isEvasiveOrJoking(text) {
+  if (!text || typeof text !== 'string') return false;
+  const clean = text.toLowerCase().trim()
+    .replace(/[!.,?~^_\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  if (clean.length === 0 || clean.length > 80) return false;
+
+  const evasivePatterns = [
+    /(thấy|thay)\s+(thầy|thay)\s+(là|la)\s+(em\s+)?(lo|sợ|so)/i,
+    /(thầy|thay)\s+(hỏi|hoi)\s+(khó|kho|gắt|gat|căng|cang)\s*(quá|qua|thế|the|vậy|vay)?/i,
+    /^(khó|kho|gắt|gat|căng|cang)\s*(quá|qua)\s*(thầy|thay)?/i,
+    /^(thầy|thay)\s+(làm|lam)\s+(khó|kho)\s+em/i,
+    /^(thầy|thay)\s+(dọa|doa)\s+em/i,
+    /^(đùa|dua|trêu|treu)\s+(thôi|thoi|tí|ti|chút)/i,
+    /^(nói|noi)\s+(đùa|dua|chơi|choi)\s+(thôi|thoi)/i,
+    /^(thôi|thoi)\s+(thầy|thay)/i,
+    /^(chịu|chiu|bó tay|bo tay)\s+(thầy|thay)?/i,
+    /^(lo|sợ|so)\s+(quá|qua)\s*(thầy|thay)?$/i
+  ];
+  return evasivePatterns.some(p => p.test(clean));
 }
 
 function isCompleteSentence(text) {
@@ -318,8 +342,6 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
                       sNorm.includes('dhh');
 
   if (isUniSchool && !isExplicitVocationalSchool) {
-    // Nếu nhắm vào trường Đại học (như ĐH Nha Trang, ĐH Bách Khoa, ĐH Sư phạm Kỹ thuật...),
-    // đây là bậc đào tạo Kỹ sư / Cử nhân đại học chính quy, TUYỆT ĐỐI KHÔNG ĐƯỢC COI LÀ HỌC NGHỀ!
     return false;
   }
 
@@ -327,7 +349,7 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
     return true;
   }
 
-  // 3. Từ khóa nghề thủ công / dịch vụ phi đại học rõ ràng (không đào tạo cử nhân đại học):
+  // 3. Từ khóa nghề thủ công / dịch vụ phi đại học rõ ràng:
   const pureVocationalKeywords = [
     'pha che', 'barista', 'lam banh', 'tho han', 'tho tien', 'tho may', 'tho dien dan dung',
     'spa', 'nail', 'mong', 'cat toc', 'barber', 'trang diem', 'makeup', 'phun xam',
@@ -339,8 +361,7 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
     return true;
   }
 
-  // 4. Các ngành kỹ thuật / ứng dụng (cơ khí, điện lạnh, sửa ô tô, đầu bếp, nấu ăn, may mặc):
-  // Chỉ coi là học nghề khi KHÔNG có trường đại học và có dấu hiệu học nghề hoặc học sinh bộc lộ ngán lý thuyết
+  // 4. Các ngành kỹ thuật / ứng dụng:
   const technicalKeywords = ['dien lanh', 'co khi', 'sua o to', 'sua xe', 'nau an', 'dau bep', 'may mac', 'may thoi trang', 'sua dien thoai'];
   if (technicalKeywords.some(k => cNorm.includes(k) || uNorm.includes(k))) {
     if (uNorm.includes('nghe') || uNorm.includes('thuc hanh') || cNorm.includes('tho') || cNorm.includes('sua')) {
@@ -351,7 +372,7 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
   return false;
 }
 
-// HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
+// HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ
 export function isUndecidedOrVague(career) {
   if (!career || typeof career !== 'string') return true;
   const clean = career.toLowerCase().trim();
@@ -361,23 +382,20 @@ export function isUndecidedOrVague(career) {
 
 /**
  * SOCRACAREER - DYNAMIC ADAPTIVE TRIGGER (BƯỚC 2: AI SOCRATES)
- * Thuật toán kích hoạt Vòng 1 linh hoạt dựa trên 4 Thiên lệch nhận thức cốt lõi
  */
 export function generateSocraticFirstPrompt(student = {}) {
-  // 1. Thu thập các chỉ số mỏ neo từ Bước 1
   const targetCareer = student.baselineTarget || student.targetMajor || student.targetCareer || student.target_career || "ngành nghề mục tiêu";
-  const source = student.source || student.reason || ""; // "Mạng xã hội", "Bạn bè/Người thân", "Tự tìm hiểu"
+  const source = student.source || student.reason || "";
   const anchorReason = student.anchorReason || "";
   let anchorQuote = student.anchorQuote || source || "";
   if (!anchorQuote && (student.id === "CT_21" || student.studentId === "CT_21")) {
     anchorQuote = "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
   }
 
-  const conf = Number(student.conf_T0 || student.initialConfidence || student.confidence_score) || 5; // Độ tự tin từ 1 - 10
-  const gpa = Number(student.gpa_A00) || 25.0; // Điểm học bạ tổ hợp
-  const benchmark = Number(student.benchmark_target) || 27.5; // Điểm chuẩn trường mục tiêu
-  const deltaScore = gpa - benchmark; // Khoảng cách điểm sàn
-  const riasecMatch = student.riasec_match_pct != null ? Number(student.riasec_match_pct) : 40; // % Tương thích RIASEC
+  const conf = Number(student.conf_T0 || student.initialConfidence || student.confidence_score) || 5;
+  const rawSchool = (student.targetSchool || student.targetUniversity || student.target_university || "").trim();
+  const schoolClause = rawSchool ? `tại ${rawSchool}` : "";
+  const riasecMatch = student.riasec_match_pct != null ? Number(student.riasec_match_pct) : 40;
 
   let biasType = "";
   let biasRule = "";
@@ -426,46 +444,39 @@ export function generateSocraticFirstPrompt(student = {}) {
 
   const isOverconfidence = 
     anchorReason === "Tự tin điểm số" || 
-    (conf >= 8 && deltaScore <= -2.0);
+    conf >= 8;
 
   const isConfirmation = 
     anchorReason === "Trái mã RIASEC" || 
     (riasecMatch < 50);
 
-  // 2. Cây quyết định thích ứng (Adaptive Decision Tree) để chọn đúng thiên lệch nổi trội
   if (isMediaAnchoring) {
-    // THIÊN LỆCH 1: MỎ NEO TRUYỀN THÔNG (Anchoring Bias)
     biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
-    biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc thuộc mẫu kiểm thử mỏ neo truyền thông.";
+    biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc truyền thông.";
     const quoteText = anchorQuote || "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
     socraticQuestion = `Chào em. Em vừa chia sẻ rằng chọn ngành ${targetCareer} vì "${quoteText}". Theo em, những clip review thu nhập nghìn đô đó phản ánh bao nhiêu phần trăm áp lực học tập và tỷ lệ đào thải thực tế của ngành này?`;
 
   } else if (isBandwagon) {
-    // THIÊN LỆCH 2: TÂM LÝ ĐÁM ĐÔNG (Bandwagon Effect)
     biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
     biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
     socraticQuestion = `Chào em. Em cho biết chọn ngành ${targetCareer} vì thấy nhiều bạn bè cũng đang đăng ký. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
 
   } else if (isOverconfidence) {
-    // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias)
     biasType = "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)";
-    biasRule = `Kích hoạt do mức tự tin trúng tuyển rất cao (${conf}/10) trong khi điểm học bạ tổ hợp (${gpa} điểm) còn cách điểm chuẩn tham chiếu (${benchmark} điểm) một khoảng khá xa (${deltaScore.toFixed(1)} điểm).`;
-    socraticQuestion = `Chào em. Em đang đặt mức tự tin tới ${conf}/10 vào khả năng trúng tuyển, trong khi điểm học bạ tổ hợp hiện tại (${gpa} điểm) còn cách điểm chuẩn tham chiếu (${benchmark} điểm) một khoảng khá xa (${deltaScore.toFixed(1)} điểm). Căn cứ cụ thể nào giúp em tin chắc mình sẽ bù đắp được khoảng cách này trong thời gian nước rút?`;
+    biasRule = `Kích hoạt do mức tự tin ban đầu rất cao (${conf}/10) khi chưa đối chứng dữ liệu tuyển sinh thực tế.`;
+    socraticQuestion = `Chào em. Thầy thấy em đang đặt mức tự tin tới ${conf}/10 vào lựa chọn ngành ${targetCareer} ${schoolClause}. Căn cứ hoặc trải nghiệm thực tế nào của bản thân giúp em tin chắc vào sự phù hợp của mình với ngành này trước khi đối chứng dữ liệu?`;
 
   } else if (isConfirmation) {
-    // THIÊN LỆCH 4: THIÊN LỆCH XÁC NHẬN (Confirmation Bias)
     biasType = "THIÊN LỆCH XÁC NHẬN (CONFIRMATION BIAS)";
     biasRule = `Kích hoạt do độ tương thích RIASEC thấp (${riasecMatch}%), sở trường tự nhiên nhóm [${student.riasecCode || "Xã hội"}] chưa khớp với đặc thù khắt khe của ngành mục tiêu.`;
     socraticQuestion = `Chào em. Kết quả trắc nghiệm RIASEC chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng ngành ${targetCareer} lại đòi hỏi đặc tính rất khắt khe về kỹ thuật thực hành. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
 
   } else {
-    // TRƯỜNG HỢP MẶC ĐỊNH / NHÓM THỰC CHẤT
     biasType = "TRUY VẤN NỀN TẢNG THỰC CHẤT";
     biasRule = "Học sinh có động cơ nội tại hài hòa; thực hiện truy vấn cơ sở thực tế và dữ liệu khách quan quan trọng nhất dẫn dắt mục tiêu.";
-    socraticQuestion = `Chào em. Em hãy chia sẻ lý do cốt lõi và dữ liệu thực tế quan trọng nhất đã dẫn dắt em lựa chọn mục tiêu ngành ${targetCareer}?`;
+    socraticQuestion = `Chào em. Em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause} với mức tự tin ban đầu là ${conf}/10. Em hãy chia sẻ lý do cốt lõi và trải nghiệm thực tế quan trọng nhất đã dẫn dắt em lựa chọn mục tiêu này?`;
   }
 
-  // 3. Trả về cấu trúc hiển thị Vòng 1 cho giao diện Web
   return {
     biasType: biasType,
     biasRule: biasRule,
@@ -474,15 +485,11 @@ export function generateSocraticFirstPrompt(student = {}) {
   };
 }
 
-/**
- * BƯỚC 2: AI SOCRATES SỬ DỤNG TRỰC TIẾP DỮ LIỆU TỪ BƯỚC 1 ĐỂ KHỞI TẠO CÂU HỎI ĐẦU TIÊN
- */
 export function initSocratesChat(profile = {}) {
   const promptData = generateSocraticFirstPrompt(profile);
   return promptData.firstQuestion;
 }
 
-// HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC KHỐI CŨ)
 export function getRecommendedComboForMajor(majorName, userText = '') {
   const m = (majorName || '').toLowerCase();
   const u = (userText || '').toLowerCase();
@@ -562,9 +569,13 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
     .replace(/môi\s*trường\s+thực\s*chiến/gi, 'môi trường làm việc thực tế')
     .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
     .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
-    .replace(/thực\s*chiến/gi, 'thực tế');
+    .replace(/thực\s*chiến/gi, 'thực tế')
+    .replace(/^Thầy\s+(?:rất\s+)?(?:hiểu|thấu hiểu|đồng cảm|thấy rằng)[^.!?\n]*[.!?]\s*/gi, '')
+    .replace(/Ước mơ của em (?:thật|rất) tuyệt vời[^.!?\n]*[.!?]?/gi, '')
+    .replace(/Em rất có tiềm năng[^.!?\n]*[.!?]?/gi, '')
+    .replace(/(?:tình cảm|ước mơ|tấm lòng)(?: này)? rất đáng (?:quý|trân trọng)[^.!?\n]*[.!?]?/gi, '');
 
-  // 4. QUY TẮC 1: XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO (CHỐNG LỖI HIỂN THỊ CHUỖI RỖNG / "tại [chưa biết]")
+  // 4. QUY TẮC 1: XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO
   const isVocational = isVocationalTrack(effectiveCareer, userText, targetSchool);
   const isUniClarification = hasUniversityClarification(userText);
   const cleanSchoolClause = formatSchoolClause(targetSchool, isVocational, 'tại ');
@@ -573,7 +584,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   cleaned = cleaned.replace(/tại\s+\[?(?:chưa biết(?: học ở đâu)?|chưa rõ|chưa xác định|không biết|trường đại học mục tiêu|undefined|null)\]?/gi, cleanSchoolClause);
   cleaned = cleaned.replace(/của\s+\[?(?:chưa biết(?: học ở đâu)?|chưa rõ|chưa xác định|không biết|trường đại học mục tiêu|undefined|null)\]?/gi, `của ${cleanSchoolName}`);
 
-  // Cắt bỏ các danh sách tự vạch chiến lược / tầng nấc thay học sinh
+  // Cắt bỏ các danh sách tự vạch chiến lược thay học sinh
   cleaned = cleaned.replace(/(?:Để giúp em|Để làm chủ lộ trình|Thầy đề xuất|Thầy định hướng)[^:.\n]*Chiến lược Thích ứng Đa tầng[^:\n]*:?/gi, '');
   cleaned = cleaned.replace(/[•\-\*]?\s*Tầng\s*[1-3][^:\n]*:?[^\n\r]*/gi, '');
   cleaned = cleaned.replace(/Chiến lược Thích ứng Đa tầng/gi, '');
@@ -581,129 +592,24 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
   cleaned = cleaned.trim();
 
   const major = effectiveCareer || 'ngành mục tiêu';
-  const lowerUser = (userText || '').toLowerCase();
-  const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
-  const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
 
   if (round === 4) {
     // Ở LƯỢT CUỐI CÙNG, RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
-    // Cắt bỏ dấu ? ở cuối câu
     cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
     cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
     cleaned = cleaned.trim();
-
-    // Loại bỏ các câu điều hướng cũ nếu có
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
-    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
-    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề" trong câu nhận định!
-    if (!isVocational || isUniClarification) {
-      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.trim();
-    }
-
-    const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-    let intro = '';
-    if (isUniClarification) {
-      intro = `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${major} ${cleanSchoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn.`;
-    } else if (sentences.length > 0) {
-      intro = sentences.slice(0, 2).join(' ').trim();
-    } else {
-      if (isVocational) {
-        intro = `Học nghề là một hướng đi thực tế, nhưng việc thi đỗ tốt nghiệp THPT và chuẩn bị thể lực bền bỉ là điều kiện tiên quyết.`;
-      } else if (isBalancedGrades) {
-        intro = `Học đều các môn là một nền tảng tốt, nhưng điểm chuẩn vào ngành ${major} ${cleanSchoolClause} đòi hỏi điểm số bứt phá ở tổ hợp xét tuyển.`;
-      } else if (strongSubject && weakSubject) {
-        intro = `Thế mạnh ở môn ${strongSubject} là điểm tựa tốt, nhưng môn ${weakSubject} nếu chưa đạt yêu cầu sẽ là rào cản khi xét tuyển vào ngành ${major} ${cleanSchoolClause}.`;
-      } else if (strongSubject) {
-        intro = `Môn ${strongSubject} là một điểm tựa, nhưng điểm chuẩn ngành ${major} ${cleanSchoolClause} đòi hỏi cả tổ hợp xét tuyển phải đạt ngưỡng an toàn.`;
-      } else {
-        intro = `Để biết năng lực thực tế có đáp ứng được ngưỡng tuyển sinh của ngành ${major} ${cleanSchoolClause} hay không, em cần đối chứng với dữ liệu thực tế.`;
-      }
-    }
-
-    // QUY TẮC 2: PHÂN HÓA HƯỚNG ĐI ĐẠI HỌC VS HỌC NGHỀ
-    const standardDirective = (isVocational && !isUniClarification)
-      ? `Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${cleanSchoolName} để đối chiếu với hồ sơ của mình.`
-      : `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
-
-    return `${intro} ${standardDirective}`.trim();
+    return `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
   } else {
-    // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
+    // VÒNG 1, 2, 3: ĐẢM BẢO TỐI ĐA 2 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN
     cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
-    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
-    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề"
-    if (!isVocational || isUniClarification) {
-      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.trim();
-    }
-
-    // QUY TẮC 6: CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG KHI HỌC SINH NÊU ĐỘNG CƠ CẢM XÚC/GIA ĐÌNH/ƯỚC MƠ
-    const isFamilyOrAltruisticUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
-    const isMedicalCareerUser = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược'].some(k => major.toLowerCase().includes(k) || lowerUser.includes(k));
-
-    if (round === 2 && isFamilyOrAltruisticUser && (cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('mức thu nhập') || cleaned.includes('khởi điểm 15') || cleaned.includes('15 - 20 triệu'))) {
-      if (isMedicalCareerUser) {
-        cleaned = `Thầy hiểu tình cảm và mong muốn hiếu thảo muốn chữa bệnh cho ba mẹ là động lực rất thiêng liêng của em. Tuy nhiên, ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?`;
-      } else {
-        cleaned = `Thầy hiểu ước mơ và tình cảm dành cho gia đình là động lực rất đáng trân trọng của em. Tuy nhiên, việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành này, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
-      }
-    }
-
-    if (!cleaned.endsWith('?')) {
-      if (round === 1) {
-        const studentObj = {
-          id: studentProfile?.studentId || studentProfile?.id || '',
-          name: studentProfile?.name || studentProfile?.studentName || 'em',
-          baselineTarget: major,
-          targetCareer: major,
-          targetSchool: targetSchool,
-          source: studentProfile?.reason || '',
-          anchorReason: studentProfile?.anchorReason || '',
-          anchorQuote: studentProfile?.anchorQuote || studentProfile?.reason || '',
-          conf_T0: studentProfile?.initialConfidence || 5,
-          gpa_A00: studentProfile?.gpa_A00 || 25.0,
-          benchmark_target: studentProfile?.benchmark_target || 27.5,
-          riasec_match_pct: studentProfile?.riasec_match_pct ?? 40,
-          riasecCode: studentProfile?.riasecCode || 'Xã hội'
-        };
-        const firstPrompt = generateSocraticFirstPrompt(studentObj);
-        cleaned += ` ${firstPrompt.firstQuestion}`;
-      } else if (isVocational && !isUniClarification) {
-        if (round === 2) {
-          cleaned += ` Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (đứng nhiều giờ, ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
-        } else if (round === 3) {
-          cleaned += ` Học nghề vẫn đòi hỏi điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để vào các trường nghề uy tín. Nhìn lại sức học hiện tại, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm vé tốt nghiệp này?`;
-        }
-      } else {
-        if (round === 2) {
-          if (isFamilyOrAltruisticUser) {
-            if (isMedicalCareerUser) {
-              cleaned += ` Nhìn vào chặng đường 6 năm đại học và 18 tháng thực hành lâm sàng đầy áp lực của ngành Y, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
-            } else {
-              cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
-            }
-          } else {
-            cleaned += ` Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập kỳ vọng đó ngay khi em vừa tốt nghiệp?`;
-          }
-        } else if (round === 3) {
-          cleaned += ` Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
-        }
-      }
-    }
-
     const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-    if (sentences.length > 3) {
+    if (sentences.length > 2) {
       const lastQ = sentences[sentences.length - 1];
-      const prevSentences = sentences.slice(0, 2).join(' ');
-      cleaned = `${prevSentences} ${lastQ}`;
+      const prev = sentences[0];
+      cleaned = `${prev} ${lastQ}`;
     }
     return cleaned.trim();
   }
@@ -734,13 +640,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Nội dung tin nhắn không được để trống.' });
     }
 
-    // 1. Kiểm tra an toàn: Lịch sử trò chuyện phải là một mảng
     const validHistory = Array.isArray(chatHistory) ? chatHistory : (Array.isArray(body?.history) ? body.history : []);
-
     const trimmedMsg = userMessage.trim();
-    const lowerTrimmed = trimmedMsg.toLowerCase();
 
-    // 2. PHẢN XẠ NHANH: Nếu học sinh chỉ chào hỏi xã giao (KHÔNG TÍNH VÀO TIẾN TRÌNH VÒNG)
+    // 2. PHẢN XẠ NHANH: Nếu học sinh chỉ chào hỏi xã giao
     if (isGreetingOnly(trimmedMsg)) {
       const greetingReply = `Chào em, thầy trò mình cùng bắt đầu nhé! Em hãy trả lời câu hỏi của thầy ở trên để tiếp tục đối thoại.`;
       return res.status(200).json({
@@ -756,7 +659,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2b. PHẢN XẠ NHANH: Nếu học sinh thắc mắc kỹ thuật / chưa hiểu câu hỏi (KHÔNG TÍNH VÀO TIẾN TRÌNH VÒNG)
+    // 2b. PHẢN XẠ NHANH: Nếu học sinh thắc mắc kỹ thuật / chưa hiểu câu hỏi
     if (isTechnicalConfusion(trimmedMsg)) {
       const clarifyReply = `Thầy hỏi để giúp em tự soi chiếu động lực và năng lực thực tế của mình trước khi ra quyết định quan trọng. Em hãy chia sẻ rõ hơn suy nghĩ của mình về câu hỏi của thầy ở trên nhé!`;
       return res.status(200).json({
@@ -772,10 +675,25 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Quản lý Tiến trình Hội thoại theo Trạng thái Cứng (STRICT STATE MACHINE - VISEF 2026)
-    // Khởi tạo biến: currentStage = 1 (Chỉ số từ 1 đến 4).
-    // Mỗi khi học sinh bấm gửi một tin nhắn, currentStage mới được tăng lên 1 đơn vị.
-    const substantiveUserMsgs = validHistory.filter(m => m.role === 'user' && !isGreetingOnly(m.text) && !isTechnicalConfusion(m.text));
+    // 2c. PHẢN XẠ NHANH: Nếu học sinh né tránh hoặc bông đùa
+    if (isEvasiveOrJoking(trimmedMsg)) {
+      const evasiveReply = `Thầy chỉ là công cụ đặt câu hỏi giúp em soi chiếu lại mục tiêu. Nếu đối diện với câu hỏi này khiến em lo lắng, thì áp lực thi cử và chọn nghề sắp tới sẽ còn thực tế hơn rất nhiều. Em hãy trả lời thẳng thắn vào trọng tâm câu hỏi của thầy ở trên.`;
+      return res.status(200).json({
+        success: true,
+        round: body?.round && Number(body.round) > 0 ? Number(body.round) : 1,
+        stage: body?.stage && Number(body.stage) > 0 ? Number(body.stage) : (body?.round ? Number(body.round) : 1),
+        chatStage: body?.chatStage && Number(body.chatStage) > 0 ? Number(body.chatStage) : 1,
+        response: evasiveReply,
+        reply: evasiveReply,
+        isComplete: false,
+        isCompleted: false,
+        advanceRound: false,
+        progress: `${body?.chatStage || 1}/4`
+      });
+    }
+
+    // 3. Quản lý Tiến trình Hội thoại theo Trạng thái Cứng (STRICT STATE MACHINE)
+    const substantiveUserMsgs = validHistory.filter(m => m.role === 'user' && !isGreetingOnly(m.text) && !isTechnicalConfusion(m.text) && !isEvasiveOrJoking(m.text));
 
     let currentStage = 1;
     if (body?.currentStage && Number(body.currentStage) >= 1) {
@@ -791,7 +709,7 @@ export default async function handler(req, res) {
     }
 
     const studentProfile = body?.studentProfile || body?.userProfile || body?.anchor || {};
-    const targetCareer = studentProfile?.targetMajor || studentProfile?.targetCareer || studentProfile?.target_career || "Sư phạm";
+    const targetCareer = studentProfile?.targetMajor || studentProfile?.targetCareer || studentProfile?.target_career || "ngành nghề mục tiêu";
     const targetSchool = studentProfile?.targetSchool || studentProfile?.targetUniversity || studentProfile?.target_university || "";
     const hollandCode = studentProfile?.hollandCode || studentProfile?.holland_code || "AEI";
     const reason = studentProfile?.reason || studentProfile?.careerReason || "Em thích từ nhỏ và cảm thấy phù hợp";
@@ -806,19 +724,16 @@ export default async function handler(req, res) {
     const studentId = studentProfile?.studentId || studentProfile?.id || body?.studentId || body?.id || '';
     const studentName = studentProfile?.name || studentProfile?.studentName || body?.studentName || '';
 
-    // 3b. Nhận diện chuyển biến mục tiêu / thắc mắc ngành mới từ tin nhắn học sinh
     const goalShift = detectGoalShift(trimmedMsg);
     const isShifted = Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
     const effectiveCareer = isShifted ? goalShift.newMajor : targetCareer;
 
-    // 4. Trích xuất các câu phát ngôn gần nhất của Thầy để chống lặp
     const pastModelUtterances = validHistory
       .filter(m => m.role === 'model' && m.text)
       .slice(-3)
       .map((m, i) => `Lượt trước ${i + 1}: "${m.text.slice(0, 120)}..."`)
       .join('\n');
 
-    // 5. TÁCH BIỆT SYSTEM PROMPT CHO TỪNG GIAI ĐOẠN ĐỘC LẬP (KHÔNG DÙNG 1 PROMPT CHUNG)
     const systemPrompt = getStageSystemPrompt(currentStage, {
       targetCareer,
       effectiveCareer,
@@ -838,7 +753,6 @@ export default async function handler(req, res) {
       riasecCode
     }, trimmedMsg, pastModelUtterances);
 
-    // 6. Chuẩn bị nội dung gửi lên Gemini API
     let contents = validHistory
       .filter(msg => msg && msg.text && typeof msg.text === 'string')
       .map(msg => ({
@@ -857,7 +771,6 @@ export default async function handler(req, res) {
 
     let replyText = null;
 
-    // 7. Cấu hình mô hình hoạt động ổn định
     const candidateModelNames = [
       'gemini-3.5-flash-lite',
       'gemini-flash-lite-latest',
@@ -905,11 +818,10 @@ export default async function handler(req, res) {
           }
         }
       } catch (err) {
-        // Thử model tiếp theo trong danh sách candidate
+        // Thử model tiếp theo
       }
     }
 
-    // 8. Heuristic Fallback Nhận thức (Dự phòng khẩn cấp nếu API gặp sự cố)
     if (!replyText || !isCompleteSentence(replyText)) {
       const rawFallback = generateCognitiveFallback({
         stage: currentStage,
@@ -981,95 +893,51 @@ function getStageSystemPrompt(stage, profile, userText, pastModelUtterances = ''
     ? `\n[CÂU THOẠI TRƯỚC ĐÓ CỦA THẦY - TUYỆT ĐỐI KHÔNG ĐƯỢC LẶP LẠI]:\n${pastModelUtterances}\n`
     : '';
 
-  // Nhận diện chuyển biến mục tiêu / thắc mắc ngành mới từ tin nhắn học sinh
   const goalShift = detectGoalShift(userText);
   const isShifted = profShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = profEffective || (goalShift ? goalShift.newMajor : targetCareer);
   const isVocational = isVocationalTrack(effectiveCareer, userText, rawSchool);
   const targetSchool = formatSchoolName(rawSchool, isVocational);
   const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
-  const askingCombo = isAskingAboutSubjectsOrCombos(userText);
-  const lowerUser = (userText || '').toLowerCase();
-  const careerLower = (effectiveCareer || '').toLowerCase();
-  const isFamilyOrAltruistic = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'người thân', 'ông bà', 'hiếu thảo'].some(k => lowerUser.includes(k));
-  const isMedicalCareer = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'dược học', 'nha khoa', 'răng hàm mặt'].some(k => careerLower.includes(k) || lowerUser.includes(k));
-  const isVagueOrUncertain = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerUser.includes(k));
-  const isSalaryFocused = ['tiền', 'lương', 'thu nhập', 'giàu', 'kiếm tiền', 'kinh tế', 'triệu', 'ổn định'].some(k => lowerUser.includes(k));
   const isUniClarification = hasUniversityClarification(userText);
 
-  // Chỉ thị thích ứng mục tiêu
   let adaptiveDirective = '';
   if (isUniClarification) {
     adaptiveDirective = `
 [CHỈ DẪN KHI HỌC SINH ĐÍNH CHÍNH HỌC ĐẠI HỌC CHỨ KHÔNG HỌC NGHỀ]:
 - Học sinh vừa khẳng định rõ: Em chọn học Đại học (tại ${targetSchool}) chứ không học trường nghề.
-- Thầy Socrates PHẢI GHI NHẬN NGAY sự đính chính này một cách điềm đạm và tích cực: Ghi nhận em đang hướng tới bậc Đại học chính quy tại ${targetSchool}.
+- Thầy Socrates ghi nhận em đang hướng tới bậc Đại học chính quy tại ${targetSchool}.
 - Nhắc nhở rằng ở bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn thi THPT.
-- Ở Lượt 3: Hỏi về môn tự tin nhất và môn lo lắng nhất trong tổ hợp môn xét tuyển học bạ/thi THPT.
-- Ở Lượt 4: RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi nhất từ học bạ để đối chứng điểm chuẩn của ${targetSchool}.
 - TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại "Học nghề là một hướng đi thực tế...", không nhắc đến cổng trường nghề hay rèn luyện thể lực của học nghề.
-`;
-  } else if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
-    adaptiveDirective = `
-[CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:
-- Ngành học sinh đang hướng tới: "${effectiveCareer}".
-- AI CHỈ ĐẶT CÂU HỎI, TUYỆT ĐỐI KHÔNG GIẢNG BÀI hay khẳng định cơ chế điểm chuẩn thay học sinh.
-- Ở Lượt 3: Hỏi về môn tự tin nhất và môn lo lắng nhất từ học bạ thực tế.
-- Ở Lượt 4: RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi nhất từ học bạ để đối chứng điểm chuẩn của ${targetSchool}.
 `;
   }
 
   const CORE_PROMPT = `
-BẠN LÀ THẦY SOCRATES - TRIẾT GIA PHẢN BIỆN HÀNH VI TRONG ĐỀ TÀI NGHIÊN CỨU KHOA HỌC KỸ THUẬT (KHKT) HỌC SINH TRUNG HỌC - HỆ THỐNG ĐIỀU CHUẨN NHẬN THỨC NGHỀ NGHIỆP THÍCH ỨNG (SOCRACAREER).
-Bạn đang thực hiện phiên đối thoại phản tư 1-1 với một học sinh THPT nhằm bóc tách thiên kiến nhận thức và mỏ neo nghề nghiệp.
+# VAI TRÒ VÀ BẢN SẮC (PERSONA)
+Bạn là "Thầy Socrates" - Trợ lý AI Tham vấn Phản tư thuộc nền tảng SocraCareer (Đề tài NCKH Khoa học Hành vi). 
+Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tính", áp dụng kỹ thuật truy vấn ngược Socrates để giúp học sinh THPT tự bóc tách các giả định cảm tính, thiên lệch nhận thức và ảo tưởng chọn nghề.
 
-BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC TUÂN THỦ 100%):
+# QUY TẮC CỐT TỬ - TUYỆT ĐỐI TUÂN THỦ (CRITICAL GUARDRAILS)
+1. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ:
+   - Nghiêm cấm đưa ra bất kỳ con số cụ thể nào về điểm chuẩn tham chiếu, điểm sàn, hay học phí (ví dụ: cấm nói "điểm chuẩn là 27.5", cấm nói "em đang thiếu 2.5 điểm"). 
+   - Nhiệm vụ đối chứng số liệu thuộc về BƯỚC 3. Ở Bước 2, bạn CHỈ ĐƯỢC CHẤT VẤN VỀ LẬP LUẬN VÀ CĂN CỨ CỦA HỌC SINH.
+2. CHỈ DÙNG THÔNG TIN HỌC SINH ĐÃ KHAI Ở BƯỚC 1:
+   - Các dữ liệu bạn được phép biết từ Bước 1 gồm: Ngành mục tiêu, Trường mục tiêu, Mức tự tin ban đầu (thang 1-10), Kỳ vọng thu nhập, Lý do ban đầu.
+3. QUY TẮC PHÁT NGÔN (ANTI-ROBOTIC & ANTI-SYCOPHANCY):
+   - KHÔNG bắt đầu câu bằng các cụm rập khuôn như: "Thầy hiểu sự...", "Thầy đồng cảm...", "Thầy thấy rằng...". Hãy đi thẳng vào câu hỏi hoặc phản hồi tự nhiên.
+   - Mỗi lượt đối thoại CHỈ ĐƯỢC ĐẶT ĐÚNG 01 CÂU HỎI TRUY VẤN. Câu hỏi phải ngắn gọn, sắc bén, đánh thẳng vào giả định của học sinh.
+   - Tuyệt đối không khen ngợi, không tán dương dễ dãi (Anti-Sycophancy). Không bao giờ nói: "Ước mơ của em thật tuyệt vời", "Em rất có tiềm năng".
 
-1. QUY TẮC XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO (CHỐNG LỖI HIỂN THỊ CHUỖI RỖNG):
-   - Biến [TRƯỜNG MỤC TIÊU]:
-     + Nếu học sinh điền: "chưa biết", "chưa rõ", "chưa xác định" hoặc để trống: TUYỆT ĐỐI KHÔNG ghép thành cụm từ vô nghĩa như "tại [chưa biết học ở đâu]" hay "tại chưa biết".
-     + Thay bằng cách diễn đạt tự nhiên: "một cơ sở đào tạo phù hợp", "trường đào tạo nghề em đang nhắm tới", hoặc bỏ hẳn vế nhắc tên trường nếu chưa cần thiết.
+# LỘ TRÌNH 4 GIAI ĐOẠN TRUY VẤN TỰ NHIÊN (4 PHIÊN HỘI THOẠI)
+- Giai đoạn 1 (Chất vấn Mỏ neo & Đám đông): Dựa vào lý do ban đầu của học sinh để bóc tách. Nếu học sinh nói "thích vì được đi nhiều nơi" hoặc "xem mạng xã hội", hãy hỏi về mặt trái, cường độ lao động hoặc trách nhiệm thực tế mà học sinh chưa từng nghĩ tới.
+- Giai đoạn 2 (Chất vấn Kỳ vọng thu nhập): So sánh mức lương kỳ vọng học sinh khai với năng lực khởi điểm thực tế của một cử nhân mới ra trường. Hỏi xem học sinh có bằng chứng hay kỹ năng vượt trội nào để nhà tuyển dụng trả mức lương đó.
+- Giai đoạn 3 (Chất vấn Sức học & Tổ hợp môn): Hỏi học sinh về môn học trong tổ hợp mà em cảm thấy lo lắng nhất, và kế hoạch học tập thực tế để vượt qua rào cản đó.
+- Giai đoạn 4 (Chuyển tiếp phản tư sang Bước 3): Tóm tắt lại lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ, và mời học sinh bước sang Bước 3 để tự tay tra cứu số liệu đề án tuyển sinh thực tế.
 
-2. QUY TẮC PHÂN HÓA HƯỚNG ĐI: ĐẠI HỌC VS. HỌC NGHỀ / THỰC HÀNH:
-   - Khi học sinh chọn hướng Học nghề (nấu ăn, sửa chữa, làm đẹp, kỹ thuật, lái xe...) hoặc bộc lộ tâm lý "ngán kiến thức / học dở các môn":
-     + KHÔNG ép học sinh so sánh "điểm chuẩn 3 năm gần nhất của đại học" hay xét tổ hợp môn phức tạp.
-     + Tiếp cận thực tế theo đúng 2 nấc nhận thức:
-       * Nấc 1 (Điều kiện pháp lý & đầu vào): Công nhận học nghề là lựa chọn thực tế, nhưng nhắc nhở điều kiện tiên quyết: PHẢI THI ĐỖ TỐT NGHIỆP THPT VÀ ĐẠT CHUẨN HỌC BẠ để được vào các trường nghề uy tín. Tránh để học sinh ngộ nhận rằng chọn học nghề là có thể buông xuôi hoàn toàn việc học lớp 12.
-       * Nấc 2 (Thực tế công việc & sức bền): Đặt câu hỏi phản tư vào kỷ luật nghề, thể lực, môi trường làm việc khắc nghiệt (đứng liên tục nhiều giờ, chịu nóng, chịu áp lực thời gian, làm ca kíp...) để đo lường độ sẵn sàng hành động.
-
-3. CHỈNH SỬA VĂN PHONG (LOẠI BỎ THÁI ĐỘ PHÁN XÉT & CHỤP MŨ - KỸ THUẬT REFRAMING):
-   - CẤM CÁC CÂU BẮT LỖI GẮNG GƯỢNG NHƯ: "Sự mơ hồ cho thấy em chưa có cơ sở...", "Em đang ảo tưởng...", "Em chọn vì đám đông...", "Em lãng phí...", "người khác quyết định hộ...".
-   - BẮT BUỘC DÙNG KỸ THUẬT TÁI ĐỊNH KHUNG (REFRAMING) THEO 3 BƯỚC:
-     + Đồng cảm trước: "Thầy hiểu cảm giác áp lực khi các môn lý thuyết không phải là thế mạnh của em...", "Thầy hiểu học nghề là lựa chọn thực tế...", "Thầy hiểu việc chưa chọn được ngành ở lớp 12 là điều tự nhiên..."
-     + Cung cấp sự thật khách quan: "Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực ca kíp, kỷ luật nghề..."
-     + Một câu hỏi duy nhất: "Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?"
-
-4. QUY TẮC "MỘT CÂU HỎI ĐƠN - KHÔNG GIẢNG BÀI - KHÔNG ĐƯA ĐÁP ÁN":
-   - AI CHỈ ĐẶT CÂU HỎI, TUYỆT ĐỐI KHÔNG GIẢNG BÀI hay giải thích kiến thức tuyển sinh thay học sinh.
-   - Mỗi lượt phản hồi chỉ được đưa ra TỐI ĐA 1-2 CÂU VĂN NHẬN ĐỊNH và KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN RÕ RÀNG (ở Vòng 1, 2, 3). TUYỆT ĐỐI KHÔNG HỎI KÉP, KHÔNG NHỒI 2-3 Ý.
-   - Mọi số liệu điểm chuẩn, tổ hợp xét tuyển phải đẩy sang Bước 3 để học sinh tự tra cứu và đối chứng.
-
-5. ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ (CHỈ Ở LƯỢT 4):
-   - Ở lượt cuối cùng (Lượt 4), TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi (không có dấu ?), ra lệnh dứt khoát chuyển sang Bước 3.
-
-6. QUY TẮC CẦU NỐI TỰ NHIÊN & CHỐNG "QUAY XE" ĐỘT NGỘT (ANTI-ABRUPT PIVOT & SEAMLESS BRIDGE):
-   - Phản hồi của Thầy Socrates BẮT BUỘC phải tiếp nối mạch suy nghĩ trực tiếp của học sinh (Follow-the-lead). TUYỆT ĐỐI KHÔNG được gật đầu chiếu lệ rồi bẻ lái 180 độ sang tra khảo chủ đề khác (đặc biệt là tiền lương / nhà tuyển dụng khi học sinh chưa hề nhắc tới).
-   - Khi học sinh chia sẻ về TÌNH CẢM GIA ĐÌNH / ƯỚC MƠ TỪ NHỎ / GIÁ TRỊ NHÂN VĂN (như "chữa bệnh cho ba mẹ", "thích từ bé", "muốn giúp người", "yêu trẻ", "đam mê"):
-     + TUYỆT ĐỐI CẤM: Không được hỏi câu hỏi tiền lương hay "nhà tuyển dụng trả bao nhiêu tiền ngay khi tốt nghiệp".
-     + CẦU NỐI PHẢN TƯ: Công nhận sự thiêng liêng/đẹp đẽ của tình cảm đó, nhưng đối chất ngay vào TÍNH KHỐC LIỆT CỦA THỰC TẾ ĐÀO TẠO & SỨC BỀN:
-       * Với ngành Y/Bác sĩ: 6 năm học đại học áp lực lớn, trực đêm liên tục và 18 tháng thực hành lâm sàng áp lực sinh tử trước khi được cấp chứng chỉ hành nghề. Hỏi xem em đã chuẩn bị tâm lý và sức bền thế nào cho chặng đường dài nhiều hy sinh này.
-       * Với các ngành khác: Đối chất giữa "thích cảm giác làm nghề" và "chịu đựng được áp lực, kỷ luật và khó khăn thực tế hàng ngày".
-   - Khi học sinh thừa nhận "EM CŨNG KHÔNG RÕ" / "CHƯA RÕ" / CẢM TÍNH:
-     + Khen ngợi sự trung thực, đối chất vào rủi ro "vỡ mộng" khi chọn nghề bằng cảm tính mà thiếu dữ liệu thực tế.
-   - Chỉ khi học sinh NÓI RÕ VỀ MỨC LƯƠNG / LÀM GIÀU thì mới hỏi về mức thu nhập cạnh tranh trên thị trường.
-
-7. CHUẨN MỰC TỪ NGỮ SƯ PHẠM (TUYỆT ĐỐI CẤM BIỆT NGỮ THỊ TRƯỜNG "THỰC CHIẾN"):
-   - TUYỆT ĐỐI CẤM sử dụng từ "thực chiến", "kỹ năng thực chiến", "kinh nghiệm thực chiến", "dự án thực chiến" trong mọi phát ngôn của Thầy Socrates. Đây là biệt ngữ thương mại/tiếp thị của các khóa đào tạo ngắn hạn ngoài thị trường, không phù hợp với chuẩn mực học thuật, sư phạm của đề tài nghiên cứu KHKT.
-   - BẮT BUỘC thay thế bằng ngôn ngữ sư phạm chuẩn mực:
-     + Thay "kỹ năng thực chiến" bằng: "năng lực thực hành nghề nghiệp", "kỹ năng chuyên môn thực tế" hoặc "năng lực nghề nghiệp thực tế".
-     + Thay "kinh nghiệm thực chiến" bằng: "kinh nghiệm thực tế" hoặc "kinh nghiệm cọ xát thực tế".
-     + Thay "dự án thực chiến" bằng: "dự án thực tế" hoặc "sản phẩm thực tế".
-     + Thay "môi trường thực chiến" bằng: "môi trường làm việc thực tế".
+# XỬ LÝ CÁC TÌNH HUỐNG HỌC SINH NÉ TRÁNH HOẶC BÔNG ĐÙA
+- Nếu học sinh trả lời cộc lốc, né tránh hoặc trêu đùa (ví dụ: "Em thấy thầy là em lo", "Thầy hỏi khó quá"):
+  -> Tuyệt đối không tính là chuyển biến nhận thức (Turning Point). 
+  -> Hãy đáp lại điềm tĩnh, kéo học sinh về thực tế: "Thầy chỉ là công cụ đặt câu hỏi giúp em soi chiếu lại mục tiêu. Nếu đối diện với câu hỏi này khiến em lo lắng, thì áp lực thi cử và chọn nghề sắp tới sẽ còn thực tế hơn rất nhiều. Hãy trả lời thẳng thắn: [Lặp lại câu hỏi trọng tâm]?"
 `;
 
   if (stage === 1) {
@@ -1077,16 +945,15 @@ BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES (SOCRACAREER CORE PROMPT - BẮT BUỘC T
       return `${CORE_PROMPT}
 BỐI CẢNH VÒNG 1 (NHÁNH B: ĐỊNH HƯỚNG MỤC TIÊU CHO HỌC SINH MƠ HỒ / CHƯA CÓ NGÀNH CỤ THỂ):
 - Học sinh chưa chọn được ngành nghề cụ thể hoặc đang phân vân, mơ hồ.
-- Thầy Socrates áp dụng kỹ thuật Re-framing đồng cảm trước, không phán xét.
 
 [NHIỆM VỤ LƯỢT 1]:
-1. Đồng cảm: Chào em và khẳng định việc chưa chọn được ngành ở lớp 12 là điều tự nhiên.
+1. Đi thẳng vào câu hỏi, không khen ngợi tán dương.
 2. ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?"
+"Chào em. Khi chưa có mục tiêu ngành nghề cụ thể ở lớp 12, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG phán xét hay chê trách sự mơ hồ của học sinh.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+- TUYỆT ĐỐI KHÔNG khen ngợi, không nói "Thầy hiểu...".
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
     }
 
     const studentObj = {
@@ -1096,18 +963,18 @@ BỐI CẢNH VÒNG 1 (NHÁNH B: ĐỊNH HƯỚNG MỤC TIÊU CHO HỌC SINH MƠ 
       targetCareer: effectiveCareer,
       targetSchool: targetSchool,
       source: reason,
-      anchorReason: profile?.anchorReason || '',
-      anchorQuote: profile?.anchorQuote || reason || '',
+      anchorReason: anchorReason || '',
+      anchorQuote: anchorQuote || reason || '',
       conf_T0: initialConfidence,
-      gpa_A00: gpa_A00 || 25.0,
-      benchmark_target: benchmark_target || 27.5,
+      gpa_A00: gpa_A00 || null,
+      benchmark_target: benchmark_target || null,
       riasec_match_pct: riasec_match_pct != null ? riasec_match_pct : 40,
       riasecCode: riasecCode || hollandCode || 'Xã hội'
     };
     const firstPrompt = generateSocraticFirstPrompt(studentObj);
 
     return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 1 (THIÊN LỆCH NHẬN THỨC KÍCH HOẠT: ${firstPrompt.biasType}):
+BỐI CẢNH GIAI ĐOẠN 1 (CHẤT VẤN MỎ NEO & ĐÁM ĐÔNG: ${firstPrompt.biasType}):
 - Quy tắc kích hoạt: ${firstPrompt.biasRule}
 - Ngành mục tiêu: ${effectiveCareer}
 - Cơ sở đào tạo mục tiêu: ${targetSchool}
@@ -1115,178 +982,66 @@ BỐI CẢNH VÒNG 1 (THIÊN LỆCH NHẬN THỨC KÍCH HOẠT: ${firstPrompt.bi
 - Lý do chọn / Mỏ neo ban đầu: "${reason}"
 - Thiên hướng RIASEC: ${hollandCode}
 
-[NHIỆM VỤ LƯỢT 1 - KÍCH HOẠT PHẢN TƯ THÍCH ỨNG THEO ĐÚNG THIÊN LỆCH]:
-1. Bắt đầu bằng lời chào điềm đạm, trung tính:
-"${firstPrompt.botGreeting}"
-2. ĐẶT ĐÚNG CÂU HỎI TRUY VẤN MỎ NEO CỐT LÕI ĐÃ ĐƯỢC THIẾT KẾ:
+[NHIỆM VỤ GIAI ĐOẠN 1]:
+1. Đi thẳng vào câu hỏi truy vấn mỏ neo cốt lõi, không bắt đầu bằng "Thầy hiểu..." hay khen ngợi:
 "${firstPrompt.firstQuestion}"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi quá đà, không phán xét hay chụp mũ học sinh.
-- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay bảo học sinh sang Bước 3 ở Lượt 1.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+- TUYỆT ĐỐI KHÔNG khen ngợi, không phán xét, không đưa số liệu điểm chuẩn.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
   }
 
-  if (isVocational) {
-    // =========================================================================
-    // KỊCH BẢN PHÂN HÓA HỌC NGHỀ / THỰC HÀNH (TUÂN THỦ 2 NẤC NHẬN THỨC)
-    // =========================================================================
-    if (stage === 2) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 2 (HỌC NGHỀ - NẤC 2: THỰC TẾ CÔNG VIỆC, KỶ LUẬT & SỨC BỀN):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
-- Kỳ vọng thu nhập: "${expectedIncome}".
-- Học sinh vừa trả lời: "${userText}".
-
-[NHIỆM VỤ LƯỢT 2 - NẤC 2: THỰC TẾ CÔNG VIỆC & SỨC BỀN]:
-1. Áp dụng kỹ thuật Tái định khung: Công nhận thị trường cần nhân lực, nhưng khẳng định mức thu nhập gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường khắc nghiệt (như đứng liên tục nhiều giờ, nhiệt độ nóng, áp lực thời gian, ca kíp).
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập ${expectedIncome} luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG phán xét hay chụp mũ.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
-    if (stage === 3) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 3 (HỌC NGHỀ - NẤC 1: ĐIỀU KIỆN PHÁP LÝ & BẰNG TỐT NGHIỆP THPT):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
-- Học sinh vừa phản hồi: "${userText}".
-
-[NHIỆM VỤ LƯỢT 3 - NẤC 1: ĐIỀU KIỆN PHÁP LÝ & ĐẦU VÀO]:
-1. Nhắc nhở điều kiện tiên quyết: Phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để được xét tuyển vào các trường nghề uy tín. Tránh để học sinh ngộ nhận rằng chọn học nghề là có thể buông xuôi hoàn toàn việc học lớp 12.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Nhiều bạn nghĩ học nghề là có thể buông xuôi việc học lớp 12, nhưng thực tế các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm bằng tốt nghiệp THPT làm tấm vé vào trường nghề?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG ép so sánh điểm chuẩn 3 năm của đại học.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
-    // stage === 4
-    return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 4 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
-- Học sinh vừa trả lời: "${userText}".
-
-[NHIỆM VỤ LƯỢT 4 - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ CHO HỌC NGHỀ]:
-1. Đưa ra đúng 1 câu nhận định trung tính: Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết.
-2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC (TUYỆT ĐỐI KHÔNG CÓ DẤU ? VÀ KHÔNG NHẮC ĐẾN HỌC PHÍ):
-"Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự chuẩn bị về thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${targetSchool} để đối chiếu với hồ sơ của mình."
-
-[CẢNH BÁO TỐI CAO]:
-- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
-- Toàn bộ phản hồi chỉ gồm 2 câu văn dứt khoát.${avoidRepetition}`;
-  }
-
-  // ==========================================
-  // KỊCH BẢN ĐẠI HỌC / HỌC THUẬT
-  // ==========================================
   if (stage === 2) {
-    if (isMedicalCareer && isFamilyOrAltruistic) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 2 (NGÀNH Y/BÁC SĨ - ĐỐI CHẤT ƯỚC MƠ HIẾU THẢO VỚI HIỆN THỰC ĐÀO TẠO KHỐC LIỆT):
-- Ngành: ${targetCareer}, trường: ${targetSchool}.
-- Học sinh vừa chia sẻ động cơ tình cảm/gia đình: "${userText}".
-
-[NHIỆM VỤ LƯỢT 2 - CẦU NỐI TỰ NHIÊN, TUYỆT ĐỐI KHÔNG QUAY XE SANG TIỀN LƯƠNG]:
-1. Đồng cảm chân thành với tấm lòng hiếu thảo/ước mơ từ nhỏ muốn chữa bệnh cho ba mẹ.
-2. TUYỆT ĐỐI KHÔNG hỏi về tiền lương khởi điểm hay "nhà tuyển dụng trả 15-20 triệu ngay khi ra trường" (vì ngành Y đào tạo 6 năm + 18 tháng thực hành lâm sàng, áp lực không nằm ở lương khởi điểm của nhà tuyển dụng tư nhân).
-3. ĐỐI CHẤT VỚI HIỆN THỰC ĐÀO TẠO & SỨC BỀN: Ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng áp lực sinh tử trước khi được cấp chứng chỉ hành nghề.
-4. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Ước mơ chữa bệnh cho ba mẹ là một tấm lòng rất đáng quý. Nhưng ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG quay xe sang hỏi tiền lương hay nhà tuyển dụng.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
-    if (isFamilyOrAltruistic) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 2 (ĐỐI CHẤT ƯỚC MƠ CẢM XÚC VỚI HIỆN THỰC KHẮC NGHIỆT CỦA NGHỀ):
-- Ngành: ${targetCareer}, trường: ${targetSchool}.
-- Học sinh vừa chia sẻ động cơ cảm xúc/gia đình/ước mơ từ nhỏ: "${userText}".
-
-[NHIỆM VỤ LƯỢT 2 - CẦU NỐI TỰ NHIÊN, TUYỆT ĐỐI KHÔNG QUAY XE SANG TIỀN LƯƠNG]:
-1. Công nhận vẻ đẹp của ước mơ/tình cảm đó một cách chân thành và điềm đạm.
-2. TUYỆT ĐỐI KHÔNG quay xe đột ngột sang hỏi chuyện tiền bạc/nhà tuyển dụng trả bao nhiêu tiền.
-3. Tạo cầu nối sang thực tế: Việc yêu thích cảm giác làm nghề rất khác với việc chịu đựng được những áp lực, góc khuất và tính kỷ luật khắt khe của công việc hàng ngày.
-4. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Ước mơ từ nhỏ là một điểm tựa đẹp, nhưng việc yêu thích nghề rất khác với việc chịu đựng được những áp lực và góc khuất thực tế của công việc hàng ngày. Em đã tìm hiểu xem những khó khăn lớn nhất mà một người làm ngành này phải đối mặt là gì chưa?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG đổi chủ đề sang tiền bạc một cách đột ngột.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
-    if (isVagueOrUncertain) {
-      return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 2 (ĐỐI CHẤT SỰ MƠ HỒ CẢM TÍNH VỚI NHU CẦU DỮ LIỆU THỰC TẾ):
-- Ngành: ${targetCareer}, trường: ${targetSchool}.
-- Học sinh vừa thừa nhận sự mơ hồ/chưa rõ: "${userText}".
-
-[NHIỆM VỤ LƯỢT 2 - CẦU NỐI MỀM MẠI]:
-1. Ghi nhận sự thẳng thắn: Thừa nhận "chưa rõ" là một khởi đầu tốt để bắt đầu tìm hiểu nghiêm túc.
-2. Tạo cầu nối: Nếu chọn nghề chỉ dựa vào cảm tính mà chưa từng tìm hiểu công việc thực tế hay hỏi người trong nghề, rủi ro vỡ mộng khi bước vào trường đại học sẽ rất lớn.
-3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Sự thẳng thắn thừa nhận 'chưa rõ' là một khởi đầu tốt. Nhưng nếu chọn nghề chỉ theo cảm tính mà chưa từng đối chiếu với công việc thực tế hay hỏi chuyện người trong nghề, rủi ro vỡ mộng sẽ rất lớn. Em nghĩ điều gì đang cản trở em tìm hiểu sâu hơn về ngành này?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG dùng từ ngữ phán xét.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
-    }
-
     return `${CORE_PROMPT}
-BỐI CẢNH VÒNG 2 (BÓC TÁCH MÂU THUẪN GIỮA KỲ VỌNG THU NHẬP & NĂNG LỰC THỰC TẾ):
-- Ngành: ${targetCareer}, trường: ${targetSchool}.
-- Kỳ vọng thu nhập khởi điểm đã chọn ở Bước 1: "${expectedIncome}".
-- Học sinh vừa trả lời: "${userText}".
+BỐI CẢNH GIAI ĐOẠN 2 (CHẤT VẤN KỲ VỌNG THU NHẬP):
+- Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
+- Mức lương khởi điểm kỳ vọng học sinh đã khai ở Bước 1: "${expectedIncome}".
+- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
 
-[NHIỆM VỤ LƯỢT 2 - QUY TẮC CÂU HỎI ĐƠN]:
-1. Phản hồi ngắn gọn (tối đa 1-2 câu), bắt nhịp tự nhiên từ câu trả lời của học sinh rồi mới chuyển tiếp sang yêu cầu năng lực thực tế để đạt mức thu nhập ${expectedIncome}.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN (TUYỆT ĐỐI KHÔNG HỎI KÉP):
-"Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập ${expectedIncome} ngay khi em vừa tốt nghiệp?"
+[NHIỆM VỤ GIAI ĐOẠN 2 - QUY TẮC PHÁT NGÔN SẮC BÉN]:
+1. Đi thẳng vào vấn đề, KHÔNG bắt đầu bằng các cụm rập khuôn như: "Thầy hiểu...", "Thầy đồng cảm...", "Thầy thấy rằng...".
+2. Tuyệt đối không khen ngợi tán dương (Không nói "Ước mơ thật tuyệt vời", "Em rất có tiềm năng").
+3. So sánh mức lương kỳ vọng "${expectedIncome}" với năng lực khởi điểm thực tế của một cử nhân mới ra trường.
+4. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN SẮC BÉN (TUYỆT ĐỐI KHÔNG HỎI KÉP):
+"Với mức lương khởi điểm kỳ vọng là ${expectedIncome}, em có bằng chứng hoặc kỹ năng chuyên môn vượt trội nào để tin rằng nhà tuyển dụng sẵn sàng chi trả mức này cho một sinh viên mới tốt nghiệp ra trường?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG hỏi dồn 2-3 ý.
-- TUYỆT ĐỐI KHÔNG giảng bài, không phán xét chụp mũ.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+- TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn hay học phí.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
   }
 
   if (stage === 3) {
     return `${CORE_PROMPT}${adaptiveDirective}
-BỐI CẢNH VÒNG 3 (BÓC TÁCH MÂU THUẪN HỌC LỰC & MÔN XÉT TUYỂN):
-- Ngành mong muốn hiện tại: ${effectiveCareer}
-- Trường đại học mục tiêu: ${targetSchool}
-- Học sinh vừa phản hồi: "${userText}"
+BỐI CẢNH GIAI ĐOẠN 3 (CHẤT VẤN SỨC HỌC & TỔ HỢP MÔN):
+- Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
+- Học sinh vừa trả lời ở Giai đoạn 2: "${userText}".
 
-[NHIỆM VỤ LƯỢT 3 - TUÂN THỦ NGUYÊN TẮC CHỈ HỎI, KHÔNG GIẢNG BÀI]:
-1. Ghi nhận chừng mực thế mạnh hoặc băn khoăn của học sinh nếu có. Tuyệt đối không phán xét tiêu cực.
-2. TUYỆT ĐỐI KHÔNG GIẢNG BÀI về chương trình GDPT 2018, không tự phỏng đoán nhân hệ số 2 hay điều kiện chuẩn của trường.
-3. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN để học sinh tự soi lại năng lực học bạ của mình:
-"Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?"
+[NHIỆM VỤ GIAI ĐOẠN 3 - CHẤT VẤN RÀO CẢN MÔN HỌC & KẾ HOẠCH]:
+1. Đi thẳng vào vấn đề, KHÔNG dùng các câu rập khuôn "Thầy hiểu...", không khen ngợi dễ dãi.
+2. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ (cấm nói 27.5, cấm nói thiếu bao nhiêu điểm). Việc đối chứng số liệu thuộc về Bước 3.
+3. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN:
+"Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?"
 
 [NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG giảng giải lý thuyết tuyển sinh hay phân tích đề án trường.
+- TUYỆT ĐỐI KHÔNG giảng bài hay đưa số liệu điểm chuẩn giả định.
 - TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.${avoidRepetition}`;
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.${avoidRepetition}`;
   }
 
   // Stage 4
   return `${CORE_PROMPT}${adaptiveDirective}
-BỐI CẢNH VÒNG 4 (BÓC TÁCH MÂU THUẪN TUYỂN SINH & ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
-- Ngành mong muốn hiện tại: ${effectiveCareer}
-- Trường đại học mục tiêu: ${targetSchool}
-- Học sinh vừa trả lời về môn học: "${userText}"
+BỐI CẢNH GIAI ĐOẠN 4 (CHUYỂN TIẾP PHẢN TƯ SANG BƯỚC 3):
+- Ngành mục tiêu: ${effectiveCareer}, cơ sở đào tạo: ${targetSchool}.
+- Học sinh vừa trả lời về môn học và kế hoạch: "${userText}".
 
-[NHIỆM VỤ LƯỢT 4 - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ]:
-1. Đưa ra đúng 1 câu nhận định trung tính: Việc tự tin ở môn thế mạnh là điểm tựa tốt, nhưng điểm chuẩn cạnh tranh vào ngành ${effectiveCareer} ${schoolClause} đòi hỏi sự chắc chắn của toàn bộ tổ hợp xét tuyển thực tế.
-2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC (TUYỆT ĐỐI KHÔNG CÓ DẤU ? VÀ KHÔNG NHẮC ĐẾN HỌC PHÍ):
-"Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu."
+[NHIỆM VỤ GIAI ĐOẠN 4 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
+1. Tóm tắt ngắn gọn lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ qua 3 lượt đối thoại (về kỳ vọng thu nhập chưa gắn với kỹ năng vượt trội, hoặc môn xét tuyển còn yếu chưa có giải pháp cụ thể).
+2. MỜI HỌC SINH BƯỚC SANG BƯỚC 3 ĐỂ TỰ TAY TRA CỨU SỐ LIỆU ĐỀ ÁN TUYỂN SINH THỰC TẾ:
+"Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu."
 
 [CẢNH BÁO TỐI CAO]:
-- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
+- TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT CÂU HỎI. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
 - Toàn bộ phản hồi chỉ gồm 2 câu văn dứt khoát.${avoidRepetition}`;
 }
 
@@ -1317,13 +1072,12 @@ function generateCognitiveFallback({
   const isShifted = propShifted || Boolean(goalShift && goalShift.newMajor.toLowerCase() !== targetCareer.toLowerCase());
   const effectiveCareer = propEffective || (goalShift ? goalShift.newMajor : targetCareer);
   const isVocational = isVocationalTrack(effectiveCareer, trimmedMsg, rawSchool);
-  const isUniClarification = hasUniversityClarification(trimmedMsg);
   const targetSchool = formatSchoolName(rawSchool, isVocational);
   const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
 
   if (stage === 1) {
     if (isUndecidedOrVague(effectiveCareer)) {
-      return `Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
+      return `Chào em. Khi chưa có mục tiêu ngành nghề cụ thể ở lớp 12, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
     }
     const studentObj = {
       id: studentId || '',
@@ -1335,8 +1089,8 @@ function generateCognitiveFallback({
       anchorReason: anchorReason || '',
       anchorQuote: anchorQuote || reason || '',
       conf_T0: initialConfidence,
-      gpa_A00: gpa_A00 || 25.0,
-      benchmark_target: benchmark_target || 27.5,
+      gpa_A00: gpa_A00 || null,
+      benchmark_target: benchmark_target || null,
       riasec_match_pct: riasec_match_pct != null ? riasec_match_pct : 40,
       riasecCode: riasecCode || hollandCode || 'Xã hội'
     };
@@ -1344,66 +1098,14 @@ function generateCognitiveFallback({
     return firstPrompt.firstQuestion;
   }
 
-  if (isUniClarification) {
-    if (stage === 4) {
-      return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
-    }
-    if (stage === 3) {
-      return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Để xét tuyển vào trường, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
-    }
-    if (stage === 2) {
-      return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Em kỳ vọng mức thu nhập ${expectedIncome} sau khi tốt nghiệp. Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập đó ngay khi ra trường?`;
-    }
-  }
-
-  if (isVocational) {
-    if (stage === 2) {
-      return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
-    }
-    if (stage === 3) {
-      return `Học nghề không đồng nghĩa với việc có thể buông xuôi việc học lớp 12, vì các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm bằng tốt nghiệp THPT làm tấm vé vào trường nghề?`;
-    }
-    return `Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${targetSchool} để đối chiếu với hồ sơ của mình.`;
-  }
-
   if (stage === 2) {
-    const lowerMsg = (trimmedMsg || '').toLowerCase();
-    const isFamily = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerMsg.includes(k));
-    const isMed = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược'].some(k => effectiveCareer.toLowerCase().includes(k) || lowerMsg.includes(k));
-    const isVague = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerMsg.includes(k));
-
-    if (isMed && isFamily) {
-      return `Thầy hiểu tình cảm và mong muốn hiếu thảo muốn chữa bệnh cho ba mẹ là động lực rất thiêng liêng của em. Tuy nhiên, ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?`;
-    }
-    if (isFamily) {
-      return `Thầy hiểu ước mơ và tình cảm dành cho gia đình là động lực rất đáng trân trọng của em. Tuy nhiên, việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành này, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
-    }
-    if (isVague) {
-      return `Sự thẳng thắn thừa nhận 'chưa rõ' là một khởi đầu tốt để nhìn lại. Nhưng nếu chỉ chọn nghề theo cảm tính từ nhỏ mà chưa từng đối chiếu với công việc thực tế hay hỏi chuyện người trong nghề, rủi ro vỡ mộng sẽ rất lớn. Em nghĩ điều gì đang cản trở em tìm hiểu thực tế về ngành này?`;
-    }
-    return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Em dựa vào năng lực chuyên môn thực tế nào của bản thân để tin rằng nhà tuyển dụng sẽ sẵn sàng trả mức thu nhập đó ngay khi em vừa tốt nghiệp?`;
+    return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. So với mức lương khởi điểm bình quân của một cử nhân mới tốt nghiệp, em có bằng chứng hay kỹ năng chuyên môn vượt trội nào để tin rằng nhà tuyển dụng sẵn sàng chi trả mức thu nhập này?`;
   }
 
   if (stage === 3) {
-    return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
+    return `Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
   }
 
   // Stage 4
-  const lowerUser = (trimmedMsg || '').toLowerCase();
-  const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
-  const { strongSubject, weakSubject } = extractSubjectsFeedback(trimmedMsg);
-
-  if (isBalancedGrades) {
-    return `Học đều các môn là một nền tảng tốt, nhưng điểm chuẩn vào ngành ${effectiveCareer} ${schoolClause} đòi hỏi điểm số bứt phá ở tổ hợp xét tuyển. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
-  }
-
-  if (strongSubject && weakSubject) {
-    return `Thế mạnh ở môn ${strongSubject} là điểm tựa tốt, nhưng môn ${weakSubject} nếu chưa đạt yêu cầu sẽ là rào cản khi xét tuyển vào ngành ${effectiveCareer} ${schoolClause}. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
-  }
-
-  if (strongSubject && !weakSubject) {
-    return `Môn ${strongSubject} là một điểm tựa, nhưng điểm chuẩn ngành ${effectiveCareer} ${schoolClause} đòi hỏi cả tổ hợp xét tuyển phải đạt ngưỡng an toàn. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
-  }
-
-  return `Để biết năng lực thực tế có đáp ứng được ngưỡng tuyển sinh của ngành ${effectiveCareer} ${schoolClause} hay không, em cần đối chứng với dữ liệu thực tế. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
+  return `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${targetSchool} xem độ chênh lệch thực tế là bao nhiêu.`;
 }
