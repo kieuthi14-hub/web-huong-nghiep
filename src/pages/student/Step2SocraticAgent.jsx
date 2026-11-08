@@ -798,7 +798,7 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
               cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
             }
           } else {
-            cleaned += ` Con số thu nhập kỳ vọng này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng), và em đã tìm hiểu xem để đạt được mức đó, một nhân sự ngành ${major} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?`;
+            cleaned += ` Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn trong tương lai?`;
           }
         } else if (round === 3) {
           cleaned += ` Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
@@ -1079,6 +1079,10 @@ export default function Step2SocraticAgent() {
           textVal = initialGreeting;
         }
 
+        if (m.role === 'model' && textVal && /tham khảo từ nguồn nào/i.test(textVal)) {
+          textVal = textVal.replace(/Con số[^?]*tham khảo từ nguồn nào[^?]*\?/gi, `Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome || '15 - 20 triệu/tháng'} trong tương lai?`);
+        }
+
         if (m.role === 'model' && textVal && /thực\s*chiến/i.test(textVal)) {
           textVal = textVal
             .replace(/(?:những\s+)?yêu\s+cầu\s+khắt\s+khe\s+về\s+kỹ\s+năng\s+thực\s+chiến/gi, 'những yêu cầu khắt khe về năng lực thực hành nghề nghiệp')
@@ -1198,9 +1202,9 @@ Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tín
 # NGUYÊN TẮC TIẾP CẬN TÂM LÝ LỨA TUỔI HỌC SINH THPT (ĐẶC BIỆT LƯU Ý VỀ MỨC LƯƠNG):
 1. Học sinh THPT chưa có kinh nghiệm việc làm; các kỳ vọng về thu nhập (như 15 - 20 triệu) thường là "mỏ neo ảo" do mạng xã hội (TikTok, Facebook, Youtube) tạo ra.
 2. TUYỆT ĐỐI KHÔNG dùng các thuật ngữ công sở như: "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "giá trị thương mại", "tạo ra doanh thu".
-3. Hãy truy vấn vào NGUỒN GỐC THÔNG TIN và THỰC TẾ ĐÁNH ĐỔI:
+3. Hãy truy vấn về NĂNG LỰC CẦN ĐÁP ỨNG ĐỂ ĐẠT MỨC LƯƠNG MONG MUỐN TRONG TƯƠNG LAI:
    - Thay vì hỏi: "Em lấy gì để đàm phán mức lương đó?" hay "nhà tuyển dụng sẵn sàng chi trả",
-   - HÃY HỎI: "Con số [Mức thu nhập] này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành [Ngành] thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
+   - HÃY HỎI: "Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là [Mức thu nhập] trong tương lai?"
 
 # QUY TẮC "BẮT CẦU LẬP LUẬN" (LIÊN KẾT TỰ NHIÊN, KHÔNG HỜI HỢT):
 - Khi học sinh nêu đặc điểm cá nhân (như "ngoại hình ưa nhìn", "giỏi tiếng Anh", "giao tiếp tốt", "thích đi đây đi đó"):
@@ -1396,20 +1400,19 @@ BỐI CẢNH VÒNG 5 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         switch (round) {
           case 2:
             return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH GIAI ĐOẠN 2 (BẮT CẦU LẬP LUẬN & CHẤT VẤN NGUỒN GỐC KỲ VỌNG THU NHẬP + THỰC TẾ ĐÁNH ĐỔI):
+BỐI CẢNH GIAI ĐOẠN 2 (BẮT CẦU LẬP LUẬN & CHẤT VẤN NĂNG LỰC ĐÁP ỨNG MỨC LƯƠNG MONG MUỐN):
 - Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
 - Mức thu nhập kỳ vọng học sinh đã khai ở Bước 1: "${expectedIncome}".
 - Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
 
-[NHIỆM VỤ GIAI ĐOẠN 2 - BẮT CẦU TỰ NHIÊN & TRUY VẤN TÂM LÝ LỨA TUỔI THPT]:
-1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Dùng chính ý kiến hoặc đặc điểm cá nhân học sinh vừa nêu trong "${userText}" (ví dụ: ngoại hình ưa nhìn, giỏi tiếng Anh, giao tiếp tốt, thích đi đây đi đó, hoặc nghĩ mình làm được) để phản biện ngắn gọn về áp lực thực tế của ngành ${effectiveCareer} (như xử lý sự cố, sức khỏe bền bỉ, làm việc lễ Tết 14-16 tiếng/ngày).
-2. TUYỆT ĐỐI KHÔNG dùng thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "nhà tuyển dụng sẵn sàng chi trả".
-3. KẾT THÚC BẰNG CÂU HỎI TRUY VẤN NGUỒN GỐC THÔNG TIN & THỰC TẾ ĐÁNH ĐỔI:
-"Con số ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng), và em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
+[NHIỆM VỤ GIAI ĐOẠN 2 - BẮT CẦU TỰ NHIÊN & TRUY VẤN NĂNG LỰC TƯƠNG LAI]:
+1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Dùng chính ý kiến hoặc đặc điểm cá nhân học sinh vừa nêu trong "${userText}" để phản biện ngắn gọn, tự nhiên (không dùng câu sáo rỗng hay thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại").
+2. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
+"Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn hay học phí.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
 
           case 3:
             return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
@@ -1557,7 +1560,7 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Để xét tuyển vào trường, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
       }
       if (round === 2) {
-        return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Con số thu nhập kỳ vọng ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng), và em đã tìm hiểu xem để đạt được mức đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?`;
+        return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
       }
     }
 
@@ -1630,7 +1633,7 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         switch (round) {
           case 2: {
             const bridgePrefix = traitBridge ? `${traitBridge} ` : '';
-            return `${bridgePrefix}Con số ${expectedIncome} em kỳ vọng là tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?`;
+            return `${bridgePrefix}Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
           }
 
           case 3: {

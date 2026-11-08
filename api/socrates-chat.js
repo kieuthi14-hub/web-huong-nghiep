@@ -945,7 +945,7 @@ Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tín
 2. TUYỆT ĐỐI KHÔNG dùng các thuật ngữ công sở như: "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "giá trị thương mại", "tạo ra doanh thu".
 3. Hãy truy vấn vào NGUỒN GỐC THÔNG TIN và THỰC TẾ ĐÁNH ĐỔI:
    - Thay vì hỏi: "Em lấy gì để đàm phán mức lương đó?" hay "nhà tuyển dụng sẵn sàng chi trả",
-   - HÃY HỎI: "Con số [Mức thu nhập] này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành [Ngành] thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
+   - HÃY HỎI: "Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là [Mức thu nhập] trong tương lai?"
 
 # QUY TẮC "BẮT CẦU LẬP LUẬN" (LIÊN KẾT TỰ NHIÊN, KHÔNG HỜI HỢT):
 - Khi học sinh nêu đặc điểm cá nhân (như "ngoại hình ưa nhìn", "giỏi tiếng Anh", "giao tiếp tốt", "thích đi đây đi đó"):
@@ -1028,7 +1028,7 @@ BỐI CẢNH GIAI ĐOẠN 2 (CHẤT VẤN KỲ VỌNG THU NHẬP):
 2. Tuyệt đối không khen ngợi tán dương (Không nói "Ước mơ thật tuyệt vời", "Em rất có tiềm năng").
 3. BẮT CẦU LẬP LUẬN: Dùng chính đặc điểm cá nhân hoặc lý do học sinh vừa nêu trong "${userText}" (như ngoại hình, tiếng Anh, giao tiếp, thích đi nhiều nơi) để phản biện ngắn gọn về áp lực thực tế của ngành ${effectiveCareer} (xử lý sự cố, sức khỏe bền bỉ, làm việc lễ Tết 14-16 tiếng/ngày). TUYỆT ĐỐI KHÔNG dùng thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại".
 4. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN SẮC BÉN (TUYỆT ĐỐI KHÔNG HỎI KÉP):
-"Con số ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng), và em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?"
+"Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG hỏi dồn 2-3 ý.
@@ -1165,7 +1165,7 @@ function generateCognitiveFallback({
 
   if (stage === 2) {
     const bridgePrefix = traitBridge ? `${traitBridge} ` : '';
-    return `${bridgePrefix}Con số ${expectedIncome} này em tham khảo từ nguồn nào (mạng xã hội, người quen kể hay tự ước lượng)? Em đã tìm hiểu xem để đạt được mức thu nhập đó, một nhân sự ngành ${effectiveCareer} thường mất bao nhiêu năm trong nghề và phải làm việc trong những điều kiện thời gian thế nào chưa?`;
+    return `${bridgePrefix}Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
   }
 
   if (stage === 3) {
