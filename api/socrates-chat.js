@@ -620,8 +620,11 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
       const prev = sentences[0];
       cleaned = `${prev} ${lastQ}`;
     }
+    if (round === 3 && (/tổ hợp xét tuyển|môn nào khiến em|công cụ bề nổi|cánh cửa quyết định/i.test(cleaned) || !/\?\s*$/.test(cleaned))) {
+      cleaned = `Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${major} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
+    }
     if (round === 4 && !/\?\s*$/.test(cleaned)) {
-      cleaned = `Việc chỉ nói "sẽ đi học thêm" hay "cố gắng hơn" vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
+      cleaned = `Việc tìm hiểu xu hướng việc làm đầu ra là rất cần thiết, nhưng trước hết em phải vượt qua cánh cửa tuyển sinh đầu vào. Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
     }
     return cleaned.trim();
   }
@@ -1043,10 +1046,10 @@ BỐI CẢNH GIAI ĐOẠN 3 (CHẤT VẤN SỨC HỌC & TỔ HỢP MÔN):
 - Học sinh vừa trả lời ở Giai đoạn 2: "${userText}".
 
 [NHIỆM VỤ GIAI ĐOẠN 3 - BẮT CẦU LẬP LUẬN & CHẤT VẤN RÀO CẢN MÔN HỌC]:
-1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Phản biện trực tiếp câu trả lời "${userText}" của học sinh (nếu học sinh nêu đặc điểm cá nhân như giao tiếp tốt, ngoại hình, ngoại ngữ, hoặc nêu nguồn mạng xã hội/tự ước lượng, hãy chỉ ra khoảng cách giữa kỳ vọng đó với thực tế rèn luyện và ngưỡng cửa tuyển sinh đại học).
-2. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ (cấm nói 27.5, cấm nói thiếu bao nhiêu điểm). Việc đối chứng số liệu thuộc về Bước 3.
+1. GHI NHẬN ĐÚNG ĐẮN (BẮT BUỘC): Khẳng định các năng lực học sinh vừa nêu trong "${userText}" thực sự rất cần thiết đối với người lao động trong tương lai. TUYỆT ĐỐI KHÔNG chê bai kiểu "chỉ là công cụ bề nổi".
+2. TUYỆT ĐỐI KHÔNG hỏi về môn học hay điểm chuẩn ở lượt này.
 3. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN:
-"Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?"
+"Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${effectiveCareer} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG giảng bài hay đưa số liệu điểm chuẩn giả định.
@@ -1061,9 +1064,9 @@ BỐI CẢNH GIAI ĐOẠN 4 (CÂU HỎI DẪN DẮT THỨ 4: CHẤT VẤN TÍNH 
 - Học sinh vừa trả lời về môn học lo lắng và kế hoạch: "${userText}".
 
 [NHIỆM VỤ GIAI ĐOẠN 4 - ĐÀO SÂU KẾ HOẠCH HÀNH ĐỘNG & PHƯƠNG ÁN DỰ PHÒNG]:
-1. Phản biện ngắn gọn câu trả lời "${userText}" của học sinh (chỉ ra rằng nói "đi học thêm" hoặc "cố gắng" vẫn còn cảm tính nếu không có định lượng thời gian tự học và lộ trình cụ thể).
+1. BẮT CẦU LẬP LUẬN: Từ góc nhìn của học sinh về xu hướng việc làm đầu ra ("${userText}"), nhắc rằng cánh cửa đầu tiên em phải vượt qua là kỳ tuyển sinh đại học sắp tới.
 2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI DẪN DẮT SẮC BÉN:
-"Việc chỉ nói 'sẽ đi học thêm' hay 'cố gắng hơn' vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?"
+"Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?"
 
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này (để học sinh trả lời câu hỏi thứ 4 này trước).
@@ -1169,16 +1172,11 @@ function generateCognitiveFallback({
   }
 
   if (stage === 3) {
-    const round3Bridge = traitBridge
-      ? `${traitBridge} `
-      : /mạng|tiktok|facebook|youtube|nghe nói|tự ước|đoán|chưa tìm hiểu/i.test(lowerUser)
-      ? `Những con số thu nhập trên mạng xã hội hay tự ước lượng thường chỉ phản ánh bề nổi của những người đã có nhiều năm kinh nghiệm và chấp nhận cường độ làm việc rất vất vả. `
-      : `Để đi từ kỳ vọng hiện tại đến lúc trụ vững được với áp lực nghề nghiệp đó, trước hết em phải vượt qua ngưỡng cửa tuyển sinh đầu vào. `;
-    return `${round3Bridge}Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
+    return `Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${effectiveCareer} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
   }
 
   if (stage === 4) {
-    return `Việc chỉ nói "sẽ đi học thêm" hay "cố gắng hơn" vẫn còn rất cảm tính nếu thiếu cam kết hành động đo lường được. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn học đang lo lắng đó, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
+    return `Việc tìm hiểu xu hướng việc làm đầu ra là rất cần thiết, nhưng trước hết em phải vượt qua cánh cửa tuyển sinh đầu vào. Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
   }
 
   // Stage 5
