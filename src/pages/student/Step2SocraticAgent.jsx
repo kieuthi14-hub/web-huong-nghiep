@@ -845,17 +845,26 @@ export default function Step2SocraticAgent() {
   const messagesEndRef = useRef(null);
   const step3CtaRef = useRef(null);
   const lastAiMsgRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const isInitialMountRef = useRef(true);
 
+  // Tự động cuộn mượt mà NỘI BỘ trong khung chat khi có tin nhắn mới (KHÔNG làm nhảy màn hình trang web)
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
     const timer = setTimeout(() => {
-      if (isReadyForStep3) {
-        step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      } else {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      const container = chatContainerRef.current;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
       }
-    }, 150);
+    }, 80);
     return () => clearTimeout(timer);
-  }, [messages, isLoading, chatStage, isCompleted, isChatFinished, isReadyForStep3]);
+  }, [messages.length, isLoading]);
 
   // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
   useEffect(() => {
@@ -1956,11 +1965,6 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           setIsChatFinished(true);
           try { localStorage.setItem("cbas_step2_completed", "true"); } catch (e) {}
 
-          // Tự động cuộn xuống đúng vị trí nút bấm
-          setTimeout(() => {
-            step3CtaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-          }, 100);
-
           // QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) & TELEMETRY CHUẨN PHƯƠNG PHÁP LUẬN KHKT SOCRACAREER
           const outcomeAnalysis = evaluateOutcomeCategory(updatedHistory, studentProfile, cleanText, goalShift);
           const outcome = outcomeAnalysis.category;
@@ -2075,9 +2079,35 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 
       {/* THANH TIẾN TRÌNH & CỤM NÚT THAO TÁC / XUẤT FILE */}
       <div style={{ padding: '14px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <span style={{ fontSize: '12px', fontWeight: 'bold', background: '#dbeafe', color: '#1e40af', padding: '3px 10px', borderRadius: '12px' }}>BƯỚC 2: CAN THIỆP HÀNH VI</span>
-          <h2 style={{ fontSize: '18px', margin: '4px 0 0 0', color: '#0f172a' }}>AI Tham Vấn Phản Tư (Socrates)</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)',
+            position: 'relative',
+            flexShrink: 0
+          }}>
+            <span style={{ fontSize: '24px', lineHeight: 1 }}>🦉</span>
+            <span style={{
+              position: 'absolute',
+              bottom: '-2px',
+              right: '-2px',
+              width: '12px',
+              height: '12px',
+              background: '#10b981',
+              borderRadius: '50%',
+              border: '2px solid #ffffff'
+            }} title="Thầy Socrates AI đang trực tuyến" />
+          </div>
+          <div>
+            <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#dbeafe', color: '#1e40af', padding: '2px 9px', borderRadius: '12px' }}>BƯỚC 2: CAN THIỆP HÀNH VI</span>
+            <h2 style={{ fontSize: '17px', margin: '3px 0 0 0', color: '#0f172a', fontWeight: '800' }}>Thầy Socrates — AI Tham Vấn Phản Tư</h2>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -2182,7 +2212,21 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       </div>
 
       {/* KHUNG NỘI DUNG CHAT (VÙNG IN VÀ HIỂN THỊ) */}
-      <div id="socratic-chat-export-area" style={{ flex: 1, overflowY: 'auto', padding: '20px', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div
+        id="socratic-chat-export-area"
+        ref={chatContainerRef}
+        style={{
+          flex: 1,
+          maxHeight: '64vh',
+          minHeight: '380px',
+          overflowY: 'auto',
+          padding: '20px',
+          background: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px'
+        }}
+      >
         {/* BANNER THÔNG TIN MỎ NEO & THIÊN LỆCH NHẬN THỨC KÍCH HOẠT VÒNG 1 */}
         {activeBiasType && (
           <div style={{
@@ -2235,38 +2279,105 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 
         {messages.map((m, i) => {
           const isLastAi = m.role === 'model' && !messages.slice(i + 1).some(msg => msg.role === 'model');
+          const isUser = m.role === 'user';
           return (
             <div 
               key={`msg-${i}`} 
               ref={isLastAi ? lastAiMsgRef : null}
               style={{ 
                 display: 'flex', 
-                justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start',
+                justifyContent: isUser ? 'flex-end' : 'flex-start',
+                alignItems: 'flex-start',
+                gap: '10px',
                 scrollMarginTop: '16px'
               }}
             >
+              {/* AVATAR ICON CỦA THẦY AI SOCRATES */}
+              {!isUser && (
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #1d4ed8 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)',
+                  flexShrink: 0,
+                  marginTop: '2px',
+                  border: '1.5px solid #e0e7ff'
+                }} title="Thầy Socrates (AI Phản Tư)">
+                  <span style={{ fontSize: '20px', lineHeight: 1 }}>🦉</span>
+                </div>
+              )}
+
               <div style={{
                 maxWidth: '78%',
                 padding: '14px 18px',
-                borderRadius: m.role === 'user' ? '16px 16px 2px 16px' : '16px 16px 16px 2px',
-                background: m.role === 'user' ? '#059669' : '#ffffff',
-                color: m.role === 'user' ? '#ffffff' : '#1e293b',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                borderRadius: isUser ? '16px 16px 2px 16px' : '4px 16px 16px 16px',
+                background: isUser ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : '#ffffff',
+                color: isUser ? '#ffffff' : '#1e293b',
+                border: isUser ? 'none' : '1px solid #e2e8f0',
+                boxShadow: isUser ? '0 2px 6px rgba(5, 150, 105, 0.2)' : '0 2px 5px rgba(15, 23, 42, 0.05)',
                 fontSize: '14.5px',
                 lineHeight: '1.6',
                 whiteSpace: 'pre-wrap'
               }}>
+                {!isUser && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e40af' }}>
+                      Thầy Socrates
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '6px', border: '1px solid #dbeafe' }}>
+                      AI Phản Tư
+                    </span>
+                  </div>
+                )}
                 <div>{m.text}</div>
                 <div style={{ fontSize: '11px', marginTop: '6px', textAlign: 'right', opacity: 0.7 }}>{m.time}</div>
               </div>
+
+              {/* AVATAR ICON CỦA HỌC SINH */}
+              {isUser && (
+                <div style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '10px',
+                  background: '#d1fae5',
+                  color: '#065f46',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '800',
+                  fontSize: '16px',
+                  flexShrink: 0,
+                  marginTop: '2px',
+                  border: '1px solid #a7f3d0'
+                }} title="Học sinh">
+                  🧑‍🎓
+                </div>
+              )}
             </div>
           );
         })}
 
         {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }} className="no-print">
-            <div style={{ background: '#fff', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#64748b' }}>
-              🤖 Thầy Socrates đang phản biện luận điểm của em...
+          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '10px' }} className="no-print">
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #1d4ed8 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)',
+              flexShrink: 0
+            }}>
+              <span style={{ fontSize: '20px', lineHeight: 1 }}>🦉</span>
+            </div>
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#475569', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              ✨ Thầy Socrates đang suy ngẫm và phản biện luận điểm của em...
             </div>
           </div>
         ) : null}
@@ -2277,217 +2388,117 @@ BỐI CẢNH VÒNG 4 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
           </div>
         ) : null}
 
-        {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI */}
-        {/* HỘP ĐO LƯỜNG TELEMETRY & ĐIỀU HƯỚNG NGAY DƯỚI TIN NHẮN CUỐI CÙNG */}
+        {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI (ĐÃ BỎ BẢNG TELEMETRY RỐI MẮT) */}
         {isReadyForStep3 ? (
           <div 
             ref={step3CtaRef}
-            style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '12px' }}
+            className="no-print"
+            style={{
+              background: '#f0fdf4',
+              border: '2px solid #10b981',
+              borderRadius: '12px',
+              padding: '18px 22px',
+              marginTop: '8px',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
+            }}
           >
-            {/* BẢNG ĐO LƯỜNG VÀ GẮN NHÃN HÀNH VI (QUY CHUẨN PHƯƠNG PHÁP LUẬN KHKT) */}
-            {sessionTelemetry && (
-              <div
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
+                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
+                </h4>
+                <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
+                  Em hãy đọc kỹ lời phân tích và định hướng của Thầy ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button 
+                type="button"
+                onClick={() => window.location.href = '/student/fact-check'}
                 style={{
-                  background: '#ffffff',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '16px 20px',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.06)'
+                  flex: 1,
+                  minWidth: '320px',
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '14px 22px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '18px' }}>📊</span>
-                    <span style={{ fontSize: '13.5px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                      Kết quả Đo lường & Gắn nhãn Hành vi (Quy chuẩn KHKT)
-                    </span>
-                  </div>
-                  <span style={{
-                    fontSize: '11.5px',
-                    fontWeight: '700',
-                    padding: '3px 10px',
-                    borderRadius: '999px',
-                    background: sessionTelemetry.triage_step4?.includes('In-depth') ? '#fef2f2' : '#ecfdf5',
-                    color: sessionTelemetry.triage_step4?.includes('In-depth') ? '#dc2626' : '#059669',
-                    border: '1px solid ' + (sessionTelemetry.triage_step4?.includes('In-depth') ? '#fecaca' : '#a7f3d0')
-                  }}>
-                    Phân luồng Bước 4: {sessionTelemetry.triage_step4}
-                  </span>
-                </div>
+                <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
+                <span style={{ fontSize: '18px' }}>➔</span>
+              </button>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '10px' }}>
-                  {/* 1. Primary_Cognitive_Bias */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
-                      1. Primary_Cognitive_Bias (Thiên lệch nhận thức)
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#1e40af', marginBottom: '4px' }}>
-                      {sessionTelemetry.primary_bias}
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
-                      {sessionTelemetry.primary_bias_rule}
-                    </div>
-                  </div>
+              <button
+                type="button"
+                onClick={handleResetSession}
+                title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
+                style={{
+                  background: '#fff1f2',
+                  color: '#be123c',
+                  border: '1.5px solid #fecdd3',
+                  padding: '12px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>🔄 Làm lại Bước 2</span>
+              </button>
 
-                  {/* 2. Turning_Point_Detected */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
-                      2. Turning_Point_Detected (Điểm xoay nhận thức)
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: sessionTelemetry.turning_point_detected === 'True' ? '#059669' : '#d97706', marginBottom: '4px' }}>
-                      {sessionTelemetry.turning_point_detected === 'True' ? 'True (Đã nhận diện rào cản/điểm yếu)' : 'False (Chưa thừa nhận điểm yếu/rào cản)'}
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
-                      {sessionTelemetry.turning_point_rule}
-                    </div>
-                  </div>
+              <button
+                type="button"
+                onClick={handleCopyText}
+                title="Sao chép toàn bộ biên bản đối thoại"
+                style={{
+                  background: copySuccess ? '#059669' : '#ffffff',
+                  color: copySuccess ? '#ffffff' : '#065f46',
+                  border: '1.5px solid #a7f3d0',
+                  padding: '12px 18px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
+              </button>
 
-                  {/* 3. Outcome_Category */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
-                      3. Outcome_Category (Phân loại hành vi sau phản tư)
-                    </div>
-                    <div style={{
-                      fontSize: '13px',
-                      fontWeight: '800',
-                      color: sessionTelemetry.outcome_category === 'Uncalibrated_Avoidant' ? '#dc2626' : (sessionTelemetry.outcome_category === 'Reconsidering' ? '#d97706' : '#059669'),
-                      marginBottom: '4px'
-                    }}>
-                      {sessionTelemetry.outcome_category === 'Uncalibrated_Avoidant'
-                        ? 'Uncalibrated_Avoidant (Chưa hiệu chuẩn / Né tránh)'
-                        : sessionTelemetry.outcome_category === 'Reconsidering'
-                        ? 'Reconsidering (Cân nhắc điều chỉnh mục tiêu)'
-                        : 'Persistent_Calibrated (Kiên định & Đã hiệu chuẩn)'}
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
-                      {sessionTelemetry.outcome_rule}
-                    </div>
-                  </div>
-
-                  {/* 4. Triage_Step4 */}
-                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', marginBottom: '3px' }}>
-                      4. Triage_Step4 (Chỉ định thời lượng Cố vấn Bước 4)
-                    </div>
-                    <div style={{ fontSize: '13px', fontWeight: '800', color: sessionTelemetry.triage_step4?.includes('In-depth') ? '#dc2626' : '#059669', marginBottom: '4px' }}>
-                      {sessionTelemetry.triage_step4}
-                    </div>
-                    <div style={{ fontSize: '11.5px', color: '#475569', lineHeight: '1.45' }}>
-                      {sessionTelemetry.triage_rule}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div 
-              className="no-print"
-              style={{
-                background: '#f0fdf4',
-                border: '2px solid #10b981',
-                borderRadius: '12px',
-                padding: '18px 22px',
-                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
-                    ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
-                    Em hãy đọc kỹ lời phân tích và kết quả gắn nhãn hành vi ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button 
-                  type="button"
-                  onClick={() => window.location.href = '/student/fact-check'}
-                  style={{
-                    flex: 1,
-                    minWidth: '320px',
-                    background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    padding: '14px 22px',
-                    borderRadius: '8px',
-                    fontWeight: 'bold',
-                    fontSize: '15px',
-                    cursor: 'pointer',
-                    boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-                  <span style={{ fontSize: '18px' }}>➔</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleResetSession}
-                  title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
-                  style={{
-                    background: '#fff1f2',
-                    color: '#be123c',
-                    border: '1.5px solid #fecdd3',
-                    padding: '12px 18px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span>🔄 Làm lại Bước 2</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyText}
-                  title="Sao chép toàn bộ biên bản đối thoại"
-                  style={{
-                    background: copySuccess ? '#059669' : '#ffffff',
-                    color: copySuccess ? '#ffffff' : '#065f46',
-                    border: '1.5px solid #a7f3d0',
-                    padding: '12px 18px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadTxt}
-                  title="Tải biên bản đối thoại (.txt)"
-                  style={{
-                    background: '#ffffff',
-                    color: '#334155',
-                    border: '1.5px solid #cbd5e1',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  📥 Tải .TXT
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleDownloadTxt}
+                title="Tải biên bản đối thoại (.txt)"
+                style={{
+                  background: '#ffffff',
+                  color: '#334155',
+                  border: '1.5px solid #cbd5e1',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                📥 Tải .TXT
+              </button>
             </div>
           </div>
         ) : null}
