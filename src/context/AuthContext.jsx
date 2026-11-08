@@ -74,7 +74,11 @@ export const AuthProvider = ({ children }) => {
   }
 
   useEffect(() => {
-    // 1. Lấy session hiện tại khi ứng dụng khởi chạy
+    // 1. Lấy session hiện tại khi ứng dụng khởi chạy (có timeout bảo vệ chống treo trang trắng)
+    const safetyTimer = setTimeout(() => {
+      setLoading(false)
+    }, 3000)
+
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
@@ -109,6 +113,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Lỗi khi lấy session ban đầu:', error)
       } finally {
+        clearTimeout(safetyTimer)
         setLoading(false)
       }
     }

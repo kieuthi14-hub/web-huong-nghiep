@@ -522,8 +522,8 @@ export function hasDeclaredSubjectsOrGrades(text) {
   return hasExplicitGradeDeclaration;
 }
 
-export function extractSubjectsFeedback(text) {
-  const clean = text.toLowerCase();
+export function extractSubjectsFeedback(text = '') {
+  const clean = String(text || '').toLowerCase();
   
   const subjects = [
     { name: 'Giáo dục Kinh tế và Pháp luật (KTPL)', patterns: ['ktpl', 'kinh tế pháp luật', 'kinh tế và pháp luật'] },
@@ -1267,7 +1267,7 @@ BỐI CẢNH VÒNG 1 (NHÁNH B: ĐỊNH HƯỚNG MỤC TIÊU CHO HỌC SINH MƠ 
 
       const studentObj = {
         id: profile?.studentId || profile?.id || localStorage.getItem('cbas_student_id') || '',
-        name: profile?.studentName || profile?.name || userProfile?.name || 'em',
+        name: profile?.studentName || profile?.name || 'em',
         baselineTarget: effectiveCareer,
         targetCareer: effectiveCareer,
         targetSchool: uni,
