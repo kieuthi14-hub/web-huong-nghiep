@@ -81,18 +81,12 @@ export default function ReflectionJournalCard({
       let jData = result.journal;
 
       const ctx = contextDataRef.current || {};
-      // Tiền điền gợi ý nhẹ từ ngữ cảnh nếu ô còn trống
+      // Tiền điền gợi ý nhẹ từ ngữ cảnh Bước 1 nếu ô còn trống (Ở Vòng 2, AI tuyệt đối không viết thay phần nhật ký cá nhân của học sinh)
       if (roundNum === 1 && !jData.artifact_data?.initialCareer && ctx.targetMajor) {
         jData.artifact_data = {
           ...jData.artifact_data,
           initialCareer: ctx.targetMajor,
           reason: ctx.reason || jData.artifact_data?.reason || ''
-        };
-      }
-      if (roundNum === 2 && !jData.artifact_data?.conversationExcerpt && ctx.conversationExcerpt) {
-        jData.artifact_data = {
-          ...jData.artifact_data,
-          conversationExcerpt: ctx.conversationExcerpt
         };
       }
 
@@ -532,43 +526,49 @@ export default function ReflectionJournalCard({
               </div>
             )}
 
-            {/* VÒNG 2: Nhận định cần kiểm chứng & trích đoạn AI */}
+            {/* VÒNG 2: Nhận định cần kiểm chứng & trích đoạn AI (do học sinh tự viết, AI không viết thay) */}
             {roundNum === 2 && (
               <div className="space-y-3">
+                {Array.isArray(contextData?.verifiedSummaryQuestions) && contextData.verifiedSummaryQuestions.length > 0 && (
+                  <div className="p-3 bg-white rounded-lg border border-indigo-200 text-xs text-slate-700 space-y-1">
+                    <div className="font-bold text-indigo-900">
+                      📌 Tham khảo danh sách câu hỏi cần kiểm tra ở Bước 3 (từ Bảng tóm tắt phản tư ở trên — AI không tự điền vào nhật ký cá nhân của em):
+                    </div>
+                    <ul className="list-disc pl-4 space-y-0.5 text-slate-600">
+                      {contextData.verifiedSummaryQuestions.map((item, idx) => (
+                        <li key={item.id || idx}>
+                          <span className="font-medium text-slate-800">{item.question}</span>{' '}
+                          <span className="text-[11px] text-indigo-700">({item.suggestedSourceType})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Một nhận định về nghề mà em thấy cần kiểm chứng lại:
+                    Một nhận định về nghề mà em thấy cần kiểm chứng lại (do chính em tự rút ra):
                   </label>
                   <input
                     type="text"
                     disabled={isReadOnlySubmitted}
                     value={journal.artifact_data?.claimToVerify || ''}
                     onChange={(e) => handleArtifactChange('claimToVerify', e.target.value)}
-                    placeholder="VD: Học ngành này ra trường chắc chắn có lương trên 15 triệu..."
+                    placeholder="VD: Yêu cầu tổ hợp môn xét tuyển hoặc điều kiện làm việc thực tế của ngành..."
                     className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs md:text-sm text-slate-900 focus:ring-1 focus:ring-indigo-500 font-medium"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-bold text-slate-700">
-                      Trích đoạn đối thoại tiêu biểu với AI Socrates (chỉ chọn 1 đoạn ngắn):
+                      Ghi chép hoặc trích đoạn trao đổi tiêu biểu mà em tự chọn lưu lại:
                     </label>
-                    {contextData.conversationExcerpt && !journal.artifact_data?.conversationExcerpt && (
-                      <button
-                        type="button"
-                        onClick={() => handleArtifactChange('conversationExcerpt', contextData.conversationExcerpt)}
-                        className="text-[11px] text-indigo-700 hover:text-indigo-900 font-bold underline cursor-pointer"
-                      >
-                        + Dán trích đoạn vừa chat
-                      </button>
-                    )}
                   </div>
                   <textarea
                     rows={3}
                     disabled={isReadOnlySubmitted}
                     value={journal.artifact_data?.conversationExcerpt || ''}
                     onChange={(e) => handleArtifactChange('conversationExcerpt', e.target.value)}
-                    placeholder="Dán hoặc gõ đoạn trao đổi then chốt giữa em và Thầy Socrates..."
+                    placeholder="Tự tay ghi lại điều em tâm đắc hoặc đoạn trao đổi đáng nhớ trong 4 chặng vừa rồi..."
                     className="w-full p-2.5 bg-white border border-slate-300 rounded-lg text-xs md:text-sm text-slate-900 focus:ring-1 focus:ring-indigo-500 font-mono text-[12px]"
                   />
                 </div>

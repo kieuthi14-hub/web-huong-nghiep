@@ -20,10 +20,10 @@ export const STEPS_META = [
   {
     step: 2,
     to: '/student/debias-agent',
-    label: 'Bước 2: AI Tham Vấn Phản Tư',
+    label: 'Bước 2: Đối Thoại Phản Tư AI',
     shortLabel: '2. AI Socrates',
-    name: 'Bước 2 (AI Socrates Phản biện)',
-    description: 'Chất vấn và làm lung lay thiên lệch nhận thức qua 3 vòng đối thoại'
+    name: 'Bước 2 (Đối thoại phản tư với AI Socrates)',
+    description: 'Làm rõ lý do chọn ngành, hiểu biết thực tế, cơ hội việc làm và sự chuẩn bị qua 4 chặng'
   },
   {
     step: 3,
@@ -36,10 +36,10 @@ export const STEPS_META = [
   {
     step: 4,
     to: '/student/booking',
-    label: 'Bước 4: Tham Vấn Đối Chất',
-    shortLabel: '4. Tham vấn thích ứng',
-    name: 'Bước 4 (Tham vấn đối chất thực tế)',
-    description: 'Phân luồng thích ứng, gặp gỡ cố vấn hoặc rà soát Case Dossier tinh gọn'
+    label: 'Bước 4: Tham Vấn & Kiểm Chứng',
+    shortLabel: '4. Tham vấn mentor',
+    name: 'Bước 4 (Tham vấn và kiểm chứng với mentor)',
+    description: 'Tham vấn và kiểm chứng với mentor dựa trên các nội dung cần hỗ trợ'
   },
   {
     step: 5,
@@ -77,11 +77,23 @@ export const isStep1Completed = () => {
 export const isStep2Completed = () => {
   try {
     if (localStorage.getItem('cbas_step2_completed') === 'true') return true
+
+    const v2Latest = localStorage.getItem('cbas_step2_v2_latest')
+    if (v2Latest) {
+      const parsedV2 = JSON.parse(v2Latest)
+      if (parsedV2 && parsedV2.stages_completed >= 4) return true
+    }
+
+    const v2Draft = localStorage.getItem('cbas_step2_v2_draft')
+    if (v2Draft) {
+      const parsedDraft = JSON.parse(v2Draft)
+      if (parsedDraft && parsedDraft.isCompleted) return true
+    }
     
     const telemetryRaw = localStorage.getItem('cbas_step2_telemetry')
     if (telemetryRaw) {
       const parsed = JSON.parse(telemetryRaw)
-      if (parsed && (parsed.outcome_category || parsed.triage_step4)) return true
+      if (parsed && (parsed.outcome_category || parsed.triage_step4 || parsed.workflow_version)) return true
     }
 
     const msgsRaw = localStorage.getItem('cbas_step2_messages')

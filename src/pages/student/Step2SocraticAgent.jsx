@@ -3,6 +3,38 @@ import { Link } from 'react-router-dom';
 import StepProgressHeader from '../../components/common/StepProgressHeader';
 import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard';
 import { resetStepData } from '../../utils/interventionProgress';
+import { supabase } from '../../lib/supabase';
+
+export const WORKFLOW_VERSION = 'v2.0_reflective_4stages_2026';
+
+export const STAGE_DEFINITIONS = {
+  1: {
+    stage: 1,
+    title: 'Chặng 1: Làm rõ lý do lựa chọn',
+    shortLabel: 'Chặng 1 • Lý do lựa chọn',
+    mainQuestion: 'Ngoài lý do đã nêu ở bước 1, còn điều gì khiến em muốn chọn ngành này? Điều nào quan trọng nhất với em?'
+  },
+  2: {
+    stage: 2,
+    title: 'Chặng 2: Xem xét hiểu biết về ngành',
+    shortLabel: 'Chặng 2 • Hiểu biết về ngành',
+    mainQuestion: 'Em đã tìm hiểu những yêu cầu và khó khăn thực tế nào khi học và làm nghề này? Em biết những điều đó từ đâu?'
+  },
+  3: {
+    stage: 3,
+    title: 'Chặng 3: Xem xét cơ hội việc làm',
+    shortLabel: 'Chặng 3 • Cơ hội việc làm',
+    mainQuestion: 'Em đánh giá cơ hội tìm việc sau khi tốt nghiệp ngành này như thế nào? Nhận định đó dựa trên thông tin nào, và người mới ra trường cần đáp ứng những yêu cầu gì?'
+  },
+  4: {
+    stage: 4,
+    title: 'Chặng 4: Đối chiếu sự chuẩn bị',
+    shortLabel: 'Chặng 4 • Đối chiếu chuẩn bị',
+    mainQuestion: 'So với yêu cầu tuyển sinh và học tập của ngành, em đã chuẩn bị được gì về môn học và kỹ năng? Điều gì còn thiếu hoặc chưa rõ mà em cần kiểm tra ở bước 3?'
+  }
+};
+
+export const FINAL_CLOSING_SENTENCE = 'Em đã xác định được những điều cần kiểm tra thêm. Ở bước 3, hãy đối chiếu chúng với nguồn dữ liệu phù hợp để xem lựa chọn của mình đã có căn cứ đến đâu.';
 
 // HÀM KIỂM TRA HỌC SINH MƠ HỒ / CHƯA CÓ MỤC TIÊU CỤ THỂ (ĐỂ KÍCH HOẠT NHÁNH B)
 export function isUndecidedOrVague(career) {
@@ -26,19 +58,18 @@ export function isSchoolUndecided(school) {
 
 export function formatSchoolClause(school, isVocational = false, prefix = 'tại ') {
   if (isSchoolUndecided(school)) {
-    return isVocational ? `${prefix}trường đào tạo nghề em đang nhắm tới` : `${prefix}một cơ sở đào tạo phù hợp`;
+    return isVocational ? `${prefix}trường đào tạo nghề em đang tìm hiểu` : `${prefix}cơ sở đào tạo phù hợp`;
   }
   return `${prefix}${school}`;
 }
 
 export function formatSchoolName(school, isVocational = false) {
   if (isSchoolUndecided(school)) {
-    return isVocational ? 'trường đào tạo nghề em đang nhắm tới' : 'cơ sở đào tạo phù hợp';
+    return isVocational ? 'trường đào tạo nghề em đang tìm hiểu' : 'cơ sở đào tạo phù hợp';
   }
   return school;
 }
 
-// QUY TẮC 2: PHÂN HÓA HƯỚNG ĐI: ĐẠI HỌC VS. HỌC NGHỀ / THỰC HÀNH
 export function removeVietnameseTones(str) {
   if (!str || typeof str !== 'string') return '';
   return str
@@ -72,29 +103,25 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
   const uNorm = removeVietnameseTones(u);
   const sNorm = removeVietnameseTones(s);
 
-  // 1. Phủ định mạnh mẽ: Nếu học sinh nêu rõ học Đại học / Không học nghề -> TUYỆT ĐỐI KHÔNG PHẢI HỌC NGHỀ
   if (hasUniversityClarification(u)) {
     return false;
   }
 
-  // 2. Kiểm tra tên trường đào tạo (school):
   const isExplicitVocationalSchool = ['nghe', 'trung cap', 'salon', 'day nghe', 'co so dao tao tu nhan'].some(k => sNorm.includes(k));
 
-  const isUniSchool = sNorm.startsWith('dh') || 
-                      sNorm.startsWith('truong dh') || 
-                      sNorm.startsWith('dai hoc') || 
+  const isUniSchool = sNorm.startsWith('dh') ||
+                      sNorm.startsWith('truong dh') ||
+                      sNorm.startsWith('dai hoc') ||
                       sNorm.startsWith('truong dai hoc') ||
-                      sNorm.includes('dai hoc') || 
-                      sNorm.includes('hoc vien') || 
-                      sNorm.includes('university') || 
-                      sNorm.includes('bach khoa') || 
+                      sNorm.includes('dai hoc') ||
+                      sNorm.includes('hoc vien') ||
+                      sNorm.includes('university') ||
+                      sNorm.includes('bach khoa') ||
                       sNorm.includes('dhqg') ||
                       sNorm.includes('dhdn') ||
                       sNorm.includes('dhh');
 
   if (isUniSchool && !isExplicitVocationalSchool) {
-    // Nếu nhắm vào trường Đại học (như ĐH Nha Trang, ĐH Bách Khoa, ĐH Sư phạm Kỹ thuật...),
-    // đây là bậc đào tạo Kỹ sư / Cử nhân đại học chính quy, TUYỆT ĐỐI KHÔNG ĐƯỢC COI LÀ HỌC NGHỀ!
     return false;
   }
 
@@ -102,7 +129,6 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
     return true;
   }
 
-  // 3. Từ khóa nghề thủ công / dịch vụ phi đại học rõ ràng (không đào tạo cử nhân đại học):
   const pureVocationalKeywords = [
     'pha che', 'barista', 'lam banh', 'tho han', 'tho tien', 'tho may', 'tho dien dan dung',
     'spa', 'nail', 'mong', 'cat toc', 'barber', 'trang diem', 'makeup', 'phun xam',
@@ -114,8 +140,6 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
     return true;
   }
 
-  // 4. Các ngành kỹ thuật / ứng dụng (cơ khí, điện lạnh, sửa ô tô, đầu bếp, nấu ăn, may mặc):
-  // Chỉ coi là học nghề khi KHÔNG có trường đại học và có dấu hiệu học nghề hoặc học sinh bộc lộ ngán lý thuyết
   const technicalKeywords = ['dien lanh', 'co khi', 'sua o to', 'sua xe', 'nau an', 'dau bep', 'may mac', 'may thoi trang', 'sua dien thoai'];
   if (technicalKeywords.some(k => cNorm.includes(k) || uNorm.includes(k))) {
     if (uNorm.includes('nghe') || uNorm.includes('thuc hanh') || cNorm.includes('tho') || cNorm.includes('sua')) {
@@ -126,352 +150,201 @@ export function isVocationalTrack(career = '', userText = '', school = '') {
   return false;
 }
 
-/**
- * SOCRACAREER - DYNAMIC ADAPTIVE TRIGGER (BƯỚC 2: AI SOCRATES)
- * Thuật toán kích hoạt Vòng 1 linh hoạt dựa trên 4 Thiên lệch nhận thức cốt lõi
- */
-export function generateSocraticFirstPrompt(student = {}) {
-  // 1. Thu thập các chỉ số mỏ neo thực tế từ Bước 1
-  const targetCareer = student.baselineTarget || student.targetMajor || student.targetCareer || student.target_career || "ngành nghề mục tiêu";
-  const rawSchool = (student.targetSchool || student.targetUniversity || student.target_university || "").trim();
-  const schoolClause = rawSchool ? `tại ${rawSchool}` : "";
-  const source = student.source || student.reason || ""; // "Mạng xã hội", "Bạn bè/Người thân", "Tự tìm hiểu"
-  const anchorReason = student.anchorReason || "";
-  let anchorQuote = student.anchorQuote || source || "";
-  if (!anchorQuote && (student.id === "CT_21" || student.studentId === "CT_21")) {
-    anchorQuote = "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
+// NHẬN DIỆN TÊN NGÀNH CÒN CHUNG CHUNG Ở CHẶNG 1 (ĐỂ LÀM RÕ NGÀNH CỤ THỂ TRƯỚC KHI HỎI YÊU CẦU TUYỂN SINH / NGHỀ NGHIỆP)
+export function isBroadMajorField(major = '', userText = '') {
+  const mNorm = removeVietnameseTones((major || '').trim());
+  const uNorm = removeVietnameseTones((userText || '').trim());
+  if (!mNorm) return true;
+
+  // Nếu trong câu trả lời học sinh đã nêu rõ ngành cụ thể thì không còn chung chung nữa
+  const specificClarifications = [
+    'su pham toan', 'su pham van', 'su pham ngu van', 'su pham anh', 'su pham tieng anh',
+    'su pham ly', 'su pham hoa', 'su pham sinh', 'su pham su', 'su pham dia', 'su pham tin',
+    'giao duc tieu hoc', 'giao duc mam non', 'su pham gdcd', 'giao duc chinh tri',
+    'quan tri kinh doanh', 'kinh doanh quoc te', 'tai chinh ngan hang', 'ke toan', 'kiem toan', 'marketing', 'thuong mai dien tu', 'logistics',
+    'ky thuat phan mem', 'khoa hoc may tinh', 'an toan thong tin', 'tri tue nhan tao', 'he thong thong tin', 'mang may tinh',
+    'y da khoa', 'y khoa', 'duoc hoc', 'dieu duong', 'rang ham mat', 'xet nghiem y hoc', 'ky thuat hinh anh',
+    'quan tri dich vu du lich va lu hanh', 'quan tri khach san', 'quan tri nha hang', 'huong dan du lich',
+    'ky thuat co khi', 'ky thuat dien', 'ky thuat o to', 'co dien tu', 'tu dong hoa',
+    'ngon ngu anh', 'ngon ngu trung', 'ngon ngu nhat', 'ngon ngu han', 'quan he cong chung', 'bao chi', 'truyen thong da phuong tien'
+  ];
+  if (specificClarifications.some(s => mNorm.includes(s) || uNorm.includes(s))) {
+    return false;
   }
 
-  const conf = Number(student.conf_T0 || student.initialConfidence || student.confidence_score) || 5; // Độ tự tin từ 1 - 10
-  const riasecMatch = student.riasec_match_pct != null ? Number(student.riasec_match_pct) : 40; // % Tương thích RIASEC
+  const broadExact = [
+    'kinh te', 'khoi kinh te', 'nganh kinh te',
+    'su pham', 'nganh su pham', 'giao vien', 'nghe giao',
+    'ky thuat', 'khoi ky thuat', 'nganh ky thuat', 'cong nghe',
+    'y duoc', 'nganh y', 'y te', 'khoi y duoc',
+    'it', 'cntt', 'may tinh', 'cong nghe thong tin',
+    'du lich', 'nganh du lich', 'dich vu',
+    'ngon ngu', 'ngoai ngu', 'nganh ngon ngu',
+    'xa hoi', 'khoa hoc xa hoi', 'nhan van',
+    'nghe thuat', 'thiet ke', 'truyen thong',
+    'nong lam', 'moi truong', 'luat'
+  ];
+  return broadExact.includes(mNorm);
+}
 
-  let biasType = "";
-  let biasRule = "";
-  let socraticQuestion = "";
-
-  const sLower = source.toLowerCase();
-  const sNorm = removeVietnameseTones(sLower);
-  const qLower = anchorQuote.toLowerCase();
-  const qNorm = removeVietnameseTones(qLower);
-
-  const isMediaAnchoring = 
-    anchorReason === "Mạng xã hội" ||
-    source.includes("mạng xã hội") || 
-    source.includes("TikTok") || 
-    source.includes("YouTube") || 
-    sLower.includes("mạng") || 
-    sLower.includes("tiktok") || 
-    sLower.includes("youtube") || 
-    sLower.includes("review") || 
-    sLower.includes("lương cao") || 
-    sLower.includes("nghìn đô") || 
-    sNorm.includes("mang xa hoi") || 
-    sNorm.includes("tren mang") || 
-    qLower.includes("mạng") || 
-    qLower.includes("tiktok") || 
-    qLower.includes("review") || 
-    qLower.includes("nghìn đô") || 
-    qNorm.includes("mang") || 
-    student.id === "CT_21" || 
-    student.studentId === "CT_21";
-
-  const isBandwagon = 
-    anchorReason === "Đám đông" ||
-    source.includes("bạn bè") || 
-    source.includes("đám đông") || 
-    source.includes("nghe theo") || 
-    sLower.includes("bạn") || 
-    sLower.includes("rủ") || 
-    sNorm.includes("ban be") || 
-    sNorm.includes("dam dong") || 
-    sNorm.includes("nghe theo") ||
-    sNorm.includes("theo ban") ||
-    sNorm.includes("ru chon") ||
-    qNorm.includes("ban be") ||
-    qNorm.includes("dam dong");
-
-  // Mức tự tin rất cao (T0 >= 8/10) khi vừa mới bắt đầu quy trình
-  const isHighConfidence = conf >= 8;
-
-  const isConfirmation = 
-    anchorReason === "Trái mã RIASEC" || 
-    (riasecMatch < 50 && student.compatibility_status && (student.compatibility_status.includes('Mâu thuẫn') || student.compatibility_status.includes('Lệch')));
-
-  const isFamilyDirected =
-    anchorReason === "Gia đình" ||
-    /ba mẹ|bố mẹ|cha mẹ|gia đình|phụ huynh|bố muốn|mẹ muốn|ba muốn|định hướng của gia đình|mong muốn của gia đình|mong muốn của ba mẹ|mong muốn của bố mẹ/i.test(`${source} ${anchorQuote}`) ||
-    sNorm.includes("ba me") ||
-    sNorm.includes("bo me") ||
-    sNorm.includes("cha me") ||
-    sNorm.includes("gia dinh") ||
-    sNorm.includes("phu huynh");
-
-  const cNorm = removeVietnameseTones(targetCareer);
-  const isMedicalCareer =
-    /\b(y khoa|y đa khoa|bác sĩ|y dược|dược học|dược sĩ|ngành dược|điều dưỡng|răng hàm mặt|nha khoa|y học cổ truyền|xét nghiệm y học|kỹ thuật y học)\b/i.test(targetCareer) ||
-    ['y khoa', 'y da khoa', 'bac si', 'y duoc', 'duoc hoc', 'duoc si', 'nganh duoc', 'dieu duong', 'rang ham mat', 'y hoc co truyen', 'xet nghiem y hoc'].some(k => cNorm.includes(k));
-
-  // 2. Cây quyết định phản tư thích ứng chuẩn mực sư phạm (KHÔNG BỊA ĐẶT ĐIỂM SỐ HỌC BẠ / ĐIỂM CHUẨN)
-  const cleanSource = (source || anchorQuote || "").trim();
-  const hasExplicitReason = Boolean(cleanSource && cleanSource.length >= 2);
-  const reasonSnippet = hasExplicitReason ? ` với lý do "${cleanSource}"` : "";
-
-  if (isFamilyDirected) {
-    // ĐẶC THÙ LÝ DO GIA ĐÌNH ĐỊNH HƯỚNG / MONG MUỐN: Tập trung bóc tách sự tự chủ (động cơ nội tại)
-    biasType = isHighConfidence ? "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)" : "PHỤ THUỘC ĐỊNH HƯỚNG GIA ĐÌNH (EXTRINSIC FAMILY PRESSURE)";
-    biasRule = "Kích hoạt do học sinh chọn ngành xuất phát từ định hướng hoặc mong muốn của ba mẹ/gia đình; tập trung bóc tách sự tự chủ và động cơ nội tại.";
-    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' theo định hướng và mong muốn của gia đình'} với mức tự tin ${conf}/10. Nếu tách khỏi kỳ vọng và định hướng của ba mẹ, bản thân em có thực sự đam mê công việc thực tế của ngành này hay em đang cố gánh vác mong muốn của người khác?`;
-
-  } else if (isMediaAnchoring) {
-    // THIÊN LỆCH 1: MỎ NEO TRUYỀN THÔNG (Anchoring Bias)
-    biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
-    biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc truyền thông.";
-    const quoteText = anchorQuote || "Ngành này cực hot trên mạng, lương nghìn đô ngay khi tốt nghiệp.";
-    socraticQuestion = `Chào em. Ở Bước 1, em vừa chia sẻ rằng chọn ngành ${targetCareer} ${schoolClause} (tự tin ${conf}/10) vì "${quoteText}". Theo em, những hình ảnh và clip review đó phản ánh bao nhiêu phần trăm công việc và áp lực thực tế của ngành này?`;
-
-  } else if (isBandwagon) {
-    // THIÊN LỆCH 2: TÂM LÝ ĐÁM ĐÔNG (Bandwagon Effect)
-    biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
-    biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
-    socraticQuestion = `Chào em. Ở Bước 1, em cho biết chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' vì thấy nhiều bạn bè cũng đang đăng ký'}. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
-
-  } else if (isMedicalCareer) {
-    // ĐẶC THÙ NGÀNH Y DƯỢC: Trọng tâm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập và thực tế thu nhập giai đoạn đầu nghề
-    biasType = isHighConfidence ? "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)" : "TRUY VẤN ĐẶC THÙ NGÀNH Y DƯỢC";
-    biasRule = `Kích hoạt phản tư đặc thù khối ngành Y Dược: Thời gian đào tạo dài hạn (6-8 năm), áp lực học tập/trực lâm sàng và thực tế đãi ngộ giai đoạn đầu nghề.`;
-    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet} với mức tự tin ${conf}/10. Khác với các ngành nghề thông thường, khối ngành Y Dược đòi hỏi thời gian đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thực hành lâm sàng lấy chứng chỉ hành nghề) cùng áp lực học tập và trực viện rất khắc nghiệt; căn cứ thực tế nào giúp em tin mình đủ sức bền để đi trọn lộ trình dài hạn đó?`;
-
-  } else if (isHighConfidence) {
-    // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias) - PHẢN TƯ THỰC CHẤT, NẮM CHẮC DỮ LIỆU BƯỚC 1, KHÔNG DÙNG ĐIỂM GIẢ LẬP
-    biasType = "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)";
-    biasRule = `Kích hoạt do mức tự tin ban đầu rất cao (${conf}/10) khi chưa đối chứng dữ liệu tuyển sinh thực tế.`;
-    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet} và đặt mức tự tin tới ${conf}/10. Căn cứ hoặc trải nghiệm thực tế nào giúp em tin chắc mình phù hợp với mặt trái và áp lực thực tế của ngành này trước khi đối chứng dữ liệu?`;
-
-  } else if (isConfirmation) {
-    // THIÊN LỆCH 4: THIÊN LỆCH XÁC NHẬN (Confirmation Bias)
-    biasType = "THIÊN LỆCH XÁC NHẬN (CONFIRMATION BIAS)";
-    biasRule = `Kích hoạt do độ tương thích RIASEC thấp, sở trường tự nhiên nhóm [${student.riasecCode || "Xã hội"}] chưa khớp với đặc thù khắt khe của ngành mục tiêu.`;
-    socraticQuestion = `Chào em. Kết quả Bước 1 chỉ ra thế mạnh tự nhiên của em thuộc nhóm ${student.riasecCode || "Xã hội"}, nhưng em lại chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet}. Em đã chủ động tìm hiểu những rào cản khi làm việc trái với sở trường tự nhiên chưa, hay em chỉ đang chú ý đến những khía cạnh tích cực của nó?`;
-
-  } else {
-    // TRƯỜNG HỢP MẶC ĐỊNH / NHÓM THỰC CHẤT
-    biasType = "TRUY VẤN NỀN TẢNG THỰC CHẤT";
-    biasRule = "Học sinh có động cơ nội tại hài hòa; thực hiện truy vấn cơ sở thực tế và dữ liệu khách quan quan trọng nhất dẫn dắt mục tiêu.";
-    socraticQuestion = `Chào em. Ở Bước 1, em đã xác định mục tiêu là ngành ${targetCareer} ${schoolClause}${reasonSnippet} với mức tự tin ban đầu là ${conf}/10. Ngoài mong muốn đó, em đã tìm hiểu những áp lực công việc thực tế và yêu cầu khắt khe nhất của ngành này chưa?`;
+// KIỂM TRA HỌC SINH CHỈ TRẢ LỜI "RỒI" Ở CHẶNG 2 MÀ CHƯA NÊU VÍ DỤ CỤ THỂ / NGUỒN
+export function isBareAffirmationInStage2(userText = '') {
+  const clean = (userText || '').trim().toLowerCase().replace(/[!.,?~]/g, '');
+  const uNorm = removeVietnameseTones(clean);
+  const words = clean.split(/\s+/).filter(Boolean);
+  const affirmList = [
+    'roi', 'da roi', 'em tim hieu roi', 'tim hieu roi', 'em biet roi', 'biet roi',
+    'da tim hieu', 'em da tim hieu', 'co tim hieu', 'em co tim hieu', 'co roi', 'da xem roi', 'xem roi', 'roi a', 'da roi a'
+  ];
+  if (affirmList.includes(uNorm)) return true;
+  if (words.length <= 5 && (uNorm.includes('roi') || uNorm === 'co' || uNorm === 'da co')) {
+    return true;
   }
+  return false;
+}
 
-  // 3. Trả về cấu trúc hiển thị Vòng 1 cho giao diện Web
-  return {
-    biasType: biasType,
-    biasRule: biasRule,
-    botGreeting: `Chào ${student.name || "em"}. Trước khi đối chứng dữ liệu tuyển sinh thực tế, chúng ta sẽ cùng thực hiện đối thoại phản tư đa chiều.`,
-    firstQuestion: socraticQuestion
-  };
+// KIỂM TRA HỌC SINH CHƯA NÊU NGUỒN ĐỘC LẬP HOẶC CHỈ DỰA VÀO VIDEO / NGƯỜI QUEN / AI Ở CHẶNG 3
+export function needsStage3SourceFollowUp(userText = '') {
+  const uNorm = removeVietnameseTones((userText || '').trim());
+  const words = uNorm.split(/\s+/).filter(Boolean);
+  const onlyInformalSource = /(tiktok|youtube|facebook|mang xa hoi|video|clip|review|nguoi quen|anh chi|ban be|nghe noi|ai noi|chatgpt)/i.test(uNorm) &&
+    !/(de an|thong ke|bao cao|cong thong tin|website truong|bo giao duc|khao sat|tuyen dung|vietnamworks|topcv|chinh thong)/i.test(uNorm);
+  const missingSourceOrReq = words.length <= 8 && !/(chua biet|khong biet|chua tim hieu|chua ro|chua co)/i.test(uNorm);
+  return onlyInformalSource || missingSourceOrReq;
+}
+
+// KIỂM TRA HỌC SINH NHẦM LẪN KỸ NĂNG MỀM LÀ TIÊU CHÍ TUYỂN SINH HOẶC NHẦM TỔ HỢP/PHƯƠNG THỨC Ở CHẶNG 4
+export function hasStage4AdmissionConfusion(userText = '') {
+  const uNorm = removeVietnameseTones((userText || '').trim());
+  const mentionsSoftSkillsOnly = /\b(giao tiep|ngoai hinh|hoat ngon|nang dong|thuyet trinh|lam viec nhom|ky nang mem)\b/i.test(uNorm) &&
+    !/\b(toan|ngu van|mon van|tieng anh|mon anh|ngoai ngu|vat ly|mon ly|hoa hoc|mon hoa|sinh hoc|mon sinh|lich su|mon su|dia ly|mon dia|tin hoc|mon tin|ktpl|gdcd|hoc ba|diem thi|to hop|phuong thuc|dgnl|ielts)\b/i.test(uNorm);
+  const mentionsMethodConfusion = /(xet ky nang mem|tuyen sinh bang giao tiep|xet tuyen bang ngoai hinh|diem chuan 30|lech thang diem|khac thang diem)/i.test(uNorm);
+  return mentionsSoftSkillsOnly || mentionsMethodConfusion;
 }
 
 /**
- * BƯỚC 2: AI SOCRATES SỬ DỤNG TRỰC TIẾP DỮ LIỆU TỪ BƯỚC 1 ĐỂ KHỞI TẠO CÂU HỎI ĐẦU TIÊN
+ * KHỞI TẠO CÂU HỎI MỞ ĐẦU BƯỚC 2 THEO CHẶNG 1 (4 CHẶNG PHẢN TƯ HỖ TRỢ XEM XÉT CĂN CỨ & TÔN TRỌNG TỰ QUYẾT)
+ * Không gán nhãn thiên lệch thành kết luận tâm lý; sử dụng dữ liệu Bước 1 để cá nhân hóa.
  */
+export function generateSocraticFirstPrompt(student = {}) {
+  const targetCareer = (student.baselineTarget || student.targetMajor || student.targetCareer || student.target_career || '').trim();
+  const rawSchool = (student.targetSchool || student.targetUniversity || student.target_university || '').trim();
+  const isVocational = isVocationalTrack(targetCareer, '', rawSchool);
+  const schoolClause = rawSchool && !isSchoolUndecided(rawSchool) ? `tại ${rawSchool}` : '';
+  const source = (student.source || student.reason || student.anchorQuote || '').trim();
+  const conf = Number(student.conf_T0 || student.initialConfidence || student.confidence_score) || 5;
+  const studentName = (student.name || student.studentName || '').trim();
+
+  const isUndecided = isUndecidedOrVague(targetCareer);
+  const isBroad = !isUndecided && isBroadMajorField(targetCareer, '');
+
+  const topicLabel = 'CHẶNG 1: LÀM RÕ LÝ DO LỰA CHỌN';
+  const topicRule = 'Cá nhân hóa từ dữ liệu Bước 1; hỗ trợ học sinh làm rõ lý do lựa chọn và điều quan trọng nhất với bản thân trên tinh thần tôn trọng quyền tự quyết.';
+
+  let firstQuestion = '';
+  const greetingName = studentName ? `Chào ${studentName}` : 'Chào em';
+
+  if (isUndecided) {
+    firstQuestion = `${greetingName}. Ở Bước 1, thầy thấy em vẫn đang phân vân và chưa chọn một ngành cụ thể${source ? ` (chia sẻ ban đầu: "${source}")` : ''}. Ngoài lý do đã nêu ở bước 1, còn điều gì khiến em muốn chọn ngành này? Điều nào quan trọng nhất với em?`;
+  } else {
+    const careerWithSchool = schoolClause ? `${targetCareer} ${schoolClause}` : targetCareer;
+    const reasonText = source ? ` với lý do "${source}"` : '';
+    firstQuestion = `${greetingName}. Ở Bước 1, em đã chọn ngành ${careerWithSchool}${reasonText} (mức độ tự tin hiện tại: ${conf}/10). Ngoài lý do đã nêu ở bước 1, còn điều gì khiến em muốn chọn ngành này? Điều nào quan trọng nhất với em?`;
+  }
+
+  return {
+    biasType: topicLabel,
+    biasRule: topicRule,
+    botGreeting: `${greetingName}. Ở Bước 2 này, thầy trò mình sẽ cùng đi qua 4 chặng ngắn để làm rõ lý do chọn ngành, hiểu biết thực tế, cơ hội việc làm và những nội dung cần kiểm chứng ở Bước 3.`,
+    firstQuestion,
+    isVocational
+  };
+}
+
 export function initSocratesChat(profile = {}) {
   const promptData = generateSocraticFirstPrompt(profile);
   return promptData.firstQuestion;
 }
 
-// QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) CHUẨN PHƯƠNG PHÁP LUẬN KHKT SOCRACAREER
+/**
+ * HÀM TƯƠNG THÍCH NGƯỢC CHO CÁC MODULE CŨ (ĐÁNH DẤU RÕ `legacy_compatibility_only: true`)
+ * Không suy diễn "né tránh", "chưa hiệu chuẩn", "tự tin thái quá" hay "không thừa nhận điểm yếu".
+ * Không dùng để bắt buộc phân luồng đối chất.
+ */
 export function evaluateOutcomeCategory(history = [], initialProfile = null, lastUserText = '', goalShift = null) {
-  const initCareer = (initialProfile?.targetMajor || initialProfile?.target_career || '').toLowerCase().trim();
-  const userMessages = history.filter(m => m.role === 'user').map(m => m.text);
+  const userMessages = (history || []).filter(m => m && m.role === 'user').map(m => m.text || '');
   const allUserText = `${userMessages.join(' ')} ${lastUserText || ''}`.toLowerCase();
-  
-  // 1. Kiểm tra Turning Point rõ ràng theo đúng tiêu chuẩn đề tài:
-  // "CHỈ set thành True nếu học sinh RÕ RÀNG thừa nhận điểm yếu/rào cản: 'Em nhận ra mình chưa tìm hiểu kỹ', 'Em thấy mức lương đó chưa thực tế', hoặc 'Em lo môn Toán/Ngoại ngữ... của em không đủ kéo điểm'. Nếu học sinh né tránh/đùa hoặc liên tục khẳng định mình giỏi (không có môn yếu), BẮT BUỘC là False."
-  const clearTurningPointPatterns = [
-    'chưa tìm hiểu kỹ', 'chua tim hieu ky', 'chưa tìm hiểu sâu', 'chưa biết rõ',
-    'chưa thực tế', 'chua thuc te', 'chưa hợp lý', 'chưa đúng', 'ảo tưởng',
-    'em nhận ra', 'nghĩ lại thì', 'thầy nói đúng', 'em hiểu rồi',
-    'không đủ kéo điểm', 'không kéo nổi điểm', 'kéo điểm không nổi', 'sợ thiếu điểm',
-    'lo môn', 'sợ môn', 'đuối môn', 'kém môn', 'mất gốc', 'yếu môn', 'hơi yếu', 'hơi đuối', 'lo lắng nhất là môn', 'lo nhất môn', 'lo nhất là môn',
-    'chưa tự tin môn', 'rủi ro', 'áp lực lớn', 'chưa có chứng chỉ', 'chưa đủ năng lực'
-  ];
 
-  const avoidantOrJokingPatterns = [
-    'thấy thầy là em lo', 'thay thay la em lo', 'thầy hỏi khó', 'hỏi khó quá',
-    'gắt quá', 'căng quá', 'đùa thôi', 'đùa tí', 'nói chơi thôi', 'thôi thầy', 'bó tay'
-  ];
-
-  // Mẫu câu học sinh phủ nhận điểm yếu / khẳng định giỏi toàn diện / né tránh rào cản
-  const denyWeaknessPatterns = [
-    'không lo lắng môn nào', 'không lo môn nào', 'không sợ môn nào', 'môn nào cũng giỏi',
-    'học giỏi đều', 'giỏi các môn', 'tự tin hết', 'không có điểm yếu', 'chắc chắn đậu',
-    'không có gì lo', 'chẳng lo môn nào', 'môn nào em cũng tốt'
-  ];
-
-  const hasClearAdmission = clearTurningPointPatterns.some(p => allUserText.includes(p));
-  const hasAvoidance = avoidantOrJokingPatterns.some(p => allUserText.includes(p));
-  const hasDeniedWeakness = denyWeaknessPatterns.some(p => allUserText.includes(p));
-
-  // Turning Point = true CHỈ KHI thừa nhận rõ điểm yếu/rào cản và không né tránh/bông đùa
-  const turningPoint = Boolean(hasClearAdmission && !hasAvoidance && !hasDeniedWeakness);
-
-  // 2. Phân loại Outcome_Category và Triage_Step4 theo chuẩn phương pháp luận:
-  const reconsideringPatterns = [
-    'đổi sang', 'chuyển sang', 'xem xét lại', 'cân nhắc ngành khác', 'chọn ngành khác',
-    'đổi nguyện vọng', 'nghĩ lại chắc chọn', 'không học ngành này nữa'
-  ];
-  const isGoalShiftTurn = Boolean(goalShift && goalShift.newMajor && goalShift.newMajor.toLowerCase() !== initCareer);
-  const hasReconsidering = isGoalShiftTurn || reconsideringPatterns.some(p => allUserText.includes(p));
-
-  let outcomeCategory = 'Uncalibrated_Avoidant';
-  let triageStep4 = 'In-depth (20 phút)';
-  let rule = '';
-
-  if (hasReconsidering) {
-    outcomeCategory = 'Reconsidering';
-    triageStep4 = 'In-depth (20 phút)';
-    rule = 'Học sinh chủ động muốn xem xét lại hoặc chuyển hướng sang ngành khác sau khi nhận diện rào cản thực tế.';
-  } else if (turningPoint === false) {
-    // ĐIỀU KIỆN CHUẨN XÁC THEO PHƯƠNG PHÁP LUẬN:
-    // Nếu học sinh không thừa nhận điểm yếu/rào cản và liên tục khẳng định mình giỏi hoặc né tránh:
-    outcomeCategory = 'Uncalibrated_Avoidant'; // Chưa hiệu chuẩn / Né tránh rào cản
-    triageStep4 = 'In-depth (20 phút)';        // BẮT BUỘC cần Mentor can thiệp sâu
-    rule = 'Học sinh chưa thừa nhận rào cản/điểm yếu cụ thể (Turning_Point = False), giữ tự tin chủ quan hoặc né tránh chất vấn; bắt buộc cần Mentor can thiệp sâu.';
-  } else {
-    // Chỉ khi học sinh thừa nhận môn yếu/rào cản (Turning_Point = True) và có phương án thực tế:
-    outcomeCategory = 'Persistent_Calibrated';
-    triageStep4 = 'Brief (10 phút)';
-    rule = 'Học sinh kiên định với mục tiêu nhưng đã thừa nhận rõ điểm yếu/rào cản thực tế (Turning_Point = True) và nêu được phương án khắc phục.';
-  }
+  const wantsMentorSupport = /(muốn gặp mentor|cần hỏi thêm|cần tư vấn|muốn tham vấn|chưa rõ|cần kiểm chứng|phân vân)/i.test(allUserText);
 
   return {
-    category: outcomeCategory,
-    triageStep4,
-    rule,
-    hasClearAdmission: turningPoint
+    category: 'Reflective_Inquiry_Completed',
+    triageStep4: wantsMentorSupport ? 'Đề xuất tham vấn và kiểm chứng với mentor (theo nhu cầu hỗ trợ)' : 'Tự chủ đối chứng ở Bước 3 & Tham vấn mentor khi cần',
+    rule: 'Ghi nhận hoàn thành 4 chặng phản tư theo quy trình mới; không dán nhãn thiên lệch nhận thức hay ép buộc nhận điểm yếu.',
+    hasClearAdmission: null,
+    legacy_compatibility_only: true,
+    workflow_version: WORKFLOW_VERSION
   };
 }
 
-// HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC KHỐI CŨ)
+// HÀM XÁC ĐỊNH TỔ HỢP MÔN THAM CHIẾU THEO CHƯƠNG TRÌNH GDPT 2018 (KHÔNG ÁP ĐẶT CỨNG NHẮC)
 export function getRecommendedComboForMajor(majorName, userText = '') {
   const m = (majorName || '').toLowerCase();
   const u = (userText || '').toLowerCase();
 
   if (m.includes('chính trị') || m.includes('công dân') || u.includes('ktpl') || u.includes('chính trị')) {
-    return 'tổ hợp có GDKT&PL (như C19, C20, D84) hoặc C00/D01';
+    return 'tổ hợp có GDKT&PL hoặc C00/D01 theo đề án của trường';
   }
   if (m.includes('tin') || m.includes('cntt') || m.includes('phần mềm') || u.includes('tin học') || u.includes('tin')) {
-    return 'tổ hợp có Tin học/Toán trọng số (Toán nhân hệ số 2) hoặc Toán - Lý - Anh';
-  }
-  if (u.includes('toán') && u.includes('lý') && u.includes('anh')) {
-    return 'Toán - Lý - Anh (hoặc tổ hợp có Toán trọng số)';
-  }
-  if (u.includes('toán') && u.includes('văn') && u.includes('anh')) {
-    return 'Toán - Văn - Anh (hoặc tổ hợp có Ngoại ngữ trọng số)';
-  }
-  if (m.includes('toán') || m.includes('vật lý') || m.includes('hóa') || m.includes('kỹ thuật') || m.includes('công nghệ')) {
-    return 'tổ hợp môn KHTN/Tin học với môn Toán nhân hệ số 2';
-  }
-  if (m.includes('văn') || m.includes('sử') || m.includes('địa') || m.includes('xã hội')) {
-    return 'tổ hợp KHXH hoặc tổ hợp tự chọn có GDKT&PL/Ngoại ngữ';
+    return 'tổ hợp có Toán/Tin học hoặc Toán - Lý - Anh theo đề án của trường';
   }
   if (m.includes('kinh tế') || m.includes('quản trị') || m.includes('marketing') || m.includes('tài chính') || m.includes('ngân hàng') || m.includes('luật')) {
-    return 'tổ hợp có môn Toán nhân hệ số 2, hoặc kết hợp GDKT&PL/Tiếng Anh';
+    return 'tổ hợp xét tuyển của ngành theo đề án tuyển sinh chính thức của trường';
   }
-  if (m.includes('ngôn ngữ') || m.includes('tiếng')) {
-    return 'tổ hợp có môn Ngoại ngữ nhân hệ số 2 kèm chuẩn đầu vào';
-  }
-  if (m.includes('y') || m.includes('dược') || m.includes('sinh')) {
-    return 'tổ hợp Toán - Hóa - Sinh hoặc KHTN kèm chuẩn Ngoại ngữ';
-  }
-  return 'tổ hợp môn tự chọn tối ưu theo đề án tuyển sinh';
+  return 'tổ hợp môn xét tuyển theo đề án tuyển sinh chính thức của trường';
 }
 
-// BỘ LỌC PHẢN XẠ TỰ NHIÊN TRƯỚC KHI CHẠY MÁY TRẠNG THÁI (NATURAL REFLEX FILTER)
+/**
+ * BỘ LỌC PHẢN XẠ TỰ NHIÊN (THÂN THIỆN, TRUNG LẬP, CHẤP NHẬN CÂU TRẢ LỜI NGẮN / "CHƯA BIẾT" / BẤT ĐỒNG)
+ * Không ép buộc học sinh, không gán nhãn "gánh ước mơ của người khác".
+ */
 export function processStudentMessage(message, chatStage, studentProfile) {
   const lowerMsg = (message || '').toLowerCase().trim();
-  const cleanGreeting = lowerMsg.replace(/[!.,?~]/g, '');
 
-  const targetMajor = studentProfile?.target_career || studentProfile?.targetMajor || '';
-  const targetUniv = studentProfile?.target_university || studentProfile?.targetSchool || '';
-  const confidence = studentProfile?.confidence_score || studentProfile?.confidence || '5';
-  const hollandCode = studentProfile?.holland_code || studentProfile?.hollandCode || 'AEI';
-  const isBranchB = isUndecidedOrVague(targetMajor);
-
-  // 1.1. Nếu học sinh thắc mắc kỹ thuật / câu hỏi lặp lại / không hiểu câu hỏi
+  // 1. Nếu học sinh hỏi lại vì chưa rõ câu hỏi (ngắn <= 10 từ)
   const isConfusion = [
-    'là sao', 'sao vậy', 'sao thế', 'sao the', 'ý thầy là sao', 'y thay la sao',
-    'em chưa hiểu', 'chưa hiểu', 'không hiểu', 'thầy nói gì', 'thầy nói thế là sao',
-    'hỏi lại', 'sao hỏi lại', 'hỏi gì kỳ', 'hỏi gì kì', 'trùng câu hỏi', 'vừa hỏi xong'
+    'là sao', 'sao vậy', 'sao thế', 'ý thầy là sao', 'y thay la sao',
+    'em chưa hiểu câu hỏi', 'không hiểu câu hỏi', 'thầy giải thích câu hỏi'
   ].some(k => lowerMsg.includes(k));
 
   if (isConfusion && lowerMsg.split(/\s+/).length <= 10) {
+    const stageDef = STAGE_DEFINITIONS[chatStage] || STAGE_DEFINITIONS[1];
     return {
       advanceRound: false,
-      reply: `Thầy đặt câu hỏi để buộc em phải tự đối diện với động lực và năng lực thực tế của mình trước khi ra quyết định. Em hãy trả lời thẳng vào câu hỏi của thầy ở trên.`
+      reply: `Để thầy diễn đạt lại ngắn gọn hơn cho em nhé: ${stageDef.mainQuestion} (Nếu em chưa tìm hiểu hoặc chưa có thông tin, em cứ trả lời "chưa biết" hoặc "chưa tìm hiểu" nhé).`
     };
   }
 
-  // 1.1b. Xử lý các tình huống học sinh né tránh hoặc bông đùa (theo quy chuẩn đề tài):
-  const isEvasiveOrJoking = (() => {
-    const ePatterns = [
-      /(thấy|thay)\s+(thầy|thay)\s+(là|la)\s+(em\s+)?(lo|sợ|so)/i,
-      /(thầy|thay)\s+(hỏi|hoi)\s+(khó|kho|gắt|gat|căng|cang)\s*(quá|qua|thế|the|vậy|vay)?/i,
-      /^(khó|kho|gắt|gat|căng|cang)\s*(quá|qua)\s*(thầy|thay)?/i,
-      /^(thầy|thay)\s+(làm|lam)\s+(khó|kho)\s+em/i,
-      /^(thầy|thay)\s+(dọa|doa)\s+em/i,
-      /^(đùa|dua|trêu|treu)\s+(thôi|thoi|tí|ti|chút)/i,
-      /^(nói|noi)\s+(đùa|dua|chơi|choi)\s+(thôi|thoi)/i,
-      /^(thôi|thoi)\s+(thầy|thay)/i,
-      /^(chịu|chiu|bó tay|bo tay)\s+(thầy|thay)?/i,
-      /^(lo|sợ|so)\s+(quá|qua)\s*(thầy|thay)?$/i
-    ];
-    return ePatterns.some(p => p.test(lowerMsg)) && lowerMsg.split(/\s+/).length <= 12;
-  })();
-
-  if (isEvasiveOrJoking) {
-    return {
-      advanceRound: false,
-      reply: `Thầy chỉ là công cụ đặt câu hỏi giúp em soi chiếu lại mục tiêu. Nếu đối diện với câu hỏi này khiến em lo lắng, thì áp lực thi cử và chọn nghề sắp tới sẽ còn thực tế hơn rất nhiều. Em hãy trả lời thẳng thắn vào trọng tâm câu hỏi của thầy ở trên.`
-    };
-  }
-
-  // 1.2. Nếu học sinh chỉ chào hỏi xã giao: Chào lại ngắn gọn và nhắc nhở, KHÔNG tăng vòng!
+  // 2. Nếu học sinh chỉ chào xã giao thuần túy mà chưa trả lời nội dung
   const isPureGreeting = (() => {
     const gPatterns = [
       /^(chào|xin chào|chao|hello|hi|alo|hé lô)\b/i,
-      /^(dạ\s+|da\s+)?(em\s+)?(chào|xin chào|chao|kính chào)\b/i,
-      /^(dạ|da|vâng|dạ vâng|thưa thầy|thầy ơi|thay oi)$/i
+      /^(dạ\s+|da\s+)?(em\s+)?(chào|xin chào|chao|kính chào)\s*(thầy|thay|ạ|a)?$/i
     ];
-    if (gPatterns.some(p => p.test(lowerMsg)) && lowerMsg.split(/\s+/).length <= 6) {
-      const substantiveWords = ['thích', 'vì', 'sư phạm', 'ngành', 'môn', 'tổ hợp', 'trường', 'đam mê', 'học', 'điểm', 'thi', 'xét', 'nghề', 'lương', 'việc', 'tiền', 'dạy thêm', 'sợ', 'dốt', 'kém', 'đều'];
-      if (!substantiveWords.some(w => lowerMsg.includes(w))) {
-        return true;
-      }
+    if (gPatterns.some(p => p.test(lowerMsg)) && lowerMsg.split(/\s+/).length <= 5) {
+      return true;
     }
     return false;
   })();
 
   if (isPureGreeting) {
+    const stageDef = STAGE_DEFINITIONS[chatStage] || STAGE_DEFINITIONS[1];
     return {
-      advanceRound: false, // KHÔNG nhảy vòng
-      reply: `Chào em. Em hãy tập trung trả lời câu hỏi phản tư của thầy ở trên để chúng ta tiếp tục.`
+      advanceRound: false,
+      reply: `Chào em! Chúng ta đang ở ${stageDef.title}. ${stageDef.mainQuestion}`
     };
   }
 
-  // 1.3. BÓC TÁCH ÁP LỰC GIA ĐÌNH / CÂU TRẢ LỜI NGẮN DO DỰ (KHÔNG NHẢY VÒNG, HỎI SÂU XUNG ĐỘT TÂM LÝ)
-  const familyKeywords = ['bố mẹ', 'ba mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'kỳ vọng', 'bắt ép', 'ép', 'áp lực', 'bảo thi', 'bảo học', 'muốn em học', 'muốn em thi', 'định hướng'];
-  const hesitationKeywords = ['không chắc', 'không biết', 'chưa chắc', 'chưa rõ', 'phân vân', 'áp lực', 'lo', 'sợ', 'ép buộc', 'tùy'];
-  const hasFamily = familyKeywords.some(k => lowerMsg.includes(k));
-  const hasHesitation = hesitationKeywords.some(k => lowerMsg.includes(k));
-  const wordCount = lowerMsg.split(/\s+/).filter(Boolean).length;
-
-  if (hasFamily && (hasHesitation || wordCount <= 8)) {
-    return {
-      advanceRound: false, // KHÔNG tăng vòng khi học sinh đang bộc lộ mâu thuẫn ngoại tại
-      reply: `Khi sự lựa chọn này phần lớn đến từ kỳ vọng của ba mẹ mà bản thân em chưa thực sự chắc chắn, em có nghĩ rằng mình đang gánh ước mơ của người khác thay vì tương lai của chính mình không?`
-    };
-  }
-
-  // 1.4. Tiếp tục đối thoại với AI Cognitive Agent theo BỘ NGUYÊN TẮC PHẢN TƯ SOCRATES
   return { advanceRound: true };
 }
 
@@ -479,78 +352,24 @@ export function isCounterArguing(text) {
   if (!text || typeof text !== 'string') return false;
   const clean = text.toLowerCase().trim();
   const counterPatterns = [
-    /(đâu|không|chẳng|chưa|làm gì)\s+(có\s+)?nghịch\s*(lý|lí)/i,
-    /nghịch\s*(lý|lí)\s+(gì|ở đâu|chỗ nào|đâu)/i,
-    /sao\s+(lại\s+)?(bảo|nói|cho là|bảo là)\s+(là\s+)?nghịch\s*(lý|lí)/i,
-    /(đâu có|làm gì có|không hề|đâu phải)\s+(nghịch|mâu thuẫn)/i,
-    /thầy\s+(nói|bảo|phán)\s+(thế|vậy|vậy là)\s+(không đúng|sai|chưa đúng|kỳ|lạ)/i,
-    /(em|mình)\s+đã\s+(nói|bảo|giải thích)\s+(rồi|là)/i,
-    /(chưa|không)\s+(biết|rõ|chắc|định hình|chọn)\s+.*?(dạy|môn|tổ hợp)/i,
-    /(làm sao|sao|thế nào)\s+.*?(tra cứu|biết|chọn|tìm)/i,
-    /chưa\s+(chọn|biết|định hình|rõ)\s+(được\s+)?(môn|sẽ dạy|tổ hợp)/i
+    /thầy\s+(nói|bảo|cho rằng)\s+(thế|vậy|như vậy)\s+(không đúng|chưa đúng|sai)/i,
+    /em\s+không\s+đồng\s+ý/i,
+    /không\s+phải\s+vậy/i,
+    /em\s+nghĩ\s+khác/i
   ];
-  return counterPatterns.some(p => p.test(clean)) || 
-    (clean.includes('nghịch') && (clean.includes('đâu') || clean.includes('không') || clean.includes('gì') || clean.includes('sao') || clean.includes('chưa')));
+  return counterPatterns.some(p => p.test(clean));
 }
 
 export function hasDeclaredSubjectsOrGrades(text) {
   if (!text || typeof text !== 'string') return false;
   const clean = text.toLowerCase().trim();
-
-  // 1. Toán
-  if (/(môn\s+)?toán/i.test(clean)) return true;
-
-  // 2. Văn / Ngữ văn
-  const cleanWithoutPhanVan = clean.replace(/phân vân|phan van|băn khoăn|ban khoan/g, ' ');
-  if (/(ngữ\s*văn|ngu\s*van|môn\s*văn|mon\s*van|học\s*văn|hoc\s*van|văn\s*(và|với|\+|lẫn)|yếu\s*văn|kém\s*văn|giỏi\s*văn|sợ\s*văn)/i.test(cleanWithoutPhanVan)) return true;
-  if (/\bvăn\b/i.test(cleanWithoutPhanVan) && (cleanWithoutPhanVan.includes('toán') || cleanWithoutPhanVan.includes('anh') || cleanWithoutPhanVan.includes('điểm') || cleanWithoutPhanVan.includes('môn') || cleanWithoutPhanVan.includes('học'))) return true;
-
-  // 3. Tiếng Anh / Ngoại ngữ
-  if (/(tiếng\s*anh|tieng\s*anh|ngoại\s*ngữ|ngoai\s*ngu|anh\s*văn|anh\s*van|\bmôn\s*anh\b|\bhọc\s*anh\b)/i.test(clean)) return true;
-
-  // 4. Vật lý / Lý
-  const cleanWithoutLyDo = clean.replace(/lý do|ly do|vô lý|vo ly|nghịch lý|nghich ly|nghịch lí|nghich li|hợp lý|hop ly|quản lý|quan ly|tâm lý|tam ly|xử lý|xu ly/g, ' ');
-  if (/(vật\s*lý|vat\s*ly|vật\s*lí|vat\s*li|môn\s*lý|môn\s*lí|\blý\b|\blí\b)/i.test(cleanWithoutLyDo)) return true;
-
-  // 5. Hóa học / Hóa
-  const cleanWithoutHoaRa = clean.replace(/hóa ra|hoa ra|chuyển hóa|chuyen hoa|thoái hóa|thoai hoa/g, ' ');
-  if (/(hóa\s*học|hoa\s*hoc|môn\s*hóa|mon\s*hoa)/i.test(cleanWithoutHoaRa)) return true;
-  if (/\bhóa\b/i.test(cleanWithoutHoaRa) && (cleanWithoutHoaRa.includes('toán') || cleanWithoutHoaRa.includes('lý') || cleanWithoutHoaRa.includes('sinh') || cleanWithoutHoaRa.includes('điểm') || cleanWithoutHoaRa.includes('môn') || cleanWithoutHoaRa.includes('học'))) return true;
-
-  // 6. Sinh học / Sinh
-  const cleanWithoutHocSinh = clean.replace(/học sinh|hoc sinh|sinh viên|sinh vien|phát sinh|phat sinh|nảy sinh|nay sinh|hy sinh|hi sinh/g, ' ');
-  if (/(sinh\s*học|sinh\s*hoc|môn\s*sinh|mon\s*sinh)/i.test(cleanWithoutHocSinh)) return true;
-
-  // 7. Lịch sử / Sử
-  const cleanWithoutSuDung = clean.replace(/sử dụng|su dung|đối xử|doi xu|xử sự|xu su/g, ' ');
-  if (/(lịch\s*sử|lich\s*su|môn\s*sử|mon\s*su|\bsử\b|\bsu\b)/i.test(cleanWithoutSuDung)) return true;
-
-  // 8. Địa lý / Địa
-  const cleanWithoutDiaDiem = clean.replace(/địa điểm|dia diem|địa phương|dia phuong|địa bàn|dia ban|địa chỉ|dia chi/g, ' ');
-  if (/(địa\s*lý|dia\s*ly|địa\s*lí|dia\s*li|môn\s*địa|mon\s*dia|\bđịa\b|\bdia\b)/i.test(cleanWithoutDiaDiem)) return true;
-
-  // 9. Tin học / GDCD / GDQP / KTPL / Công nghệ / KHTN / KHXH
-  if (/(tin\s*học|tin\s*hoc|gdcd|gdqp|ktpl|quốc\s*phòng|kinh\s*tế\s*pháp\s*luật|công\s*nghệ|khtn|khxh|giáo\s*dục\s*công\s*dân)/i.test(clean)) return true;
-
-  // 10. Tổ hợp / Khối xét tuyển
-  if (/(tổ\s*hợp\s*([a-d]\d{2}|[a-d]|khtn|khxh|môn)|khối\s*([a-d]\d{2}|[a-d]|tự\s*nhiên|xã\s*hội)|\b[a-d]\d{2}\b)/i.test(clean)) return true;
-
-  // 11. Từ khóa kết hợp năng lực môn học
-  if (/(học\s*tốt|hoc\s*tot|đuối|duoi|học\s*khá|hoc\s*kha|môn\s*mạnh|môn\s*yếu|sở\s*trường|thế\s*mạnh|môn\s*sở\s*trường|môn\s*thế\s*mạnh)/i.test(clean)) return true;
-
-  // 12. Tuyên bố học lực rõ ràng
-  const hasExplicitGradeDeclaration = [
-    'học đều', 'hoc deu', 'đều đều', 'deu deu', 'học tàn tàn', 'tàn tàn', 'tan tan',
-    'các môn như nhau', 'môn nào cũng như nhau', 'môn nào cũng vậy', 'môn nào cũng thế',
-    'mất gốc', 'mat goc', 'đuối tất cả', 'kém tất cả', 'yếu tất cả'
-  ].some(k => clean.includes(k));
-
-  return hasExplicitGradeDeclaration;
+  if (/(môn\s+)?(toán|ngữ\s*văn|môn\s*văn|tiếng\s*anh|ngoại\s*ngữ|vật\s*lý|hóa\s*học|sinh\s*học|lịch\s*sử|địa\s*lý|tin\s*học|ktpl|gdcd)/i.test(clean)) return true;
+  if (/(tổ\s*hợp\s*([a-d]\d{2}|môn)|khối\s*[a-d]\d{2}|\b[a-d]\d{2}\b|học\s*bạ|điểm\s*thi|đgnl|ielts)/i.test(clean)) return true;
+  return false;
 }
 
 export function extractSubjectsFeedback(text = '') {
   const clean = String(text || '').toLowerCase();
-  
   const subjects = [
     { name: 'Giáo dục Kinh tế và Pháp luật (KTPL)', patterns: ['ktpl', 'kinh tế pháp luật', 'kinh tế và pháp luật'] },
     { name: 'Giáo dục Công dân (GDCD)', patterns: ['gdcd', 'công dân'] },
@@ -570,8 +389,8 @@ export function extractSubjectsFeedback(text = '') {
 
   for (const sub of subjects) {
     for (const p of sub.patterns) {
-      const strongReg = new RegExp('(học tốt|giỏi|khá|thế mạnh|sở trường|mạnh|thích|ổn)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*)?(giỏi|tốt|khá|cao|ổn|được 8|được 9|8|9)', 'i');
-      const weakReg = new RegExp('(hơi đuối|đuối|yếu|kém|dốt|sợ|thấp|lo)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*|hơi\\s*)?(hơi đuối|đuối|yếu|kém|dốt|sợ|thấp|được 5|được 6|5|6)', 'i');
+      const strongReg = new RegExp('(học tốt|giỏi|khá|thế mạnh|sở trường|mạnh|thích|ổn|tự tin)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*)?(giỏi|tốt|khá|cao|ổn|được 8|được 9)', 'i');
+      const weakReg = new RegExp('(hơi đuối|đuối|yếu|kém|chưa tốt|còn thiếu|cần cải thiện|lo)\\s*(môn\\s*)?' + p + '|' + p + '\\s*(thì\\s*)?(em\\s*)?(học\\s*|hơi\\s*)?(hơi đuối|đuối|yếu|kém|chưa vững|thấp|được 5|được 6)', 'i');
 
       if (!strongSubject && strongReg.test(clean)) {
         strongSubject = sub.name;
@@ -603,12 +422,15 @@ export function detectGoalShift(text) {
     { patterns: ['sư phạm tin học', 'sư phạm tin', 'sp tin'], name: 'Sư phạm Tin học', field: 'tech' },
     { patterns: ['giáo dục tiểu học', 'sp tiểu học', 'sư phạm tiểu học'], name: 'Giáo dục Tiểu học', field: 'edu' },
     { patterns: ['giáo dục mầm non', 'sp mầm non', 'sư phạm mầm non'], name: 'Giáo dục Mầm non', field: 'edu' },
-    { patterns: ['công nghệ thông tin', 'cntt', 'khoa học máy tính', 'kỹ thuật phần mềm'], name: 'Công nghệ Thông tin', field: 'tech' },
-    { patterns: ['quản trị kinh doanh', 'marketing', 'kinh doanh quốc tế', 'thương mại điện tử'], name: 'Quản trị Kinh doanh', field: 'biz' },
-    { patterns: ['tài chính ngân hàng', 'kế toán', 'kiểm toán'], name: 'Tài chính - Ngân hàng', field: 'biz' },
+    { patterns: ['công nghệ thông tin', 'cntt', 'khoa học máy tính', 'kỹ thuật phần mềm', 'an toàn thông tin', 'trí tuệ nhân tạo'], name: 'Kỹ thuật Phần mềm / Công nghệ Thông tin', field: 'tech' },
+    { patterns: ['quản trị kinh doanh', 'marketing', 'kinh doanh quốc tế', 'thương mại điện tử', 'logistics'], name: 'Quản trị Kinh doanh / Marketing', field: 'biz' },
+    { patterns: ['tài chính ngân hàng', 'kế toán', 'kiểm toán'], name: 'Tài chính - Ngân hàng / Kế toán', field: 'biz' },
+    { patterns: ['quản trị dịch vụ du lịch và lữ hành', 'quản trị khách sạn', 'quản trị lữ hành', 'hướng dẫn du lịch'], name: 'Quản trị Dịch vụ Du lịch và Lữ hành', field: 'tourism' },
     { patterns: ['luật kinh tế', 'luật dân sự', 'ngành luật', 'học luật', 'khoa luật'], name: 'Ngành Luật', field: 'law' },
-    { patterns: ['y đa khoa', 'bác sĩ', 'điều dưỡng', 'dược', 'dược học'], name: 'Y - Dược', field: 'med' },
-    { patterns: ['tâm lý học', 'tâm lý giáo dục', 'công tác xã hội'], name: 'Tâm lý học & Xã hội', field: 'soc' }
+    { patterns: ['y đa khoa', 'y khoa', 'bác sĩ đa khoa'], name: 'Y khoa (Bác sĩ Đa khoa)', field: 'med' },
+    { patterns: ['dược học', 'ngành dược', 'dược sĩ'], name: 'Dược học', field: 'med' },
+    { patterns: ['điều dưỡng'], name: 'Điều dưỡng', field: 'med' },
+    { patterns: ['tâm lý học', 'tâm lý giáo dục', 'công tác xã hội'], name: 'Tâm lý học', field: 'soc' }
   ];
 
   for (const item of knownMajors) {
@@ -620,7 +442,7 @@ export function detectGoalShift(text) {
     }
   }
 
-  const matchGeneric = clean.match(/(?:dự định|tính|muốn|đổi sang|chuyển sang|thi|học)\s+(?:ngành|chuyên ngành)\s+([a-zà-ỹ\s]{3,30}?)(?:\s+(?:mà|nhưng|tại|ở|ạ|được|có|để|[.,!?]|$))/i);
+  const matchGeneric = clean.match(/(?:dự định|tính|muốn|đổi sang|chuyển sang|thi|học|hướng tới|nhắm tới)\s+(?:ngành|chuyên ngành)\s+([a-zà-ỹ\s]{3,35}?)(?:\s+(?:mà|nhưng|tại|ở|ạ|được|có|để|[.,!?]|$))/i);
   if (matchGeneric && matchGeneric[1]) {
     const candidate = matchGeneric[1].trim();
     if (candidate.length >= 3 && !['này', 'đó', 'kia', 'gì', 'nào', 'khác'].includes(candidate)) {
@@ -645,216 +467,358 @@ export function isAskingAboutSubjectsOrCombos(text) {
   return patterns.some(p => clean.includes(p));
 }
 
+/**
+ * LÀM SẠCH VÀ CHUẨN HÓA PHẢN HỒI CỦA AI THEO MỤC 2, 3, 4:
+ * - Loại bỏ tuyệt đối các câu gây áp lực: "Em đang gánh ước mơ của người khác", "Em phải thừa nhận điểm yếu", "Suy nghĩ của em quá đơn giản", "Em không phù hợp với ngành này".
+ * - Đảm bảo giọng điệu thân thiện, trung lập, ngắn gọn, phù hợp học sinh THPT.
+ * - Khi kết thúc 4 chặng (round === 5), luôn kết thúc bằng câu chuẩn của Mục 4.
+ */
 export function sanitizeSocraticResponse(rawText, round, effectiveCareer, targetSchool, userText = '') {
   if (!rawText || typeof rawText !== 'string') return '';
   let cleaned = rawText.trim();
 
-  // 1. Loại bỏ các tiền tố xưng danh hoặc thẻ hệ thống
   cleaned = cleaned
     .replace(/^(Chuyên gia Phản tư Hành vi Socrates|Trợ lý AI Tham Vấn Phản Tư Socrates|AI Tham Vấn Phản Tư Socrates|AI Phản tư|Người Đồng Hành Phản Tư|Socrates|Thầy Socrates)[:\s-]*/i, '')
     .replace(/^\[.*?(CHỈ ĐẠO|CHỈ THỊ|BỐI CẢNH|NHIỆM VỤ).*?\]\s*/gi, '')
     .replace(/^#+.*?\n/gi, '')
     .trim();
 
-  // 2. BỘ NGUYÊN TẮC: TUYỆT ĐỐI CẤM KHEN NGỢI QUÁ ĐÀ, XOA DỊU
-  const praisePatterns = [
-    /^(Thầy\s+(rất\s+)?(thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng|chúc mừng em)[^.!?\n]*[.!?]\s*/i,
-    /(Thầy\s+(rất\s+)?(thấu cảm|thấu hiểu|hoan nghênh|khen ngợi|ủng hộ|đánh giá cao)|rất\s+(tuyệt vời|đáng khen|hoan nghênh|đáng khích lệ)|góc nhìn rất tiến bộ|thầy\s+chúc mừng)[^.!?\n]*[.!?]\s*/gi
+  // LOẠI BỎ TUYỆT ĐỐI CÁC CÂU GÂY ÁP LỰC HOẶC CHỤP MŨ THEO YÊU CẦU MỤC 3:
+  const bannedPressureFixes = [
+    {
+      pattern: /[^.!?\n]*(?:gánh\s+ước\s+mơ\s+của\s+người\s+khác|gánh\s+vác\s+mong\s+muốn\s+của\s+người\s+khác|sống\s+hộ\s+ước\s+mơ)[^.!?\n]*[.!?]?/gi,
+      replace: 'Định hướng từ gia đình là một nguồn tham khảo đáng quý để em cân nhắc thêm cùng mong muốn của bản thân.'
+    },
+    {
+      pattern: /[^.!?\n]*(?:phải\s+thừa\s+nhận\s+điểm\s+yếu|buộc\s+phải\s+thừa\s+nhận|không\s+chịu\s+thừa\s+nhận\s+điểm\s+yếu)[^.!?\n]*[.!?]?/gi,
+      replace: 'Việc xác định những phần đã chuẩn bị và những phần cần kiểm tra thêm sẽ giúp em chủ động hơn.'
+    },
+    {
+      pattern: /[^.!?\n]*(?:suy\s+nghĩ\s+của\s+em\s+quá\s+đơn\s+giản|suy\s+nghĩ\s+quá\s+đơn\s+giản|nhận\s+thức\s+quá\s+đơn\s+giản|suy\s+nghĩ\s+vu\s+vơ)[^.!?\n]*[.!?]?/gi,
+      replace: 'Góc nhìn hiện tại của em là điểm khởi đầu để mình tiếp tục đối chiếu thêm thông tin thực tế.'
+    },
+    {
+      pattern: /[^.!?\n]*(?:em\s+không\s+phù\s+hợp\s+với\s+ngành\s+này|không\s+hề\s+phù\s+hợp\s+với\s+ngành)[^.!?\n]*[.!?]?/gi,
+      replace: 'Mức độ phù hợp với ngành là điều em có thể kiểm chứng thêm qua các thông tin cụ thể ở bước tiếp theo.'
+    },
+    {
+      pattern: /[^.!?\n]*(?:một\s+dạng\s+ảo\s+tưởng|đang\s+ảo\s+tưởng|chỉ\s+là\s+công\s+cụ\s+bề\s+nổi)[^.!?\n]*[.!?]?/gi,
+      replace: ''
+    },
+    {
+      pattern: /đối\s+chất\s+với\s+mentor/gi,
+      replace: 'tham vấn và kiểm chứng với mentor'
+    }
   ];
-  praisePatterns.forEach(rx => {
-    cleaned = cleaned.replace(rx, '').trim();
-  });
 
-  // 3. QUY TẮC 3: LOẠI BỎ THÁI ĐỘ PHÁN XÉT & CHỤP MŨ - ÁP DỤNG TÁI ĐỊNH KHUNG (REFRAMING)
-  const judgmentalFixes = [
-    { pattern: /(?:sự\s+)?mơ\s*hồ\s+cho\s+thấy\s+em\s+chưa\s+có\s+cơ\s+sở[^.!?\n]*[.!?]?/gi, replace: 'Việc chưa có mục tiêu cụ thể là điều thường gặp ở giai đoạn này.' },
-    { pattern: /em\s+(?:đang\s+)?ảo\s*tưởng[^.!?\n]*[.!?]?/gi, replace: 'em cần nhìn vào thực tế tuyển sinh và năng lực bản thân.' },
-    { pattern: /em\s+chọn\s+(?:theo|vì)\s+(?:đám\s+đông|số\s+đông)[^.!?\n]*[.!?]?/gi, replace: 'em nên cân nhắc kỹ giữa xu hướng xã hội và năng lực thực tế.' },
-    { pattern: /để\s+người\s+khác\s+quyết\s+định\s+hộ\s+cuộc\s+đời\s+mình[^.!?\n]*[.!?]?/gi, replace: 'cần tự mình nhìn nhận rõ thế mạnh và rào cản.' },
-    { pattern: /(?:bị\s+)?điểm liệt/gi, replace: 'chưa đạt ngưỡng an toàn' },
-    { pattern: /(?:năng lực\s+)?(?:yếu kém|kém cỏi|bất tài|thấp kém)/gi, replace: 'cần bứt phá thêm' },
-    { pattern: /(?:chắc chắn\s+)?(?:sẽ trượt|rớt đại học|thất bại)/gi, replace: 'đối diện với rủi ro cạnh tranh' }
-  ];
-  judgmentalFixes.forEach(({ pattern, replace }) => {
+  bannedPressureFixes.forEach(({ pattern, replace }) => {
     cleaned = cleaned.replace(pattern, replace).trim();
   });
 
-  // 3b. QUY TẮC SƯ PHẠM & TÂM LÝ LỨA TUỔI THPT: LOẠI BỎ BIỆT NGỮ THỊ TRƯỜNG & THUẬT NGỮ CÔNG SỞ ("THỰC CHIẾN", "ĐÀM PHÁN LƯƠNG", "BÁO CÁO TÀI CHÍNH", "NĂNG LỰC THƯƠNG MẠI")
+  // Thay thế thuật ngữ công sở nặng nề
   cleaned = cleaned
-    .replace(/(?:những\s+)?yêu\s+cầu\s+khắt\s+khe\s+về\s+kỹ\s+năng\s+thực\s+chiến/gi, 'những yêu cầu khắt khe về năng lực thực hành nghề nghiệp')
-    .replace(/kỹ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
-    .replace(/kĩ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
-    .replace(/kinh\s*nghiệm\s+thực\s*chiến/gi, 'kinh nghiệm thực tế')
-    .replace(/dự\s*án\s+thực\s*chiến/gi, 'dự án thực tế')
-    .replace(/học\s+thực\s*chiến/gi, 'rèn luyện thực tế')
-    .replace(/môi\s*trường\s+thực\s*chiến/gi, 'môi trường làm việc thực tế')
-    .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
-    .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
+    .replace(/kỹ\s*năng\s+thực\s*chiến/gi, 'kỹ năng thực hành nghề nghiệp')
     .replace(/thực\s*chiến/gi, 'thực tế')
-    .replace(/đàm\s*phán\s*lương/gi, 'đạt mức thu nhập kỳ vọng')
+    .replace(/đàm\s*phán\s*lương/gi, 'đáp ứng yêu cầu công việc')
     .replace(/báo\s*cáo\s*tài\s*chính/gi, 'công việc chuyên môn')
-    .replace(/(?:năng\s*lực|giá\s*trị)\s*thương\s*mại/gi, 'năng lực nghề nghiệp thực tế')
-    .replace(/tạo\s+ra\s+doanh\s+thu\s+hay\s+giá\s+trị\s+thương\s+mại/gi, 'đáp ứng khối lượng công việc thực tế')
-    .replace(/tạo\s+ra\s+doanh\s+thu/gi, 'đáp ứng yêu cầu công việc')
-    .replace(/[^.!?\n]*chỉ là công cụ bề nổi[^.!?\n]*[.!?]?\s*/gi, 'Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. ');
-
-  // 3c. QUY TẮC PHÁT NGÔN CHUẨN SOCRACAREER (ANTI-ROBOTIC & ANTI-SYCOPHANCY):
-  // KHÔNG bắt đầu bằng: "Thầy hiểu...", "Thầy đồng cảm...", "Thầy thấy rằng..."
-  // Tuyệt đối không khen ngợi: "Ước mơ của em thật tuyệt vời", "Em rất có tiềm năng"
-  cleaned = cleaned
-    .replace(/^Thầy\s+(?:rất\s+)?(?:hiểu|thấu hiểu|đồng cảm|thấy rằng)[^.!?\n]*[.!?]\s*/gi, '')
-    .replace(/Ước mơ của em (?:thật|rất) tuyệt vời[^.!?\n]*[.!?]?/gi, '')
-    .replace(/Em rất có tiềm năng[^.!?\n]*[.!?]?/gi, '')
-    .replace(/(?:tình cảm|ước mơ|tấm lòng)(?: này)? rất đáng (?:quý|trân trọng)[^.!?\n]*[.!?]?/gi, '')
+    .replace(/(?:năng\s*lực|giá\s*trị)\s*thương\s*mại/gi, 'năng lực nghề nghiệp')
     .trim();
 
-  // 4. QUY TẮC 1: XỬ LÝ BIẾN DỮ LIỆU ĐẦU VÀO (CHỐNG LỖI HIỂN THỊ CHUỖI RỖNG / "tại [chưa biết]")
   const isVocational = isVocationalTrack(effectiveCareer, userText, targetSchool);
-  const isUniClarification = hasUniversityClarification(userText);
   const cleanSchoolClause = formatSchoolClause(targetSchool, isVocational, 'tại ');
   const cleanSchoolName = formatSchoolName(targetSchool, isVocational);
 
   cleaned = cleaned.replace(/tại\s+\[?(?:chưa biết(?: học ở đâu)?|chưa rõ|chưa xác định|không biết|trường đại học mục tiêu|undefined|null)\]?/gi, cleanSchoolClause);
   cleaned = cleaned.replace(/của\s+\[?(?:chưa biết(?: học ở đâu)?|chưa rõ|chưa xác định|không biết|trường đại học mục tiêu|undefined|null)\]?/gi, `của ${cleanSchoolName}`);
 
-  // Cắt bỏ các danh sách tự vạch chiến lược / tầng nấc thay học sinh
-  cleaned = cleaned.replace(/(?:Để giúp em|Để làm chủ lộ trình|Thầy đề xuất|Thầy định hướng)[^:.\n]*Chiến lược Thích ứng Đa tầng[^:\n]*:?/gi, '');
-  cleaned = cleaned.replace(/[•\-\*]?\s*Tầng\s*[1-3][^:\n]*:?[^\n\r]*/gi, '');
-  cleaned = cleaned.replace(/Chiến lược Thích ứng Đa tầng/gi, '');
-  cleaned = cleaned.replace(/Mô hình hạ bậc mềm \(Soft Laddering\)/gi, '');
-  cleaned = cleaned.trim();
-
-  const major = effectiveCareer || 'ngành mục tiêu';
-  const lowerUser = (userText || '').toLowerCase();
-  const { strongSubject, weakSubject } = extractSubjectsFeedback(userText);
-  const isBalancedGrades = lowerUser.includes('học đều') || lowerUser.includes('đều đều') || lowerUser.includes('như nhau');
-
   if (round === 5) {
-    // Ở LƯỢT 5 (KẾT THÚC 4 CÂU HỎI PHẢN TƯ), TỔNG KẾT & RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ
-    // Cắt bỏ dấu ? ở cuối câu
-    cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.');
-    cleaned = cleaned.replace(/^[^\n\r?]+\?\s*$/g, '');
-    cleaned = cleaned.trim();
+    // Ở LƯỢT KẾT THÚC 4 CHẶNG: Luôn kết thúc bằng câu chuẩn của Mục 4
+    cleaned = cleaned.replace(new RegExp(FINAL_CLOSING_SENTENCE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '').trim();
+    cleaned = cleaned.replace(/[^\n\r.!?]*Ở bước 3,\s*hãy đối chiếu[^\n\r.!?]*[.!?]?/gi, '').trim();
+    cleaned = cleaned.replace(/[^\n\r.!?]*Em hãy bước sang Bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
 
-    // Loại bỏ các câu điều hướng cũ nếu có
-    cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
-
-    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
-    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề" trong câu nhận định!
-    if (!isVocational || isUniClarification) {
-      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.trim();
+    // Bỏ câu hỏi ở lượt chốt
+    cleaned = cleaned.replace(/(?:[\n\r]+|[.!?]\s+)[^.!?\n\r]+\?\s*$/g, '.').trim();
+    if (cleaned.endsWith('?')) {
+      cleaned = cleaned.slice(0, -1) + '.';
     }
 
     const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-    let intro = '';
-    if (isUniClarification) {
-      intro = `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${major} ${cleanSchoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn.`;
-    } else if (sentences.length > 0) {
-      intro = sentences.slice(0, 2).join(' ').trim();
-    } else {
-      if (isVocational) {
-        intro = `Học nghề là một hướng đi thực tế, nhưng việc thi đỗ tốt nghiệp THPT và chuẩn bị thể lực bền bỉ là điều kiện tiên quyết.`;
-      } else if (isBalancedGrades) {
-        intro = `Học đều các môn là một nền tảng tốt, nhưng điểm chuẩn vào ngành ${major} ${cleanSchoolClause} đòi hỏi điểm số bứt phá ở tổ hợp xét tuyển.`;
-      } else if (strongSubject && weakSubject) {
-        intro = `Thế mạnh ở môn ${strongSubject} là điểm tựa tốt, nhưng môn ${weakSubject} nếu chưa đạt yêu cầu sẽ là rào cản khi xét tuyển vào ngành ${major} ${cleanSchoolClause}.`;
-      } else if (weakSubject) {
-        intro = `Việc em nhận diện được điểm yếu ở môn ${weakSubject} là bước đầu quan trọng, nhưng để biến kế hoạch học tập thành điểm số trúng tuyển vào ngành ${major} ${cleanSchoolClause}, em cần biết chính xác ngưỡng điểm mình phải vượt qua.`;
-      } else if (strongSubject) {
-        intro = `Môn ${strongSubject} là một điểm tựa, nhưng điểm chuẩn ngành ${major} ${cleanSchoolClause} đòi hỏi cả tổ hợp xét tuyển phải đạt ngưỡng an toàn.`;
-      } else {
-        intro = `Để biết kế hoạch ôn tập và năng lực thực tế của em có đáp ứng được ngưỡng tuyển sinh của ngành ${major} ${cleanSchoolClause} hay không, em cần đối chứng ngay với số liệu chính thống.`;
-      }
-    }
+    const summaryIntro = sentences.length > 0
+      ? sentences.slice(0, 2).join(' ').trim()
+      : `Cảm ơn em đã chia sẻ thẳng thắn qua cả 4 chặng phản tư về ngành ${effectiveCareer || 'mục tiêu'}. Thầy đã tổng hợp lại các lý do, thông tin, sự chuẩn bị và những điểm cần kiểm chứng của em ở bảng tóm tắt bên dưới.`;
 
-    // QUY TẮC 2: PHÂN HÓA HƯỚNG ĐI ĐẠI HỌC VS HỌC NGHỀ
-    const standardDirective = (isVocational && !isUniClarification)
-      ? `Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${cleanSchoolName} để đối chiếu với hồ sơ của mình.`
-      : `Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${cleanSchoolName} xem độ chênh lệch thực tế là bao nhiêu.`;
-
-    return `${intro} ${standardDirective}`.trim();
-  } else {
-    // VÒNG 1, 2, 3, 4: ĐẢM BẢO TỐI ĐA 2-3 CÂU VĂN VÀ KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN DẪN DẮT
-    cleaned = cleaned.replace(/[^\n\r.!?]*bước 3[^\n\r.!?]*[.!?]?/gi, '').trim();
-
-    // Nếu học sinh đã đính chính học Đại học hoặc đây là hướng Đại học,
-    // TUYỆT ĐỐI CẤM để lọt cụm từ "học nghề" / "cổng trường nghề"
-    if (!isVocational || isUniClarification) {
-      cleaned = cleaned.replace(/Học nghề là một hướng đi thực tế[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*cổng trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*trường nghề[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.replace(/[^.!?\n]*chuẩn bị về thể lực[^.!?\n]*[.!?]?/gi, '');
-      cleaned = cleaned.trim();
-    }
-
-    // QUY TẮC 6: NGUYÊN TẮC PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY) - CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG & XỬ LÝ ĐẶC THÙ Y DƯỢC / GIA ĐÌNH
-    const isFamilyDirectedUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
-    const isFamilyOrAltruisticUser = isFamilyDirectedUser || ['chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
-    const isMedicalCareerUser = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'răng hàm mặt', 'nha khoa', 'y học cổ truyền', 'xét nghiệm y học'].some(k => major.toLowerCase().includes(k) || lowerUser.includes(k));
-
-    if (round === 2 && (isFamilyOrAltruisticUser || isMedicalCareerUser)) {
-      if (isFamilyDirectedUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu'))) {
-        cleaned = `Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập trên giảng đường đại học và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${major} hay em chỉ đang gánh vác mong muốn của người khác?`;
-      } else if (isMedicalCareerUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu') || !/6.*8\s*năm|6\s*năm|đào tạo dài hạn|thực hành/i.test(cleaned))) {
-        cleaned = `Khác với các công việc thương mại thông thường, ngành ${major} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?`;
-      } else if (isFamilyOrAltruisticUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu'))) {
-        cleaned = `Ước mơ và tình cảm dành cho gia đình là động lực khởi đầu đáng quý, nhưng việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành ${major}, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
-      }
-    }
-
-    if (!cleaned.endsWith('?')) {
-      if (isVocational && !isUniClarification) {
-        if (round === 1) {
-          cleaned += ` Khi tìm hiểu công việc thực tế hàng ngày của nghề này, em thấy đặc thù công việc có thực sự phù hợp với tính cách và năng lực hành động của em không?`;
-        } else if (round === 2) {
-          cleaned += ` Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc. Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
-        } else if (round === 3) {
-          cleaned += ` Học nghề vẫn đòi hỏi điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để vào các trường nghề uy tín. Nhìn lại sức học hiện tại, môn nào khiến em lo lắng nhất cho kỳ thi tốt nghiệp này?`;
-        } else if (round === 4) {
-          cleaned += ` Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${cleanSchoolName}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?`;
-        }
-      } else {
-        if (round === 1) {
-          cleaned += ` Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
-        } else if (round === 2) {
-          if (isFamilyDirectedUser) {
-            cleaned += ` Nếu tách khỏi kỳ vọng của ba mẹ, bản thân em có thực sự đam mê công việc thực tế của ngành ${major} hay em chỉ đang chiều theo mong muốn của gia đình?`;
-          } else if (isMedicalCareerUser) {
-            cleaned += ` Nhìn vào lộ trình đào tạo dài hạn 6-8 năm, áp lực học tập nặng nề và thực tế thu nhập giai đoạn đầu nghề của ngành ${major}, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
-          } else if (isFamilyOrAltruisticUser) {
-            cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
-          } else {
-            cleaned += ` Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn trong tương lai?`;
-          }
-        } else if (round === 3) {
-          cleaned += ` Những năng lực em vừa nêu rất cần thiết đối với người lao động trong tương lai, nhưng em đã tìm hiểu về xu hướng việc làm của ngành ${major} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
-        } else if (round === 4) {
-          cleaned += ` Để xét tuyển vào ngành ${major} ${cleanSchoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
-        }
-      }
-    }
-
-    // Bảo hiểm cứng cho Vòng 3: Nếu AI lỡ chê bai năng lực hoặc nhảy sớm sang hỏi tổ hợp môn ở Vòng 3, chuẩn hóa về câu hỏi Xu hướng việc làm tương lai
-    if (round === 3 && (!isVocational || isUniClarification) && (/tổ hợp xét tuyển|môn nào khiến em|công cụ bề nổi|cánh cửa quyết định/i.test(cleaned))) {
-      cleaned = `Những năng lực em vừa nêu rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${major} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
-    }
-
-    const sentences = cleaned.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
-    if (sentences.length > 3) {
-      const lastQ = sentences[sentences.length - 1];
-      const prevSentences = sentences.slice(0, 2).join(' ');
-      cleaned = `${prevSentences} ${lastQ}`;
-    }
-    return cleaned.trim();
+    return `${summaryIntro} ${FINAL_CLOSING_SENTENCE}`.trim();
   }
+
+  return cleaned.trim();
 }
+
+/**
+ * QUYẾT ĐỊNH CHUYỂN CHẶNG HOẶC HỎI BỔ SUNG NGẮN (TỐI ĐA 1 CÂU BỔ SUNG MỖI CHẶNG)
+ * Tuân thủ Mục 2 & Mục 3:
+ * - Chấp nhận "chưa biết", "chưa tìm hiểu", "chưa có căn cứ", câu trả lời ngắn hoặc không đồng ý với AI.
+ * - Mỗi chặng chỉ hỏi bổ sung tối đa 1 câu. Nếu vẫn còn thiếu thông tin, ghi nhận khoảng trống đó và chuyển sang chặng tiếp theo.
+ */
+export function evaluateStageProgression(currentStage, userText = '', studentProfile = {}, stageFollowUpUsed = {}) {
+  const alreadyFollowedUp = Boolean(stageFollowUpUsed?.[currentStage]);
+  const clean = (userText || '').trim();
+  const uNorm = removeVietnameseTones(clean);
+  const targetMajor = studentProfile?.shiftedMajor || studentProfile?.targetMajor || studentProfile?.target_career || '';
+
+  // Nếu học sinh đã trả lời câu hỏi bổ sung ở chặng này rồi -> BẮT BUỘC ghi nhận và chuyển sang chặng tiếp theo
+  if (alreadyFollowedUp) {
+    return {
+      shouldFollowUp: false,
+      nextStage: Math.min(currentStage + 1, 5),
+      followUpReason: null
+    };
+  }
+
+  // Nếu học sinh trả lời "chưa biết", "chưa tìm hiểu", "chưa có căn cứ", "không có" -> Chấp nhận là câu trả lời hợp lệ, ghi nhận khoảng trống và chuyển chặng ngay
+  const isValidDontKnowOrNone = /^(khong co|khong co gi them|chua biet|khong biet|chua tim hieu|em chua tim hieu|chua ro|em chua ro|chua co can cu|khong ro|da khong|khong a)$/i.test(uNorm) ||
+    /(chua tim hieu|chua biet|chua co can cu|khong co ly do nao khac|chi co vay thoi)/i.test(uNorm);
+
+  if (isValidDontKnowOrNone) {
+    // Riêng ở Chặng 1 nếu tên ngành quá chung chung và học sinh chưa nêu ngành cụ thể thì hỏi 1 câu ngắn để làm rõ ngành cụ thể
+    if (currentStage === 1 && isBroadMajorField(targetMajor, clean)) {
+      return {
+        shouldFollowUp: true,
+        nextStage: 1,
+        followUpReason: 'clarify_broad_major'
+      };
+    }
+    return {
+      shouldFollowUp: false,
+      nextStage: Math.min(currentStage + 1, 5),
+      followUpReason: null
+    };
+  }
+
+  if (currentStage === 1) {
+    // Nếu tên ngành còn chung chung (VD: "Kinh tế", "Sư phạm", "CNTT", "Y dược", "Du lịch") và học sinh chưa làm rõ ngành cụ thể
+    if (isBroadMajorField(targetMajor, clean)) {
+      return {
+        shouldFollowUp: true,
+        nextStage: 1,
+        followUpReason: 'clarify_broad_major'
+      };
+    }
+    return {
+      shouldFollowUp: false,
+      nextStage: 2,
+      followUpReason: null
+    };
+  }
+
+  if (currentStage === 2) {
+    // Nếu học sinh chỉ trả lời "rồi" / "đã tìm hiểu rồi" mà chưa nêu ví dụ cụ thể hoặc nguồn -> hỏi 1 câu bổ sung ngắn
+    if (isBareAffirmationInStage2(clean)) {
+      return {
+        shouldFollowUp: true,
+        nextStage: 2,
+        followUpReason: 'ask_stage2_example'
+      };
+    }
+    return {
+      shouldFollowUp: false,
+      nextStage: 3,
+      followUpReason: null
+    };
+  }
+
+  if (currentStage === 3) {
+    // Nếu học sinh chỉ dựa vào video, người quen hoặc AI, hoặc chưa nêu nguồn/yêu cầu với người mới ra trường -> hỏi 1 câu bổ sung ngắn
+    if (needsStage3SourceFollowUp(clean)) {
+      return {
+        shouldFollowUp: true,
+        nextStage: 3,
+        followUpReason: 'ask_stage3_independent_source'
+      };
+    }
+    return {
+      shouldFollowUp: false,
+      nextStage: 4,
+      followUpReason: null
+    };
+  }
+
+  if (currentStage === 4) {
+    // Nếu học sinh nhầm kỹ năng mềm là điều kiện tuyển sinh hoặc nhầm phương thức/tổ hợp -> hỏi 1 câu bổ sung ngắn phân biệt rõ
+    if (hasStage4AdmissionConfusion(clean)) {
+      return {
+        shouldFollowUp: true,
+        nextStage: 4,
+        followUpReason: 'clarify_stage4_admission_vs_skills'
+      };
+    }
+    return {
+      shouldFollowUp: false,
+      nextStage: 5,
+      followUpReason: null
+    };
+  }
+
+  return {
+    shouldFollowUp: false,
+    nextStage: Math.min(currentStage + 1, 5),
+    followUpReason: null
+  };
+}
+
+/**
+ * TỔNG HỢP TÓM TẮT PHẢN TƯ 5 PHẦN TỪ NỘI DUNG HỘI THOẠI THỰC TẾ (MỤC 4 & MỤC 5)
+ * Chỉ tổng hợp từ những gì đã trao đổi, phân biệt rõ phát biểu tự báo cáo của học sinh (Mục 1-4) và gợi ý của AI (Mục 5).
+ */
+export function buildReflectiveSummary(messages = [], studentProfile = {}) {
+  const step1Reason = (studentProfile?.reason || studentProfile?.anchorQuote || '').trim();
+  const targetMajor = (studentProfile?.shiftedMajor || studentProfile?.targetMajor || studentProfile?.target_career || 'Ngành mục tiêu').trim();
+  const targetSchool = (studentProfile?.targetSchool || studentProfile?.target_university || '').trim();
+  const schoolLabel = targetSchool && !isSchoolUndecided(targetSchool) ? targetSchool : 'cơ sở đào tạo dự kiến';
+
+  const userMsgs = (messages || []).filter(m => m && m.role === 'user');
+  const byStage = { 1: [], 2: [], 3: [], 4: [] };
+
+  userMsgs.forEach((m, idx) => {
+    const st = m.stage && m.stage >= 1 && m.stage <= 4 ? m.stage : Math.min(idx + 1, 4);
+    if (m.text && m.text.trim()) {
+      byStage[st].push(m.text.trim());
+    }
+  });
+
+  const stage1Text = byStage[1].join(' | ');
+  const stage2Text = byStage[2].join(' | ');
+  const stage3Text = byStage[3].join(' | ');
+  const stage4Text = byStage[4].join(' | ');
+  const allUserCombined = userMsgs.map(m => m.text).join(' ');
+  const allNorm = removeVietnameseTones(allUserCombined);
+
+  // 1. Lý do lựa chọn do học sinh nêu
+  const reasonParts = [];
+  if (step1Reason) {
+    reasonParts.push(`Lý do khai báo ở Bước 1: "${step1Reason}"`);
+  }
+  if (stage1Text) {
+    reasonParts.push(`Chia sẻ tại Chặng 1: "${stage1Text}"`);
+  }
+  const studentReasons = reasonParts.length > 0
+    ? reasonParts.join('. ')
+    : 'Học sinh giữ nguyên lý do lựa chọn ban đầu ở Bước 1, chưa bổ sung lý do khác.';
+
+  // 2. Thông tin và nguồn học sinh đã đề cập
+  const infoParts = [];
+  if (stage2Text) {
+    infoParts.push(`Hiểu biết về việc học & làm nghề (Chặng 2): "${stage2Text}"`);
+  }
+  if (stage3Text) {
+    infoParts.push(`Nhận định về cơ hội việc làm & nguồn tham khảo (Chặng 3): "${stage3Text}"`);
+  }
+  const mentionedInfoAndSources = infoParts.length > 0
+    ? infoParts.join('. ')
+    : 'Học sinh báo cáo chưa tìm hiểu sâu thông tin chi tiết hoặc chưa nêu nguồn đối chiếu cụ thể.';
+
+  // 3. Sự chuẩn bị do học sinh tự báo cáo
+  const prepParts = [];
+  if (stage4Text) {
+    prepParts.push(`Chia sẻ tại Chặng 4: "${stage4Text}"`);
+  }
+  const { strongSubject, weakSubject } = extractSubjectsFeedback(allUserCombined);
+  if (strongSubject) {
+    prepParts.push(`Môn học tự báo cáo có thế mạnh: ${strongSubject}`);
+  }
+  if (weakSubject) {
+    prepParts.push(`Môn học tự báo cáo cần củng cố thêm: ${weakSubject}`);
+  }
+  const selfReportedPreparation = prepParts.length > 0
+    ? prepParts.join('. ')
+    : 'Học sinh chưa nêu chi tiết về tổ hợp môn hoặc kỹ năng đã chuẩn bị.';
+
+  // 4. Những nội dung còn thiếu hoặc chưa được kiểm chứng
+  const missingItems = [];
+  if (!stage2Text || /(chua tim hieu|chua biet|khong biet|chua ro|moi nghe noi)/i.test(removeVietnameseTones(stage2Text))) {
+    missingItems.push(`Chưa đối chiếu chương trình đào tạo và yêu cầu học tập thực tế của ngành ${targetMajor} từ nguồn chính thức của ${schoolLabel}`);
+  } else {
+    missingItems.push(`Thông tin về yêu cầu học tập và thực tế nghề ${targetMajor} hiện là tự báo cáo, cần đối chiếu thêm với chương trình đào tạo chính thức`);
+  }
+
+  if (!stage3Text || /(tiktok|youtube|facebook|mang xa hoi|video|nguoi quen|nghe noi|chua biet|chua tim hieu|chua ro)/i.test(removeVietnameseTones(stage3Text))) {
+    missingItems.push(`Nhận định về cơ hội việc làm và yêu cầu tuyển dụng cho sinh viên mới tốt nghiệp ngành ${targetMajor} cần được kiểm chứng thêm bằng nguồn dữ liệu độc lập`);
+  }
+
+  if (!stage4Text || /(chua biet|chua ro|khong biet|chua tim hieu|to hop|diem chuan)/i.test(removeVietnameseTones(stage4Text)) || hasStage4AdmissionConfusion(stage4Text)) {
+    missingItems.push(`Cần kiểm tra chính xác phương thức xét tuyển, tổ hợp môn xét tuyển và điểm chuẩn cùng thang điểm của ngành ${targetMajor} tại ${schoolLabel}`);
+  } else {
+    missingItems.push(`Cần đối chiếu điểm học tập hiện tại với điểm chuẩn và điều kiện xét tuyển chính thức của ngành ${targetMajor} (${schoolLabel}) theo đúng phương thức và thang điểm`);
+  }
+
+  const unverifiedOrMissingItems = missingItems.join('; ') + '.';
+
+  // 5. Danh sách từ 1 đến 3 câu hỏi cần kiểm tra ở Bước 3, mỗi câu kèm gợi ý loại nguồn phù hợp (không bịa đường dẫn hoặc số liệu)
+  const questionsForStep3 = [
+    {
+      id: 'q3_1',
+      question: `Ngành ${targetMajor} tại ${schoolLabel} xét tuyển theo những phương thức nào, dùng tổ hợp môn gì và điểm chuẩn các năm gần nhất (cùng phương thức, cùng thang điểm) là bao nhiêu?`,
+      suggestedSourceType: 'Đề án tuyển sinh chính thức và công bố điểm chuẩn trên Cổng thông tin tuyển sinh của trường / Bộ GD&ĐT'
+    },
+    {
+      id: 'q3_2',
+      question: `Chương trình đào tạo ngành ${targetMajor} gồm những học phần cốt lõi nào, điều kiện tốt nghiệp và yêu cầu thực hành/thực tập thực tế ra sao?`,
+      suggestedSourceType: 'Khung chương trình đào tạo và Chuẩn đầu ra công bố trên website Khoa/Trường đào tạo'
+    },
+    {
+      id: 'q3_3',
+      question: `Nhà tuyển dụng hiện yêu cầu những kỹ năng chuyên môn, ngoại ngữ hay chứng chỉ gì đối với sinh viên mới tốt nghiệp ngành ${targetMajor}?`,
+      suggestedSourceType: 'Báo cáo tình hình việc làm của sinh viên tốt nghiệp (Ba công khai của trường) và bản mô tả công việc thực tế trên các cổng việc làm uy tín'
+    }
+  ];
+
+  // Đề xuất tham vấn và kiểm chứng với mentor dựa trên vấn đề cần hỗ trợ (không bắt buộc vì học sinh "chưa nhận lỗi")
+  const hasOpenQuestionsOrSupportNeed = /(chua biet|chua tim hieu|chua ro|phan van|lo lang|muon hoi|can tu van)/i.test(allNorm);
+  const mentorRecommendation = hasOpenQuestionsOrSupportNeed
+    ? 'Đề xuất tham vấn và kiểm chứng với mentor: Học sinh có một số nội dung về yêu cầu ngành học, cơ hội việc làm hoặc phương thức tuyển sinh cần được hỗ trợ tra cứu và giải đáp thêm.'
+    : 'Đề xuất tham vấn và kiểm chứng với mentor: Học sinh có thể tự chủ đối chiếu dữ liệu tại Bước 3 và đăng ký tham vấn, kiểm chứng thêm với mentor nếu muốn trao đổi sâu hơn về trải nghiệm thực tế.';
+
+  return {
+    studentReasons,
+    mentionedInfoAndSources,
+    selfReportedPreparation,
+    unverifiedOrMissingItems,
+    questionsForStep3,
+    mentorRecommendation,
+    mentorSupportRequested: hasOpenQuestionsOrSupportNeed,
+    unverifiedSelfReportNotice: 'Lưu ý: Các thông tin do học sinh nêu tại Bước 2 là dữ liệu tự báo cáo, chưa được xác minh và sẽ được đối chiếu với nguồn chính thống tại Bước 3.'
+  };
+}
+
+// Prompt hệ thống cho AI theo chuẩn 4 chặng (Mục 1, 2, 3, 4)
+const REFLECTIVE_4STAGES_PERSONA = `
+# VAI TRÒ VÀ MỤC TIÊU BƯỚC 2
+Bạn là "Thầy Socrates" - Trợ lý AI đối thoại phản tư hướng nghiệp của hệ thống SocraCareer dành cho học sinh THPT.
+Mục tiêu của Bước 2 là giúp học sinh tự làm rõ:
+1. Vì sao mình chọn ngành.
+2. Mình đã hiểu yêu cầu học tập và thực tế nghề nghiệp đến đâu.
+3. Nhận định về cơ hội việc làm dựa trên căn cứ nào.
+4. Mình đã chuẩn bị được gì và cần kiểm chứng điều gì ở Bước 3.
+
+QUAN TRỌNG: Không đặt mục tiêu buộc học sinh nhận mình sai, giảm tự tin hoặc đổi ngành. Bạn hỗ trợ học sinh xem xét căn cứ và tôn trọng quyền tự quyết của học sinh.
+
+# NGUYÊN TẮC PHẢN HỒI CỦA AI
+- Giọng điệu thân thiện, trung lập, ngắn gọn (2-3 câu), phù hợp với học sinh THPT.
+- Phản hồi dựa trên nội dung học sinh vừa trả lời; không suy diễn động cơ ẩn.
+- Có thể dùng các cách nói như: "Em đang cho rằng...", "Căn cứ nào giúp em nhận định như vậy?", "Điều này mình cần kiểm tra thêm".
+- TUYỆT ĐỐI KHÔNG dùng các câu gây áp lực:
+  * "Em đang gánh ước mơ của người khác"
+  * "Em phải thừa nhận điểm yếu"
+  * "Suy nghĩ của em quá đơn giản"
+  * "Em không phù hợp với ngành này"
+- Chấp nhận "chưa biết", "chưa tìm hiểu", "chưa có căn cứ" là câu trả lời hợp lệ; ghi nhận trung lập là nội dung cần kiểm chứng ở Bước 3, không trách móc hay giảng giải dài.
+- Không tự đưa ra tỷ lệ việc làm, mức lương, dự báo thị trường, tổ hợp môn, điểm chuẩn, thời gian đào tạo hoặc yêu cầu của trường nếu chưa có nguồn kiểm chứng chính thức.
+- Mỗi lượt chỉ hỏi đúng 01 câu trọng tâm.
+`;
 
 export default function Step2SocraticAgent() {
   const [chatStage, setChatStage] = useState(1);
+  const [stageFollowUpUsed, setStageFollowUpUsed] = useState({ 1: false, 2: false, 3: false, 4: false });
   const [isCompleted, setIsCompleted] = useState(false);
   const [isChatFinished, setIsChatFinished] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -863,6 +827,14 @@ export default function Step2SocraticAgent() {
   const [errorMessage, setErrorMessage] = useState('');
   const [studentProfile, setStudentProfile] = useState(null);
   const [copySuccess, setCopySuccess] = useState(false);
+
+  // State Tóm tắt phản tư & Nội dung cần kiểm chứng (học sinh xem, chỉnh sửa và xác nhận trước khi lưu)
+  const [summaryDraft, setSummaryDraft] = useState(null);
+  const [isEditingSummary, setIsEditingSummary] = useState(false);
+  const [isSummaryConfirmed, setIsSummaryConfirmed] = useState(false);
+  const [savedRecordMeta, setSavedRecordMeta] = useState(null);
+  const [summaryStatusMsg, setSummaryStatusMsg] = useState('');
+
   const [sessionTelemetry, setSessionTelemetry] = useState(() => {
     try {
       const raw = localStorage.getItem('cbas_step2_telemetry');
@@ -872,9 +844,9 @@ export default function Step2SocraticAgent() {
   });
   const [activeBiasType, setActiveBiasType] = useState(() => {
     try {
-      return localStorage.getItem('cbas_step2_primary_bias') || '';
+      return localStorage.getItem('cbas_step2_primary_bias') || 'CHẶNG 1: LÀM RÕ LÝ DO LỰA CHỌN';
     } catch (e) {
-      return '';
+      return 'CHẶNG 1: LÀM RÕ LÝ DO LỰA CHỌN';
     }
   });
   const [activeBiasRule, setActiveBiasRule] = useState(() => {
@@ -895,7 +867,7 @@ export default function Step2SocraticAgent() {
   const inputFieldRef = useRef(null);
   const isInitialMountRef = useRef(true);
 
-  // Tự động cuộn tức thì NỘI BỘ trong khung chat khi có tin nhắn mới (KHÔNG dùng smooth scroll chồng chéo làm giật màn hình)
+  // Tự động cuộn nội bộ trong khung chat khi có tin nhắn mới
   useEffect(() => {
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -913,132 +885,61 @@ export default function Step2SocraticAgent() {
     return () => cancelAnimationFrame(rafId);
   }, [messages.length, isLoading, isReadyForStep3]);
 
-  // 1. KHỞI TẠO CONTEXT TỪ BƯỚC 1 VÀ PHÂN LUỒNG NHÁNH A / NHÁNH B
+  // 1. KHỞI TẠO DỮ LIỆU TỪ BƯỚC 1 (KHÔNG SỬA HOẶC GHI ĐÈ BIÊN BẢN ĐÃ LƯU TRƯỚC ĐÓ)
   useEffect(() => {
-    // Tự động quét sạch triệt để bộ nhớ đệm nếu dính câu hỏi giả định điểm số cũ (25 điểm, 27.5 điểm)
-    try {
-      const rawMsgs = localStorage.getItem("cbas_step2_messages");
-      if (rawMsgs && (rawMsgs.includes('27.5') || rawMsgs.includes('25 điểm') || rawMsgs.includes('khoảng cách khá xa') || rawMsgs.includes('một khoảng khá xa') || rawMsgs.includes('điểm học bạ tổ hợp hiện tại') || rawMsgs.includes('bù đắp được khoảng cách'))) {
-        localStorage.removeItem("cbas_step2_messages");
-        localStorage.removeItem("cbas_step2_round");
-        localStorage.removeItem("cbas_step2_completed");
-        localStorage.removeItem("cbas_step2_telemetry");
-      }
-    } catch (e) {}
-
     let userProfile = null;
     try {
-      const rawProf = localStorage.getItem("cbas_user_profile");
+      const rawProf = localStorage.getItem('cbas_user_profile');
       if (rawProf) userProfile = JSON.parse(rawProf);
     } catch (e) {}
 
     let anchor = null;
     try {
-      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData") || localStorage.getItem("career_initial_anchor");
+      const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData') || localStorage.getItem('career_initial_anchor');
       if (rawAnchor) anchor = JSON.parse(rawAnchor);
     } catch (e) {}
 
-    const rawMajor = (userProfile?.targetMajor || anchor?.target_career || anchor?.target_major || anchor?.targetMajor || "").trim();
+    const rawMajor = (userProfile?.targetMajor || anchor?.target_career || anchor?.target_major || anchor?.targetMajor || '').trim();
     const hasStep1Data = Boolean(rawMajor || userProfile?.hollandCode || anchor?.holland_code);
 
-    // NẾU HỌC SINH CHƯA LÀM HOẶC VỪA BẤM LÀM LẠI BƯỚC 1: KHÔNG TỰ BỊA ĐẶT DỮ LIỆU CŨ ("Sư phạm")
     if (!hasStep1Data) {
       setIsMissingStep1(true);
       setMessages([]);
-      try {
-        localStorage.removeItem("cbas_step2_messages");
-        localStorage.removeItem("cbas_step2_round");
-        localStorage.removeItem("cbas_step2_completed");
-        localStorage.removeItem("cbas_step2_telemetry");
-        localStorage.removeItem("cbas_step2_anchor_fingerprint");
-      } catch (e) {}
       return;
     }
     setIsMissingStep1(false);
 
-    const hollandCode = userProfile?.hollandCode || anchor?.holland_code || anchor?.hollandCode || "AEI";
+    const hollandCode = userProfile?.hollandCode || anchor?.holland_code || anchor?.hollandCode || 'AEI';
     const targetMajor = rawMajor;
-    const targetSchool = (userProfile?.targetSchool || anchor?.target_university || anchor?.targetSchool || "").trim();
-    const reason = (userProfile?.reason || anchor?.source_of_influence || anchor?.reason || anchor?.choice_source || "").trim();
+    const targetSchool = (userProfile?.targetSchool || anchor?.target_university || anchor?.targetSchool || '').trim();
+    const reason = (userProfile?.reason || anchor?.source_of_influence || anchor?.reason || anchor?.choice_source || '').trim();
     const initialConfidence = userProfile?.initialConfidence ?? (anchor?.confidence_score ? Number(anchor.confidence_score) : 5);
-    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || "";
-
-    // Thu thập các chỉ số học bạ và điểm chuẩn (nếu có từ phiên trước, không tự bịa đặt)
-    let gpa_A00 = null;
-    let benchmark_target = null;
-    try {
-      const triageRaw = localStorage.getItem('cbas_step3_triage');
-      if (triageRaw) {
-        const t = JSON.parse(triageRaw);
-        if (t.totalStudentScore && !isNaN(Number(t.totalStudentScore))) gpa_A00 = Number(t.totalStudentScore);
-        if (t.avgCutoff && !isNaN(Number(t.avgCutoff))) benchmark_target = Number(t.avgCutoff);
-      }
-      if (userProfile?.gpa && !isNaN(Number(userProfile.gpa))) gpa_A00 = Number(userProfile.gpa);
-      if (anchor?.gpa && !isNaN(Number(anchor.gpa))) gpa_A00 = Number(anchor.gpa);
-      if (userProfile?.benchmark && !isNaN(Number(userProfile.benchmark))) benchmark_target = Number(userProfile.benchmark);
-      if (anchor?.benchmark && !isNaN(Number(anchor.benchmark))) benchmark_target = Number(anchor.benchmark);
-    } catch (e) {}
-
-    // Xác định nhóm RIASEC và % tương thích nghề
-    const codeStr = String(hollandCode || 'AEI').toUpperCase();
-    const primaryChar = codeStr[0] || 'S';
-    const nameMap = {
-      'R': 'Kỹ thuật / Thực tế',
-      'I': 'Nghiên cứu / Phân tích',
-      'A': 'Nghệ thuật / Sáng tạo',
-      'S': 'Xã hội / Hỗ trợ con người',
-      'E': 'Quản lý / Kinh doanh',
-      'C': 'Nghiệp vụ / Quy trình'
-    };
-    const riasecGroupName = nameMap[primaryChar] || 'Xã hội';
-
-    let riasecMatchPct = 40;
-    if (anchor?.riasec_match_pct && !isNaN(Number(anchor.riasec_match_pct))) {
-      riasecMatchPct = Number(anchor.riasec_match_pct);
-    } else if (anchor?.compatibility_status) {
-      if (anchor.compatibility_status.includes('Tương thích cao')) riasecMatchPct = 85;
-      else if (anchor.compatibility_status.includes('Mâu thuẫn') || anchor.compatibility_status.includes('Lệch')) riasecMatchPct = 35;
-      else riasecMatchPct = 50;
-    } else {
-      const cNorm = removeVietnameseTones(targetMajor);
-      const techCareers = ['ky thuat', 'dien lanh', 'co khi', 'it', 'phan mem', 'oto', 'lap trinh', 'xay dung'];
-      const isTech = techCareers.some(k => cNorm.includes(k));
-      if (isTech) {
-        if (primaryChar === 'S' || primaryChar === 'A') riasecMatchPct = 35;
-        else if (primaryChar === 'R' || primaryChar === 'I') riasecMatchPct = 85;
-        else riasecMatchPct = 45;
-      }
-    }
-
+    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || '';
+    const studentId = userProfile?.studentId || anchor?.student_code || localStorage.getItem('cbas_student_id') || 'HS_ ẩn danh';
     const studentName = userProfile?.name || anchor?.student_name || '';
     const anchorReason = userProfile?.anchorReason || anchor?.anchorReason || '';
     const anchorQuote = userProfile?.anchorQuote || anchor?.anchorQuote || reason || '';
 
     const studentObj = {
-      id: localStorage.getItem('cbas_student_id') || '',
+      id: studentId,
       name: studentName,
       baselineTarget: targetMajor,
       targetCareer: targetMajor,
-      targetSchool: targetSchool,
+      targetSchool,
       source: reason,
       anchorReason,
       anchorQuote,
       conf_T0: initialConfidence,
-      gpa_A00: gpa_A00,
-      benchmark_target: benchmark_target,
-      riasec_match_pct: riasecMatchPct,
-      riasecCode: riasecGroupName
+      riasecCode: hollandCode
     };
 
     const promptTrigger = generateSocraticFirstPrompt(studentObj);
     setActiveBiasType(promptTrigger.biasType);
     setActiveBiasRule(promptTrigger.biasRule);
-    try {
-      localStorage.setItem('cbas_step2_primary_bias', promptTrigger.biasType);
-      localStorage.setItem('cbas_step2_bias_rule', promptTrigger.biasRule);
-    } catch (e) {}
 
     const resolvedProfile = {
+      studentId,
+      studentName,
       hollandCode,
       targetMajor,
       targetSchool,
@@ -1049,12 +950,6 @@ export default function Step2SocraticAgent() {
       expectedIncome,
       primaryBias: promptTrigger.biasType,
       primaryBiasRule: promptTrigger.biasRule,
-      gpa_A00,
-      benchmark_target,
-      riasec_match_pct: riasecMatchPct,
-      riasecCode: riasecGroupName,
-      studentId: localStorage.getItem('cbas_student_id') || '',
-      // Tương thích ngược:
       target_career: targetMajor,
       target_university: targetSchool,
       confidence_score: String(initialConfidence),
@@ -1063,703 +958,239 @@ export default function Step2SocraticAgent() {
     };
     setStudentProfile(resolvedProfile);
 
-    // KIỂM TRA FINGERPRINT ĐỂ PHÁT HIỆN SỰ THAY ĐỔI MỎ NEO TỪ BƯỚC 1
-    const currentFingerprint = `${targetMajor}|${targetSchool}|${reason}|${hollandCode}|${initialConfidence}|${expectedIncome}`.toLowerCase().trim();
-    const savedFingerprint = localStorage.getItem("cbas_step2_anchor_fingerprint");
+    // Kiểm tra bản nháp hoặc bản đã lưu của quy trình mới (v2) mà KHÔNG sửa hay ghi đè các biên bản cũ đã lưu
+    const currentFingerprint = `${targetMajor}|${targetSchool}|${reason}|${hollandCode}|${initialConfidence}|${WORKFLOW_VERSION}`.toLowerCase().trim();
+    const savedV2Fingerprint = localStorage.getItem('cbas_step2_v2_fingerprint');
 
-    let savedMessages = null;
-    let savedCompleted = false;
-
-    if (savedFingerprint && savedFingerprint !== currentFingerprint) {
-      // Khi học sinh đã thay đổi ngành hoặc lý do ở Bước 1, xóa toàn bộ hội thoại cũ
+    let loadedV2Draft = null;
+    if (savedV2Fingerprint === currentFingerprint) {
       try {
-        localStorage.removeItem("cbas_step2_messages");
-        localStorage.removeItem("cbas_step2_round");
-        localStorage.removeItem("cbas_step2_completed");
-        localStorage.removeItem("cbas_step2_telemetry");
-        localStorage.removeItem("cbas_step2_reflection");
+        const rawDraft = localStorage.getItem('cbas_step2_v2_draft');
+        if (rawDraft) loadedV2Draft = JSON.parse(rawDraft);
       } catch (e) {}
     } else {
       try {
-        const rawMsgs = localStorage.getItem("cbas_step2_messages");
-        if (rawMsgs) savedMessages = JSON.parse(rawMsgs);
-        savedCompleted = localStorage.getItem("cbas_step2_completed") === "true";
+        localStorage.setItem('cbas_step2_v2_fingerprint', currentFingerprint);
+        localStorage.removeItem('cbas_step2_v2_draft');
       } catch (e) {}
     }
 
-    try {
-      localStorage.setItem("cbas_step2_anchor_fingerprint", currentFingerprint);
-    } catch (e) {}
-
-    const isBranchB = isUndecidedOrVague(targetMajor);
-
-    // LỜI CHÀO & CÂU HỎI MỞ ĐẦU CHUẨN THUẬT TOÁN KÍCH HOẠT LINH HOẠT SOCRACAREER:
-    let initialGreeting = '';
-    if (isBranchB) {
-      // NHÁNH B: HỌC SINH MƠ HỒ, CHƯA CÓ MỤC TIÊU CỤ THỂ (ÁP DỤNG REFRAMING ĐỒNG CẢM)
-      initialGreeting = `Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
-      setActiveBiasType("ĐỊNH HƯỚNG MỤC TIÊU (CHƯA XÁC ĐỊNH NGÀNH)");
-      setActiveBiasRule("Học sinh chưa xác định được ngành nghề cụ thể; kích hoạt phản tư làm rõ sở thích và năng lực.");
-    } else {
-      // DYNAMIC ADAPTIVE TRIGGER DỰA TRÊN 4 THIÊN LỆCH NHẬN THỨC CỐT LÕI
-      initialGreeting = promptTrigger.firstQuestion;
-    }
-
-    if (Array.isArray(savedMessages) && savedMessages.length > 0) {
-      const sanitizedSaved = savedMessages.map((m, idx) => {
-        let textVal = m.text || '';
-        // Tự động chữa lành triệt để nếu tin nhắn cũ bị lưu dính số liệu bịa đặt (25 điểm, 27.5 điểm, -2.5 điểm)
-        if (m.role === 'model' && idx === 0 && (textVal.includes('25 điểm') || textVal.includes('27.5 điểm') || textVal.includes('-2.5 điểm') || textVal.includes('bù đắp được khoảng cách này'))) {
-          textVal = initialGreeting;
-        }
-
-        if (m.role === 'model' && textVal && /tham khảo từ nguồn nào/i.test(textVal)) {
-          textVal = textVal.replace(/Con số[^?]*tham khảo từ nguồn nào[^?]*\?/gi, `Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome || '15 - 20 triệu/tháng'} trong tương lai?`);
-        }
-
-        if (m.role === 'model' && textVal && (/chỉ là công cụ bề nổi/i.test(textVal) || (idx === 4 && /môn nào khiến em cảm thấy lo lắng nhất/i.test(textVal)))) {
-          textVal = `Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${targetMajor || 'này'} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
-        }
-
-        if (m.role === 'model' && textVal && /thực\s*chiến/i.test(textVal)) {
-          textVal = textVal
-            .replace(/(?:những\s+)?yêu\s+cầu\s+khắt\s+khe\s+về\s+kỹ\s+năng\s+thực\s+chiến/gi, 'những yêu cầu khắt khe về năng lực thực hành nghề nghiệp')
-            .replace(/kỹ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
-            .replace(/kĩ\s*năng\s+thực\s*chiến/gi, 'năng lực thực hành nghề nghiệp')
-            .replace(/kinh\s*nghiệm\s+thực\s*chiến/gi, 'kinh nghiệm thực tế')
-            .replace(/dự\s*án\s+thực\s*chiến/gi, 'dự án thực tế')
-            .replace(/học\s+thực\s*chiến/gi, 'rèn luyện thực tế')
-            .replace(/môi\s*trường\s+thực\s*chiến/gi, 'môi trường làm việc thực tế')
-            .replace(/chiến\s*lược\s+thực\s*chiến/gi, 'chiến lược thực tiễn')
-            .replace(/bán\s*hàng\s+thực\s*chiến/gi, 'bán hàng thực tế')
-            .replace(/thực\s*chiến/gi, 'thực tế');
-        }
-        return {
-          ...m,
-          text: textVal
-        };
-      });
-      setMessages(sanitizedSaved);
-      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(sanitizedSaved)); } catch (e) {}
-      const userMsgCount = savedMessages.filter(m => m.role === 'user').length;
-      const lastMsg = savedMessages[savedMessages.length - 1];
-      const hasStep3InLast = Boolean(lastMsg?.role === 'model' && lastMsg?.text && (
-        lastMsg.text.includes("chuyển sang Bước 3") || 
-        lastMsg.text.includes("chuyển sang bước 3") || 
-        lastMsg.text.includes("Bước 3") || 
-        lastMsg.text.includes("bước 3")
-      ));
-      if (userMsgCount >= 4 && (savedCompleted || hasStep3InLast)) {
-        setIsCompleted(true);
-        setIsChatFinished(true);
-        setChatStage(5);
-        // Tự động tính lại và chuẩn hóa sessionTelemetry theo quy tắc phương pháp luận mới nhất
-        const outcomeAnalysis = evaluateOutcomeCategory(sanitizedSaved, resolvedProfile, '', null);
-        const outcome = outcomeAnalysis.category;
-        const outcomeRule = outcomeAnalysis.rule;
-        const tpDetected = outcomeAnalysis.hasClearAdmission;
-        const triage = outcomeAnalysis.triageStep4 || (outcome === 'Persistent_Calibrated' ? 'Brief (10 phút)' : 'In-depth (20 phút)');
-        const isNeedInDepth = triage.includes('In-depth');
-        const tpRule = tpDetected
-          ? 'Học sinh thừa nhận rõ ràng rào cản năng lực thực tế (môn yếu/lo lắng) hoặc sự chưa thực tế của kỳ vọng ban đầu.'
-          : 'Không phát hiện điểm xoay nhận thức (học sinh không thừa nhận điểm yếu/rào cản, liên tục khẳng định mình giỏi hoặc né tránh chất vấn).';
-        const triageRule = isNeedInDepth
-          ? 'Chỉ định phiên Tham vấn Chuyên sâu (In-depth 20 phút): Do học sinh chưa hiệu chuẩn nhận thức / không thừa nhận điểm yếu (Uncalibrated_Avoidant) hoặc đang cân nhắc đổi ngành (Reconsidering), bắt buộc cần Mentor can thiệp sâu.'
-          : 'Chỉ định phiên Định hướng Nhanh (Brief 10 phút): Học sinh đã thừa nhận rõ môn yếu/rào cản thực tế (Turning_Point = True) và có phương án học tập khả thi (Persistent_Calibrated).';
-        const refreshedTelemetry = {
-          primary_bias: promptTrigger.biasType || 'TRUY VẤN NỀN TẢNG THỰC CHẤT',
-          primary_bias_rule: promptTrigger.biasRule || 'Kích hoạt Vòng 1 thích ứng dựa trên phân tích mỏ neo lý do lựa chọn và độ tự tin T0.',
-          turning_point_detected: tpDetected ? 'True' : 'False',
-          turning_point_rule: tpRule,
-          outcome_category: outcome,
-          outcome_rule: outcomeRule,
-          triage_step4: triage,
-          triage_rule: triageRule,
-          timestamp: new Date().toISOString()
-        };
-        setSessionTelemetry(refreshedTelemetry);
-        try { localStorage.setItem('cbas_step2_telemetry', JSON.stringify(refreshedTelemetry)); } catch (e) {}
-      } else {
-        // Nếu phiên cũ kết thúc sớm ở lượt 3 (chỉ có 3 câu hỏi), tự động gỡ câu chốt Bước 3 cuối để học sinh trả lời thêm Câu hỏi 4 dẫn dắt
-        let cleanedSaved = sanitizedSaved;
-        if (userMsgCount === 3 && hasStep3InLast) {
-          const prevUserText = sanitizedSaved.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
-          const { weakSubject } = extractSubjectsFeedback(prevUserText);
-          const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học mình còn lo lắng';
-          const followUpQ4 = `Việc em nhận diện được nỗi lo ở ${weakMention} mới chỉ là bước đầu, bởi nếu chỉ dừng ở dự định "sẽ đi học thêm" hay "sẽ cố gắng" thì vẫn còn rất cảm tính. Em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá điểm số ${weakMention}, và nếu điểm chuẩn tổ hợp vượt quá tầm với hiện tại thì em đã chuẩn bị phương án dự phòng nào chưa?`;
-          cleanedSaved = [
-            ...sanitizedSaved.slice(0, -1),
-            {
-              ...lastMsg,
-              text: followUpQ4
-            }
-          ];
-          setMessages(cleanedSaved);
-          try {
-            localStorage.setItem("cbas_step2_messages", JSON.stringify(cleanedSaved));
-            localStorage.removeItem("cbas_step2_completed");
-          } catch (e) {}
-        }
-        const resolvedStage = Math.min(userMsgCount + 1, 4);
-        setChatStage(resolvedStage);
-        setIsCompleted(false);
-        setIsChatFinished(false);
+    if (loadedV2Draft && Array.isArray(loadedV2Draft.messages) && loadedV2Draft.messages.length > 0) {
+      setMessages(loadedV2Draft.messages);
+      setChatStage(loadedV2Draft.chatStage || 1);
+      setStageFollowUpUsed(loadedV2Draft.stageFollowUpUsed || { 1: false, 2: false, 3: false, 4: false });
+      const done = Boolean(loadedV2Draft.isCompleted && loadedV2Draft.chatStage >= 5);
+      setIsCompleted(done);
+      setIsChatFinished(done);
+      if (loadedV2Draft.summaryDraft) {
+        setSummaryDraft(loadedV2Draft.summaryDraft);
+      } else if (done) {
+        setSummaryDraft(buildReflectiveSummary(loadedV2Draft.messages, resolvedProfile));
+      }
+      setIsSummaryConfirmed(Boolean(loadedV2Draft.isSummaryConfirmed));
+      if (loadedV2Draft.savedRecordMeta) {
+        setSavedRecordMeta(loadedV2Draft.savedRecordMeta);
       }
     } else {
       const initMsg = [{
         role: 'model',
-        text: initialGreeting,
+        stage: 1,
+        text: promptTrigger.firstQuestion,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        biasType: promptTrigger?.biasType || (isBranchB ? "ĐỊNH HƯỚNG MỤC TIÊU (CHƯA XÁC ĐỊNH NGÀNH)" : "")
+        workflowVersion: WORKFLOW_VERSION
       }];
       setMessages(initMsg);
-      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(initMsg)); } catch (e) {}
       setChatStage(1);
+      setStageFollowUpUsed({ 1: false, 2: false, 3: false, 4: false });
       setIsCompleted(false);
       setIsChatFinished(false);
+      setSummaryDraft(null);
+      setIsSummaryConfirmed(false);
+      try {
+        localStorage.setItem('cbas_step2_v2_draft', JSON.stringify({
+          workflowVersion: WORKFLOW_VERSION,
+          fingerprint: currentFingerprint,
+          chatStage: 1,
+          stageFollowUpUsed: { 1: false, 2: false, 3: false, 4: false },
+          isCompleted: false,
+          isSummaryConfirmed: false,
+          messages: initMsg
+        }));
+        // Chỉ khởi tạo cbas_step2_messages nếu chưa có biên bản cũ đã hoàn thành (bảo toàn biên bản cũ)
+        const existingLegacyCompleted = localStorage.getItem('cbas_step2_completed') === 'true';
+        if (!existingLegacyCompleted) {
+          localStorage.setItem('cbas_step2_messages', JSON.stringify(initMsg));
+        }
+      } catch (e) {}
     }
   }, []);
 
-  // CẤU HÌNH BẢN SẮC VÀ ĐẠO ĐỨC HÀNH VI CHUẨN KHKT - SOCRACAREER (SOCRATIC PERSONA)
-  const SOCRATIC_PERSONA = `
-# VAI TRÒ VÀ BẢN SẮC (PERSONA)
-Bạn là "Thầy Socrates" - Trợ lý AI Tham vấn Phản tư thuộc nền tảng SocraCareer (Đề tài NCKH Khoa học Hành vi). 
-Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tính", áp dụng kỹ thuật truy vấn ngược Socrates để giúp học sinh THPT tự bóc tách các giả định cảm tính, thiên lệch nhận thức và ảo tưởng chọn nghề.
+  // Lưu nháp tiến trình v2 mỗi khi state hội thoại hoặc bản tóm tắt thay đổi
+  const persistV2Draft = (nextState = {}) => {
+    try {
+      const payload = {
+        workflowVersion: WORKFLOW_VERSION,
+        chatStage: nextState.chatStage ?? chatStage,
+        stageFollowUpUsed: nextState.stageFollowUpUsed ?? stageFollowUpUsed,
+        isCompleted: nextState.isCompleted ?? isCompleted,
+        isSummaryConfirmed: nextState.isSummaryConfirmed ?? isSummaryConfirmed,
+        messages: nextState.messages ?? messages,
+        summaryDraft: nextState.summaryDraft ?? summaryDraft,
+        savedRecordMeta: nextState.savedRecordMeta ?? savedRecordMeta,
+        updatedAt: new Date().toISOString()
+      };
+      localStorage.setItem('cbas_step2_v2_draft', JSON.stringify(payload));
+    } catch (e) {}
+  };
 
-# QUY TẮC CỐT TỬ - TUYỆT ĐỐI TUÂN THỦ (CRITICAL GUARDRAILS)
-1. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ:
-   - Nghiêm cấm đưa ra bất kỳ con số cụ thể nào về điểm chuẩn tham chiếu, điểm sàn, hay học phí (ví dụ: cấm nói "điểm chuẩn là 27.5", cấm nói "em đang thiếu 2.5 điểm"). 
-   - Nhiệm vụ đối chứng số liệu thuộc về BƯỚC 3. Ở Bước 2, bạn CHỈ ĐƯỢC CHẤT VẤN VỀ LẬP LUẬN VÀ CĂN CỨ CỦA HỌC SINH.
-2. CHỈ DÙNG THÔNG TIN HỌC SINH ĐÃ KHAI Ở BƯỚC 1:
-   - Các dữ liệu bạn được phép biết từ Bước 1 gồm: Ngành mục tiêu, Trường mục tiêu, Mức tự tin ban đầu (thang 1-10), Kỳ vọng thu nhập, Lý do ban đầu.
-3. QUY TẮC PHÁT NGÔN (ANTI-ROBOTIC & ANTI-SYCOPHANCY):
-   - KHÔNG bắt đầu câu bằng các cụm rập khuôn như: "Thầy hiểu sự...", "Thầy đồng cảm...", "Thầy thấy rằng...". Hãy đi thẳng vào câu hỏi hoặc phản hồi tự nhiên.
-   - Mỗi lượt đối thoại CHỈ ĐƯỢC ĐẶT ĐÚNG 01 CÂU HỎI TRUY VẤN. Câu hỏi phải ngắn gọn, sắc bén, đánh thẳng vào giả định của học sinh.
-   - Tuyệt đối không khen ngợi, không tán dương dễ dãi (Anti-Sycophancy). Không bao giờ nói: "Ước mơ của em thật tuyệt vời", "Em rất có tiềm năng".
+  // Tạo prompt gửi tới Gemini trực tiếp theo 4 chặng (hoặc câu hỏi bổ sung của chặng hiện tại)
+  const generatePromptForRound = (targetStage, profile, userText, followUpReason = null) => {
+    const career = profile?.shiftedMajor || profile?.targetMajor || profile?.target_career || 'ngành đã chọn';
+    const rawSchool = profile?.targetSchool || profile?.target_university || '';
+    const isVocational = isVocationalTrack(career, userText, rawSchool);
+    const uni = formatSchoolName(rawSchool, isVocational);
+    const reason = profile?.reason || 'Chưa nêu chi tiết';
+    const conf = profile?.initialConfidence ?? 5;
 
-# NGUYÊN TẮC PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY):
-1. Mỗi lượt phản hồi CHỈ ĐƯỢC CHẤT VẤN VÀO 01 TRỌNG TÂM DUY NHẤT. Tuyệt đối không vừa chất vấn lý do gia đình/đam mê, vừa nhảy cóc sang hỏi về mức lương trong cùng một câu.
-2. Xử lý logic theo đặc thù ngành nghề:
-   - Nếu ngành là Y Dược: Trọng tâm phản biện phải nằm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập và thực tế thu nhập giai đoạn đầu nghề, chứ không hỏi như một công việc thương mại thông thường.
-   - Nếu lý do là "Ba mẹ định hướng / mong muốn": Tập trung bóc tách sự tự chủ (động cơ nội tại) xem học sinh có thực sự đam mê hay chỉ đang gánh kỳ vọng của người khác.
-
-# NGUYÊN TẮC TIẾP CẬN TÂM LÝ LỨA TUỔI HỌC SINH THPT (ĐẶC BIỆT LƯU Ý VỀ MỨC LƯƠNG):
-1. Học sinh THPT chưa có kinh nghiệm việc làm; các kỳ vọng về thu nhập (như 15 - 20 triệu) thường là "mỏ neo ảo" do mạng xã hội (TikTok, Facebook, Youtube) tạo ra.
-2. TUYỆT ĐỐI KHÔNG dùng các thuật ngữ công sở như: "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "giá trị thương mại", "tạo ra doanh thu".
-3. Hãy truy vấn về NĂNG LỰC CẦN ĐÁP ỨNG ĐỂ ĐẠT MỨC LƯƠNG MONG MUỐN TRONG TƯƠNG LAI (đối với các ngành thương mại/dịch vụ/kỹ thuật thông thường khi không vướng áp lực định hướng gia đình):
-   - Thay vì hỏi: "Em lấy gì để đàm phán mức lương đó?" hay "nhà tuyển dụng sẵn sàng chi trả",
-   - HÃY HỎI: "Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là [Mức thu nhập] trong tương lai?"
-
-# QUY TẮC "BẮT CẦU LẬP LUẬN" (LIÊN KẾT TỰ NHIÊN, KHÔNG HỜI HỢT):
-- Khi học sinh nêu đặc điểm cá nhân (như "ngoại hình ưa nhìn", "giỏi tiếng Anh", "giao tiếp tốt", "thích đi đây đi đó"):
-  -> BẮT BUỘC phải dùng chính đặc điểm đó để phản biện trước khi hỏi câu tiếp theo.
-  -> Ví dụ: "Ngoại hình và ngoại ngữ là lợi thế giao tiếp, nhưng ngành Du lịch đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và làm việc ngày lễ Tết. Ngoài việc được đi nhiều nơi, em đã chuẩn bị tâm lý thế nào cho những ngày phải phục vụ khách suốt 14-16 tiếng?"
-
-# LỘ TRÌNH 4 CÂU HỎI TRUY VẤN TỰ NHIÊN + 1 LƯỢT ĐÚC KẾT
-- Câu hỏi 1 (Chất vấn Mỏ neo & Đám đông): Dựa vào lý do ban đầu của học sinh để bóc tách. Nếu học sinh nói "thích vì được đi nhiều nơi" hoặc "xem mạng xã hội", hãy hỏi về mặt trái, cường độ lao động hoặc trách nhiệm thực tế mà học sinh chưa từng nghĩ tới.
-- Câu hỏi 2 (Chất vấn Năng lực đáp ứng kỳ vọng thu nhập): Hỏi xem theo học sinh, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn trong tương lai.
-- Câu hỏi 3 (Ghi nhận năng lực & Chất vấn Xu hướng việc làm tương lai): Khẳng định những năng lực học sinh vừa nêu là rất cần thiết đối với người lao động trong tương lai, sau đó hỏi xem học sinh đã tìm hiểu về xu hướng việc làm của ngành này trong tương lai (như mức độ cạnh tranh hay tỷ lệ thất nghiệp khi ra trường) chưa.
-- Câu hỏi 4 (Chất vấn Sức học & Tổ hợp môn xét tuyển): Từ bức tranh việc làm đầu ra, dẫn dắt về cánh cửa tuyển sinh đầu vào; hỏi học sinh về môn học trong tổ hợp xét tuyển mà em cảm thấy lo lắng nhất và kế hoạch học tập thực tế để vượt qua rào cản đó.
-- Lượt 5 (Chuyển tiếp phản tư sang Bước 3): Tóm tắt lại nhận thức của học sinh và mời học sinh bước sang Bước 3 để tự tay tra cứu số liệu đề án tuyển sinh thực tế.
-
-# XỬ LÝ CÁC TÌNH HUỐNG HỌC SINH NÉ TRÁNH HOẶC BÔNG ĐÙA
-- Nếu học sinh trả lời cộc lốc, né tránh hoặc trêu đùa (ví dụ: "Em thấy thầy là em lo", "Thầy hỏi khó quá"):
-  -> Tuyệt đối không tính là chuyển biến nhận thức (Turning Point). 
-  -> Hãy đáp lại điềm tĩnh, kéo học sinh về thực tế: "Thầy chỉ là công cụ đặt câu hỏi giúp em soi chiếu lại mục tiêu. Nếu đối diện với câu hỏi này khiến em lo lắng, thì áp lực thi cử và chọn nghề sắp tới sẽ còn thực tế hơn rất nhiều. Hãy trả lời thẳng thắn: [Lặp lại câu hỏi trọng tâm]?"
+    const baseContext = `${REFLECTIVE_4STAGES_PERSONA}
+THÔNG TIN BƯỚC 1 CỦA HỌC SINH:
+- Ngành mục tiêu: ${career}
+- Trường / Cơ sở đào tạo dự kiến: ${uni}
+- Lý do ban đầu ở Bước 1: "${reason}"
+- Mức tự tin ban đầu: ${conf}/10
+- Phản hồi vừa rồi của học sinh: "${userText}"
 `;
 
-  const generatePromptForRound = (round, profile, userText, specialInstruction = null) => {
-    const career = profile?.targetMajor || profile?.target_career || "ngành đã chọn";
-    const rawSchool = profile?.targetSchool || profile?.target_university || "";
-    const score = profile?.initialConfidence ?? profile?.confidence_score ?? "5";
-    const holland = profile?.hollandCode || profile?.holland_code || "RIASEC";
-    const reason = profile?.reason || profile?.source_of_influence || "Em thích từ nhỏ";
-    const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
-    const isBranchB = isUndecidedOrVague(career);
-
-    // Nhận diện chuyển biến mục tiêu / thắc mắc ngành mới từ tin nhắn học sinh
-    const goalShift = detectGoalShift(userText);
-    const isShifted = Boolean(goalShift && goalShift.newMajor.toLowerCase() !== career.toLowerCase());
-    const effectiveCareer = isShifted ? goalShift.newMajor : (profile?.shiftedMajor || career);
-    const isVocational = isVocationalTrack(effectiveCareer, userText, rawSchool);
-    const uni = formatSchoolName(rawSchool, isVocational);
-    const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
-    const askingCombo = isAskingAboutSubjectsOrCombos(userText);
-    const lowerUser = (userText || '').toLowerCase();
-    const careerLower = (effectiveCareer || '').toLowerCase();
-    const recommendedCombo = getRecommendedComboForMajor(effectiveCareer, userText);
-    const isUniClarification = hasUniversityClarification(userText);
-
-    const isFamilyOrAltruistic = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'người thân', 'ông bà', 'hiếu thảo'].some(k => lowerUser.includes(k));
-    const isMedicalCareer = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'dược học', 'nha khoa', 'răng hàm mặt'].some(k => careerLower.includes(k) || lowerUser.includes(k));
-    const isVagueOrUncertain = ['không rõ', 'chưa rõ', 'không biết', 'chưa biết', 'chưa tìm hiểu', 'nghĩ vậy', 'cảm thấy', 'tùy'].some(k => lowerUser.includes(k));
-    const isSalaryFocused = ['tiền', 'lương', 'thu nhập', 'giàu', 'kiếm tiền', 'kinh tế', 'triệu', 'ổn định'].some(k => lowerUser.includes(k));
-
-    let adaptiveDirective = '';
-    if (isUniClarification) {
-      adaptiveDirective = `\n\n[CHỈ DẪN KHI HỌC SINH ĐÍNH CHÍNH HỌC ĐẠI HỌC CHỨ KHÔNG HỌC NGHỀ]:\n` +
-        `- Học sinh vừa khẳng định rõ: Em chọn học Đại học (tại ${uni}) chứ không học trường nghề.\n` +
-        `- Thầy Socrates PHẢI GHI NHẬN NGAY sự đính chính này một cách điềm đạm và tích cực: Ghi nhận em đang hướng tới bậc Đại học chính quy tại ${uni}.\n` +
-        `- Nhắc nhở rằng ở bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn thi THPT.\n` +
-        `- Ở Lượt 3: Hỏi về môn tự tin nhất và môn lo lắng nhất trong tổ hợp môn xét tuyển học bạ/thi THPT.\n` +
-        `- Ở Lượt 4: RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi nhất từ học bạ để đối chứng điểm chuẩn của ${uni}.\n` +
-        `- TUYỆT ĐỐI KHÔNG ĐƯỢC lặp lại "Học nghề là một hướng đi thực tế...", không nhắc đến cổng trường nghề hay rèn luyện thể lực của học nghề.\n`;
-    } else if (isShifted || askingCombo || lowerUser.includes('ktpl') || lowerUser.includes('chính trị') || lowerUser.includes('tin học')) {
-      adaptiveDirective = `\n\n[CHỈ DẪN KHI HỌC SINH ĐỔI Ý / NÊU NGÀNH MỚI HOẶC HỎI TỔ HỢP]:\n` +
-        `- Ngành học sinh đang hướng tới: "${effectiveCareer}".\n` +
-        `- AI CHỈ ĐẶT CÂU HỎI, TUYỆT ĐỐI KHÔNG GIẢNG BÀI hay khẳng định cơ chế điểm chuẩn thay học sinh.\n` +
-        `- Ở Lượt 3: Hỏi về môn tự tin nhất và môn lo lắng nhất từ học bạ thực tế.\n` +
-        `- Ở Lượt 4: RA LỆNH học sinh tự sang Bước 3 chọn tổ hợp có lợi nhất từ học bạ để đối chứng điểm chuẩn của ${uni}.\n`;
+    if (followUpReason === 'clarify_broad_major') {
+      return `${baseContext}
+[NHIỆM VỤ LƯỢT PHẢN HỒI BỔ SUNG CHẶNG 1 (LÀM RÕ NGÀNH CỤ THỂ)]:
+- Ghi nhận ngắn gọn, trung lập ý kiến vừa nêu của học sinh (không mặc định định hướng của cha mẹ hay bạn bè là tiêu cực).
+- Vì tên lĩnh vực "${career}" còn khá rộng, hãy đặt 01 câu hỏi ngắn giúp học sinh làm rõ ngành cụ thể đang hướng tới trước khi xem xét yêu cầu học tập và nghề nghiệp.`;
     }
 
-    const specialDirective = specialInstruction ? `\n\nCHỈ DẪN KHI HỌC SINH BỘC LỘ RÀO CẢN / NỖI SỢ:\n${specialInstruction}\n` : '';
-
-    if (round === 1) {
-      if (isBranchB) {
-        return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (NHÁNH B: ĐỊNH HƯỚNG MỤC TIÊU CHO HỌC SINH MƠ HỒ / CHƯA CÓ NGÀNH CỤ THỂ):
-- Học sinh chưa chọn được ngành nghề cụ thể hoặc đang phân vân, mơ hồ.
-- Thầy Socrates áp dụng kỹ thuật Re-framing đồng cảm trước, không phán xét.
-
-[NHIỆM VỤ LƯỢT 1]:
-1. Đồng cảm: Chào em và khẳng định việc chưa chọn được ngành ở lớp 12 là điều tự nhiên.
-2. ĐẶT DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG phán xét hay chê trách sự mơ hồ của học sinh.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
-      }
-
-      const studentObj = {
-        id: profile?.studentId || profile?.id || localStorage.getItem('cbas_student_id') || '',
-        name: profile?.studentName || profile?.name || 'em',
-        baselineTarget: effectiveCareer,
-        targetCareer: effectiveCareer,
-        targetSchool: uni,
-        source: reason,
-        anchorReason: profile?.anchorReason || '',
-        anchorQuote: profile?.anchorQuote || reason || '',
-        conf_T0: score,
-        gpa_A00: profile?.gpa_A00 || null,
-        benchmark_target: profile?.benchmark_target || null,
-        riasec_match_pct: profile?.riasec_match_pct ?? 40,
-        riasecCode: profile?.riasecCode || holland || 'Xã hội'
-      };
-      const promptTrigger = generateSocraticFirstPrompt(studentObj);
-
-      return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (THIÊN LỆCH NHẬN THỨC KÍCH HOẠT: ${promptTrigger.biasType}):
-- Quy tắc kích hoạt: ${promptTrigger.biasRule}
-- Ngành mục tiêu: ${effectiveCareer}
-- Cơ sở đào tạo mục tiêu: ${uni}
-- Mức tự tin ban đầu (T0): ${score}/10
-- Lý do chọn / Mỏ neo ban đầu: "${reason}"
-- Thiên hướng RIASEC: ${holland}
-
-[NHIỆM VỤ LƯỢT 1 - KÍCH HOẠT PHẢN TƯ THÍCH ỨNG THEO ĐÚNG THIÊN LỆCH]:
-1. Bắt đầu bằng lời chào điềm đạm, trung tính:
-"${promptTrigger.botGreeting}"
-2. ĐẶT ĐÚNG CÂU HỎI TRUY VẤN MỎ NEO CỐT LÕI ĐÃ ĐƯỢC THIẾT KẾ:
-"${promptTrigger.firstQuestion}"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG khen ngợi quá đà, không phán xét hay chụp mũ học sinh.
-- TUYỆT ĐỐI KHÔNG nói về điểm chuẩn, tổ hợp môn hay bảo học sinh sang Bước 3 ở Lượt 1.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+    if (followUpReason === 'ask_stage2_example') {
+      return `${baseContext}
+[NHIỆM VỤ LƯỢT PHẢN HỒI BỔ SUNG CHẶNG 2 (HỎI VÍ DỤ CỤ THỂ & NGUỒN)]:
+- Học sinh vừa cho biết đã tìm hiểu về ngành "${career}".
+- Hãy đặt 01 câu hỏi ngắn, thân thiện mời học sinh nêu 1 ví dụ cụ thể về yêu cầu học tập hoặc khó khăn/cơ hội thực tế của ngành và cho biết em tìm hiểu thông tin đó từ nguồn nào.`;
     }
 
-    if (!isBranchB) {
-      if (isVocational) {
-        // =========================================================================
-        // KỊCH BẢN PHÂN HÓA HỌC NGHỀ / THỰC HÀNH (TUÂN THỦ 2 NẤC NHẬN THỨC)
-        // =========================================================================
-        switch (round) {
-          case 2:
-            return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (HỌC NGHỀ - NẤC 2: THỰC TẾ CÔNG VIỆC, KỶ LUẬT & SỨC BỀN):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
-- Kỳ vọng thu nhập: "${expectedIncome}".
-- Học sinh vừa trả lời: "${userText}".
+    if (followUpReason === 'ask_stage3_independent_source') {
+      return `${baseContext}
+[NHIỆM VỤ LƯỢT PHẢN HỒI BỔ SUNG CHẶNG 3 (HỎI NGUỒN ĐỘC LẬP ĐỐI CHIẾU & YÊU CẦU NGƯỜI MỚI RA TRƯỜNG)]:
+- Ghi nhận trung lập nguồn thông tin học sinh vừa nêu (không mặc định video, người quen hay AI là sai).
+- Đặt 01 câu hỏi ngắn: Em có thể đối chiếu thêm với nguồn độc lập nào (như đề án tuyển sinh, báo cáo việc làm của trường hoặc thông tin tuyển dụng thực tế), và theo em người mới ra trường cần đáp ứng những yêu cầu gì?`;
+    }
 
-[NHIỆM VỤ LƯỢT 2 - NẤC 2: THỰC TẾ CÔNG VIỆC & SỨC BỀN]:
-1. Áp dụng kỹ thuật Tái định khung: Công nhận thị trường cần nhân lực, nhưng khẳng định mức thu nhập gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường khắc nghiệt (như đứng liên tục nhiều giờ, nhiệt độ nóng, áp lực thời gian, ca kíp).
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập ${expectedIncome} luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?"
+    if (followUpReason === 'clarify_stage4_admission_vs_skills') {
+      return `${baseContext}
+[NHIỆM VỤ LƯỢT PHẢN HỒI BỔ SUNG CHẶNG 4 (PHÂN BIỆT ĐIỀU KIỆN TUYỂN SINH & KỸ NĂNG HỌC TẬP/HÀNH NGHỀ)]:
+- Ghi nhận những kỹ năng học sinh vừa nêu là hữu ích cho quá trình học tập và làm nghề.
+- Lưu ý nhẹ nhàng sự khác biệt giữa kỹ năng mềm và điều kiện xét tuyển đầu vào (môn học trong tổ hợp xét tuyển, phương thức xét tuyển).
+- Đặt 01 câu hỏi ngắn: Về các môn học phục vụ xét tuyển vào ngành ${career} và những thông tin tuyển sinh cần kiểm tra ở Bước 3, em đã chuẩn bị được gì và còn điều gì chưa rõ?`;
+    }
 
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG phán xét hay chụp mũ.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
+    switch (targetStage) {
+      case 2:
+        return `${baseContext}
+[NHIỆM VỤ CHUYỂN SANG CHẶNG 2 – XEM XÉT HIỂU BIẾT VỀ NGÀNH]:
+1. Ghi nhận trung lập chia sẻ của học sinh ở Chặng 1 (nếu học sinh không có lý do khác hoặc chọn theo định hướng gia đình/bạn bè, ghi nhận trung lập, không phán xét).
+2. Đặt câu hỏi chính của Chặng 2:
+"Em đã tìm hiểu những yêu cầu và khó khăn thực tế nào khi học và làm nghề này? Em biết những điều đó từ đâu?"`;
 
-          case 3:
-            return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (HỌC NGHỀ - NẤC 1: ĐIỀU KIỆN PHÁP LÝ & BẰNG TỐT NGHIỆP THPT):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
-- Học sinh vừa phản hồi: "${userText}".
+      case 3:
+        return `${baseContext}
+[NHIỆM VỤ CHUYỂN SANG CHẶNG 3 – XEM XÉT CƠ HỘI VIỆC LÀM]:
+1. Ghi nhận trung lập câu trả lời ở Chặng 2 (nếu học sinh chưa tìm hiểu, ghi nhận nhẹ nhàng đó là nội dung sẽ kiểm chứng ở Bước 3, không trách móc hay giảng giải dài; xem xét cân bằng cả cơ hội và yêu cầu thực tế).
+2. Đặt câu hỏi chính của Chặng 3:
+"Em đánh giá cơ hội tìm việc sau khi tốt nghiệp ngành này như thế nào? Nhận định đó dựa trên thông tin nào, và người mới ra trường cần đáp ứng những yêu cầu gì?"`;
 
-[NHIỆM VỤ LƯỢT 3 - NẤC 1: ĐIỀU KIỆN PHÁP LÝ & ĐẦU VÀO]:
-1. Nhắc nhở điều kiện tiên quyết: Phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ để được xét tuyển vào các trường nghề uy tín. Tránh để học sinh ngộ nhận rằng chọn học nghề là có thể buông xuôi hoàn toàn việc học lớp 12.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Nhiều bạn nghĩ học nghề là có thể buông xuôi việc học lớp 12, nhưng thực tế các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, em đã có kế hoạch ôn thi thế nào để đảm bảo tấm bằng tốt nghiệp THPT làm tấm vé vào trường nghề?"
+      case 4:
+        return `${baseContext}
+[NHIỆM VỤ CHUYỂN SANG CHẶNG 4 – ĐỐI CHIẾU SỰ CHUẨN BỊ]:
+1. Ghi nhận trung lập nhận định của học sinh ở Chặng 3 (không dẫn dắt theo hướng ngành chắc chắn dễ xin việc hoặc thất nghiệp cao; không tự đưa ra số liệu tỷ lệ việc làm hay mức lương).
+2. Đặt câu hỏi chính của Chặng 4:
+"So với yêu cầu tuyển sinh và học tập của ngành, em đã chuẩn bị được gì về môn học và kỹ năng? Điều gì còn thiếu hoặc chưa rõ mà em cần kiểm tra ở bước 3?"`;
 
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG ép so sánh điểm chuẩn 3 năm của đại học.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2-3 câu văn.`;
-
-          case 4:
-            return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (HỌC NGHỀ - CHẤT VẤN KẾ HOẠCH HÀNH ĐỘNG CỤ THỂ & PHƯƠNG ÁN DỰ PHÒNG):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
-- Học sinh vừa trả lời: "${userText}".
-
-[NHIỆM VỤ LƯỢT 4 - BÓC TÁCH CAM KẾT HÀNH ĐỘNG & PHƯƠNG ÁN DỰ PHÒNG]:
-1. Phản biện ngắn gọn: Chỉ nói "sẽ cố gắng" hay "sẽ ôn tập" vẫn còn chung chung.
-2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI DẪN DẮT SÂU HƠN:
-"Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${uni}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-
-          case 5:
-          default:
-            return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 5 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
-- Ngành nghề: ${effectiveCareer}, cơ sở đào tạo: ${uni}.
-- Học sinh vừa trả lời: "${userText}".
-
-[NHIỆM VỤ LƯỢT 5 - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ CHO HỌC NGHỀ]:
-1. Đưa ra đúng 1 câu nhận định trung tính: Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết.
-2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ BẮT BUỘC (TUYỆT ĐỐI KHÔNG CÓ DẤU ? VÀ KHÔNG NHẮC ĐẾN HỌC PHÍ):
-"Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự chuẩn bị về thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${uni} để đối chiếu với hồ sơ của mình."
-
-[CẢNH BÁO TỐI CAO]:
-- TUYỆT ĐỐI KHÔNG ĐƯỢC đặt câu hỏi. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
-- Toàn bộ phản hồi chỉ gồm 2 câu văn dứt khoát.`;
-        }
-      } else {
-        // ==========================================
-        // KỊCH BẢN 4 CÂU HỎI TRUY VẤN + 1 LƯỢT CHỐT BƯỚC 3 SOCRACAREER
-        // ==========================================
-        switch (round) {
-          case 2: {
-            const isFamilyDirectedTurn = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
-            if (isFamilyDirectedTurn) {
-              return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH GIAI ĐOẠN 2 (PHẢN TƯ ĐƠN ĐIỂM: BÓC TÁCH SỰ TỰ CHỦ & ĐỘNG CƠ NỘI TẠI KHI GIA ĐÌNH ĐỊNH HƯỚNG):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 2 - PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY)]:
-1. CHỈ CHẤT VẤN ĐÚNG 01 TRỌNG TÂM DUY NHẤT: Tập trung bóc tách sự tự chủ (động cơ nội tại) xem học sinh có thực sự đam mê hay chỉ đang gánh kỳ vọng của người khác.
-2. TUYỆT ĐỐI KHÔNG nhảy cóc sang hỏi về mức lương trong cùng một câu.
-3. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
-"Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập nhiều năm trên giảng đường và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${effectiveCareer} hay em chỉ đang gánh vác mong muốn của người khác?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG nhắc đến tiền lương hay thu nhập ở lượt này.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-            }
-            if (isMedicalCareer) {
-              return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH GIAI ĐOẠN 2 (PHẢN TƯ ĐƠN ĐIỂM THEO ĐẶC THÙ NGÀNH Y DƯỢC):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 2 - PHẢN TƯ ĐẶC THÙ KHỐI NGÀNH Y DƯỢC]:
-1. CHỈ CHẤT VẤN ĐÚNG 01 TRỌNG TÂM DUY NHẤT: Trọng tâm phản biện phải nằm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập/trực lâm sàng và thực tế thu nhập giai đoạn đầu nghề khi mới ra trường, chứ KHÔNG hỏi như một công việc thương mại thông thường.
-2. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
-"Khác với các công việc thương mại thông thường, ngành ${effectiveCareer} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG hỏi như một công việc thương mại thông thường.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-            }
-            return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH GIAI ĐOẠN 2 (BẮT CẦU LẬP LUẬN & CHẤT VẤN NĂNG LỰC ĐÁP ỨNG MỨC LƯƠNG MONG MUỐN):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Mức thu nhập kỳ vọng học sinh đã khai ở Bước 1: "${expectedIncome}".
-- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 2 - BẮT CẦU TỰ NHIÊN & TRUY VẤN NĂNG LỰC TƯƠNG LAI (PHẢN TƯ ĐƠN ĐIỂM)]:
-1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Dùng chính ý kiến hoặc đặc điểm cá nhân học sinh vừa nêu trong "${userText}" để phản biện ngắn gọn, tự nhiên (không dùng câu sáo rỗng hay thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại").
-2. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
-"Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn hay học phí.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-          }
-
-          case 3:
-            return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
-BỐI CẢNH GIAI ĐOẠN 3 (CÔNG NHẬN NĂNG LỰC & CHẤT VẤN XU HƯỚNG VIỆC LÀM TRONG TƯƠNG LAI):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa trả lời ở Giai đoạn 2 về các năng lực cần có: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 3 - CÔNG NHẬN NĂNG LỰC & HỎI VỀ XU HƯỚNG VIỆC LÀM TƯƠNG LAI]:
-1. GHI NHẬN ĐÚNG ĐẮN (BẮT BUỘC): Khẳng định các năng lực học sinh vừa nêu trong "${userText}" (ví dụ: ngoại ngữ, giao tiếp, kỹ năng chuyên môn...) thực sự rất cần thiết đối với người lao động trong tương lai. TUYỆT ĐỐI KHÔNG chê bai kiểu "chỉ là công cụ bề nổi".
-2. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN VỀ XU HƯỚNG VIỆC LÀM:
-"Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${effectiveCareer} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG hỏi về môn học hay điểm chuẩn ở lượt này (để dành sang Giai đoạn 4).
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này.
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-
-          case 4:
-            return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
-BỐI CẢNH GIAI ĐOẠN 4 (CHẤT VẤN SỨC HỌC & MÔN HỌC LO LẮNG NHẤT TRONG TỔ HỢP XÉT TUYỂN):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa chia sẻ về xu hướng việc làm tương lai: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 4 - CHẤT VẤN RÀO CẢN MÔN HỌC & KẾ HOẠCH HỌC TẬP]:
-1. BẮT CẦU LẬP LUẬN: Từ góc nhìn của học sinh về xu hướng việc làm đầu ra ("${userText}"), nhắc rằng cánh cửa đầu tiên em phải vượt qua là kỳ tuyển sinh đại học sắp tới.
-2. TUYỆT ĐỐI KHÔNG TỰ ĐƯA SỐ LIỆU ĐIỂM CHUẨN HAY HỌC PHÍ (cấm nói 27.5, cấm nói thiếu bao nhiêu điểm). Việc đối chứng số liệu thuộc về Bước 3.
-3. KẾT THÚC BẰNG DUY NHẤT 01 CÂU HỎI TRUY VẤN:
-"Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?"
-
-[NGHIÊM CẤM]:
-- TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn giả định.
-- TUYỆT ĐỐI KHÔNG nhắc đến Bước 3 ở lượt này (để học sinh trả lời xong câu hỏi thứ 4 này mới chuyển bước).
-- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
-
-          case 5:
-          default:
-            return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
-BỐI CẢNH GIAI ĐOẠN 5 (TỔNG KẾT PHẢN TƯ & CHUYỂN TIẾP SANG BƯỚC 3):
-- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
-- Học sinh vừa trả lời câu hỏi thứ 4 về cam kết tự học và phương án dự phòng: "${userText}".
-
-[NHIỆM VỤ GIAI ĐOẠN 5 - TÓM TẮT LỖ HỔNG LẬP LUẬN & RA LỆNH CHUYỂN BƯỚC 3]:
-1. Tóm tắt ngắn gọn chuyển biến hoặc lỗ hổng lập luận lớn nhất mà học sinh vừa bộc lộ qua 4 câu hỏi phản tư.
-2. MỜI HỌC SINH BƯỚC SANG BƯỚC 3 ĐỂ TỰ TAY TRA CỨU SỐ LIỆU ĐỀ ÁN TUYỂN SINH THỰC TẾ:
-"Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất, chỉ tiêu và đề án tuyển sinh thực tế của ${uni} xem độ chênh lệch thực tế là bao nhiêu."
-
-[CẢNH BÁO TỐI CAO]:
-- TUYỆT ĐỐI KHÔNG ĐƯỢC ĐẶT CÂU HỎI. CẤM CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI.
-- Toàn bộ phản hồi chỉ gồm 2 câu văn dứt khoát.`;
-        }
-      }
-    } else {
-      // ==========================================
-      // KỊCH BẢN NHÁNH B (MƠ HỒ, CHƯA CÓ MỤC TIÊU)
-      // ==========================================
-      switch (round) {
-        case 1:
-          return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 1 (ĐỒNG CẢM & BÓC TÁCH NGUYÊN NHÂN MƠ HỒ):
-- Học sinh chưa có mục tiêu ngành cụ thể, nhóm Holland: ${holland}.
-- Học sinh vừa trả lời: "${userText}".
-
-[NHIỆM VỤ LƯỢT 1]:
-1. Tối đa 1 câu đồng cảm trung tính, khẳng định việc chưa chọn được ngành ở lớp 12 là điều bình thường.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?"`;
-
-        case 2:
-          return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 2 (ĐỐI CHIẾU HOLLAND & TRẢI NGHIỆM THỰC TẾ):
-- Học sinh vừa chia sẻ: "${userText}". Nhóm Holland: ${holland}.
-
-[NHIỆM VỤ LƯỢT 2]:
-1. Tối đa 1-2 câu trung tính liên hệ thiên hướng Holland với việc học thực tế.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Kết quả Holland cho thấy em có thiên hướng ở nhóm ${holland}. Khi thực hiện các nhiệm vụ học tập hoặc hoạt động thực tế liên quan đến nhóm này, em có thấy mình tập trung và có năng lượng vượt trội hơn không?"`;
-
-        case 3:
-          return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 3 (BÓC TÁCH HỌC THUẬT VS THỰC HÀNH NGHỀ):
-- Học sinh vừa chia sẻ: "${userText}".
-
-[NHIỆM VỤ LƯỢT 3]:
-1. Tối đa 1-2 câu phân định giữa hướng học thuật đại học và kỹ thuật/dịch vụ thực hành.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN:
-"Từ thế mạnh đó, giữa hướng đi đại học học thuật và hướng đi kỹ thuật/dịch vụ thực hành, đâu là hướng đi em thấy phù hợp hơn với sức học hiện tại của mình?"`;
-
-        case 4:
-          return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 4 (CHẤT VẤN MÔN HỌC THẾ MẠNH & RÀO CẢN TRƯỚC KHI TRA CỨU):
-- Học sinh vừa chọn hướng đi: "${userText}".
-
-[NHIỆM VỤ LƯỢT 4]:
-1. Tối đa 1 câu ghi nhận hướng đi sơ bộ của học sinh.
-2. KẾT THÚC BẰNG DUY NHẤT 1 CÂU HỎI TRUY VẤN DẪN DẮT:
-"Với hướng đi đó, nhìn lại bảng điểm học bạ hiện tại của mình, đâu là môn học em có điểm số tốt nhất để làm trụ cột xét tuyển và môn nào em cần phải cải thiện gấp?"`;
-
-        case 5:
-        default:
-          return `${SOCRATIC_PERSONA}${specialDirective}
-BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
-- Học sinh vừa chia sẻ về môn học: "${userText}".
-
-[NHIỆM VỤ LƯỢT 5]:
-1. Đúng 1 câu xác nhận lựa chọn sơ bộ của học sinh.
-2. RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ:
-"Em hãy bước sang Bước 3, tự tay tra cứu Đề án tuyển sinh và tiêu chuẩn đầu vào của các cơ sở đào tạo phù hợp với hướng đi em vừa chọn để đối chiếu với học bạ của mình."
-[CẢNH BÁO]: TUYỆT ĐỐI KHÔNG CÓ DẤU HỎI (?) Ở CUỐI PHẢN HỒI. Tối đa 2 câu văn.`;
-      }
+      case 5:
+      default:
+        return `${baseContext}
+[NHIỆM VỤ TỔNG KẾT 4 CHẶNG VÀ CHUYỂN SANG BƯỚC 3]:
+1. Ghi nhận ngắn gọn những điểm chính học sinh đã chia sẻ qua 4 chặng (kể cả những nội dung học sinh báo cáo chưa biết hoặc cần kiểm tra thêm).
+2. Kết thúc bằng đúng câu sau:
+"${FINAL_CLOSING_SENTENCE}"`;
     }
   };
 
-  // PHẢN HỒI SOCRATES DỰ PHÒNG CHUẨN BỘ NGUYÊN TẮC (BẢO HIỂM 100% TUÂN THỦ NGUYÊN TẮC CÂN BẰNG)
-  const generateHeuristicFallback = (round, profile, userText = '', specialInstruction = null) => {
-    const career = profile?.targetMajor || profile?.target_career || "ngành nghề mục tiêu";
-    const rawSchool = profile?.targetSchool || profile?.target_university || "";
-    const holland = profile?.hollandCode || profile?.holland_code || "AEI";
-    const reason = profile?.reason || profile?.source_of_influence || "nguyện vọng bản thân";
-    const expectedIncome = profile?.expectedIncome || profile?.expected_income || "10 - 15 triệu/tháng";
-    const isBranchB = isUndecidedOrVague(career);
-
-    const goalShift = detectGoalShift(userText);
-    const isShifted = Boolean(goalShift && goalShift.newMajor.toLowerCase() !== career.toLowerCase());
-    const effectiveCareer = isShifted ? goalShift.newMajor : (profile?.shiftedMajor || career);
-    const isVocational = isVocationalTrack(effectiveCareer, userText, rawSchool);
-    const isUniClarification = hasUniversityClarification(userText);
-    const uni = formatSchoolName(rawSchool, isVocational);
+  // Phản hồi dự phòng trung lập, bám sát 100% câu trả lời thực tế của học sinh và đúng cấu trúc 4 chặng
+  const generateHeuristicFallback = (targetStage, profile, userText = '', followUpReason = null) => {
+    const career = profile?.shiftedMajor || profile?.targetMajor || profile?.target_career || 'ngành đã chọn';
+    const rawSchool = profile?.targetSchool || profile?.target_university || '';
+    const isVocational = isVocationalTrack(career, userText, rawSchool);
     const schoolClause = formatSchoolClause(rawSchool, isVocational, 'tại ');
-    const lowerUser = (userText || '').toLowerCase();
-    const { weakSubject } = extractSubjectsFeedback(userText);
+    const cleanUser = (userText || '').trim();
+    const uNorm = removeVietnameseTones(cleanUser);
 
-    if (specialInstruction) {
-      return `Rào cản về kỹ năng hay tâm lý hoàn toàn có thể cải thiện được nếu có phương pháp phù hợp. Nếu phải đối diện với tình huống này thường xuyên trong thực tế nghề nghiệp, em dựa vào năng lực gì để khắc phục và vượt qua?`;
+    const isDontKnow = /(chua biet|khong biet|chua tim hieu|chua ro|chua co can cu|khong ro)/i.test(uNorm);
+    const isParentReason = /(ba me|bo me|cha me|gia dinh|phu huynh|dinh huong)/i.test(uNorm);
+    const isDisagree = isCounterArguing(cleanUser);
+
+    if (followUpReason === 'clarify_broad_major') {
+      const ack = isParentReason
+        ? 'Thầy ghi nhận định hướng và sự đồng hành từ gia đình là một điểm tựa quan trọng với em.'
+        : 'Thầy đã ghi nhận chia sẻ của em về lý do lựa chọn.';
+      return `${ack} Vì lĩnh vực "${career}" có nhiều ngành đào tạo khác nhau, em đang hướng tới ngành cụ thể nào trong lĩnh vực này (ví dụ một chuyên ngành cụ thể ${schoolClause}) để mình tiện đối chiếu yêu cầu học tập ở các chặng tiếp theo?`;
     }
 
-    if (isUniClarification) {
-      if (round === 5) {
-        return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Với bậc Đại học, yêu cầu sẽ thiên về nền tảng kiến thức kỹ thuật chuyên sâu và điểm chuẩn cạnh tranh theo tổ hợp môn. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với điểm chuẩn 3 năm gần nhất của ${uni} xem độ chênh lệch thực tế là bao nhiêu.`;
-      }
-      if (round === 4) {
-        const weakMention = weakSubject ? `môn ${weakSubject}` : 'môn học còn lo lắng';
-        return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Việc nhận ra nỗi lo ở ${weakMention} mới chỉ là bước đầu; em dự định dành cụ thể bao nhiêu giờ tự học mỗi ngày để bứt phá môn đó, và nếu điểm chuẩn vượt tầm với hiện tại thì phương án dự phòng của em là gì?`;
-      }
-      if (round === 3) {
-        return `Thầy ghi nhận em đang hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause} chứ không phải học nghề. Để xét tuyển vào trường, nhìn lại học bạ và sức học thực tế của mình, đâu là môn em tự tin nhất và môn nào khiến em lo lắng nhất?`;
-      }
-      if (round === 2) {
-        return `Thầy ghi nhận em hướng tới bậc Đại học chính quy ngành ${effectiveCareer} ${schoolClause}. Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
-      }
+    if (followUpReason === 'ask_stage2_example') {
+      return `Thầy ghi nhận là em đã bước đầu tìm hiểu về ngành ${career}. Em có thể chia sẻ thêm một ví dụ cụ thể về yêu cầu học tập hoặc công việc thực tế của ngành mà em ấn tượng nhất, và em biết thông tin đó từ nguồn nào không?`;
     }
 
-    if (round === 1) {
-      if (isBranchB) {
-        return `Chào em. Thầy hiểu ở thời điểm này, việc chưa chọn được một ngành cụ thể là tâm lý rất bình thường của nhiều học sinh lớp 12. Khi chưa có mục tiêu rõ ràng, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
-      }
-      const studentObj = {
-        id: profile?.studentId || profile?.id || localStorage.getItem('cbas_student_id') || '',
-        name: profile?.studentName || profile?.name || 'em',
-        baselineTarget: effectiveCareer,
-        targetCareer: effectiveCareer,
-        targetSchool: uni,
-        source: reason,
-        anchorReason: profile?.anchorReason || '',
-        anchorQuote: profile?.anchorQuote || reason || '',
-        conf_T0: profile?.initialConfidence ?? 5,
-        gpa_A00: profile?.gpa_A00 || null,
-        benchmark_target: profile?.benchmark_target || null,
-        riasec_match_pct: profile?.riasec_match_pct ?? 40,
-        riasecCode: profile?.riasecCode || holland || 'Xã hội'
-      };
-      const firstPrompt = generateSocraticFirstPrompt(studentObj);
-      return firstPrompt.firstQuestion;
+    if (followUpReason === 'ask_stage3_independent_source') {
+      return `Thầy ghi nhận nhận định và thông tin tham khảo em vừa nêu về cơ hội việc làm ngành ${career}. Để có thêm góc nhìn khách quan, theo em mình có thể đối chiếu thêm với nguồn độc lập nào (như báo cáo việc làm của trường, đề án tuyển sinh hay tin tuyển dụng thực tế), và người mới ra trường cần đáp ứng những yêu cầu gì?`;
     }
 
-    if (!isBranchB) {
-      if (isVocational) {
-        // Fallback cho hướng học nghề / thực hành
-        switch (round) {
-          case 2:
-            return `Em kỳ vọng mức thu nhập ${expectedIncome} sau khi ra trường. Thị trường quả thực thiếu nhân lực tay nghề cao, nhưng mức thu nhập luôn gắn liền với tay nghề thực tế và khả năng chịu được áp lực môi trường làm việc (như đứng liên tục nhiều giờ, chịu nhiệt độ, áp lực thời gian và ca kíp). Để đạt được mục tiêu đó, em đã chuẩn bị gì cho kỳ thi tốt nghiệp sắp tới và sức bền thể lực cho công việc này?`;
-
-          case 3:
-            return `Học nghề không đồng nghĩa với việc có thể buông xuôi việc học lớp 12, vì các trường nghề uy tín đều yêu cầu điều kiện tiên quyết: phải thi đỗ Tốt nghiệp THPT và đạt chuẩn học bạ. Nhìn lại sức học hiện tại của mình, môn học nào khiến em cảm thấy lo lắng nhất trong kỳ thi tốt nghiệp THPT?`;
-
-          case 4:
-            return `Để đảm bảo chắc chắn vượt qua kỳ thi tốt nghiệp THPT và theo kịp chương trình đào tạo nghề tại ${uni}, em sẽ bắt đầu thay đổi thói quen học tập hàng ngày như thế nào ngay từ tuần này và đâu là phương án dự phòng của em?`;
-
-          case 5:
-          default:
-            return `Học nghề là một hướng đi thực tế, nhưng bằng tốt nghiệp THPT và sự rèn luyện thể lực là điều kiện tiên quyết. Em hãy bước sang Bước 3, tự tay kiểm tra điều kiện xét tuyển học bạ, chỉ tiêu và tiêu chuẩn đầu vào của ${uni} để đối chiếu với hồ sơ của mình.`;
-        }
-      } else {
-        // Fallback cho hướng Đại học / Học thuật (Đủ 4 câu hỏi phản tư + Lượt 5 chốt sang Bước 3)
-        // Xây dựng câu "Bắt cầu lập luận" tự nhiên dựa trên đặc điểm cá nhân học sinh vừa nêu
-        const hasAppearance = /ngoại hình|ưa nhìn|cao ráo|dễ nhìn/i.test(lowerUser);
-        const hasLanguageOrComm = /tiếng anh|ngoại ngữ|giao tiếp|hoạt ngôn|năng động/i.test(lowerUser);
-        const hasTravel = /đi nhiều nơi|đi đây đi đó|đi du lịch|khám phá|trải nghiệm/i.test(lowerUser);
-        const isTourism = /du lịch|lữ hành|khách sạn|nhà hàng|hướng dẫn viên/i.test(effectiveCareer.toLowerCase());
-
-        let traitBridge = '';
-        if (hasAppearance || hasLanguageOrComm) {
-          const traitLabel = (hasAppearance && hasLanguageOrComm)
-            ? 'Ngoại hình và ngoại ngữ/giao tiếp'
-            : hasAppearance
-            ? 'Ngoại hình ưa nhìn'
-            : 'Khả năng giao tiếp hay ngoại ngữ';
-          traitBridge = isTourism
-            ? `${traitLabel} là lợi thế giao tiếp ban đầu, nhưng ngành ${effectiveCareer} đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và làm việc xuyên ngày lễ Tết, có những ngày phải phục vụ khách suốt 14-16 tiếng.`
-            : `${traitLabel} là lợi thế ban đầu, nhưng thực tế ngành ${effectiveCareer} đòi hỏi xử lý áp lực công việc liên tục, giải quyết sự cố phát sinh và rèn luyện chuyên môn sâu.`;
-        } else if (hasTravel) {
-          traitBridge = `Ngoài việc được đi nhiều nơi, thực tế ngành ${effectiveCareer} đòi hỏi xử lý sự cố phát sinh, sức khỏe bền bỉ và những ngày phải phục vụ khách suốt 14-16 tiếng kể cả dịp lễ Tết.`;
-        } else if (/làm được|nghĩ là|tự tin/i.test(lowerUser)) {
-          traitBridge = isTourism
-            ? `Niềm tin "mình làm được" mới chỉ là cảm giác ban đầu, bởi ngoài việc đi nhiều nơi, ngành ${effectiveCareer} đòi hỏi xử lý sự cố tour, sức khỏe bền bỉ và những ngày phục vụ khách suốt 14-16 tiếng.`
-            : `Niềm tin "mình làm được" khi chưa va chạm thực tế mới chỉ là cảm giác chủ quan, bởi ngành ${effectiveCareer} đòi hỏi thời gian rèn luyện chuyên môn và cường độ làm việc rất khắt khe.`;
-        }
-
-        switch (round) {
-          case 2: {
-            const isFamilyDirectedFallback = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
-            const isMedicalFallback = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'răng hàm mặt', 'nha khoa', 'y học cổ truyền', 'xét nghiệm y học'].some(k => effectiveCareer.toLowerCase().includes(k) || lowerUser.includes(k));
-            if (isFamilyDirectedFallback) {
-              return `Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập nhiều năm trên giảng đường và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${effectiveCareer} hay em chỉ đang gánh vác mong muốn của người khác?`;
-            }
-            if (isMedicalFallback) {
-              return `Khác với các công việc thương mại thông thường, ngành ${effectiveCareer} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?`;
-            }
-            const bridgePrefix = traitBridge ? `${traitBridge} ` : '';
-            return `${bridgePrefix}Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
-          }
-
-          case 3: {
-            return `Những năng lực em vừa nêu thực sự rất cần thiết đối với người lao động trong tương lai. Tuy nhiên, bên cạnh việc chuẩn bị kỹ năng cá nhân, em đã tìm hiểu về xu hướng việc làm của ngành ${effectiveCareer} trong tương lai cũng như tỷ lệ cạnh tranh hay nguy cơ thất nghiệp khi ra trường chưa?`;
-          }
-
-          case 4: {
-            return `Việc tìm hiểu xu hướng việc làm đầu ra là rất cần thiết, nhưng trước hết em phải vượt qua cánh cửa tuyển sinh đầu vào. Để xét tuyển vào ngành ${effectiveCareer} ${schoolClause}, trong các môn thuộc tổ hợp xét tuyển, môn nào khiến em cảm thấy lo lắng nhất và kế hoạch học tập thực tế của em để vượt qua rào cản đó là gì?`;
-          }
-
-          case 5:
-          default:
-            return `Để biết kế hoạch ôn tập và năng lực thực tế của em có đáp ứng được ngưỡng tuyển sinh của ngành ${effectiveCareer} ${schoolClause} hay không, em cần đối chứng ngay với số liệu chính thống. Em hãy bước sang Bước 3, tự tay chọn tổ hợp môn có lợi nhất từ học bạ của mình để đối chứng với đề án tuyển sinh, điểm chuẩn 3 năm gần nhất và chỉ tiêu thực tế của ${uni} xem độ chênh lệch thực tế là bao nhiêu.`;
-        }
-      }
-    } else {
-      switch (round) {
-        case 1:
-          return `Việc chưa xác định được ngành ở lớp 12 là điều rất bình thường. Khi chưa có mục tiêu cụ thể, đâu là điều khiến em băn khoăn nhất: là chưa hiểu rõ sở thích bản thân, hay đang lo lắng về năng lực học tập của mình?`;
-
-        case 2:
-          return `Kết quả Holland cho thấy em có thiên hướng ở nhóm ${holland}. Khi thực hiện các nhiệm vụ học tập liên quan đến nhóm năng lực này, em có thấy mình tập trung và có năng lượng vượt trội hơn không?`;
-
-        case 3:
-          return `Từ nhóm thế mạnh ${holland}, thị trường nghề nghiệp thường mở ra hai ngã rẽ: học thuật đại học và kỹ thuật/dịch vụ thực hành. Giữa hai hướng đi này, đâu là hướng đi em thấy phù hợp hơn với sức học hiện tại của mình?`;
-
-        case 4:
-          return `Với hướng đi đó, nhìn lại bảng điểm học bạ hiện tại của mình, đâu là môn học em có điểm số tốt nhất để làm trụ cột xét tuyển và môn nào em cần phải cải thiện gấp?`;
-
-        case 5:
-        default:
-          return `Em vừa tự tay định hình mục tiêu đầu tiên cho bản thân sau các vòng phản tư. Em hãy bước sang Bước 3, tự tay tra cứu Đề án tuyển sinh và tiêu chuẩn đầu vào của các cơ sở đào tạo phù hợp với hướng đi em vừa chọn để đối chiếu với học bạ của mình.`;
-      }
+    if (followUpReason === 'clarify_stage4_admission_vs_skills') {
+      return `Những kỹ năng em vừa nêu là nền tảng hữu ích cho quá trình học tập và làm nghề sau này. Tuy nhiên, điều kiện tuyển sinh đầu vào của trường thường dựa trên các môn văn hóa trong tổ hợp xét tuyển hoặc phương thức xét tuyển cụ thể; vậy về các môn học phục vụ xét tuyển và những điều kiện đầu vào cần kiểm tra ở Bước 3, em đã chuẩn bị được gì và còn điều gì chưa rõ?`;
     }
+
+    if (targetStage === 2) {
+      let ack = `Thầy đã ghi nhận lý do lựa chọn và điều quan trọng nhất mà em vừa chia sẻ đối với ngành ${career}.`;
+      if (isParentReason) {
+        ack = `Thầy ghi nhận định hướng của gia đình cùng suy nghĩ của em khi lựa chọn ngành ${career}.`;
+      } else if (isDontKnow || /^(khong co|khong)$/i.test(uNorm)) {
+        ack = `Thầy ghi nhận em giữ nguyên lý do lựa chọn đã nêu ở Bước 1 cho ngành ${career}.`;
+      } else if (isDisagree) {
+        ack = `Thầy tôn trọng góc nhìn và lập luận riêng của em về lý do chọn ngành ${career}.`;
+      }
+      return `${ack} Bước sang Chặng 2, em đã tìm hiểu những yêu cầu và khó khăn thực tế nào khi học và làm nghề này? Em biết những điều đó từ đâu?`;
+    }
+
+    if (targetStage === 3) {
+      let ack = `Thầy đã ghi nhận những thông tin và nguồn tìm hiểu của em về yêu cầu học tập cũng như thực tế công việc ngành ${career}.`;
+      if (isDontKnow) {
+        ack = `Việc em chưa tìm hiểu chi tiết các yêu cầu học tập và thực tế nghề ${career} ở thời điểm này là hoàn toàn bình thường; thầy sẽ ghi nhận đây là nội dung cần kiểm chứng ở Bước 3.`;
+      }
+      return `${ack} Ở Chặng 3 này, em đánh giá cơ hội tìm việc sau khi tốt nghiệp ngành này như thế nào? Nhận định đó dựa trên thông tin nào, và người mới ra trường cần đáp ứng những yêu cầu gì?`;
+    }
+
+    if (targetStage === 4) {
+      let ack = `Thầy đã ghi nhận góc nhìn của em về cơ hội việc làm và yêu cầu đối với người mới tốt nghiệp ngành ${career}.`;
+      if (isDontKnow) {
+        ack = `Thầy ghi nhận phần thông tin về cơ hội việc làm và yêu cầu tuyển dụng của ngành ${career} là nội dung mình sẽ đối chiếu thêm với nguồn dữ liệu ở Bước 3.`;
+      }
+      return `${ack} Bước sang Chặng 4, so với yêu cầu tuyển sinh và học tập của ngành, em đã chuẩn bị được gì về môn học và kỹ năng? Điều gì còn thiếu hoặc chưa rõ mà em cần kiểm tra ở bước 3?`;
+    }
+
+    // Chặng 5: Tổng kết và chuyển sang Bước 3
+    return `Cảm ơn em đã trao đổi thẳng thắn qua cả 4 chặng để làm rõ lý do chọn ngành ${career}, mức độ hiểu biết về ngành, góc nhìn về cơ hội việc làm cũng như sự chuẩn bị hiện tại của bản thân. ${FINAL_CLOSING_SENTENCE}`;
   };
 
-  // 3. GỌI API GEMINI VỚI CẤU HÌNH NHIỆT ĐỘ CỐ ĐỊNH CHỐNG ẢO GIÁC
-  const callGeminiSocratic = async (historyMessages, userText, stage, specialInstruction = null) => {
+  // Gọi API phản tư
+  const callGeminiSocratic = async (historyMessages, userText, targetStage, currentStage, followUpReason = null, currentFollowUpCount = 0) => {
     const goalShift = detectGoalShift(userText);
-    const curMajor = studentProfile?.targetMajor || studentProfile?.target_career || 'ngành mục tiêu';
-    const effectiveMajor = (goalShift && goalShift.newMajor) ? goalShift.newMajor : (studentProfile?.shiftedMajor || curMajor);
+    const curMajor = studentProfile?.shiftedMajor || studentProfile?.targetMajor || studentProfile?.target_career || 'ngành mục tiêu';
+    const effectiveMajor = (goalShift && goalShift.newMajor) ? goalShift.newMajor : curMajor;
     const effectiveProfile = {
       ...studentProfile,
       targetMajor: effectiveMajor,
@@ -1768,267 +1199,291 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
       shiftedMajor: effectiveMajor
     };
 
-    // 3.1. Thử gọi Serverless Backend /api/socrates-chat hoặc /api/chat
-    const endpointsToTry = ['/api/socrates-chat', '/api/chat'];
     const requestPayload = {
-      chatStage: stage,
-      stage: stage,
-      round: stage,
+      chatStage: followUpReason ? currentStage : targetStage,
+      stage: followUpReason ? currentStage : targetStage,
+      round: followUpReason ? currentStage : targetStage,
+      isFollowUp: Boolean(followUpReason),
+      followUpCount: followUpReason ? 0 : 1,
+      followUpReason,
       studentProfile: {
-        hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
+        hollandCode: effectiveProfile.hollandCode || 'RIASEC',
         targetMajor: effectiveMajor,
-        targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || '',
-        reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
-        anchorReason: studentProfile?.anchorReason || '',
-        anchorQuote: studentProfile?.anchorQuote || studentProfile?.reason || '',
-        initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
-        expectedIncome: studentProfile?.expectedIncome || studentProfile?.expected_income || '10 - 15 triệu/tháng',
-        // Tương thích ngược & chỉ số thích ứng:
-        targetCareer: effectiveMajor,
-        confidenceT0: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
-        competenceSelfEval: 'Vừa sức',
-        gpa_A00: studentProfile?.gpa_A00,
-        benchmark_target: studentProfile?.benchmark_target,
-        riasec_match_pct: studentProfile?.riasec_match_pct,
-        riasecCode: studentProfile?.riasecCode,
-        studentId: studentProfile?.studentId || localStorage.getItem('cbas_student_id') || ''
+        targetSchool: effectiveProfile.targetSchool || '',
+        reason: effectiveProfile.reason || '',
+        initialConfidence: effectiveProfile.initialConfidence ?? 5,
+        expectedIncome: effectiveProfile.expectedIncome || '',
+        studentId: effectiveProfile.studentId || ''
       },
-      userProfile: {
-        hollandCode: studentProfile?.hollandCode || studentProfile?.holland_code || 'RIASEC',
-        targetMajor: effectiveMajor,
-        targetSchool: studentProfile?.targetSchool || studentProfile?.target_university || '',
-        reason: studentProfile?.reason || studentProfile?.source_of_influence || 'Em thích từ nhỏ',
-        anchorReason: studentProfile?.anchorReason || '',
-        anchorQuote: studentProfile?.anchorQuote || studentProfile?.reason || '',
-        initialConfidence: studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? 5,
-        expectedIncome: studentProfile?.expectedIncome || studentProfile?.expected_income || '10 - 15 triệu/tháng',
-        gpa_A00: studentProfile?.gpa_A00,
-        benchmark_target: studentProfile?.benchmark_target,
-        riasec_match_pct: studentProfile?.riasec_match_pct,
-        riasecCode: studentProfile?.riasecCode,
-        studentId: studentProfile?.studentId || localStorage.getItem('cbas_student_id') || ''
-      },
-      chatHistory: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
+      chatHistory: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text, stage: m.stage })),
       userMessage: userText,
-      // Hỗ trợ trường tương thích:
       message: userText,
-      history: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text })),
-      anchor: effectiveProfile,
-      specialInstruction: specialInstruction
+      history: historyMessages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', text: m.text, stage: m.stage }))
     };
 
-    const isStage5 = stage === 5;
+    const isStage5 = !followUpReason && targetStage === 5;
 
-    for (const ep of endpointsToTry) {
-      try {
-        const serverlessCtrl = new AbortController();
-        const sTimeout = setTimeout(() => serverlessCtrl.abort(), 12000);
-
-        const serverlessRes = await fetch(ep, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestPayload),
-          signal: serverlessCtrl.signal
-        });
-        clearTimeout(sTimeout);
-
-        if (serverlessRes.ok) {
-          const sData = await serverlessRes.json();
-          let replyText = sData?.response || sData?.reply;
-          if (replyText && replyText.trim().length >= 15) {
-            const isReallyComplete = isStage5 && (sData?.isComplete === true || sData?.isCompleted === true || sData?.stage === 5);
-            const sanitized = sanitizeSocraticResponse(replyText, stage, effectiveMajor, studentProfile?.targetSchool, userText);
-
-            return {
-              replyText: sanitized,
-              chatStage: isReallyComplete ? 5 : stage,
-              isCompleted: isReallyComplete,
-              isComplete: isReallyComplete,
-              shiftedMajor: sData?.shiftedMajor || (goalShift ? goalShift.newMajor : null)
-            };
-          }
-        }
-      } catch (apiErr) {
-        // Thử endpoint tiếp theo
-      }
-    }
-
-    // 3.2. Gọi trực tiếp Gemini API (Hỗ trợ cả Vite import.meta và process.env an toàn)
+    // 1. Thử gọi endpoint /api/socrates-chat
     try {
-      const DEFAULT_ENCODED = 'QVEuQWI4Uk42S001OHFsaDJITEU0WktpSkt2dmZQVE1vd0ZLUjRHRU9GbE92X01iVERaRHc=';
-      const fallbackKey = typeof atob !== 'undefined' ? atob(DEFAULT_ENCODED) : '';
-      const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY)
-        || (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_GEMINI_API_KEY)
-        || fallbackKey;
-
-      const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-      const systemPrompt = generatePromptForRound(stage, effectiveProfile, userText, specialInstruction);
-
-      const formattedContents = historyMessages.map(m => ({
-        role: m.role === 'model' ? 'model' : 'user',
-        parts: [{ text: m.text }]
-      }));
-
-      formattedContents.push({
-        role: 'user',
-        parts: [{ text: userText }]
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 9000);
+      const res = await fetch('/api/socrates-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload),
+        signal: ctrl.signal
       });
+      clearTimeout(timer);
 
-      const directCtrl = new AbortController();
-      const directTimeout = setTimeout(() => directCtrl.abort(), 12000);
-
-      const response = await fetch(ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: formattedContents,
-          generationConfig: {
-            temperature: 0.35,
-            topP: 0.85,
-            maxOutputTokens: 1000
-          }
-        }),
-        signal: directCtrl.signal
-      });
-      clearTimeout(directTimeout);
-
-      if (response.ok) {
-        const data = await response.json();
-        const parts = data.candidates?.[0]?.content?.parts;
-        let text = null;
-        if (Array.isArray(parts) && parts.length > 0) {
-          const cleanParts = parts.filter(p => !p.thought && p.text);
-          if (cleanParts.length > 0) {
-            text = cleanParts.map(p => p.text).join('\n\n').trim();
-          } else {
-            text = parts[0]?.text?.trim();
-          }
-          if (text) {
-            const isReallyComplete = isStage5;
-            const sanitized = sanitizeSocraticResponse(text, stage, effectiveMajor, studentProfile?.targetSchool, userText);
-
-            return {
-              replyText: sanitized,
-              chatStage: isReallyComplete ? 5 : stage,
-              isCompleted: isReallyComplete,
-              isComplete: isReallyComplete,
-              shiftedMajor: goalShift ? goalShift.newMajor : null
-            };
-          }
+      if (res.ok) {
+        const sData = await res.json();
+        const replyText = sData?.response || sData?.reply;
+        if (replyText && replyText.trim().length >= 15) {
+          const sanitized = sanitizeSocraticResponse(replyText, isStage5 ? 5 : targetStage, effectiveMajor, effectiveProfile.targetSchool, userText);
+          return {
+            replyText: sanitized,
+            chatStage: isStage5 ? 5 : targetStage,
+            isCompleted: isStage5,
+            isComplete: isStage5,
+            shiftedMajor: sData?.shiftedMajor || (goalShift ? goalShift.newMajor : null),
+            serverTimestamp: sData?.serverTimestamp || new Date().toISOString()
+          };
         }
       }
     } catch (e) {
-      console.warn("Direct Gemini call exception:", e);
+      // Chuyển sang fallback
     }
 
-    // 3.3. Kích hoạt fallback heuristic dự phòng chuẩn CBAS nếu mạng chậm hoặc hết quota
-    let fallbackText = generateHeuristicFallback(stage, effectiveProfile, userText, specialInstruction);
-    const isReallyComplete = isStage5;
-    const sanitizedFallback = sanitizeSocraticResponse(fallbackText, stage, effectiveMajor, studentProfile?.targetSchool, userText);
+    // 2. Sử dụng phản hồi chuẩn mực theo cấu trúc 4 chặng (đảm bảo câu hỏi chính xác từng chặng)
+    const fallbackText = generateHeuristicFallback(targetStage, effectiveProfile, userText, followUpReason);
+    const sanitizedFallback = sanitizeSocraticResponse(fallbackText, isStage5 ? 5 : targetStage, effectiveMajor, effectiveProfile.targetSchool, userText);
 
     return {
       replyText: sanitizedFallback,
-      chatStage: isReallyComplete ? 5 : stage,
-      isCompleted: isReallyComplete,
-      isComplete: isReallyComplete,
-      shiftedMajor: goalShift ? goalShift.newMajor : null
+      chatStage: isStage5 ? 5 : targetStage,
+      isCompleted: isStage5,
+      isComplete: isStage5,
+      shiftedMajor: goalShift ? goalShift.newMajor : null,
+      serverTimestamp: new Date().toISOString()
     };
   };
 
-  // 4. TRÍCH XUẤT VĂN BẢN ĐỐI THOẠI CHUẨN MỰC CHO HỌC SINH
+  // Xử lý lưu & xác nhận biên bản phản tư (Mục 4, 5, 6)
+  const handleConfirmAndSaveSummary = async (customSummary = null) => {
+    const summaryToSave = customSummary || summaryDraft || buildReflectiveSummary(messages, studentProfile);
+    const serverTime = new Date().toISOString();
+
+    const recordId = `step2_v2_${Date.now()}`;
+    const v2Record = {
+      record_id: recordId,
+      workflow_version: WORKFLOW_VERSION,
+      server_timestamp: serverTime,
+      student_code: studentProfile?.studentId || localStorage.getItem('cbas_student_id') || 'CT_01',
+      step1_snapshot: {
+        targetMajor: studentProfile?.targetMajor || '',
+        shiftedMajor: studentProfile?.shiftedMajor || studentProfile?.targetMajor || '',
+        targetSchool: studentProfile?.targetSchool || '',
+        initialReason: studentProfile?.reason || '',
+        initialConfidence: studentProfile?.initialConfidence ?? 5,
+        expectedIncome: studentProfile?.expectedIncome || '',
+        hollandCode: studentProfile?.hollandCode || ''
+      },
+      stages_completed: 4,
+      self_report_unverified_notice: 'Thông tin do học sinh nêu trong hội thoại là dữ liệu tự báo cáo, chưa được xác minh.',
+      confirmed_by_student: true,
+      confirmed_summary: {
+        student_statements: {
+          reasons: summaryToSave.studentReasons,
+          mentioned_info_and_sources: summaryToSave.mentionedInfoAndSources,
+          self_reported_preparation: summaryToSave.selfReportedPreparation,
+          unverified_or_missing_items: summaryToSave.unverifiedOrMissingItems
+        },
+        ai_suggestions_for_step3: {
+          questions_to_verify: summaryToSave.questionsForStep3,
+          mentor_consultation_suggestion: summaryToSave.mentorRecommendation,
+          student_requests_mentor_support: Boolean(summaryToSave.mentorSupportRequested)
+        }
+      },
+      messages: messages.map(m => ({
+        role: m.role,
+        stage: m.stage || null,
+        text: m.text,
+        time: m.time || ''
+      }))
+    };
+
+    try {
+      // 1. Lưu thêm vào danh sách biên bản v2 (append-only, KHÔNG ghi đè các biên bản đã lưu trước đó)
+      const existingListRaw = localStorage.getItem('cbas_step2_v2_records');
+      const existingList = existingListRaw ? JSON.parse(existingListRaw) : [];
+      const updatedList = Array.isArray(existingList) ? [...existingList, v2Record] : [v2Record];
+      localStorage.setItem('cbas_step2_v2_records', JSON.stringify(updatedList));
+      localStorage.setItem('cbas_step2_v2_latest', JSON.stringify(v2Record));
+      localStorage.setItem('cbas_step2_completed', 'true');
+
+      // 2. Nếu chưa có cbas_step2_telemetry cũ thì mới lưu bản tương thích ngược có đánh dấu legacy_compatibility_only: true
+      const existingLegacyTelemetry = localStorage.getItem('cbas_step2_telemetry');
+      const compatTelemetry = {
+        workflow_version: WORKFLOW_VERSION,
+        legacy_compatibility_only: true,
+        summary_title: 'Tóm tắt phản tư và nội dung cần kiểm chứng',
+        student_reasons: summaryToSave.studentReasons,
+        mentioned_info_and_sources: summaryToSave.mentionedInfoAndSources,
+        self_reported_preparation: summaryToSave.selfReportedPreparation,
+        unverified_or_missing_items: summaryToSave.unverifiedOrMissingItems,
+        questions_for_step3: summaryToSave.questionsForStep3,
+        mentor_recommendation: summaryToSave.mentorRecommendation,
+        self_report_unverified: true,
+        // Trường tương thích ngược cho các trang đọc cũ (được đánh dấu legacy_compatibility_only):
+        turning_point_detected: 'Legacy_Deprecated',
+        outcome_category: 'Reflective_Inquiry_Completed',
+        triage_step4: summaryToSave.mentorSupportRequested
+          ? 'Tham vấn và kiểm chứng với mentor (theo nhu cầu hỗ trợ)'
+          : 'Tự chủ đối chứng ở Bước 3 & Tham vấn mentor khi cần',
+        timestamp: serverTime
+      };
+      setSessionTelemetry(compatTelemetry);
+      if (!existingLegacyTelemetry) {
+        localStorage.setItem('cbas_step2_telemetry', JSON.stringify(compatTelemetry));
+      }
+      if (!localStorage.getItem('cbas_step2_messages')) {
+        localStorage.setItem('cbas_step2_messages', JSON.stringify(messages));
+      }
+    } catch (e) {
+      console.warn('Lỗi lưu biên bản vào localStorage:', e);
+    }
+
+    // 3. Thử đồng bộ biên bản phiên bản mới lên Supabase (nếu có kết nối, không ghi đè bản cũ)
+    try {
+      if (supabase) {
+        await supabase.from('step2_reflective_records').insert([{
+          record_id: recordId,
+          student_code: v2Record.student_code,
+          workflow_version: WORKFLOW_VERSION,
+          step1_snapshot: v2Record.step1_snapshot,
+          confirmed_summary: v2Record.confirmed_summary,
+          messages: v2Record.messages,
+          created_at: serverTime
+        }]);
+      }
+    } catch (e) {
+      // Bỏ qua nếu bảng chưa tạo hoặc đang offline
+    }
+
+    const meta = {
+      recordId,
+      workflowVersion: WORKFLOW_VERSION,
+      serverTimestamp: serverTime
+    };
+    setSavedRecordMeta(meta);
+    setSummaryDraft(summaryToSave);
+    setIsSummaryConfirmed(true);
+    setIsEditingSummary(false);
+    setSummaryStatusMsg(`Đã xác nhận và lưu biên bản phản tư (Phiên bản quy trình: ${WORKFLOW_VERSION} • ${new Date(serverTime).toLocaleString('vi-VN')}).`);
+    persistV2Draft({
+      summaryDraft: summaryToSave,
+      isSummaryConfirmed: true,
+      savedRecordMeta: meta
+    });
+  };
+
+  // 4. TRÍCH XUẤT BIÊN BẢN ĐỐI THOẠI CHUẨN MỰC (MỤC 5 & MỤC 6)
   const generateExportText = () => {
     let userProfile = null;
     try {
-      const rawProf = localStorage.getItem("cbas_user_profile");
+      const rawProf = localStorage.getItem('cbas_user_profile');
       if (rawProf) userProfile = JSON.parse(rawProf);
     } catch (e) {}
 
     let anchor = null;
     try {
-      const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
+      const rawAnchor = localStorage.getItem('cbas_anchor_data') || localStorage.getItem('userAnchorData');
       if (rawAnchor) anchor = JSON.parse(rawAnchor);
     } catch (e) {}
 
-    const targetCareer = userProfile?.targetMajor || anchor?.target_career || studentProfile?.targetMajor || studentProfile?.target_career || 'Chưa xác định';
-    const rawUniv = userProfile?.targetSchool || anchor?.target_university || studentProfile?.targetSchool || studentProfile?.target_university || '';
+    const studentCode = studentProfile?.studentId || userProfile?.studentId || anchor?.student_code || localStorage.getItem('cbas_student_id') || 'CT_01';
+    const targetCareer = studentProfile?.shiftedMajor || userProfile?.targetMajor || anchor?.target_career || studentProfile?.targetMajor || 'Chưa xác định';
+    const rawUniv = userProfile?.targetSchool || anchor?.target_university || studentProfile?.targetSchool || '';
     const isVocationalExport = isVocationalTrack(targetCareer, '', rawUniv);
     const targetUniv = formatSchoolName(rawUniv, isVocationalExport);
-    const confidence = userProfile?.initialConfidence ?? anchor?.confidence_score ?? studentProfile?.initialConfidence ?? studentProfile?.confidence_score ?? '5';
-    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || studentProfile?.expectedIncome || '10 - 15 triệu/tháng';
+    const confidence = userProfile?.initialConfidence ?? anchor?.confidence_score ?? studentProfile?.initialConfidence ?? '5';
+    const expectedIncome = userProfile?.expectedIncome || anchor?.expected_income || studentProfile?.expectedIncome || 'Chưa khai báo';
     const reason = userProfile?.reason || anchor?.source_of_influence || studentProfile?.reason || 'Chưa ghi nhận lý do';
-    const holland = userProfile?.hollandCode || anchor?.holland_code || studentProfile?.hollandCode || studentProfile?.holland_code || 'AEI';
-    const dateStr = new Date().toLocaleString('vi-VN');
+    const holland = userProfile?.hollandCode || anchor?.holland_code || studentProfile?.hollandCode || 'AEI';
+    const serverTimeStr = savedRecordMeta?.serverTimestamp
+      ? new Date(savedRecordMeta.serverTimestamp).toLocaleString('vi-VN')
+      : new Date().toLocaleString('vi-VN');
+
+    const activeSummary = summaryDraft || buildReflectiveSummary(messages, studentProfile || {});
 
     let content = `=================================================================\n`;
-    content += `   BIÊN BẢN PHẢN TƯ HƯỚNG NGHIỆP SOCRATES (BƯỚC 2)\n`;
-    content += `   Hệ Thống Điều Chuẩn Nhận Thức Nghề Nghiệp Thích Ứng (SocraCareer)\n`;
-    content += `       Đề tài Nghiên cứu Khoa học Kỹ thuật (KHKT) Học sinh Trung học\n`;
+    content += `   BIÊN BẢN ĐỐI THOẠI PHẢN TƯ VỚI AI SOCRATES (BƯỚC 2)\n`;
+    content += `   Hệ Thống Hỗ Trợ Ra Quyết Định Nghề Nghiệp Có Căn Cứ (SocraCareer)\n`;
     content += `=================================================================\n\n`;
-    content += `📅 Thời gian xuất: ${dateStr}\n`;
-    content += `🎯 Ngành mục tiêu: ${targetCareer}\n`;
-    content += `🏛️ Trường / Cơ sở đào tạo mục tiêu: ${targetUniv}\n`;
+    content += `🔖 Phiên bản quy trình: ${WORKFLOW_VERSION}\n`;
+    content += `📅 Thời gian ghi nhận (Server Timestamp): ${serverTimeStr}\n`;
+    content += `🆔 Mã học sinh: ${studentCode}\n`;
+    content += `🎯 Ngành mục tiêu (Bước 1): ${targetCareer}\n`;
+    content += `🏛️ Trường / Cơ sở đào tạo dự kiến: ${targetUniv}\n`;
+    content += `🧭 Tổ hợp thiên hướng Holland (Bước 1): ${holland}\n`;
     content += `📊 Mức tự tin ban đầu (Bước 1): ${confidence}/10\n`;
-    content += `💵 Kỳ vọng thu nhập (Bước 1): ${expectedIncome}\n`;
-    content += `📝 Lý do chọn ban đầu: ${reason}\n`;
-    const isSessionDone = isReadyForStep3;
-    content += `🔄 Tiến trình hoàn thành: ${isSessionDone ? '4 / 4 giai đoạn phản tư (Đã hoàn thành đầy đủ)' : `${Math.min(chatStage, 4)} / ${maxStages} câu hỏi phản tư`}\n\n`;
-
-    const effectiveBias = activeBiasType || sessionTelemetry?.primary_bias || localStorage.getItem('cbas_step2_primary_bias') || 'TRUY VẤN NỀN TẢNG THỰC CHẤT';
-    const effectiveBiasRule = activeBiasRule || sessionTelemetry?.primary_bias_rule || localStorage.getItem('cbas_step2_bias_rule') || 'Kích hoạt Vòng 1 thích ứng dựa trên phân tích mỏ neo lý do lựa chọn, độ tự tin T0, khoảng cách điểm học bạ và độ tương thích RIASEC.';
+    content += `💵 Kỳ vọng thu nhập ban đầu (Bước 1): ${expectedIncome}\n`;
+    content += `📝 Lý do chọn ban đầu (Bước 1): ${reason}\n`;
+    content += `🔄 Tiến trình: ${isReadyForStep3 ? '4 / 4 chặng phản tư (Đã hoàn thành)' : `${Math.min(chatStage, 4)} / 4 chặng phản tư`}\n`;
+    content += `ℹ️ Lưu ý: Thông tin do học sinh nêu trong biên bản này là dữ liệu tự báo cáo, chưa được xác minh.\n\n`;
 
     content += `-----------------------------------------------------------------\n`;
-    content += `KẾT QUẢ ĐO LƯỜNG VÀ GẮN NHÃN HÀNH VI (QUY CHUẨN KHKT):\n`;
+    content += `TÓM TẮT PHẢN TƯ VÀ NỘI DUNG CẦN KIỂM CHỨNG:\n`;
+    content += `(Trạng thái: ${isSummaryConfirmed ? 'Học sinh đã xem và xác nhận' : 'Bản tổng hợp chờ học sinh xác nhận'})\n`;
     content += `-----------------------------------------------------------------\n`;
-    content += `- Primary_Cognitive_Bias: ${effectiveBias}\n`;
-    content += `  * Quy tắc kích hoạt: ${effectiveBiasRule}\n`;
-    if (sessionTelemetry) {
-      content += `- Turning_Point_Detected: ${sessionTelemetry.turning_point_detected}\n`;
-      content += `  * Quy tắc kích hoạt: ${sessionTelemetry.turning_point_rule || 'Phát hiện khi học sinh bộc lộ động cơ ngoại tại (áp lực gia đình, tài chính), tự ti năng lực môn học, hoặc có tín hiệu dịch chuyển mục tiêu ngành.'}\n`;
-      content += `- Outcome_Category: ${sessionTelemetry.outcome_category}\n`;
-      content += `  * Quy tắc kích hoạt: ${sessionTelemetry.outcome_rule || (sessionTelemetry.outcome_category === 'Adaptive_Shift' ? 'Học sinh thực sự có chuyển biến nhận thức, nhận ra rủi ro hoặc điều chỉnh mục tiêu/phương án xét tuyển.' : 'Học sinh kiên định với mục tiêu sau khi đã đối diện với thách thức và điều chuẩn nhận thức.')}\n`;
-      content += `- Triage_Step4: ${sessionTelemetry.triage_step4}\n`;
-      content += `  * Quy tắc kích hoạt: ${sessionTelemetry.triage_rule || (sessionTelemetry.triage_step4?.includes('In-depth') ? 'Chỉ định tham vấn sâu 20 phút do có biến động nhận thức (Turning Point) hoặc dịch chuyển mục tiêu cần cố vấn can thiệp.' : 'Chỉ định phiên định hướng nhanh 5 phút do nhận thức thực tế đã tương đối vững vàng.')}\n`;
-    }
-    content += `\n`;
+    content += `[A. PHẦN PHÁT BIỂU TỰ BÁO CÁO CỦA HỌC SINH (Chưa được xác minh)]\n`;
+    content += `1. Lý do lựa chọn do học sinh nêu:\n   - ${activeSummary.studentReasons}\n`;
+    content += `2. Thông tin và nguồn học sinh đã đề cập:\n   - ${activeSummary.mentionedInfoAndSources}\n`;
+    content += `3. Sự chuẩn bị do học sinh tự báo cáo:\n   - ${activeSummary.selfReportedPreparation}\n`;
+    content += `4. Những nội dung còn thiếu hoặc chưa được kiểm chứng:\n   - ${activeSummary.unverifiedOrMissingItems}\n\n`;
+
+    content += `[B. PHẦN GỢI Ý CỦA AI ĐỂ KIỂM CHỨNG Ở BƯỚC 3 & THAM VẤN MENTOR]\n`;
+    content += `5. Danh sách câu hỏi cần kiểm tra ở Bước 3 (kèm loại nguồn gợi ý):\n`;
+    (activeSummary.questionsForStep3 || []).forEach((q, idx) => {
+      content += `   5.${idx + 1}. Câu hỏi: ${q.question}\n`;
+      content += `        Gợi ý loại nguồn phù hợp: ${q.suggestedSourceType}\n`;
+    });
+    content += `- Đề xuất tham vấn và kiểm chứng với mentor:\n   * ${activeSummary.mentorRecommendation}\n\n`;
 
     content += `-----------------------------------------------------------------\n`;
-    content += `CHI TIẾT NỘI DUNG ĐỐI THOẠI PHẢN BIỆN SOCRATES:\n`;
+    content += `CHI TIẾT NỘI DUNG ĐỐI THOẠI THEO 4 CHẶNG:\n`;
     content += `-----------------------------------------------------------------\n\n`;
 
     messages.forEach((msg) => {
       const sender = msg.role === 'model' ? '🤖 Thầy Socrates (AI)' : '🧑‍🎓 Học sinh';
-      content += `[${msg.time || ''}] ${sender}:\n${msg.text}\n\n`;
+      const stageTag = msg.stage ? ` [Chặng ${Math.min(msg.stage, 4)}]` : '';
+      content += `[${msg.time || ''}]${stageTag} ${sender}:\n${msg.text}\n\n`;
     });
 
     content += `=================================================================\n`;
     content += `📌 HƯỚNG DẪN TIẾP THEO DÀNH CHO HỌC SINH:\n`;
-    content += `1. Dùng các câu hỏi truy vấn ở trên để tra cứu số liệu tại Bước 3 (Điểm chuẩn trúng tuyển 3 năm gần nhất, Độ chênh lệch điểm học bạ, Tổ hợp xét tuyển thực tế và Chỉ tiêu tuyển sinh).\n`;
-    content += `2. Mang biên bản này đối chất trực tiếp với Cố vấn / Sinh viên trong buổi Tư vấn 1-1 ở Bước 4.\n`;
+    content += `1. Ở Bước 3, hãy đối chiếu các câu hỏi cần kiểm tra ở trên với nguồn dữ liệu chính thống phù hợp để xem lựa chọn của mình đã có căn cứ đến đâu.\n`;
+    content += `2. Sử dụng biên bản này để tham vấn và kiểm chứng với mentor trong buổi trao đổi ở Bước 4 khi em cần hỗ trợ thêm.\n`;
     content += `=================================================================\n`;
 
     return content;
   };
 
-  // 4.1. Tải về file văn bản (.txt)
   const handleDownloadTxt = () => {
     const text = generateExportText();
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
     const careerSlug = (studentProfile?.target_career || 'huong_nghiep')
       .trim().replace(/[^a-zA-Z0-9\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
-    
     link.href = url;
-    link.download = `Nhat_ky_phan_tu_Socrates_${careerSlug}_${new Date().toISOString().slice(0, 10)}.txt`;
+    link.download = `Bien_ban_phan_tu_Bước2_${careerSlug}_${new Date().toISOString().slice(0, 10)}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
-  // 4.2. Sao chép vào bộ nhớ tạm (Clipboard)
   const handleCopyText = async () => {
     try {
       const text = generateExportText();
@@ -2049,62 +1504,56 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     }
   };
 
-  // 4.3. In hoặc Lưu file PDF chuẩn
   const handlePrint = () => {
     window.print();
   };
 
-  // 4.4. Bắt đầu lại cuộc trò chuyện từ đầu (Phục vụ thử nghiệm)
+  // Làm lại phiên nháp hiện tại (KHÔNG xóa danh sách biên bản cbas_step2_v2_records đã lưu trước đó)
   const handleResetSession = () => {
-    if (window.confirm("Em có muốn xóa dữ liệu phiên hiện tại và bắt đầu lại cuộc trò chuyện từ Giai đoạn 1 không?")) {
-      resetStepData(2);
+    if (window.confirm('Em có muốn bắt đầu lại phiên đối thoại mới từ Chặng 1 không? (Các biên bản đã xác nhận và lưu trước đó vẫn được bảo toàn)')) {
+      try {
+        localStorage.removeItem('cbas_step2_v2_draft');
+      } catch (e) {}
       window.location.reload();
     }
   };
 
-  // 5. BỘ LỌC ĐẦU VÀO THÔNG MINH & ĐIỀU PHỐI GIAI ĐOẠN PHẢN TƯ
+  // 5. XỬ LÝ GỬI TIN NHẮN THEO 4 CHẶNG PHẢN TƯ
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (isLoading || isReadyForStep3) return;
     const cleanText = inputValue.trim();
     if (cleanText.length === 0) return;
 
-    // 5.1. Chạy bộ lọc phản xạ tự nhiên trước khi chạy máy trạng thái
     const reflex = processStudentMessage(cleanText, chatStage, studentProfile);
 
-    // Nếu học sinh chỉ chào hỏi xã giao: Trả lời ấm áp, KHÔNG nhảy giai đoạn
     if (reflex.advanceRound === false && reflex.reply) {
       setErrorMessage('');
       const userMsg = {
         role: 'user',
+        stage: chatStage,
         text: cleanText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       const aiMsg = {
         role: 'model',
+        stage: chatStage,
         text: reflex.reply,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => {
         const next = [...prev, userMsg, aiMsg];
-        try { localStorage.setItem("cbas_step2_messages", JSON.stringify(next)); } catch (e) {}
+        persistV2Draft({ messages: next });
         return next;
       });
       setInputValue('');
       return;
     }
 
-    // RÀNG BUỘC THÔNG MINH CHO CÁC LƯỢT TIẾP THEO:
-    // Giai đoạn 1, 2 bắt buộc lập luận (tối thiểu 5 ký tự)
-    // Giai đoạn 3 trở đi chấp nhận câu trả lời ngắn ("dạ rồi", "chưa", "em đã xem")
-    if (chatStage <= 2 && cleanText.length < 5) {
-      setErrorMessage("⚠️ Câu trả lời của em quá ngắn. Hãy chia sẻ cụ thể trải nghiệm hoặc suy nghĩ của mình để Thầy phản biện nhé!");
-      return;
-    }
-
     setErrorMessage('');
     const userMsg = {
       role: 'user',
+      stage: chatStage,
       text: cleanText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
@@ -2114,126 +1563,161 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
     setInputValue('');
     setIsLoading(true);
 
-    const targetStage = Math.min(chatStage + 1, 5);
+    // Đánh giá chuyển chặng hoặc hỏi bổ sung (tối đa 1 câu bổ sung mỗi chặng)
+    const progression = evaluateStageProgression(chatStage, cleanText, studentProfile, stageFollowUpUsed);
+    const nextFollowUpState = { ...stageFollowUpUsed };
+    if (progression.shouldFollowUp) {
+      nextFollowUpState[chatStage] = true;
+      setStageFollowUpUsed(nextFollowUpState);
+    }
+
+    const targetStage = progression.shouldFollowUp ? chatStage : progression.nextStage;
 
     try {
-      let aiResult = null;
-      if (reflex.directReply) {
-        aiResult = {
-          replyText: reflex.directReply,
-          chatStage: targetStage,
-          isCompleted: false,
-          isComplete: false
-        };
-      } else {
-        aiResult = await callGeminiSocratic(nextHistory, cleanText, targetStage, reflex.instructionForAI);
-      }
+      const aiResult = await callGeminiSocratic(
+        nextHistory,
+        cleanText,
+        targetStage,
+        chatStage,
+        progression.followUpReason,
+        stageFollowUpUsed[chatStage] ? 1 : 0
+      );
 
-      // ĐỒNG BỘ CHUYỂN BIẾN MỤC TIÊU (GOAL SHIFT / TURNING POINT) VÀO PROFILE & LOCALSTORAGE:
+      // Nếu học sinh làm rõ ngành cụ thể (ví dụ từ "Kinh tế" -> "Quản trị Kinh doanh"), cập nhật shiftedMajor trong phiên Bước 2 mà KHÔNG ghi đè dữ liệu gốc Bước 1
       const goalShift = detectGoalShift(cleanText);
       const newMajor = goalShift?.newMajor || aiResult?.shiftedMajor;
+      let updatedProfile = studentProfile;
       if (newMajor && (!studentProfile?.targetMajor || newMajor.toLowerCase() !== studentProfile.targetMajor.toLowerCase())) {
-        setStudentProfile(prev => ({
-          ...prev,
-          targetMajor: newMajor,
-          target_career: newMajor,
+        updatedProfile = {
+          ...studentProfile,
           shiftedMajor: newMajor
-        }));
-        try {
-          const rawProf = localStorage.getItem("cbas_user_profile");
-          const profObj = rawProf ? JSON.parse(rawProf) : {};
-          profObj.targetMajor = newMajor;
-          profObj.target_career = newMajor;
-          profObj.shiftedMajor = newMajor;
-          localStorage.setItem("cbas_user_profile", JSON.stringify(profObj));
-        } catch (e) {}
-        try {
-          const rawAnchor = localStorage.getItem("cbas_anchor_data") || localStorage.getItem("userAnchorData");
-          if (rawAnchor) {
-            const anchorObj = JSON.parse(rawAnchor);
-            anchorObj.target_career = newMajor;
-            anchorObj.targetMajor = newMajor;
-            anchorObj.shiftedMajor = newMajor;
-            localStorage.setItem("cbas_anchor_data", JSON.stringify(anchorObj));
-          }
-        } catch (e) {}
+        };
+        setStudentProfile(updatedProfile);
       }
-      
+
       const replyContent = aiResult?.replyText || (typeof aiResult === 'string' ? aiResult : '');
-      const isFinished = targetStage === 5 && (aiResult?.isComplete === true || aiResult?.isCompleted === true);
-      const nextStage = isFinished ? 5 : targetStage;
+      const isFinished = targetStage === 5 && !progression.shouldFollowUp;
+      const nextStageNum = isFinished ? 5 : targetStage;
 
       const aiMsg = {
         role: 'model',
+        stage: isFinished ? 4 : nextStageNum,
         text: replyContent,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        workflowVersion: WORKFLOW_VERSION
       };
 
       const updatedHistory = [...nextHistory, aiMsg];
       setMessages(updatedHistory);
-      try { localStorage.setItem("cbas_step2_messages", JSON.stringify(updatedHistory)); } catch (e) {}
+      setChatStage(nextStageNum);
 
-      if (reflex.advanceRound !== false) {
-        setChatStage(nextStage);
-        if (isFinished) {
-          setIsCompleted(true);
-          setIsChatFinished(true);
-          try { localStorage.setItem("cbas_step2_completed", "true"); } catch (e) {}
-
-          // QUY TẮC 4: PHÂN LOẠI HÀNH VI (OUTCOME_CATEGORY) & TELEMETRY CHUẨN PHƯƠNG PHÁP LUẬN KHKT SOCRACAREER
-          const outcomeAnalysis = evaluateOutcomeCategory(updatedHistory, studentProfile, cleanText, goalShift);
-          const outcome = outcomeAnalysis.category;
-          const outcomeRule = outcomeAnalysis.rule;
-          const tpDetected = outcomeAnalysis.hasClearAdmission;
-
-          // Phân luồng Tham vấn Bước 4 theo chuẩn phương pháp luận:
-          // - Nếu turningPoint === false (không thừa nhận điểm yếu/rào cản) -> Uncalibrated_Avoidant -> BẮT BUỘC In-depth (20 phút)
-          // - Nếu Reconsidering -> In-depth (20 phút)
-          // - Chỉ khi turningPoint === true (thừa nhận môn yếu và có phương án thực tế) -> Persistent_Calibrated -> Brief (10 phút)
-          const triage = outcomeAnalysis.triageStep4 || (outcome === 'Persistent_Calibrated' ? 'Brief (10 phút)' : 'In-depth (20 phút)');
-          const isNeedInDepth = triage.includes('In-depth');
-
-          const tpRule = tpDetected 
-            ? `Học sinh thừa nhận rõ ràng rào cản năng lực thực tế (môn yếu/lo lắng) hoặc sự chưa thực tế của kỳ vọng ban đầu.`
-            : 'Không phát hiện điểm xoay nhận thức (học sinh không thừa nhận điểm yếu/rào cản, liên tục khẳng định mình giỏi hoặc né tránh câu hỏi).';
-
-          const triageRule = isNeedInDepth
-            ? 'Chỉ định phiên Tham vấn Chuyên sâu (In-depth 20 phút): Do học sinh chưa hiệu chuẩn nhận thức / không thừa nhận điểm yếu (Uncalibrated_Avoidant) hoặc đang cân nhắc đổi ngành (Reconsidering), bắt buộc cần Mentor can thiệp sâu.'
-            : 'Chỉ định phiên Định hướng Nhanh (Brief 10 phút): Học sinh đã thừa nhận rõ môn yếu/rào cản thực tế (Turning_Point = True) và có phương án học tập khả thi (Persistent_Calibrated).';
-
-          const telemetryData = {
-            primary_bias: activeBiasType || localStorage.getItem('cbas_step2_primary_bias') || 'TRUY VẤN NỀN TẢNG THỰC CHẤT',
-            primary_bias_rule: activeBiasRule || localStorage.getItem('cbas_step2_bias_rule') || 'Kích hoạt Vòng 1 thích ứng dựa trên phân tích mỏ neo lý do lựa chọn và độ tự tin T0.',
-            turning_point_detected: tpDetected ? 'True' : 'False',
-            turning_point_rule: tpRule,
-            outcome_category: outcome,
-            outcome_rule: outcomeRule,
-            triage_step4: triage,
-            triage_rule: triageRule,
-            timestamp: new Date().toISOString()
-          };
-          setSessionTelemetry(telemetryData);
-          localStorage.setItem('cbas_step2_telemetry', JSON.stringify(telemetryData));
-        }
+      // Cập nhật tiêu đề chặng hiển thị
+      const stageMeta = STAGE_DEFINITIONS[Math.min(nextStageNum, 4)];
+      if (stageMeta) {
+        setActiveBiasType(stageMeta.title.toUpperCase());
       }
 
+      if (isFinished) {
+        setIsCompleted(true);
+        setIsChatFinished(true);
+        const generatedSummary = buildReflectiveSummary(updatedHistory, updatedProfile);
+        setSummaryDraft(generatedSummary);
+        try {
+          localStorage.setItem('cbas_step2_completed', 'true');
+        } catch (e) {}
+        persistV2Draft({
+          chatStage: 5,
+          stageFollowUpUsed: nextFollowUpState,
+          isCompleted: true,
+          messages: updatedHistory,
+          summaryDraft: generatedSummary
+        });
+      } else {
+        persistV2Draft({
+          chatStage: nextStageNum,
+          stageFollowUpUsed: nextFollowUpState,
+          isCompleted: false,
+          messages: updatedHistory
+        });
+      }
     } catch (err) {
       console.error(err);
-      setErrorMessage("⚠️ Sự cố kết nối AI: " + err.message);
+      setErrorMessage('⚠️ Sự cố kết nối AI: ' + err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Cập nhật trường trong bản tóm tắt khi học sinh chỉnh sửa
+  const handleSummaryFieldChange = (field, value) => {
+    setSummaryDraft(prev => {
+      const base = prev || buildReflectiveSummary(messages, studentProfile);
+      return {
+        ...base,
+        [field]: value
+      };
+    });
+    setIsSummaryConfirmed(false);
+  };
+
+  const handleQuestionStep3Change = (idx, key, value) => {
+    setSummaryDraft(prev => {
+      const base = prev || buildReflectiveSummary(messages, studentProfile);
+      const list = [...(base.questionsForStep3 || [])];
+      if (list[idx]) {
+        list[idx] = { ...list[idx], [key]: value };
+      }
+      return {
+        ...base,
+        questionsForStep3: list
+      };
+    });
+    setIsSummaryConfirmed(false);
+  };
+
+  const handleAddQuestionStep3 = () => {
+    setSummaryDraft(prev => {
+      const base = prev || buildReflectiveSummary(messages, studentProfile);
+      const list = [...(base.questionsForStep3 || [])];
+      if (list.length >= 3) return base;
+      list.push({
+        id: `q3_${Date.now()}`,
+        question: '',
+        suggestedSourceType: 'Đề án tuyển sinh chính thức của trường / Cổng thông tin việc làm'
+      });
+      return {
+        ...base,
+        questionsForStep3: list
+      };
+    });
+    setIsSummaryConfirmed(false);
+  };
+
+  const handleRemoveQuestionStep3 = (idx) => {
+    setSummaryDraft(prev => {
+      const base = prev || buildReflectiveSummary(messages, studentProfile);
+      const list = [...(base.questionsForStep3 || [])];
+      if (list.length <= 1) return base;
+      list.splice(idx, 1);
+      return {
+        ...base,
+        questionsForStep3: list
+      };
+    });
+    setIsSummaryConfirmed(false);
+  };
+
+  const currentStageMeta = STAGE_DEFINITIONS[Math.min(chatStage, 4)] || STAGE_DEFINITIONS[1];
+
   return (
     <div style={{ maxWidth: '920px', margin: '0 auto', display: 'flex', flexDirection: 'column', minHeight: '88vh', fontFamily: 'sans-serif' }}>
-      <StepProgressHeader 
-        currentStep={2} 
-        onResetStep={() => { resetStepData(2); window.location.reload(); }}
-        title="Bước 2: AI Tham Vấn Phản Tư (Socratic Agent)" 
-        subtitle="Đối thoại phản biện cùng Trợ lý AI để bóc tách điểm mù tư duy và bẫy tâm lý chọn nghề." 
+      <StepProgressHeader
+        currentStep={2}
+        onResetStep={handleResetSession}
+        title="Bước 2: Đối thoại phản tư với AI Socrates"
+        subtitle="Làm rõ lý do chọn ngành, hiểu biết thực tế, cơ hội việc làm và những nội dung cần kiểm chứng ở Bước 3."
       />
-      
+
       {isMissingStep1 ? (
         <div style={{ flex: 1, padding: '40px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
           <div style={{ maxWidth: '540px', width: '100%', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '36px 24px', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -2244,7 +1728,7 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
               Em chưa hoàn thành Bước 1
             </h3>
             <p style={{ fontSize: '13.5px', color: '#64748b', lineHeight: '1.6', marginBottom: '24px' }}>
-              Để Trợ lý AI Socrates có dữ liệu bộc lộ mỏ neo và thiên hướng nghề nghiệp cá nhân hóa chính xác cho em, em cần hoàn thành <strong>Bước 1 (Trắc nghiệm Holland RIASEC & Khai báo Mỏ neo T₀)</strong> trước.
+              Để AI Socrates cá nhân hóa cuộc đối thoại phản tư dựa trên ngành nghề và lý do lựa chọn ban đầu của em, em cần hoàn thành <strong>Bước 1 (Trắc nghiệm Holland RIASEC & Khai báo lựa chọn ban đầu)</strong> trước.
             </p>
             <Link
               to="/student/holland"
@@ -2268,248 +1752,352 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         </div>
       ) : (
         <>
-      {/* CSS CHO CHẾ ĐỘ IN / LƯU FILE PDF */}
-      <style>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #socratic-chat-export-area, #socratic-chat-export-area * {
-            visibility: visible;
-          }
-          #socratic-chat-export-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: auto;
-            overflow: visible !important;
-            background: #ffffff !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-        }
-      `}</style>
+          {/* CSS CHO CHẾ ĐỘ IN / LƯU FILE PDF */}
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              #socratic-chat-export-area, #socratic-chat-export-area * {
+                visibility: visible;
+              }
+              #socratic-chat-export-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+            }
+          `}</style>
 
-      {/* THANH TIẾN TRÌNH & CỤM NÚT THAO TÁC / XUẤT FILE */}
-      <div style={{ padding: '14px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '14px',
-            background: 'linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)',
-            position: 'relative',
-            flexShrink: 0
-          }}>
-            <span style={{ fontSize: '24px', lineHeight: 1 }}>🦉</span>
-            <span style={{
-              position: 'absolute',
-              bottom: '-2px',
-              right: '-2px',
-              width: '12px',
-              height: '12px',
-              background: '#10b981',
-              borderRadius: '50%',
-              border: '2px solid #ffffff'
-            }} title="Thầy Socrates AI đang trực tuyến" />
-          </div>
-          <div>
-            <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#dbeafe', color: '#1e40af', padding: '2px 9px', borderRadius: '12px' }}>BƯỚC 2: CAN THIỆP HÀNH VI</span>
-            <h2 style={{ fontSize: '17px', margin: '3px 0 0 0', color: '#0f172a', fontWeight: '800' }}>Thầy Socrates — AI Tham Vấn Phản Tư</h2>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-            <span>Tiến trình:</span>
-            <span style={{ color: '#2563eb' }}>{isReadyForStep3 ? 4 : Math.min(chatStage, 4)}</span>
-            <span>/ {maxStages} câu hỏi phản tư</span>
-            {isReadyForStep3 ? (
-              <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
-                ✓ Đã hoàn thành 4 câu hỏi phản tư
-              </span>
-            ) : null}
-          </div>
-
-          {/* CỤM NÚT SAO CHÉP, XUẤT FILE & BẮT ĐẦU LẠI */}
-          <div style={{ display: 'flex', gap: '6px' }} className="no-print">
-            <button
-              type="button"
-              onClick={handleCopyText}
-              title="Sao chép toàn bộ nội dung trò chuyện vào bộ nhớ tạm"
-              style={{
-                background: copySuccess ? '#ecfdf5' : '#f8fafc',
-                border: '1px solid ' + (copySuccess ? '#a7f3d0' : '#cbd5e1'),
-                borderRadius: '6px',
-                padding: '6px 11px',
-                fontSize: '12.5px',
-                fontWeight: '600',
-                color: copySuccess ? '#059669' : '#334155',
-                cursor: 'pointer',
-                display: 'inline-flex',
+          {/* THANH TIẾN TRÌNH 4 CHẶNG & CỤM NÚT THAO TÁC / XUẤT FILE */}
+          <div style={{ padding: '14px 20px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)',
+                display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              {copySuccess ? '✅ Đã chép!' : '📋 Sao chép'}
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDownloadTxt}
-              title="Tải biên bản đối thoại phản tư (.txt)"
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                padding: '6px 11px',
-                fontSize: '12.5px',
-                fontWeight: '600',
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              📥 Xuất .TXT
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              title="In hoặc Lưu file PDF chuẩn"
-              style={{
-                background: '#f8fafc',
-                border: '1px solid #cbd5e1',
-                borderRadius: '6px',
-                padding: '6px 11px',
-                fontSize: '12.5px',
-                fontWeight: '600',
-                color: '#334155',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              🖨️ Lưu PDF
-            </button>
-
-            <button
-              type="button"
-              onClick={handleResetSession}
-              title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
-              style={{
-                background: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '6px',
-                padding: '6px 11px',
-                fontSize: '12.5px',
-                fontWeight: '600',
-                color: '#1d4ed8',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-            >
-              🔄 Bắt đầu lại
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* KHUNG NỘI DUNG CHAT (VÙNG IN VÀ HIỂN THỊ) */}
-      <div
-        id="socratic-chat-export-area"
-        ref={chatContainerRef}
-        style={{
-          height: '58vh',
-          minHeight: '400px',
-          maxHeight: '560px',
-          overflowY: 'auto',
-          overflowAnchor: 'none',
-          padding: '20px',
-          background: '#f8fafc',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px'
-        }}
-      >
-        {/* BANNER THÔNG TIN MỎ NEO & THIÊN LỆCH NHẬN THỨC KÍCH HOẠT VÒNG 1 */}
-        {activeBiasType && (
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '8px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                🎯 Mỏ neo Bước 1:
-              </span>
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b' }}>
-                {studentProfile?.targetMajor || 'Ngành mục tiêu'} {studentProfile?.targetSchool ? `(${studentProfile.targetSchool})` : ''}
-              </span>
-              {studentProfile?.initialConfidence != null && (
-                <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontWeight: '600' }}>
-                  Tự tin T₀: {studentProfile.initialConfidence}/10
-                </span>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>
-                💡 Trọng tâm phản tư Vòng 1:
-              </span>
-              <span style={{
-                fontSize: '11.5px',
-                fontWeight: '600',
-                padding: '3px 9px',
-                borderRadius: '6px',
-                background: '#eff6ff',
-                color: '#1d4ed8',
-                border: '1px solid #dbeafe'
+                justifyContent: 'center',
+                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.25)',
+                position: 'relative',
+                flexShrink: 0
               }}>
-                {activeBiasType.includes('MỎ NEO TRUYỀN THÔNG') ? 'Phản tư thông tin truyền thông & mạng xã hội' :
-                 activeBiasType.includes('TÂM LÝ ĐÁM ĐÔNG') ? 'Phản tư động cơ tự chủ vs. xu hướng xung quanh' :
-                 activeBiasType.includes('TỰ TIN THÁI QUÁ') ? 'Khảo sát căn cứ thực tế của mức độ tự tin T₀' :
-                 activeBiasType.includes('THIÊN LỆCH XÁC NHẬN') ? 'Đối chiếu sở trường RIASEC & đặc thù nghề' :
-                 'Khảo sát cơ sở thực tế & động lực cốt lõi'}
-              </span>
+                <span style={{ fontSize: '24px', lineHeight: 1 }}>🦉</span>
+                <span style={{
+                  position: 'absolute',
+                  bottom: '-2px',
+                  right: '-2px',
+                  width: '12px',
+                  height: '12px',
+                  background: '#10b981',
+                  borderRadius: '50%',
+                  border: '2px solid #ffffff'
+                }} title="AI Socrates đang trực tuyến" />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', background: '#dbeafe', color: '#1e40af', padding: '2px 9px', borderRadius: '12px' }}>
+                    BƯỚC 2: ĐỐI THOẠI PHẢN TƯ 4 CHẶNG
+                  </span>
+                  <span style={{ fontSize: '10.5px', color: '#64748b', background: '#f1f5f9', padding: '2px 7px', borderRadius: '8px', fontWeight: '600' }}>
+                    Quy trình: {WORKFLOW_VERSION}
+                  </span>
+                </div>
+                <h2 style={{ fontSize: '17px', margin: '3px 0 0 0', color: '#0f172a', fontWeight: '800' }}>
+                  Đối thoại phản tư với AI Socrates
+                </h2>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: '#475569', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span>Tiến trình:</span>
+                <span style={{ color: '#2563eb' }}>{isReadyForStep3 ? 4 : Math.min(chatStage, 4)}</span>
+                <span>/ {maxStages} chặng</span>
+                {isReadyForStep3 ? (
+                  <span style={{ marginLeft: '8px', fontSize: '12px', color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '8px' }}>
+                    ✓ Đã hoàn thành 4 chặng
+                  </span>
+                ) : null}
+              </div>
+
+              <div style={{ display: 'flex', gap: '6px' }} className="no-print">
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  title="Sao chép toàn bộ biên bản phản tư vào bộ nhớ tạm"
+                  style={{
+                    background: copySuccess ? '#ecfdf5' : '#f8fafc',
+                    border: '1px solid ' + (copySuccess ? '#a7f3d0' : '#cbd5e1'),
+                    borderRadius: '6px',
+                    padding: '6px 11px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    color: copySuccess ? '#059669' : '#334155',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  {copySuccess ? '✅ Đã chép!' : '📋 Sao chép'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadTxt}
+                  title="Tải biên bản phản tư (.txt)"
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '6px 11px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  📥 Xuất .TXT
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  title="In hoặc Lưu file PDF chuẩn"
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    padding: '6px 11px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  🖨️ Lưu PDF
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetSession}
+                  title="Bắt đầu lại cuộc trò chuyện từ Chặng 1"
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '6px',
+                    padding: '6px 11px',
+                    fontSize: '12.5px',
+                    fontWeight: '600',
+                    color: '#1d4ed8',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  🔄 Bắt đầu lại
+                </button>
+              </div>
             </div>
           </div>
-        )}
 
-        {messages.map((m, i) => {
-          const isLastAi = m.role === 'model' && !messages.slice(i + 1).some(msg => msg.role === 'model');
-          const isUser = m.role === 'user';
-          return (
-            <div 
-              key={`msg-${i}`} 
-              ref={isLastAi ? lastAiMsgRef : null}
-              style={{ 
-                display: 'flex', 
-                justifyContent: isUser ? 'flex-end' : 'flex-start',
-                alignItems: 'flex-start',
-                gap: '10px',
-                scrollMarginTop: '16px'
-              }}
-            >
-              {/* AVATAR ICON CỦA THẦY AI SOCRATES */}
-              {!isUser && (
+          {/* THANH CHỈ BÁO 4 CHẶNG RÕ RÀNG */}
+          <div style={{ padding: '10px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '8px' }} className="no-print">
+            {[1, 2, 3, 4].map((st) => {
+              const def = STAGE_DEFINITIONS[st];
+              const isDone = isReadyForStep3 || chatStage > st;
+              const isCurrent = !isReadyForStep3 && chatStage === st;
+              return (
+                <div
+                  key={st}
+                  style={{
+                    padding: '7px 10px',
+                    borderRadius: '8px',
+                    fontSize: '11.5px',
+                    fontWeight: '700',
+                    border: isCurrent ? '1.5px solid #2563eb' : isDone ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                    background: isCurrent ? '#eff6ff' : isDone ? '#ecfdf5' : '#ffffff',
+                    color: isCurrent ? '#1d4ed8' : isDone ? '#065f46' : '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>{isDone ? '✓' : `${st}.`}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{def.shortLabel}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* KHUNG NỘI DUNG CHAT & BẢNG TÓM TẮT PHẢN TƯ (VÙNG IN VÀ HIỂN THỊ) */}
+          <div
+            id="socratic-chat-export-area"
+            ref={chatContainerRef}
+            style={{
+              height: isReadyForStep3 ? 'auto' : '56vh',
+              minHeight: '400px',
+              maxHeight: isReadyForStep3 ? 'none' : '560px',
+              overflowY: 'auto',
+              overflowAnchor: 'none',
+              padding: '20px',
+              background: '#f8fafc',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            {/* BANNER THÔNG TIN BƯỚC 1 & MỤC TIÊU BƯỚC 2 */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  🎯 Lựa chọn Bước 1:
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b' }}>
+                  {studentProfile?.shiftedMajor || studentProfile?.targetMajor || 'Ngành mục tiêu'} {studentProfile?.targetSchool ? `(${studentProfile.targetSchool})` : ''}
+                </span>
+                {studentProfile?.initialConfidence != null && (
+                  <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                    Mức tự tin ban đầu: {studentProfile.initialConfidence}/10
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b' }}>
+                  🧭 Trọng tâm hiện tại:
+                </span>
+                <span style={{
+                  fontSize: '11.5px',
+                  fontWeight: '600',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  background: '#eff6ff',
+                  color: '#1d4ed8',
+                  border: '1px solid #dbeafe'
+                }}>
+                  {isReadyForStep3 ? 'Tổng kết phản tư & Nội dung cần kiểm chứng' : currentStageMeta.title}
+                </span>
+              </div>
+            </div>
+
+            {messages.map((m, i) => {
+              const isLastAi = m.role === 'model' && !messages.slice(i + 1).some(msg => msg.role === 'model');
+              const isUser = m.role === 'user';
+              return (
+                <div
+                  key={`msg-${i}`}
+                  ref={isLastAi ? lastAiMsgRef : null}
+                  style={{
+                    display: 'flex',
+                    justifyContent: isUser ? 'flex-end' : 'flex-start',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    scrollMarginTop: '16px'
+                  }}
+                >
+                  {!isUser && (
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '12px',
+                      background: 'linear-gradient(135deg, #4f46e5 0%, #1d4ed8 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      border: '1.5px solid #e0e7ff'
+                    }} title="Thầy Socrates (AI Phản Tư)">
+                      <span style={{ fontSize: '20px', lineHeight: 1 }}>🦉</span>
+                    </div>
+                  )}
+
+                  <div style={{
+                    maxWidth: '78%',
+                    padding: '14px 18px',
+                    borderRadius: isUser ? '16px 16px 2px 16px' : '4px 16px 16px 16px',
+                    background: isUser ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : '#ffffff',
+                    color: isUser ? '#ffffff' : '#1e293b',
+                    border: isUser ? 'none' : '1px solid #e2e8f0',
+                    boxShadow: isUser ? '0 2px 6px rgba(5, 150, 105, 0.2)' : '0 2px 5px rgba(15, 23, 42, 0.05)',
+                    fontSize: '14.5px',
+                    lineHeight: '1.6',
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {!isUser && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e40af' }}>
+                          Thầy Socrates
+                        </span>
+                        <span style={{ fontSize: '10px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '6px', border: '1px solid #dbeafe' }}>
+                          AI Phản Tư
+                        </span>
+                        {m.stage && (
+                          <span style={{ fontSize: '10px', fontWeight: '600', color: '#64748b' }}>
+                            • Chặng {Math.min(m.stage, 4)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div>{m.text}</div>
+                    <div style={{ fontSize: '11px', marginTop: '6px', textAlign: 'right', opacity: 0.7 }}>{m.time}</div>
+                  </div>
+
+                  {isUser && (
+                    <div style={{
+                      width: '34px',
+                      height: '34px',
+                      borderRadius: '10px',
+                      background: '#d1fae5',
+                      color: '#065f46',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: '800',
+                      fontSize: '16px',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                      border: '1px solid #a7f3d0'
+                    }} title="Học sinh">
+                      🧑‍🎓
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {isLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '10px' }} className="no-print">
                 <div style={{
                   width: '38px',
                   height: '38px',
@@ -2519,270 +2107,389 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)',
-                  flexShrink: 0,
-                  marginTop: '2px',
-                  border: '1.5px solid #e0e7ff'
-                }} title="Thầy Socrates (AI Phản Tư)">
+                  flexShrink: 0
+                }}>
                   <span style={{ fontSize: '20px', lineHeight: 1 }}>🦉</span>
                 </div>
-              )}
-
-              <div style={{
-                maxWidth: '78%',
-                padding: '14px 18px',
-                borderRadius: isUser ? '16px 16px 2px 16px' : '4px 16px 16px 16px',
-                background: isUser ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' : '#ffffff',
-                color: isUser ? '#ffffff' : '#1e293b',
-                border: isUser ? 'none' : '1px solid #e2e8f0',
-                boxShadow: isUser ? '0 2px 6px rgba(5, 150, 105, 0.2)' : '0 2px 5px rgba(15, 23, 42, 0.05)',
-                fontSize: '14.5px',
-                lineHeight: '1.6',
-                whiteSpace: 'pre-wrap'
-              }}>
-                {!isUser && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e40af' }}>
-                      Thầy Socrates
-                    </span>
-                    <span style={{ fontSize: '10px', fontWeight: '700', background: '#eff6ff', color: '#2563eb', padding: '1px 6px', borderRadius: '6px', border: '1px solid #dbeafe' }}>
-                      AI Phản Tư
-                    </span>
-                  </div>
-                )}
-                <div>{m.text}</div>
-                <div style={{ fontSize: '11px', marginTop: '6px', textAlign: 'right', opacity: 0.7 }}>{m.time}</div>
-              </div>
-
-              {/* AVATAR ICON CỦA HỌC SINH */}
-              {isUser && (
-                <div style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '10px',
-                  background: '#d1fae5',
-                  color: '#065f46',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '800',
-                  fontSize: '16px',
-                  flexShrink: 0,
-                  marginTop: '2px',
-                  border: '1px solid #a7f3d0'
-                }} title="Học sinh">
-                  🧑‍🎓
+                <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#475569', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  ✨ Thầy Socrates đang ghi nhận và chuẩn bị câu hỏi phản tư tiếp theo...
                 </div>
-              )}
-            </div>
-          );
-        })}
-
-        {isLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '10px' }} className="no-print">
-            <div style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #1d4ed8 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 3px 8px rgba(37, 99, 235, 0.25)',
-              flexShrink: 0
-            }}>
-              <span style={{ fontSize: '20px', lineHeight: 1 }}>🦉</span>
-            </div>
-            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '10px 16px', borderRadius: '12px', fontSize: '13px', color: '#475569', fontWeight: '600', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-              ✨ Thầy Socrates đang suy ngẫm và phản biện luận điểm của em...
-            </div>
-          </div>
-        ) : null}
-
-        {errorMessage ? (
-          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }} className="no-print">
-            {errorMessage}
-          </div>
-        ) : null}
-
-        {/* CALLOUT BOX TINH GỌN NGAY DƯỚI TIN NHẮN CUỐI CÙNG CỦA AI (ĐÃ BỎ BẢNG TELEMETRY RỐI MẮT) */}
-        {isReadyForStep3 ? (
-          <div 
-            ref={step3CtaRef}
-            className="no-print"
-            style={{
-              background: '#f0fdf4',
-              border: '2px solid #10b981',
-              borderRadius: '12px',
-              padding: '18px 22px',
-              marginTop: '8px',
-              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.12)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '26px', lineHeight: 1 }}>🎯</div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 6px 0', fontSize: '15.5px', color: '#065f46', fontWeight: 'bold' }}>
-                  ✓ Em đã hoàn thành 4 giai đoạn phản tư nhận thức cùng Thầy Socrates.
-                </h4>
-                <p style={{ margin: 0, fontSize: '13px', color: '#047857', lineHeight: '1.4' }}>
-                  Em hãy đọc kỹ lời phân tích và định hướng của Thầy ở trên, sau đó bấm nút bên dưới để chuyển sang Bước 3 tự tay đối chứng số liệu thực tế từ Đề án tuyển sinh.
-                </p>
               </div>
-            </div>
+            ) : null}
 
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                onClick={() => window.location.href = '/student/fact-check'}
-                style={{
-                  flex: 1,
-                  minWidth: '320px',
-                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '14px 22px',
-                  borderRadius: '8px',
-                  fontWeight: 'bold',
-                  fontSize: '15px',
-                  cursor: 'pointer',
-                  boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>BẤM VÀO ĐÂY ĐỂ TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU ĐỀ ÁN</span>
-                <span style={{ fontSize: '18px' }}>➔</span>
-              </button>
+            {errorMessage ? (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px' }} className="no-print">
+                {errorMessage}
+              </div>
+            ) : null}
 
-              <button
-                type="button"
-                onClick={handleResetSession}
-                title="Bắt đầu lại cuộc trò chuyện từ Vòng 1"
-                style={{
-                  background: '#fff1f2',
-                  color: '#be123c',
-                  border: '1.5px solid #fecdd3',
-                  padding: '12px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>🔄 Làm lại Bước 2</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyText}
-                title="Sao chép toàn bộ biên bản đối thoại"
-                style={{
-                  background: copySuccess ? '#059669' : '#ffffff',
-                  color: copySuccess ? '#ffffff' : '#065f46',
-                  border: '1.5px solid #a7f3d0',
-                  padding: '12px 18px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadTxt}
-                title="Tải biên bản đối thoại (.txt)"
+            {/* BẢNG TÓM TẮT PHẢN TƯ VÀ NỘI DUNG CẦN KIỂM CHỨNG (MỤC 4 & MỤC 5: CHO PHÉP XEM, CHỈNH SỬA, XÁC NHẬN VÀ PHÂN BIỆT RÕ PHÁT BIỂU HỌC SINH VỚI GỢI Ý AI) */}
+            {isReadyForStep3 && summaryDraft ? (
+              <div
+                ref={step3CtaRef}
                 style={{
                   background: '#ffffff',
-                  color: '#334155',
-                  border: '1.5px solid #cbd5e1',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap'
+                  border: '2px solid #0ea5e9',
+                  borderRadius: '14px',
+                  padding: '20px',
+                  marginTop: '8px',
+                  boxShadow: '0 4px 16px rgba(14, 165, 233, 0.1)'
                 }}
               >
-                📥 Tải .TXT
-              </button>
-            </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: '800', background: '#e0f2fe', color: '#0369a1', padding: '3px 9px', borderRadius: '8px', textTransform: 'uppercase' }}>
+                      Tổng kết 4 chặng • Phiên bản {WORKFLOW_VERSION}
+                    </span>
+                    <h3 style={{ margin: '6px 0 4px 0', fontSize: '17px', fontWeight: '800', color: '#0f172a' }}>
+                      📋 Tóm tắt phản tư và nội dung cần kiểm chứng
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '12.5px', color: '#475569' }}>
+                      ℹ️ <strong>Lưu ý:</strong> Các thông tin ở Mục 1–4 là dữ liệu tự báo cáo của em trong cuộc trò chuyện (chưa được xác minh). Em có thể <strong>xem lại, chỉnh sửa hoặc xác nhận</strong> bản tóm tắt này trước khi lưu biên bản và chuyển sang Bước 3.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }} className="no-print">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSummary(prev => !prev)}
+                      style={{
+                        padding: '7px 13px',
+                        borderRadius: '8px',
+                        border: '1px solid #cbd5e1',
+                        background: isEditingSummary ? '#f1f5f9' : '#ffffff',
+                        color: '#1e293b',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isEditingSummary ? '👁️ Xem chế độ đọc' : '✏️ Chỉnh sửa tóm tắt'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmAndSaveSummary(summaryDraft)}
+                      style={{
+                        padding: '7px 15px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: isSummaryConfirmed ? '#059669' : '#2563eb',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isSummaryConfirmed ? '✓ Đã xác nhận & lưu biên bản' : '✅ Xác nhận & Lưu biên bản'}
+                    </button>
+                  </div>
+                </div>
+
+                {summaryStatusMsg && (
+                  <div style={{ marginBottom: '12px', padding: '9px 12px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', color: '#065f46', fontSize: '12.5px', fontWeight: '600' }}>
+                    {summaryStatusMsg}
+                  </div>
+                )}
+
+                {/* PHẦN A: PHÁT BIỂU TỰ BÁO CÁO CỦA HỌC SINH (MỤC 1 - 4) */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    🧑‍🎓 Phần A — Phát biểu tự báo cáo của học sinh (Chưa được xác minh)
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                        1. Lý do lựa chọn do học sinh nêu:
+                      </label>
+                      {isEditingSummary ? (
+                        <textarea
+                          rows={2}
+                          value={summaryDraft.studentReasons || ''}
+                          onChange={(e) => handleSummaryFieldChange('studentReasons', e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: '13.5px', color: '#334155', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {summaryDraft.studentReasons}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                        2. Thông tin và nguồn học sinh đã đề cập:
+                      </label>
+                      {isEditingSummary ? (
+                        <textarea
+                          rows={2}
+                          value={summaryDraft.mentionedInfoAndSources || ''}
+                          onChange={(e) => handleSummaryFieldChange('mentionedInfoAndSources', e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: '13.5px', color: '#334155', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {summaryDraft.mentionedInfoAndSources}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                        3. Sự chuẩn bị do học sinh tự báo cáo:
+                      </label>
+                      {isEditingSummary ? (
+                        <textarea
+                          rows={2}
+                          value={summaryDraft.selfReportedPreparation || ''}
+                          onChange={(e) => handleSummaryFieldChange('selfReportedPreparation', e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: '13.5px', color: '#334155', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {summaryDraft.selfReportedPreparation}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                        4. Những nội dung còn thiếu hoặc chưa được kiểm chứng:
+                      </label>
+                      {isEditingSummary ? (
+                        <textarea
+                          rows={2}
+                          value={summaryDraft.unverifiedOrMissingItems || ''}
+                          onChange={(e) => handleSummaryFieldChange('unverifiedOrMissingItems', e.target.value)}
+                          style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                        />
+                      ) : (
+                        <div style={{ fontSize: '13.5px', color: '#334155', background: '#ffffff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                          {summaryDraft.unverifiedOrMissingItems}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* PHẦN B: GỢI Ý CỦA AI CHO BƯỚC 3 & THAM VẤN MENTOR (MỤC 5) */}
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                      🤖 Phần B — Gợi ý của AI: 1–3 câu hỏi cần kiểm tra ở Bước 3 & Loại nguồn phù hợp
+                    </span>
+                    {isEditingSummary && (summaryDraft.questionsForStep3 || []).length < 3 && (
+                      <button
+                        type="button"
+                        onClick={handleAddQuestionStep3}
+                        style={{ fontSize: '11.5px', fontWeight: '700', padding: '4px 9px', borderRadius: '6px', border: '1px solid #93c5fd', background: '#ffffff', color: '#1d4ed8', cursor: 'pointer' }}
+                      >
+                        + Thêm câu hỏi (tối đa 3)
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {(summaryDraft.questionsForStep3 || []).map((item, idx) => (
+                      <div key={item.id || idx} style={{ background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '8px', padding: '10px 12px' }}>
+                        {isEditingSummary ? (
+                          <div style={{ display: 'grid', gap: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: '12px', color: '#1e40af' }}>Câu hỏi kiểm chứng {idx + 1}:</strong>
+                              {(summaryDraft.questionsForStep3 || []).length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveQuestionStep3(idx)}
+                                  style={{ fontSize: '11px', color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                                >
+                                  Xóa
+                                </button>
+                              )}
+                            </div>
+                            <input
+                              type="text"
+                              value={item.question || ''}
+                              onChange={(e) => handleQuestionStep3Change(idx, 'question', e.target.value)}
+                              placeholder="Nhập câu hỏi cần kiểm tra ở Bước 3..."
+                              style={{ width: '100%', padding: '6px 9px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                            />
+                            <input
+                              type="text"
+                              value={item.suggestedSourceType || ''}
+                              onChange={(e) => handleQuestionStep3Change(idx, 'suggestedSourceType', e.target.value)}
+                              placeholder="Loại nguồn phù hợp để đối chiếu..."
+                              style={{ width: '100%', padding: '6px 9px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '12.5px', color: '#475569' }}
+                            />
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                              {idx + 1}. {item.question}
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#1d4ed8' }}>
+                              🔎 <strong>Loại nguồn gợi ý đối chiếu:</strong> {item.suggestedSourceType}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Đề xuất tham vấn và kiểm chứng với mentor */}
+                  <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed #bfdbfe', fontSize: '12.5px', color: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      🤝 <strong>Tham vấn và kiểm chứng với mentor:</strong> {summaryDraft.mentorRecommendation}
+                    </div>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', background: '#ffffff', padding: '4px 10px', borderRadius: '6px', border: '1px solid #93c5fd' }} className="no-print">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(summaryDraft.mentorSupportRequested)}
+                        onChange={(e) => handleSummaryFieldChange('mentorSupportRequested', e.target.checked)}
+                      />
+                      <span>Em muốn đăng ký tham vấn và kiểm chứng thêm với mentor ở Bước 4</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* CỤM NÚT CHUYỂN SANG BƯỚC 3 (CHO PHÉP CHUYỂN NGAY CẢ KHI HỌC SINH VẪN CÒN NỘI DUNG CHƯA BIẾT / CHƯA ĐỦ CĂN CỨ) */}
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }} className="no-print">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!isSummaryConfirmed) {
+                        await handleConfirmAndSaveSummary(summaryDraft);
+                      }
+                      window.location.href = '/student/fact-check';
+                    }}
+                    style={{
+                      flex: 1,
+                      minWidth: '300px',
+                      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '14px 22px',
+                      borderRadius: '8px',
+                      fontWeight: 'bold',
+                      fontSize: '14.5px',
+                      cursor: 'pointer',
+                      boxShadow: '0 3px 10px rgba(5, 150, 105, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span>XÁC NHẬN TÓM TẮT & TIẾP TỤC SANG BƯỚC 3: ĐỐI CHỨNG DỮ LIỆU</span>
+                    <span style={{ fontSize: '18px' }}>➔</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyText}
+                    style={{
+                      background: copySuccess ? '#059669' : '#ffffff',
+                      color: copySuccess ? '#ffffff' : '#065f46',
+                      border: '1.5px solid #a7f3d0',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copySuccess ? '✅ Đã sao chép' : '📋 Sao chép biên bản'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadTxt}
+                    style={{
+                      background: '#ffffff',
+                      color: '#334155',
+                      border: '1.5px solid #cbd5e1',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    📥 Tải .TXT
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <div ref={messagesEndRef} />
           </div>
-        ) : null}
 
-        <div ref={messagesEndRef} />
-      </div>
+          {/* THANH NHẬP LIỆU PHẢN TƯ */}
+          <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0', boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }} className="no-print">
+            <form
+              onSubmit={handleSendMessage}
+              style={{ display: 'flex', gap: '10px' }}
+            >
+              <input
+                ref={inputFieldRef}
+                type="text"
+                value={inputValue}
+                onChange={(e) => {
+                  if (!isLoading && !isReadyForStep3) setInputValue(e.target.value);
+                }}
+                readOnly={isLoading}
+                disabled={isReadyForStep3}
+                placeholder={
+                  isReadyForStep3
+                    ? 'Em đã hoàn thành 4 chặng. Hãy xem, chỉnh sửa hoặc xác nhận bảng tóm tắt ở trên để sang Bước 3.'
+                    : isLoading
+                    ? 'Thầy Socrates đang ghi nhận câu trả lời của em...'
+                    : `Nhập câu trả lời của em cho ${currentStageMeta.shortLabel} (có thể ghi "chưa biết" hoặc "chưa tìm hiểu" nếu em chưa rõ)...`
+                }
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  backgroundColor: isReadyForStep3 ? '#f1f5f9' : isLoading ? '#f8fafc' : '#ffffff',
+                  color: isReadyForStep3 ? '#64748b' : '#0f172a',
+                  cursor: isReadyForStep3 ? 'not-allowed' : 'text'
+                }}
+              />
+              <button
+                type="submit"
+                disabled={isLoading || !inputValue.trim() || isReadyForStep3}
+                style={{
+                  background: isReadyForStep3 ? '#94a3b8' : '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '0 24px',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  cursor: isLoading || !inputValue.trim() || isReadyForStep3 ? 'not-allowed' : 'pointer',
+                  opacity: isLoading || !inputValue.trim() || isReadyForStep3 ? 0.6 : 1
+                }}
+              >
+                GỬI ➔
+              </button>
+            </form>
+          </div>
 
-      {/* THANH NHẬP LIỆU PHẢN BIỆN (KHÓA KHI ĐÃ HOÀN TẤT) */}
-      <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0', boxShadow: '0 -2px 10px rgba(0,0,0,0.03)' }} className="no-print">
-        <form 
-          onSubmit={handleSendMessage} 
-          style={{ display: 'flex', gap: '10px' }}
-        >
-          <input
-            ref={inputFieldRef}
-            type="text"
-            value={inputValue}
-            onChange={(e) => {
-              if (!isLoading && !isReadyForStep3) setInputValue(e.target.value);
-            }}
-            readOnly={isLoading}
-            disabled={isReadyForStep3}
-            placeholder={isReadyForStep3 ? "Phiên phản tư Bước 2 đã hoàn tất. Vui lòng bấm tiếp tục bên dưới." : isLoading ? "Thầy Socrates đang phân tích câu trả lời của em..." : "Tự tay nhập câu trả lời phản biện của em..."}
-            style={{
-              flex: 1,
-              padding: '12px 16px',
-              border: '1.5px solid #cbd5e1',
-              borderRadius: '8px',
-              fontSize: '14px',
-              outline: 'none',
-              backgroundColor: isReadyForStep3 ? '#f1f5f9' : isLoading ? '#f8fafc' : '#ffffff',
-              color: isReadyForStep3 ? '#64748b' : '#0f172a',
-              cursor: isReadyForStep3 ? 'not-allowed' : 'text'
-            }}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim() || isReadyForStep3}
-            style={{
-              background: isReadyForStep3 ? '#94a3b8' : '#10b981',
-              color: '#ffffff',
-              border: 'none',
-              padding: '0 24px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: isLoading || !inputValue.trim() || isReadyForStep3 ? 'not-allowed' : 'pointer',
-              opacity: isLoading || !inputValue.trim() || isReadyForStep3 ? 0.6 : 1
-            }}
-          >
-            GỬI ➔
-          </button>
-        </form>
-      </div>
-
-      {/* MỤC NHẬT KÝ VÀ SẢN PHẨM PHẢN TƯ VÒNG 2 */}
-      <div style={{ padding: '12px 16px 28px 16px' }} className="no-print">
-        <ReflectionJournalCard 
-          round={2}
-          contextData={{
-            targetMajor: studentProfile?.targetMajor || '',
-            activeBiasType: activeBiasType || '',
-            conversationExcerpt: (messages || []).filter(m => m.role === 'model').slice(-1)[0]?.text || ''
-          }}
-        />
-      </div>
+          {/* MỤC NHẬT KÝ CÁ NHÂN VÒNG 2 (AI KHÔNG VIẾT THAY PHẦN NHẬT KÝ CÁ NHÂN CỦA HỌC SINH) */}
+          <div style={{ padding: '12px 16px 28px 16px' }} className="no-print">
+            <ReflectionJournalCard
+              round={2}
+              studentCode={studentProfile?.studentId || ''}
+              contextData={{
+                targetMajor: studentProfile?.shiftedMajor || studentProfile?.targetMajor || '',
+                workflowVersion: WORKFLOW_VERSION,
+                verifiedSummaryQuestions: summaryDraft?.questionsForStep3 || []
+              }}
+            />
+          </div>
         </>
       )}
-
     </div>
   );
 }

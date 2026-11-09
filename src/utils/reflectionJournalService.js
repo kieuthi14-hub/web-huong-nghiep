@@ -27,13 +27,13 @@ export const ROUNDS_CONFIG = {
   2: {
     round: 2,
     step: 2,
-    title: 'Vòng 2: AI Tham Vấn Phản Tư Socrates',
+    title: 'Vòng 2: Đối Thoại Phản Tư Với AI Socrates',
     shortTitle: 'Vòng 2: AI Socrates',
     stepPath: '/student/debias-agent',
-    stepName: 'Bước 2 (AI Socrates Phản biện 3 vòng)',
-    description: 'Chất vấn và làm lung lay thiên lệch nhận thức qua 3 vòng đối thoại',
-    artifactGuideTitle: 'Sản phẩm Vòng 2: Nhận định cần kiểm chứng & Trích đoạn đối thoại AI',
-    artifactGuideDesc: 'Nêu một nhận định về nghề mà em thấy cần phải kiểm chứng lại. Em có thể chọn trích dẫn 1 đoạn đối thoại tiêu biểu với AI Socrates (không đưa toàn bộ lịch sử trò chuyện).',
+    stepName: 'Bước 2 (Đối thoại phản tư 4 chặng với AI Socrates)',
+    description: 'Làm rõ lý do chọn ngành, hiểu biết thực tế, cơ hội việc làm và sự chuẩn bị qua 4 chặng',
+    artifactGuideTitle: 'Sản phẩm Vòng 2: Nhận định cần kiểm chứng & Ghi chép phản tư cá nhân',
+    artifactGuideDesc: 'Nêu một nhận định về nghề mà em thấy cần phải kiểm chứng lại và ghi chép cá nhân của em sau cuộc đối thoại (AI không viết thay phần nhật ký cá nhân của học sinh).',
     defaultArtifact: {
       claimToVerify: '',
       conversationExcerpt: ''
@@ -58,13 +58,13 @@ export const ROUNDS_CONFIG = {
   4: {
     round: 4,
     step: 4,
-    title: 'Vòng 4: Tham Vấn Đối Chất Thực Tế (Mentor)',
-    shortTitle: 'Vòng 4: Tham vấn đối chất',
+    title: 'Vòng 4: Tham Vấn Và Kiểm Chứng Với Mentor',
+    shortTitle: 'Vòng 4: Tham vấn mentor',
     stepPath: '/student/booking',
-    stepName: 'Bước 4 (Tham vấn đối chất thực tế / Adaptive Triage)',
-    description: 'Phân luồng thích ứng, gặp gỡ cố vấn hoặc rà soát Case Dossier tinh gọn',
+    stepName: 'Bước 4 (Tham vấn và kiểm chứng với mentor)',
+    description: 'Tham vấn và kiểm chứng thực tế với cố vấn dựa trên các nội dung cần hỗ trợ',
     artifactGuideTitle: 'Sản phẩm Vòng 4: Ghi chép trao đổi với mentor hoặc sản phẩm thử nhiệm vụ nghề',
-    artifactGuideDesc: 'Tóm tắt bài học hoặc lời dặn then chốt từ buổi trao đổi với Mentor, hoặc kết quả em tự trải nghiệm một nhiệm vụ thực tế của nghề (không bắt buộc ghi âm/video hay nhận diện người được hỏi).',
+    artifactGuideDesc: 'Tóm tắt bài học hoặc lời dặn then chốt từ buổi tham vấn và kiểm chứng với Mentor, hoặc kết quả em tự trải nghiệm một nhiệm vụ thực tế của nghề (không bắt buộc ghi âm/video hay nhận diện người được hỏi).',
     defaultArtifact: {
       mentorNotes: '',
       taskTrialSummary: ''
