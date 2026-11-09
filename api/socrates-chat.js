@@ -12,17 +12,17 @@ export const WORKFLOW_VERSION = 'v2.1_natural_reflective_dialogue_2026';
 export const INTERNAL_TOPICS = ['reasons', 'understanding', 'opportunities', 'preparation'];
 
 export const TOPIC_LABELS = {
-  reasons: 'Lý do lựa chọn',
-  understanding: 'Hiểu biết về nghề',
-  opportunities: 'Cơ hội việc làm',
-  preparation: 'Sự chuẩn bị'
+  reasons: 'Vì sao chọn nghề?',
+  understanding: 'Em hiểu nghề em chọn đến đâu?',
+  opportunities: 'Cơ hội việc làm?',
+  preparation: 'Cần chuẩn bị những gì để thi đậu vào ngành đó?'
 };
 
 export const TOPIC_OPENING_QUESTIONS = {
   reasons: 'Ngoài lý do đã nêu ở bước 1, còn điều gì khiến em muốn chọn ngành này?',
   understanding: 'Theo em, khó khăn đáng chú ý nhất khi làm nghề này là gì?',
   opportunities: 'Em hình dung cơ hội tìm việc sau khi tốt nghiệp ngành này như thế nào?',
-  preparation: 'Hiện tại, em đã chuẩn bị được gì để đáp ứng yêu cầu đầu vào của ngành?'
+  preparation: 'Hiện tại, em cần chuẩn bị những gì để thi đậu vào ngành này?'
 };
 
 export function removeVietnameseTones(str) {
@@ -332,7 +332,7 @@ export function buildNaturalContextualReply({
     }
 
     if (followUpType === 'clarify_academic_preparation') {
-      return 'Những kỹ năng đó rất hữu ích khi học và làm nghề. Còn về các môn văn hóa dùng để xét tuyển đầu vào, hiện em đã chuẩn bị được gì?';
+      return 'Những kỹ năng đó rất hữu ích khi học và làm nghề. Vậy về các môn văn hóa xét tuyển, em cần chuẩn bị những gì để thi đậu vào ngành này?';
     }
   }
 
@@ -357,11 +357,15 @@ export function buildNaturalContextualReply({
     }
 
     if (nextTopic === 'opportunities') {
-      return TOPIC_OPENING_QUESTIONS.opportunities;
+      const explicitSources = extractExplicitSources(clean);
+      const sourceAck = explicitSources.length > 0
+        ? `Em biết thông tin đó qua ${explicitSources[0].toLowerCase()}.`
+        : 'Đó là góc nhìn hiện tại của em về thực tế công việc.';
+      return `${sourceAck} ${TOPIC_OPENING_QUESTIONS.opportunities}`;
     }
 
     if (nextTopic === 'preparation') {
-      return TOPIC_OPENING_QUESTIONS.preparation;
+      return `Đó là những yếu tố em cho rằng cần có khi ra trường. ${TOPIC_OPENING_QUESTIONS.preparation}`;
     }
   }
 
@@ -501,7 +505,16 @@ QUY TẮC BẮT BUỘC:
 
       const rawAiText = result?.response?.text();
       if (rawAiText && rawAiText.trim().length >= 15) {
-        replyText = sanitizeSocraticResponse(rawAiText);
+        const cleanedAi = sanitizeSocraticResponse(rawAiText);
+        // Nếu đang chuyển sang 1 trong 4 vòng nội dung tiếp theo (ask_next_topic), đảm bảo giữ đúng câu hỏi trọng tâm của vòng đó
+        if (actionType === 'ask_next_topic') {
+          const aiSentences = cleanedAi.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+          const firstAck = aiSentences.find(s => !s.endsWith('?'));
+          const coreQuestion = deterministicReply.split(/(?<=[.!?])\s+/).filter(s => s.endsWith('?')).pop() || TOPIC_OPENING_QUESTIONS[nextTopic];
+          replyText = firstAck ? `${firstAck} ${coreQuestion}` : deterministicReply;
+        } else if (cleanedAi.endsWith('?')) {
+          replyText = cleanedAi;
+        }
       }
     } catch (e) {
       // Fallback sang deterministicReply

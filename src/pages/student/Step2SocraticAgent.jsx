@@ -10,10 +10,10 @@ export const WORKFLOW_VERSION = 'v2.1_natural_reflective_dialogue_2026';
 export const INTERNAL_TOPICS = ['reasons', 'understanding', 'opportunities', 'preparation'];
 
 export const TOPIC_LABELS = {
-  reasons: 'Lý do lựa chọn',
-  understanding: 'Hiểu biết về nghề',
-  opportunities: 'Cơ hội việc làm',
-  preparation: 'Sự chuẩn bị'
+  reasons: 'Vì sao chọn nghề?',
+  understanding: 'Em hiểu nghề em chọn đến đâu?',
+  opportunities: 'Cơ hội việc làm?',
+  preparation: 'Cần chuẩn bị những gì để thi đậu vào ngành đó?'
 };
 
 export const TOPIC_STATUS_LABELS = {
@@ -27,7 +27,7 @@ export const TOPIC_OPENING_QUESTIONS = {
   reasons: 'Ngoài lý do đã nêu ở bước 1, còn điều gì khiến em muốn chọn ngành này?',
   understanding: 'Theo em, khó khăn đáng chú ý nhất khi làm nghề này là gì?',
   opportunities: 'Em hình dung cơ hội tìm việc sau khi tốt nghiệp ngành này như thế nào?',
-  preparation: 'Hiện tại, em đã chuẩn bị được gì để đáp ứng yêu cầu đầu vào của ngành?'
+  preparation: 'Hiện tại, em cần chuẩn bị những gì để thi đậu vào ngành này?'
 };
 
 export function createInitialTopicStates() {
@@ -765,7 +765,7 @@ export function analyzeTurnAndPlanNextStep({
         nextTopicStates,
         isSupportingDistress: false,
         sessionOutcome: 'in_progress',
-        replyText: 'Những kỹ năng đó rất hữu ích khi học và làm nghề. Còn về các môn văn hóa dùng để xét tuyển đầu vào, hiện em đã chuẩn bị được gì?'
+        replyText: 'Những kỹ năng đó rất hữu ích khi học và làm nghề. Vậy về các môn văn hóa xét tuyển, em cần chuẩn bị những gì để thi đậu vào ngành này?'
       };
     }
 
@@ -1396,11 +1396,11 @@ export default function Step2SocraticAgent() {
     content += `ℹ️ Lưu ý: Thông tin do học sinh nêu trong biên bản này là dữ liệu tự báo cáo, chưa được xác minh.\n\n`;
 
     content += `-----------------------------------------------------------------\n`;
-    content += `TRẠNG THÁI CÁC CHỦ ĐỀ TÌM HIỂU:\n`;
+    content += `TIẾN TRÌNH 4 VÒNG CÂU HỎI TRỌNG TÂM:\n`;
     content += `-----------------------------------------------------------------\n`;
-    INTERNAL_TOPICS.forEach(k => {
+    INTERNAL_TOPICS.forEach((k, idx) => {
       const st = topicStates?.[k]?.status || 'not_started';
-      content += `- ${TOPIC_LABELS[k]}: ${TOPIC_STATUS_LABELS[st] || 'Chưa trao đổi'}\n`;
+      content += `- Vòng ${idx + 1}/4 (${TOPIC_LABELS[k]}): ${TOPIC_STATUS_LABELS[st] || 'Chưa trao đổi'}\n`;
     });
     content += `\n`;
 
@@ -1409,10 +1409,10 @@ export default function Step2SocraticAgent() {
     content += `(Trạng thái xác nhận: ${isSummaryConfirmed ? 'Học sinh đã xem và xác nhận' : 'Bản tổng hợp chờ học sinh xác nhận'})\n`;
     content += `-----------------------------------------------------------------\n`;
     content += `[A. PHÁT BIỂU CỦA HỌC SINH TRONG PHIÊN (Chưa được xác minh)]\n`;
-    content += `- Lý do lựa chọn: ${activeSummary.studentReasons}\n`;
-    content += `- Hiểu biết về nghề & nguồn thông tin: ${activeSummary.mentionedInfoAndSources}\n`;
-    content += `- Nhận định về cơ hội việc làm: ${activeSummary.jobOpportunityView || 'Chưa có thông tin trong phiên'}\n`;
-    content += `- Sự chuẩn bị hiện tại: ${activeSummary.selfReportedPreparation}\n`;
+    content += `- Vòng 1 (Vì sao chọn nghề?): ${activeSummary.studentReasons}\n`;
+    content += `- Vòng 2 (Em hiểu nghề em chọn đến đâu?): ${activeSummary.mentionedInfoAndSources}\n`;
+    content += `- Vòng 3 (Cơ hội việc làm?): ${activeSummary.jobOpportunityView || 'Chưa có thông tin trong phiên'}\n`;
+    content += `- Vòng 4 (Cần chuẩn bị những gì để thi đậu vào ngành đó?): ${activeSummary.selfReportedPreparation}\n`;
     content += `- Nội dung chưa rõ / cần kiểm chứng thêm: ${activeSummary.unverifiedOrMissingItems}\n`;
     if (activeSummary.distressNote) {
       content += `- Ghi nhận băn khoăn / cần hỗ trợ tâm lý - thông tin: "${activeSummary.distressNote}"\n`;
@@ -1859,6 +1859,50 @@ export default function Step2SocraticAgent() {
               gap: '16px'
             }}
           >
+            {/* THANH THEO DÕI 4 VÒNG / 4 NỘI DUNG CÂU HỎI TRỌNG TÂM */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
+              gap: '8px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            }}>
+              {INTERNAL_TOPICS.map((tKey, idx) => {
+                const st = topicStates?.[tKey]?.status || 'not_started';
+                const isDone = st === 'has_content' || st === 'needs_verification';
+                const isCurrent = !isSessionEnded && activeTopic === tKey;
+                return (
+                  <div
+                    key={tKey}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: isCurrent ? '1.5px solid #2563eb' : isDone ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                      background: isCurrent ? '#eff6ff' : isDone ? '#ecfdf5' : '#f8fafc',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '3px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                      <span style={{ fontSize: '10.5px', fontWeight: '800', color: isCurrent ? '#1d4ed8' : isDone ? '#047857' : '#64748b' }}>
+                        Vòng {idx + 1}/4
+                      </span>
+                      <span style={{ fontSize: '10.5px', fontWeight: '700', color: isCurrent ? '#2563eb' : isDone ? '#059669' : '#94a3b8' }}>
+                        {isDone ? '✓ Đã hỏi' : isCurrent ? '● Đang trao đổi' : '○ Chờ hỏi'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a', lineHeight: '1.35' }}>
+                      {TOPIC_LABELS[tKey]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             {/* THÔNG TIN LỰA CHỌN BƯỚC 1 */}
             <div style={{
               background: '#ffffff',
@@ -2092,13 +2136,13 @@ export default function Step2SocraticAgent() {
                   </div>
                 )}
 
-                {/* TRẠNG THÁI 4 CHỦ ĐỀ NỘI BỘ */}
+                {/* TRẠNG THÁI 4 VÒNG CÂU HỎI TRỌNG TÂM */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '8px', marginBottom: '14px' }}>
-                  {INTERNAL_TOPICS.map(k => {
+                  {INTERNAL_TOPICS.map((k, idx) => {
                     const st = topicStates?.[k]?.status || 'not_started';
                     return (
                       <div key={k} style={{ padding: '8px 10px', borderRadius: '8px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '12px' }}>
-                        <div style={{ fontWeight: '700', color: '#1e293b' }}>{TOPIC_LABELS[k]}</div>
+                        <div style={{ fontWeight: '700', color: '#1e293b' }}>Vòng {idx + 1}: {TOPIC_LABELS[k]}</div>
                         <div style={{ color: st === 'has_content' ? '#059669' : st === 'needs_verification' ? '#2563eb' : '#64748b', fontWeight: '600', marginTop: '2px' }}>
                           {TOPIC_STATUS_LABELS[st]}
                         </div>
@@ -2110,13 +2154,13 @@ export default function Step2SocraticAgent() {
                 {/* PHẦN A: PHÁT BIỂU CỦA HỌC SINH TRONG PHIÊN */}
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
                   <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f172a', marginBottom: '10px', textTransform: 'uppercase' }}>
-                    🧑‍🎓 Phần A — Phát biểu của học sinh trong phiên (Chưa được xác minh)
+                    🧑‍🎓 Phần A — Phát biểu của học sinh qua 4 vòng câu hỏi (Chưa được xác minh)
                   </div>
 
                   <div style={{ display: 'grid', gap: '10px' }}>
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                        • Lý do lựa chọn:
+                        • Vòng 1 — Vì sao chọn nghề?:
                       </label>
                       {isEditingSummary ? (
                         <textarea
@@ -2134,7 +2178,7 @@ export default function Step2SocraticAgent() {
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                        • Hiểu biết về nghề và nguồn thông tin đã nêu:
+                        • Vòng 2 — Em hiểu nghề em chọn đến đâu? (và nguồn thông tin):
                       </label>
                       {isEditingSummary ? (
                         <textarea
@@ -2152,7 +2196,7 @@ export default function Step2SocraticAgent() {
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                        • Nhận định về cơ hội việc làm:
+                        • Vòng 3 — Cơ hội việc làm?:
                       </label>
                       {isEditingSummary ? (
                         <textarea
@@ -2170,7 +2214,7 @@ export default function Step2SocraticAgent() {
 
                     <div>
                       <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                        • Sự chuẩn bị hiện tại:
+                        • Vòng 4 — Cần chuẩn bị những gì để thi đậu vào ngành đó?:
                       </label>
                       {isEditingSummary ? (
                         <textarea
