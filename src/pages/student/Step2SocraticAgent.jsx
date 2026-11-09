@@ -197,12 +197,32 @@ export function generateSocraticFirstPrompt(student = {}) {
     anchorReason === "Trái mã RIASEC" || 
     (riasecMatch < 50 && student.compatibility_status && (student.compatibility_status.includes('Mâu thuẫn') || student.compatibility_status.includes('Lệch')));
 
+  const isFamilyDirected =
+    anchorReason === "Gia đình" ||
+    /ba mẹ|bố mẹ|cha mẹ|gia đình|phụ huynh|bố muốn|mẹ muốn|ba muốn|định hướng của gia đình|mong muốn của gia đình|mong muốn của ba mẹ|mong muốn của bố mẹ/i.test(`${source} ${anchorQuote}`) ||
+    sNorm.includes("ba me") ||
+    sNorm.includes("bo me") ||
+    sNorm.includes("cha me") ||
+    sNorm.includes("gia dinh") ||
+    sNorm.includes("phu huynh");
+
+  const cNorm = removeVietnameseTones(targetCareer);
+  const isMedicalCareer =
+    /\b(y khoa|y đa khoa|bác sĩ|y dược|dược học|dược sĩ|ngành dược|điều dưỡng|răng hàm mặt|nha khoa|y học cổ truyền|xét nghiệm y học|kỹ thuật y học)\b/i.test(targetCareer) ||
+    ['y khoa', 'y da khoa', 'bac si', 'y duoc', 'duoc hoc', 'duoc si', 'nganh duoc', 'dieu duong', 'rang ham mat', 'y hoc co truyen', 'xet nghiem y hoc'].some(k => cNorm.includes(k));
+
   // 2. Cây quyết định phản tư thích ứng chuẩn mực sư phạm (KHÔNG BỊA ĐẶT ĐIỂM SỐ HỌC BẠ / ĐIỂM CHUẨN)
   const cleanSource = (source || anchorQuote || "").trim();
   const hasExplicitReason = Boolean(cleanSource && cleanSource.length >= 2);
   const reasonSnippet = hasExplicitReason ? ` với lý do "${cleanSource}"` : "";
 
-  if (isMediaAnchoring) {
+  if (isFamilyDirected) {
+    // ĐẶC THÙ LÝ DO GIA ĐÌNH ĐỊNH HƯỚNG / MONG MUỐN: Tập trung bóc tách sự tự chủ (động cơ nội tại)
+    biasType = isHighConfidence ? "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)" : "PHỤ THUỘC ĐỊNH HƯỚNG GIA ĐÌNH (EXTRINSIC FAMILY PRESSURE)";
+    biasRule = "Kích hoạt do học sinh chọn ngành xuất phát từ định hướng hoặc mong muốn của ba mẹ/gia đình; tập trung bóc tách sự tự chủ và động cơ nội tại.";
+    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' theo định hướng và mong muốn của gia đình'} với mức tự tin ${conf}/10. Nếu tách khỏi kỳ vọng và định hướng của ba mẹ, bản thân em có thực sự đam mê công việc thực tế của ngành này hay em đang cố gánh vác mong muốn của người khác?`;
+
+  } else if (isMediaAnchoring) {
     // THIÊN LỆCH 1: MỎ NEO TRUYỀN THÔNG (Anchoring Bias)
     biasType = "MỎ NEO TRUYỀN THÔNG (ANCHORING BIAS)";
     biasRule = "Kích hoạt do học sinh bộc lộ động cơ chọn ngành từ hình ảnh review trên mạng xã hội (TikTok, YouTube) hoặc truyền thông.";
@@ -214,6 +234,12 @@ export function generateSocraticFirstPrompt(student = {}) {
     biasType = "TÂM LÝ ĐÁM ĐÔNG (BANDWAGON EFFECT)";
     biasRule = "Kích hoạt do học sinh chọn ngành theo xu thế đám đông, bạn bè xung quanh cùng rủ chọn hoặc nghe theo lời khuyên ngoại tại.";
     socraticQuestion = `Chào em. Ở Bước 1, em cho biết chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet || ' vì thấy nhiều bạn bè cũng đang đăng ký'}. Nếu các bạn đổi hướng sang ngành khác, lý do thực chất nào giữ chân em tiếp tục theo đuổi ngành này?`;
+
+  } else if (isMedicalCareer) {
+    // ĐẶC THÙ NGÀNH Y DƯỢC: Trọng tâm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập và thực tế thu nhập giai đoạn đầu nghề
+    biasType = isHighConfidence ? "TỰ TIN THÁI QUÁ (OVERCONFIDENCE BIAS)" : "TRUY VẤN ĐẶC THÙ NGÀNH Y DƯỢC";
+    biasRule = `Kích hoạt phản tư đặc thù khối ngành Y Dược: Thời gian đào tạo dài hạn (6-8 năm), áp lực học tập/trực lâm sàng và thực tế đãi ngộ giai đoạn đầu nghề.`;
+    socraticQuestion = `Chào em. Ở Bước 1, em đã chọn ngành ${targetCareer} ${schoolClause}${reasonSnippet} với mức tự tin ${conf}/10. Khác với các ngành nghề thông thường, khối ngành Y Dược đòi hỏi thời gian đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thực hành lâm sàng lấy chứng chỉ hành nghề) cùng áp lực học tập và trực viện rất khắc nghiệt; căn cứ thực tế nào giúp em tin mình đủ sức bền để đi trọn lộ trình dài hạn đó?`;
 
   } else if (isHighConfidence) {
     // THIÊN LỆCH 3: TỰ TIN THÁI QUÁ (Overconfidence Bias) - PHẢN TƯ THỰC CHẤT, NẮM CHẮC DỮ LIỆU BƯỚC 1, KHÔNG DÙNG ĐIỂM GIẢ LẬP
@@ -765,15 +791,18 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
       cleaned = cleaned.trim();
     }
 
-    // QUY TẮC 6: CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG KHI HỌC SINH NÊU ĐỘNG CƠ CẢM XÚC/GIA ĐÌNH/ƯỚC MƠ
-    const isFamilyOrAltruisticUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
-    const isMedicalCareerUser = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược'].some(k => major.toLowerCase().includes(k) || lowerUser.includes(k));
+    // QUY TẮC 6: NGUYÊN TẮC PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY) - CHỐNG QUAY XE ĐỘT NGỘT SANG TIỀN LƯƠNG & XỬ LÝ ĐẶC THÙ Y DƯỢC / GIA ĐÌNH
+    const isFamilyDirectedUser = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
+    const isFamilyOrAltruisticUser = isFamilyDirectedUser || ['chữa bệnh', 'từ nhỏ', 'từ bé', 'ước mơ từ nhỏ', 'thích từ nhỏ', 'giúp đỡ', 'cứu người', 'yêu trẻ', 'hiếu thảo'].some(k => lowerUser.includes(k));
+    const isMedicalCareerUser = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'răng hàm mặt', 'nha khoa', 'y học cổ truyền', 'xét nghiệm y học'].some(k => major.toLowerCase().includes(k) || lowerUser.includes(k));
 
-    if (round === 2 && isFamilyOrAltruisticUser && (cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('mức thu nhập') || cleaned.includes('khởi điểm 15') || cleaned.includes('15 - 20 triệu'))) {
-      if (isMedicalCareerUser) {
-        cleaned = `Thầy hiểu tình cảm và mong muốn hiếu thảo muốn chữa bệnh cho ba mẹ là động lực rất thiêng liêng của em. Tuy nhiên, ngành Y đòi hỏi tối thiểu 6 năm học đại học áp lực cực lớn, những đêm trực trắng tại bệnh viện và thêm 18 tháng thực hành lâm sàng trước khi có thể độc lập hành nghề. Khi nghĩ về chặng đường dài và nhiều áp lực sinh tử đó, điều gì khiến em tin mình có đủ sức bền và sự kiên trì để đi đến cùng?`;
-      } else {
-        cleaned = `Thầy hiểu ước mơ và tình cảm dành cho gia đình là động lực rất đáng trân trọng của em. Tuy nhiên, việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành này, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
+    if (round === 2 && (isFamilyOrAltruisticUser || isMedicalCareerUser)) {
+      if (isFamilyDirectedUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu'))) {
+        cleaned = `Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập trên giảng đường đại học và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${major} hay em chỉ đang gánh vác mong muốn của người khác?`;
+      } else if (isMedicalCareerUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu') || !/6.*8\s*năm|6\s*năm|đào tạo dài hạn|thực hành/i.test(cleaned))) {
+        cleaned = `Khác với các công việc thương mại thông thường, ngành ${major} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?`;
+      } else if (isFamilyOrAltruisticUser && (cleaned.includes('mức lương') || cleaned.includes('mức thu nhập') || cleaned.includes('thị trường lao động') || cleaned.includes('nhà tuyển dụng') || cleaned.includes('triệu'))) {
+        cleaned = `Ước mơ và tình cảm dành cho gia đình là động lực khởi đầu đáng quý, nhưng việc yêu thích một ngành nghề rất khác với việc chịu đựng được những áp lực và kỷ luật khắt khe của công việc thực tế hàng ngày. Khi tìm hiểu về ngành ${major}, em đã lường trước những khó khăn lớn nhất mà mình sẽ phải đối mặt chưa?`;
       }
     }
 
@@ -792,12 +821,12 @@ export function sanitizeSocraticResponse(rawText, round, effectiveCareer, target
         if (round === 1) {
           cleaned += ` Em thấy công việc chuyên môn thực tế hàng ngày của ngành này có thực sự khớp với tính cách tự nhiên của em không, hay em chọn vì thấy ngành này đang hot và được nhiều người khen ngợi?`;
         } else if (round === 2) {
-          if (isFamilyOrAltruisticUser) {
-            if (isMedicalCareerUser) {
-              cleaned += ` Nhìn vào chặng đường 6 năm đại học và 18 tháng thực hành lâm sàng đầy áp lực của ngành Y, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
-            } else {
-              cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
-            }
+          if (isFamilyDirectedUser) {
+            cleaned += ` Nếu tách khỏi kỳ vọng của ba mẹ, bản thân em có thực sự đam mê công việc thực tế của ngành ${major} hay em chỉ đang chiều theo mong muốn của gia đình?`;
+          } else if (isMedicalCareerUser) {
+            cleaned += ` Nhìn vào lộ trình đào tạo dài hạn 6-8 năm, áp lực học tập nặng nề và thực tế thu nhập giai đoạn đầu nghề của ngành ${major}, điều gì khiến em tin mình có đủ sức bền để đi đến cùng?`;
+          } else if (isFamilyOrAltruisticUser) {
+            cleaned += ` Nhìn vào áp lực và kỷ luật khắt khe của nghề này, em đã chuẩn bị gì cho những khó khăn thực tế phía trước?`;
           } else {
             cleaned += ` Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn trong tương lai?`;
           }
@@ -1208,10 +1237,16 @@ Mục tiêu duy nhất của bạn: Đóng vai "người phản biện khó tín
    - Mỗi lượt đối thoại CHỈ ĐƯỢC ĐẶT ĐÚNG 01 CÂU HỎI TRUY VẤN. Câu hỏi phải ngắn gọn, sắc bén, đánh thẳng vào giả định của học sinh.
    - Tuyệt đối không khen ngợi, không tán dương dễ dãi (Anti-Sycophancy). Không bao giờ nói: "Ước mơ của em thật tuyệt vời", "Em rất có tiềm năng".
 
+# NGUYÊN TẮC PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY):
+1. Mỗi lượt phản hồi CHỈ ĐƯỢC CHẤT VẤN VÀO 01 TRỌNG TÂM DUY NHẤT. Tuyệt đối không vừa chất vấn lý do gia đình/đam mê, vừa nhảy cóc sang hỏi về mức lương trong cùng một câu.
+2. Xử lý logic theo đặc thù ngành nghề:
+   - Nếu ngành là Y Dược: Trọng tâm phản biện phải nằm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập và thực tế thu nhập giai đoạn đầu nghề, chứ không hỏi như một công việc thương mại thông thường.
+   - Nếu lý do là "Ba mẹ định hướng / mong muốn": Tập trung bóc tách sự tự chủ (động cơ nội tại) xem học sinh có thực sự đam mê hay chỉ đang gánh kỳ vọng của người khác.
+
 # NGUYÊN TẮC TIẾP CẬN TÂM LÝ LỨA TUỔI HỌC SINH THPT (ĐẶC BIỆT LƯU Ý VỀ MỨC LƯƠNG):
 1. Học sinh THPT chưa có kinh nghiệm việc làm; các kỳ vọng về thu nhập (như 15 - 20 triệu) thường là "mỏ neo ảo" do mạng xã hội (TikTok, Facebook, Youtube) tạo ra.
 2. TUYỆT ĐỐI KHÔNG dùng các thuật ngữ công sở như: "đàm phán lương", "báo cáo tài chính", "năng lực thương mại", "giá trị thương mại", "tạo ra doanh thu".
-3. Hãy truy vấn về NĂNG LỰC CẦN ĐÁP ỨNG ĐỂ ĐẠT MỨC LƯƠNG MONG MUỐN TRONG TƯƠNG LAI:
+3. Hãy truy vấn về NĂNG LỰC CẦN ĐÁP ỨNG ĐỂ ĐẠT MỨC LƯƠNG MONG MUỐN TRONG TƯƠNG LAI (đối với các ngành thương mại/dịch vụ/kỹ thuật thông thường khi không vướng áp lực định hướng gia đình):
    - Thay vì hỏi: "Em lấy gì để đàm phán mức lương đó?" hay "nhà tuyển dụng sẵn sàng chi trả",
    - HÃY HỎI: "Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là [Mức thu nhập] trong tương lai?"
 
@@ -1407,14 +1442,46 @@ BỐI CẢNH VÒNG 5 (HỌC NGHỀ - ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
         // KỊCH BẢN 4 CÂU HỎI TRUY VẤN + 1 LƯỢT CHỐT BƯỚC 3 SOCRACAREER
         // ==========================================
         switch (round) {
-          case 2:
+          case 2: {
+            const isFamilyDirectedTurn = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
+            if (isFamilyDirectedTurn) {
+              return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH GIAI ĐOẠN 2 (PHẢN TƯ ĐƠN ĐIỂM: BÓC TÁCH SỰ TỰ CHỦ & ĐỘNG CƠ NỘI TẠI KHI GIA ĐÌNH ĐỊNH HƯỚNG):
+- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
+- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
+
+[NHIỆM VỤ GIAI ĐOẠN 2 - PHẢN TƯ ĐƠN ĐIỂM (SINGLE-POINT INQUIRY)]:
+1. CHỈ CHẤT VẤN ĐÚNG 01 TRỌNG TÂM DUY NHẤT: Tập trung bóc tách sự tự chủ (động cơ nội tại) xem học sinh có thực sự đam mê hay chỉ đang gánh kỳ vọng của người khác.
+2. TUYỆT ĐỐI KHÔNG nhảy cóc sang hỏi về mức lương trong cùng một câu.
+3. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
+"Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập nhiều năm trên giảng đường và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${effectiveCareer} hay em chỉ đang gánh vác mong muốn của người khác?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG nhắc đến tiền lương hay thu nhập ở lượt này.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
+            }
+            if (isMedicalCareer) {
+              return `${SOCRATIC_PERSONA}${specialDirective}
+BỐI CẢNH GIAI ĐOẠN 2 (PHẢN TƯ ĐƠN ĐIỂM THEO ĐẶC THÙ NGÀNH Y DƯỢC):
+- Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
+- Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
+
+[NHIỆM VỤ GIAI ĐOẠN 2 - PHẢN TƯ ĐẶC THÙ KHỐI NGÀNH Y DƯỢC]:
+1. CHỈ CHẤT VẤN ĐÚNG 01 TRỌNG TÂM DUY NHẤT: Trọng tâm phản biện phải nằm ở thời gian đào tạo dài hạn (6-8 năm), áp lực học tập/trực lâm sàng và thực tế thu nhập giai đoạn đầu nghề khi mới ra trường, chứ KHÔNG hỏi như một công việc thương mại thông thường.
+2. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
+"Khác với các công việc thương mại thông thường, ngành ${effectiveCareer} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?"
+
+[NGHIÊM CẤM]:
+- TUYỆT ĐỐI KHÔNG hỏi như một công việc thương mại thông thường.
+- Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
+            }
             return `${SOCRATIC_PERSONA}${specialDirective}
 BỐI CẢNH GIAI ĐOẠN 2 (BẮT CẦU LẬP LUẬN & CHẤT VẤN NĂNG LỰC ĐÁP ỨNG MỨC LƯƠNG MONG MUỐN):
 - Ngành mục tiêu: ${effectiveCareer}, trường mục tiêu: ${uni}.
 - Mức thu nhập kỳ vọng học sinh đã khai ở Bước 1: "${expectedIncome}".
 - Học sinh vừa trả lời ở Giai đoạn 1: "${userText}".
 
-[NHIỆM VỤ GIAI ĐOẠN 2 - BẮT CẦU TỰ NHIÊN & TRUY VẤN NĂNG LỰC TƯƠNG LAI]:
+[NHIỆM VỤ GIAI ĐOẠN 2 - BẮT CẦU TỰ NHIÊN & TRUY VẤN NĂNG LỰC TƯƠNG LAI (PHẢN TƯ ĐƠN ĐIỂM)]:
 1. BẮT CẦU LẬP LUẬN (BẮT BUỘC): Dùng chính ý kiến hoặc đặc điểm cá nhân học sinh vừa nêu trong "${userText}" để phản biện ngắn gọn, tự nhiên (không dùng câu sáo rỗng hay thuật ngữ công sở như "đàm phán lương", "báo cáo tài chính", "năng lực thương mại").
 2. KẾT THÚC BẰNG ĐÚNG CÂU HỎI TRUY VẤN SAU:
 "Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?"
@@ -1422,6 +1489,7 @@ BỐI CẢNH GIAI ĐOẠN 2 (BẮT CẦU LẬP LUẬN & CHẤT VẤN NĂNG LỰC
 [NGHIÊM CẤM]:
 - TUYỆT ĐỐI KHÔNG đưa số liệu điểm chuẩn hay học phí.
 - Chỉ xuất ra trực tiếp lời thoại của Thầy Socrates, tối đa 2 câu văn.`;
+          }
 
           case 3:
             return `${SOCRATIC_PERSONA}${specialDirective}${adaptiveDirective}
@@ -1641,6 +1709,14 @@ BỐI CẢNH VÒNG 5 (RA LỆNH ĐIỀU HƯỚNG BƯỚC 3 TỰ CHỦ):
 
         switch (round) {
           case 2: {
+            const isFamilyDirectedFallback = ['ba mẹ', 'bố mẹ', 'cha mẹ', 'gia đình', 'phụ huynh', 'định hướng của ba mẹ', 'định hướng của gia đình', 'bố muốn', 'mẹ muốn', 'ba muốn'].some(k => lowerUser.includes(k));
+            const isMedicalFallback = ['bác sĩ', 'y khoa', 'y đa khoa', 'y dược', 'y tế', 'điều dưỡng', 'dược', 'răng hàm mặt', 'nha khoa', 'y học cổ truyền', 'xét nghiệm y học'].some(k => effectiveCareer.toLowerCase().includes(k) || lowerUser.includes(k));
+            if (isFamilyDirectedFallback) {
+              return `Sự định hướng của ba mẹ xuất phát từ mong muốn tốt cho em, nhưng người trực tiếp học tập nhiều năm trên giảng đường và gắn bó lâu dài với nghề lại là chính em. Nếu tách khỏi kỳ vọng của gia đình, bản thân em có thực sự đam mê đặc thù công việc của ngành ${effectiveCareer} hay em chỉ đang gánh vác mong muốn của người khác?`;
+            }
+            if (isMedicalFallback) {
+              return `Khác với các công việc thương mại thông thường, ngành ${effectiveCareer} đòi hỏi lộ trình đào tạo dài hạn từ 6 đến 8 năm (bao gồm cả thời gian thực hành lâm sàng lấy chứng chỉ hành nghề), áp lực học tập rất lớn và thực tế thu nhập giai đoạn đầu nghề còn khiêm tốn. Khi nhìn vào chặng đường dài hạn và khắc nghiệt đó, em đã chuẩn bị tâm lý và sự kiên trì thế nào để theo đuổi đến cùng?`;
+            }
             const bridgePrefix = traitBridge ? `${traitBridge} ` : '';
             return `${bridgePrefix}Theo em, bản thân cần đáp ứng những năng lực gì để có thể nhận được mức lương như mình mong muốn là ${expectedIncome} trong tương lai?`;
           }
