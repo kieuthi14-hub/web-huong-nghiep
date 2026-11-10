@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { syncStudentReflectionProgress } from '../../lib/studentReflectionsSync'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
@@ -900,6 +901,10 @@ const CounselingBooking = () => {
 
     // Đồng bộ Supabase nếu có user
     try {
+      await syncStudentReflectionProgress({
+        mentor_notes: `[Fast-Track]: ${fastTrackReflection.trim() || 'Đạt chuẩn thực chứng tinh gọn dưới sự giám sát của Mentor.'}`
+      })
+
       if (user?.id) {
         await supabase.from('counseling_sessions').insert([{
           student_id: user.id,
@@ -942,6 +947,12 @@ const CounselingBooking = () => {
       localStorage.setItem('cbas_step4_feedback', JSON.stringify(payload))
       localStorage.setItem('cbas_step4_completed', 'true')
       localStorage.setItem('cbas_step4_consultation_completed', 'true')
+
+      try {
+        await syncStudentReflectionProgress({
+          mentor_notes: booking?.counselor_notes || payload.notes
+        })
+      } catch (e) {}
 
       // Nếu có booking hiện tại, cập nhật trạng thái completed
       if (booking) {

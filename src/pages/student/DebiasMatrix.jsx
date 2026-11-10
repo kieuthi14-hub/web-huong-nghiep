@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { syncStudentReflectionProgress } from '../../lib/studentReflectionsSync';
 import Toast from '../../components/common/Toast';
 import StepProgressHeader from '../../components/common/StepProgressHeader';
 import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard';
@@ -714,6 +715,13 @@ export default function DebiasMatrix() {
 
     // Đồng bộ Supabase
     try {
+      await syncStudentReflectionProgress({
+        priority_choice_1: triadTiers.dream.majorSchool || '',
+        priority_choice_2: triadTiers.realistic.majorSchool || '',
+        priority_choice_3: triadTiers.safe.majorSchool || '',
+        contingency_plan: `[Kế hoạch K${selectedGrade}]: ${getPlanItem(selectedGrade, 0)} | [Kỹ năng nghề]: ${getPlanItem(selectedGrade, 1)} | [Vật neo]: ${getPlanItem(selectedGrade, 2)} | [Cam kết]: ${personalPledge}`
+      });
+
       if (user?.id) {
         await supabase.from('metacognitive_matrix').insert([{
           student_id: user.id,

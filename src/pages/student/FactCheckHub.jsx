@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { syncStudentReflectionProgress } from '../../lib/studentReflectionsSync'
 import Step3VocationalVerification from './Step3VocationalVerification'
 import Step3DataVerification from './Step3DataVerification'
 import ReflectionJournalCard from '../../components/reflection/ReflectionJournalCard'
@@ -292,6 +293,16 @@ const FactCheckHub = () => {
 
   // Xử lý hoàn thành phân hệ Đại học / Cao Đẳng (CBAS Step 3 Empirical Grounding & Cognitive Triage)
   const handleAcademicComplete = async (triageResult, nextStep) => {
+    try {
+      await syncStudentReflectionProgress({
+        benchmark_3years: triageResult?.avgCutoff != null
+          ? `Điểm chuẩn TB: ${triageResult.avgCutoff}/${triageResult?.maxScale || 30}đ (Điểm tự lượng giá: ${triageResult?.totalStudentScore || 0}, chênh lệch: ${triageResult?.scoreGap || 0}đ)`
+          : String(triageResult?.benchmark_3years || ''),
+        tuition_per_year: Number(triageResult?.tuitionFee) || 0,
+        admission_combination: String(triageResult?.targetCombination || '')
+      })
+    } catch (e) {}
+
     // Lưu vào Supabase nếu đã đăng nhập (phục vụ nghiên cứu & báo cáo CBAS)
     if (user?.id) {
       try {

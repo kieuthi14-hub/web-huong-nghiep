@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { syncStudentReflectionProgress } from '../../lib/studentReflectionsSync'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/common/Button'
 import Toast from '../../components/common/Toast'
@@ -1180,6 +1181,12 @@ const HollandTest = () => {
 
       // Lưu vào CSDL Supabase (nếu có kết nối)
       try {
+        await syncStudentReflectionProgress({
+          initial_career: `${userProfile.targetMajor}${finalSchool && !finalSchool.includes('Chưa') ? ` (${finalSchool})` : ''}`,
+          initial_confidence: Number(userProfile.initialConfidence) || 5,
+          initial_reason: trimmedReason
+        }, userProfile.studentId || localStorage.getItem('cbas_student_id'))
+
         if (user) {
           await supabase.from('test_results').insert({
             student_id: user.id,
