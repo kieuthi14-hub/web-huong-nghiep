@@ -1181,8 +1181,11 @@ const HollandTest = () => {
 
       // Lưu vào CSDL Supabase (nếu có kết nối)
       try {
+        const formattedInitialCareer = finalSchool && !finalSchool.toLowerCase().includes('chưa')
+          ? `${userProfile.targetMajor} - ${finalSchool}`
+          : userProfile.targetMajor
         await syncStudentReflectionProgress({
-          initial_career: `${userProfile.targetMajor}${finalSchool && !finalSchool.includes('Chưa') ? ` (${finalSchool})` : ''}`,
+          initial_career: formattedInitialCareer,
           initial_confidence: Number(userProfile.initialConfidence) || 5,
           initial_reason: trimmedReason
         }, userProfile.studentId || localStorage.getItem('cbas_student_id'))

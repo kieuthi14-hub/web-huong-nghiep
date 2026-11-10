@@ -63,6 +63,68 @@ export async function syncStudentReflectionProgress(fields = {}, explicitStudent
     return { ok: true, student_code, data };
   } catch (err) {
     console.warn('[student_reflections] Sync exception:', err);
-    return { ok: false, student_code, error: err };
+  return { ok: false, student_code, error: err };
   }
 }
+
+/**
+ * Tính toán các chỉ số thống kê KHKT tương đương với câu lệnh SQL trên bảng `public.student_reflections`
+ */
+export async function fetchStudentReflectionsSummary() {
+  let rows = [];
+  if (supabase && typeof supabase.from === 'function') {
+    try {
+      const { data, error } = await supabase
+        .from('student_reflections')
+        .select('*')
+        .order('updated_at', { ascending: false });
+      if (!error && Array.isArray(data)) {
+        rows = data;
+      }
+    } catch (e) {}
+  }
+
+  if (rows.length === 0) {
+    try {
+      const localMap = JSON.parse(localStorage.getItem('cbas_student_reflections_map') || '{}');
+      rows = Object.values(localMap);
+    } catch (e) {}
+  }
+
+  const tong_so_hoc_sinh = rows.length;
+  const so_hs_kiem_chung_so_lieu = rows.filter(
+    r => r.benchmark_3years != null && String(r.benchmark_3years).trim() !== '' && Number(r.tuition_per_year) > 0
+  ).length;
+  const ty_le_kiem_chung_pct = tong_so_hoc_sinh > 0
+    ? Number(((so_hs_kiem_chung_so_lieu * 100.0) / tong_so_hoc_sinh).toFixed(1))
+    : 0;
+
+  const so_hs_co_ke_hoach_b = rows.filter(
+    r => r.contingency_plan != null && String(r.contingency_plan).length > 5
+  ).length;
+  const ty_le_ke_hoach_b_pct = tong_so_hoc_sinh > 0
+    ? Number(((so_hs_co_ke_hoach_b * 100.0) / tong_so_hoc_sinh).toFixed(1))
+    : 0;
+
+  const so_hs_dieu_chinh_nguyen_vong = rows.filter(r => {
+    if (!r.initial_career || !r.priority_choice_1) return false;
+    return String(r.initial_career).trim().toLowerCase() !== String(r.priority_choice_1).trim().toLowerCase();
+  }).length;
+  const ty_le_dieu_chinh_pct = tong_so_hoc_sinh > 0
+    ? Number(((so_hs_dieu_chinh_nguyen_vong * 100.0) / tong_so_hoc_sinh).toFixed(1))
+    : 0;
+
+  return {
+    rows,
+    metrics: {
+      tong_so_hoc_sinh,
+      so_hs_kiem_chung_so_lieu,
+      ty_le_kiem_chung_pct,
+      so_hs_co_ke_hoach_b,
+      ty_le_ke_hoach_b_pct,
+      so_hs_dieu_chinh_nguyen_vong,
+      ty_le_dieu_chinh_pct
+    }
+  };
+}
+
