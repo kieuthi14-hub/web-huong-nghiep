@@ -1826,48 +1826,56 @@ export default function DebiasMatrix() {
                   <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
                 </div>
 
-                <div style={{ position: 'relative', padding: '2px 0' }}>
-                  {/* Đường viền tam giác nối 3 nguyện vọng: đỉnh = NV1, hai đỉnh đáy = NV dự phòng 2 và 3 */}
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"
-                    style={{ position: 'absolute', left: '25%', top: '12%', width: '50%', height: '76%', zIndex: 0, pointerEvents: 'none' }}>
-                    <polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.07)" stroke="#2dd4bf" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-                  </svg>
-
-                  <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '14px', rowGap: '10px' }}>
-                    {/* ĐỈNH: Nguyện vọng 1 */}
-                    <div style={{ gridColumn: '1 / -1', justifySelf: 'center', width: '58%', boxSizing: 'border-box', textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #14b8a6', background: '#f0fdfa', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)</span>
-                      <p className="font-bold text-slate-900 mt-0.5 text-[12px]">
-                        {triadTiers.dream?.majorSchool || `${targetMajor} (Trường trọng điểm / Tốp đầu)`}
-                      </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-teal-200 leading-snug">
-                        {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn'}
+                {(() => {
+                  const pyramidTiers = [
+                    { key: 'dream', color: '#c2410c', title: 'NGUYỆN VỌNG 1 · THỬ THÁCH', hint: 'Điểm chuẩn cao hơn điểm hiện tại', fallback: `${targetMajor} (Trường trọng điểm / Tốp đầu)`, top: 36, bottom: 57.3 },
+                    { key: 'realistic', color: '#0f766e', title: 'NGUYỆN VỌNG DỰ PHÒNG 2 · VỪA SỨC', hint: 'Điểm chuẩn ngang điểm hiện tại', fallback: `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`, top: 57.3, bottom: 78.7 },
+                    { key: 'safe', color: '#1d4ed8', title: 'NGUYỆN VỌNG DỰ PHÒNG 3 · BẢO TOÀN', hint: 'Điểm chuẩn thấp hơn điểm hiện tại', fallback: `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`, top: 78.7, bottom: 100 }
+                  ];
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'stretch', gap: '10px', padding: '2px 0' }}>
+                      <div style={{ flex: '1 1 0', minWidth: 0 }}>
+                        {pyramidTiers.map((t, idx) => {
+                          const lt = (100 - t.top) / 2;
+                          const lb = (100 - t.bottom) / 2;
+                          return (
+                            <div key={t.key} style={{
+                              position: 'relative',
+                              height: '70px',
+                              marginTop: idx === 0 ? 0 : '3px',
+                              background: t.color,
+                              clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                              WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                              WebkitPrintColorAdjust: 'exact',
+                              printColorAdjust: 'exact',
+                              color: '#ffffff',
+                              textAlign: 'center',
+                              boxSizing: 'border-box',
+                              padding: `6px ${lt + 2}%`,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'center'
+                            }}>
+                              <div style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.2px', lineHeight: 1.2 }}>{t.title}</div>
+                              <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                                {triadTiers[t.key]?.majorSchool || t.fallback}
+                              </div>
+                              <div style={{ fontSize: '8.5px', opacity: 0.92, marginTop: '2px', lineHeight: 1.2 }}>{t.hint}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ width: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center' }}>
+                        <span style={{ fontSize: '16px', lineHeight: 1 }}>▲</span>
+                        <div style={{ width: '2px', flex: 1, background: '#0f172a' }} />
+                        <span style={{ marginTop: '4px' }}>Mức thách thức tăng dần</span>
                       </div>
                     </div>
-
-                    {/* ĐÁY TRÁI: Dự phòng 2 */}
-                    <div style={{ boxSizing: 'border-box', minWidth: 0, textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #06b6d4', background: '#ecfeff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC</span>
-                      <p className="font-bold text-slate-900 mt-0.5 text-[11.5px]">
-                        {triadTiers.realistic?.majorSchool || `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`}
-                      </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-cyan-200 leading-snug">
-                        {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn'}
-                      </div>
-                    </div>
-
-                    {/* ĐÁY PHẢI: Dự phòng 3 */}
-                    <div style={{ boxSizing: 'border-box', minWidth: 0, textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #94a3b8', background: '#f8fafc', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN</span>
-                      <p className="font-bold text-slate-900 mt-0.5 text-[11.5px]">
-                        {triadTiers.safe?.majorSchool || `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`}
-                      </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-slate-300 leading-snug">
-                        {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm lộ trình học tập không bị gián đoạn'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  );
+                })()}
+                <p style={{ fontSize: '9px', color: '#475569', marginTop: '4px', textAlign: 'center' }}>
+                  Chọn theo thứ tự ưu tiên: Nguyện vọng 1 → Nguyện vọng dự phòng 2 → Nguyện vọng dự phòng 3
+                </p>
               </div>
 
               {/* 4. 3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP */}
