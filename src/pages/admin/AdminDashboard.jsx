@@ -4759,7 +4759,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
                         <div>
                           <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
-                            1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)
+                            NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH)
                           </span>
                           <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major}</p>
                         </div>
@@ -4772,7 +4772,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
                         <div>
                           <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                            2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)
+                            NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC)
                           </span>
                           <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
                             {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
@@ -4789,7 +4789,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
                         <div>
                           <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                            3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)
+                            NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)
                           </span>
                           <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
                             {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')

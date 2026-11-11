@@ -1821,49 +1821,52 @@ export default function DebiasMatrix() {
                   <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                  {/* Nấc 1: Thử thách */}
-                  <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50/50 flex flex-col justify-between">
-                    <div>
+                <div style={{ position: 'relative', padding: '4px 0 2px 0' }}>
+                  {/* Đường viền hình tam giác nối 3 nguyện vọng: đỉnh = NV1, hai đỉnh đáy = NV2, NV3 */}
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"
+                    style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}>
+                    <polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+                  </svg>
+
+                  {/* ĐỈNH TAM GIÁC: Nguyện vọng 1 (Thử thách) */}
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+                    <div className="p-2.5 rounded-lg border border-teal-300 bg-teal-50 shadow-sm" style={{ width: '56%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                       <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.dream?.label || '1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)'}
+                        {triadTiers.dream?.label || 'NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)'}
                       </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                      <p className="font-bold text-slate-900 mt-1 text-[12px]">
                         {triadTiers.dream?.majorSchool || `${targetMajor} (Trường trọng điểm / Tốp đầu)`}
                       </p>
-                    </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
-                      {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)'}
+                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/70 leading-normal">
+                        {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)'}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Nấc 2: Vừa sức */}
-                  <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50/50 flex flex-col justify-between">
-                    <div>
+                  {/* HAI ĐỈNH ĐÁY: Nguyện vọng dự phòng 2 và 3 */}
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                    <div className="p-2.5 rounded-lg border border-cyan-300 bg-cyan-50 shadow-sm" style={{ width: '48%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                       <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.realistic?.label || '2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)'}
+                        {triadTiers.realistic?.label || 'NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)'}
                       </span>
                       <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
                         {triadTiers.realistic?.majorSchool || `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`}
                       </p>
+                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/70 leading-normal">
+                        {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn (+1.5 đến +2.5 điểm)'}
+                      </div>
                     </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
-                      {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn (+1.5 đến +2.5 điểm)'}
-                    </div>
-                  </div>
 
-                  {/* Nấc 3: Bảo toàn rủi ro */}
-                  <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between">
-                    <div>
+                    <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 shadow-sm" style={{ width: '48%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
                       <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.safe?.label || '3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)'}
+                        {triadTiers.safe?.label || 'NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)'}
                       </span>
                       <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
                         {triadTiers.safe?.majorSchool || `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`}
                       </p>
-                    </div>
-                    <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                      {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập không bị gián đoạn'}
+                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
+                        {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập không bị gián đoạn'}
+                      </div>
                     </div>
                   </div>
                 </div>

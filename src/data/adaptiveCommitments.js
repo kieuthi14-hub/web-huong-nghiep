@@ -59,17 +59,17 @@ export const ADAPTIVE_COMMITMENTS_BY_GRADE = {
 // DỮ LIỆU TAM GIÁC NGUYỆN VỌNG MẪU TIÊU CHUẨN (KHÔNG GÁN CỐ ĐỊNH NGÀNH HỌC KHÁC):
 export const DEFAULT_TRIANGLE_DATA = {
   stretch: {
-    title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH)",
+    title: "NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH)",
     major: "Nguyện vọng Thử thách (Trường đại học trọng điểm / Tốp đầu)",
     desc: "Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)"
   },
   realistic: {
-    title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC)",
+    title: "NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC)",
     major: "Nguyện vọng Vừa sức (Hệ chính quy vừa sức / Cơ sở đào tạo uy tín khu vực)",
     desc: "Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (biên độ an toàn +1.5 đến +2.5 điểm)"
   },
   safety: {
-    title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+    title: "NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)",
     major: "Nguyện vọng Bảo toàn (Hệ Cao đẳng / Chương trình đào tạo thực hành chất lượng cao)",
     desc: "Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập và tích lũy kỹ năng nghề không bị gián đoạn"
   }
@@ -112,19 +112,19 @@ export const CT21_COMMITMENT_DATA = {
   },
   triangle: {
     stretch: {
-      title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
+      title: "NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)",
       majorSchool: "Trí tuệ Nhân tạo — Trường ĐH Công nghệ Thông tin - ĐHQG TP.HCM",
       targetScore: "27.50 điểm (Khoảng cách nỗ lực: Thiếu 2.50 điểm so với phong độ hiện tại)",
       notes: "Mục tiêu dấn thân phấn đấu cao độ, đòi hỏi bứt phá vượt bậc trong kỳ thi TN THPT."
     },
     realistic: {
-      title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)",
       majorSchool: "Công nghệ Thông tin — Trường Đại học Nha Trang (Tham chiếu: 22.0 - 23.5 điểm)",
       targetScore: "Biên độ an toàn: Điểm học bạ hiện tại (25.0) cao hơn điểm chuẩn từ +1.5 đến +3.0 điểm.",
       notes: "Mục tiêu trọng tâm bảo đảm cơ hội trúng tuyển cao và tối ưu chi phí đào tạo."
     },
     safety: {
-      title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)",
       majorSchool: "Kỹ thuật Phần mềm — Cao đẳng Kỹ thuật Công nghệ Khánh Hòa (Xét học bạ THPT)",
       targetScore: "Vùng đệm dự phòng rủi ro",
       notes: "Vùng đệm dự phòng rủi ro; bảo đảm lộ trình học tập liên tục không bị đứt gãy nếu kỳ thi tốt nghiệp có biến động điểm thi bất khả kháng. Tuyệt đối không phó mặc may rủi."
@@ -200,19 +200,19 @@ export const CT13_COMMITMENT_DATA = {
   },
   triangle: {
     stretch: {
-      title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
+      title: "NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)",
       majorSchool: "Y Đa khoa — ĐH Y Dược TP.HCM",
       targetScore: "Tham chiếu: 27.5đ+ (Khoảng cách nỗ lực: Thiếu 3.2 điểm)",
       notes: "Mục tiêu phấn đấu nỗ lực cao — Yêu cầu bứt phá năng lực chuyên sâu."
     },
     realistic: {
-      title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)",
       majorSchool: "Y học Dự phòng / Dược học — ĐH Tây Nguyên / ĐH Nha Trang",
       targetScore: "Tham chiếu: 21.5 - 23.0đ",
       notes: "Mục tiêu phù hợp năng lực học bạ tích lũy, cơ hội trúng tuyển ổn định."
     },
     safety: {
-      title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)",
       majorSchool: "Cao đẳng Điều dưỡng — Cao đẳng Y tế Khánh Hòa (Xét học bạ sớm)",
       targetScore: "Vùng đệm an toàn xét tuyển sớm",
       notes: "Vùng đệm an toàn — Chủ động phương thức xét tuyển sớm, bảo đảm việc làm lâm sàng tại địa phương."
@@ -288,19 +288,19 @@ export const CT08_COMMITMENT_DATA = {
   },
   triangle: {
     stretch: {
-      title: "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)",
+      title: "NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)",
       majorSchool: "Quản trị Khách sạn — Trường Đại học Nha Trang (Tham chiếu: 21.0đ)",
       targetScore: "21.0 điểm",
       notes: "Mục tiêu đại học chính quy địa phương — Đòi hỏi củng cố điểm văn hóa THPT vững chắc."
     },
     realistic: {
-      title: "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)",
       majorSchool: "Kỹ thuật Chế biến Món ăn / Làm đẹp — CĐ Du lịch Nha Trang (Hệ chính quy)",
       targetScore: "Xét tuyển học bạ THPT (18.0 - 20.0đ)",
       notes: "Mục tiêu đào tạo bài bản — Học phí theo quy định nhà nước, thực hành xưởng đạt chuẩn."
     },
     safety: {
-      title: "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)",
+      title: "NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)",
       majorSchool: "Hệ Trung cấp nghề 9+ — Trường Cao đẳng Kỹ thuật Công nghệ Khánh Hòa",
       targetScore: "Miễn học phí theo chính sách nhà nước",
       notes: "Vùng đệm dự phòng rủi ro — Được miễn học phí nghề theo chính sách nhà nước, bảo toàn tương lai."
@@ -348,17 +348,17 @@ export function buildAdaptiveTriadAndPlan(targetMajor = '', targetSchool = '', g
   const school = (targetSchool || '').trim();
 
   // Nấc 1: Thử thách (Stretch Goal)
-  const stretchTitle = "1. NGUYỆN VỌNG THỬ THÁCH (STRETCH GOAL)";
+  const stretchTitle = "NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)";
   const stretchSchool = school ? `${major} — ${school}` : `${major} (Trường đại học trọng điểm / Tốp đầu)`;
   const stretchDesc = "Mục tiêu dấn thân nỗ lực cao — Đòi hỏi bứt phá tối đa năng lực các môn thế mạnh trong tổ hợp xét tuyển.";
 
   // Nấc 2: Vừa sức (Realistic Target)
-  const realisticTitle = "2. NGUYỆN VỌNG VỪA SỨC (REALISTIC TARGET)";
+  const realisticTitle = "NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)";
   const realisticSchool = `${major} (Hệ chính quy vừa sức / Cơ sở đào tạo uy tín khu vực)`;
   const realisticDesc = "Mục tiêu trọng tâm bảo đảm cơ hội trúng tuyển vững chắc, tối ưu hóa học phí và lộ trình việc làm sau tốt nghiệp.";
 
   // Nấc 3: Bảo toàn (Safety Buffer)
-  const safetyTitle = "3. NGUYỆN VỌNG BẢO TOÀN (SAFETY BUFFER)";
+  const safetyTitle = "NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)";
   const safetySchool = `${major} (Hệ Cao đẳng / Chương trình đào tạo thực hành chất lượng cao)`;
   const safetyDesc = "Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập và tích lũy kỹ năng nghề không bị gián đoạn.";
 
