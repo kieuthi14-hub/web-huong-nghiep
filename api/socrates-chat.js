@@ -7,7 +7,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-export const WORKFLOW_VERSION = 'v2.1_natural_reflective_dialogue_2026';
+export const WORKFLOW_VERSION = 'v2.2_anti_repeat_4rounds_2026';
 
 export const INTERNAL_TOPICS = ['reasons', 'understanding', 'opportunities', 'preparation'];
 
@@ -373,6 +373,62 @@ export function buildNaturalContextualReply({
   return 'Cuộc trò chuyện vừa rồi đã giúp làm rõ hơn những điều em đã tìm hiểu và những khoảng trống thông tin cần tra cứu thêm. Em hãy kiểm tra lại bản tóm tắt bên dưới trước khi lưu và chuyển sang bước 3 nhé.';
 }
 
+const TOPIC_MARKERS = {
+  reasons: /còn điều gì khiến em muốn chọn ngành/i,
+  understanding: /khó khăn đáng chú ý nhất/i,
+  opportunities: /cơ hội tìm việc/i,
+  preparation: /cần chuẩn bị những gì để thi đậu/i
+};
+
+// Xác định chủ đề của một tin nhắn AI dựa trên câu hỏi trong đó
+export function detectTopicFromAiText(text = '') {
+  let found = null;
+  let bestPos = -1;
+  for (const key of INTERNAL_TOPICS) {
+    const m = TOPIC_MARKERS[key].exec(text || '');
+    if (m && m.index >= bestPos) { found = key; bestPos = m.index; }
+  }
+  return found;
+}
+
+// Suy ra kế hoạch hội thoại từ lịch sử khi client không gửi dialoguePlan (bản cache cũ)
+export function inferPlanFromHistory(chatHistory = []) {
+  const aiMsgs = (Array.isArray(chatHistory) ? chatHistory : []).filter(m => m && m.role !== 'user' && typeof m.text === 'string');
+  const lastAi = aiMsgs[aiMsgs.length - 1];
+  const topic = (lastAi && detectTopicFromAiText(lastAi.text)) || 'reasons';
+  const idx = INTERNAL_TOPICS.indexOf(topic);
+  if (idx >= INTERNAL_TOPICS.length - 1) {
+    return { actionType: 'closing', activeTopic: topic, nextTopic: 'completed' };
+  }
+  return { actionType: 'ask_next_topic', activeTopic: topic, nextTopic: INTERNAL_TOPICS[idx + 1] };
+}
+
+function extractQuestion(text = '') {
+  const sentences = (text || '').split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+  return sentences.filter(s => s.endsWith('?')).pop() || '';
+}
+
+// Chống lặp: nếu câu hỏi đã được AI hỏi trước đó, chuyển sang câu hỏi chủ đề chưa hỏi
+export function avoidRepeatedQuestion(replyText, chatHistory = []) {
+  const q = extractQuestion(replyText);
+  if (!q) return { text: replyText, repeated: false };
+  const aiTexts = (Array.isArray(chatHistory) ? chatHistory : [])
+    .filter(m => m && m.role !== 'user' && typeof m.text === 'string')
+    .map(m => m.text);
+  if (!aiTexts.some(t => t.includes(q))) return { text: replyText, repeated: false };
+  for (const key of INTERNAL_TOPICS) {
+    const oq = TOPIC_OPENING_QUESTIONS[key];
+    if (!aiTexts.some(t => t.includes(oq))) {
+      return { text: `Mình ghi lại ý đó của em. ${oq}`, repeated: true, nextTopic: key };
+    }
+  }
+  return {
+    text: 'Cuộc trò chuyện vừa rồi đã giúp làm rõ hơn những điều em đã tìm hiểu và những khoảng trống thông tin cần tra cứu thêm. Em hãy kiểm tra lại bản tóm tắt bên dưới trước khi lưu và chuyển sang bước 3 nhé.',
+    repeated: true,
+    nextTopic: 'completed'
+  };
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -404,7 +460,7 @@ export default async function handler(req, res) {
     const targetSchool = studentProfile?.targetSchool || studentProfile?.targetUniversity || '';
     const reason = studentProfile?.reason || 'Chưa nêu chi tiết';
 
-    const plan = dialoguePlan || {};
+    const plan = (dialoguePlan && dialoguePlan.actionType) ? dialoguePlan : inferPlanFromHistory(chatHistory);
     const actionType = plan.actionType || 'ask_next_topic';
     const activeTopic = plan.activeTopic || 'reasons';
     const nextTopic = plan.nextTopic || 'understanding';
@@ -430,17 +486,18 @@ export default async function handler(req, res) {
       followUpType === 'ask_concrete_difficulty' ||
       /chữa bệnh cho mẹ|nội khoa|xuyên đêm|trực đêm|giỏi thì sẽ có nhiều cơ hội/i.test(trimmedMsg)
     ) {
+      const guarded = avoidRepeatedQuestion(deterministicReply, chatHistory);
       return res.status(200).json({
         success: true,
         workflowVersion: WORKFLOW_VERSION,
         serverTimestamp,
         actionType,
         activeTopic,
-        nextTopic,
-        response: deterministicReply,
-        reply: deterministicReply,
-        isComplete: actionType === 'closing',
-        isCompleted: actionType === 'closing'
+        nextTopic: guarded.nextTopic || nextTopic,
+        response: guarded.text,
+        reply: guarded.text,
+        isComplete: actionType === 'closing' || guarded.nextTopic === 'completed',
+        isCompleted: actionType === 'closing' || guarded.nextTopic === 'completed'
       });
     }
 
@@ -524,17 +581,20 @@ QUY TẮC BẮT BUỘC:
       replyText = sanitizeSocraticResponse(deterministicReply);
     }
 
+    const guardedFinal = avoidRepeatedQuestion(replyText, chatHistory);
+    replyText = guardedFinal.text;
+
     return res.status(200).json({
       success: true,
       workflowVersion: WORKFLOW_VERSION,
       serverTimestamp,
       actionType,
       activeTopic,
-      nextTopic,
+      nextTopic: guardedFinal.nextTopic || nextTopic,
       response: replyText,
       reply: replyText,
-      isComplete: actionType === 'closing',
-      isCompleted: actionType === 'closing'
+      isComplete: actionType === 'closing' || guardedFinal.nextTopic === 'completed',
+      isCompleted: actionType === 'closing' || guardedFinal.nextTopic === 'completed'
     });
   } catch (error) {
     console.error('Lỗi Socrates Chat Backend:', error);

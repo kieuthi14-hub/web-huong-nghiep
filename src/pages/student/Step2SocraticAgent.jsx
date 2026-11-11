@@ -5,7 +5,43 @@ import ReflectionJournalCard from '../../components/reflection/ReflectionJournal
 import { resetStepData } from '../../utils/interventionProgress';
 import { supabase } from '../../lib/supabase';
 
-export const WORKFLOW_VERSION = 'v2.1_natural_reflective_dialogue_2026';
+export const WORKFLOW_VERSION = 'v2.2_anti_repeat_4rounds_2026';
+
+const TOPIC_MARKERS = {
+  reasons: /còn điều gì khiến em muốn chọn ngành/i,
+  understanding: /khó khăn đáng chú ý nhất/i,
+  opportunities: /cơ hội tìm việc/i,
+  preparation: /cần chuẩn bị những gì để thi đậu/i
+};
+
+export function detectTopicFromAiText(text = '') {
+  let found = null;
+  let bestPos = -1;
+  for (const key of ['reasons', 'understanding', 'opportunities', 'preparation']) {
+    const m = TOPIC_MARKERS[key].exec(text || '');
+    if (m && m.index >= bestPos) { found = key; bestPos = m.index; }
+  }
+  return found;
+}
+
+export function avoidRepeatedQuestion(replyText, history = []) {
+  const sentences = (replyText || '').split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+  const q = sentences.filter(s => s.endsWith('?')).pop() || '';
+  if (!q) return { text: replyText, repeated: false };
+  const aiTexts = history.filter(m => m && m.role === 'model' && typeof m.text === 'string').map(m => m.text);
+  if (!aiTexts.some(t => t.includes(q))) return { text: replyText, repeated: false };
+  for (const key of ['reasons', 'understanding', 'opportunities', 'preparation']) {
+    const oq = TOPIC_OPENING_QUESTIONS[key];
+    if (!aiTexts.some(t => t.includes(oq))) {
+      return { text: `Mình ghi lại ý đó của em. ${oq}`, repeated: true, nextTopic: key };
+    }
+  }
+  return {
+    text: 'Cuộc trò chuyện vừa rồi đã giúp làm rõ hơn những điều em đã tìm hiểu và những thông tin cần tra cứu thêm. Em hãy kiểm tra lại bản tóm tắt bên dưới trước khi lưu và chuyển sang bước 3 nhé.',
+    repeated: true,
+    nextTopic: 'completed'
+  };
+}
 
 export const INTERNAL_TOPICS = ['reasons', 'understanding', 'opportunities', 'preparation'];
 
@@ -1537,6 +1573,14 @@ export default function Step2SocraticAgent() {
     setIsLoading(true);
 
     try {
+      // Chủ đề đang hỏi được suy ra từ câu hỏi gần nhất của AI (không phụ thuộc state cũ/draft cũ)
+      const lastAiMsg = [...messages].reverse().find(m => m.role === 'model');
+      const topicFromHistory = lastAiMsg ? detectTopicFromAiText(lastAiMsg.text) : null;
+      const derivedTopic = topicFromHistory && !isSupportingDistress
+        && INTERNAL_TOPICS.indexOf(topicFromHistory) > INTERNAL_TOPICS.indexOf(activeTopic)
+        ? topicFromHistory
+        : activeTopic;
+
       // Nếu học sinh nêu ngành/chuyên ngành cụ thể (VD: "Em định học nội khoa"), ghi nhận vào shiftedMajor trong phiên
       const goalShift = detectGoalShift(cleanText);
       let updatedProfile = studentProfile;
@@ -1550,13 +1594,24 @@ export default function Step2SocraticAgent() {
 
       const plan = analyzeTurnAndPlanNextStep({
         userText: cleanText,
-        activeTopic,
+        activeTopic: derivedTopic,
         topicStates,
         studentProfile: updatedProfile,
         wasSupportingDistress: isSupportingDistress
       });
 
-      const replyContent = await callAiWithPlan(nextHistory, cleanText, plan, updatedProfile);
+      let replyContent = await callAiWithPlan(nextHistory, cleanText, plan, updatedProfile);
+
+      // Chống lặp: nếu câu hỏi đã được hỏi trước đó thì chuyển sang chủ đề chưa hỏi
+      const guarded = avoidRepeatedQuestion(replyContent, messages);
+      if (guarded.repeated) {
+        replyContent = guarded.text;
+        plan.nextTopic = guarded.nextTopic;
+        if (guarded.nextTopic === 'completed') {
+          plan.actionType = 'closing';
+          plan.sessionOutcome = 'completed_all_topics';
+        }
+      }
 
       const nextTopicKey = plan.nextTopic === 'completed' ? 'preparation' : plan.nextTopic;
       const aiMsg = {

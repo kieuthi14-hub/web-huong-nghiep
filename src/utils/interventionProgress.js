@@ -276,6 +276,10 @@ export const resetStepData = (stepNumber) => {
         localStorage.removeItem('cbas_step2_bias_rule')
         localStorage.removeItem('cbas_step2_anchor_fingerprint')
         localStorage.removeItem('cbas_step2_reflection')
+        ;['v2', 'v21', 'v22'].forEach(v => {
+          localStorage.removeItem(`cbas_step2_${v}_draft`)
+          localStorage.removeItem(`cbas_step2_${v}_fingerprint`)
+        })
         // Khi làm lại Bước 2 (đối thoại phản tư), toàn bộ các bước sau (3, 4, 5) phải được làm lại theo
         resetStepData(3)
         break
