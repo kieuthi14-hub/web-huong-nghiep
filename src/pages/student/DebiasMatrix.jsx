@@ -847,8 +847,10 @@ export default function DebiasMatrix() {
             justify-content: space-between !important;
             width: 210mm !important;
             max-width: 210mm !important;
-            min-height: 297mm !important;
-            height: auto !important;
+            min-height: 0 !important;
+            height: 296mm !important;
+            max-height: 296mm !important;
+            overflow: hidden !important;
             margin: 0 auto !important;
             /* LỀ AN TOÀN BẢO VỆ CHỮ: Trên 12mm, Phải 14mm, Dưới 12mm, Trái 18mm */
             padding: 12mm 14mm 12mm 18mm !important;
@@ -884,6 +886,9 @@ export default function DebiasMatrix() {
             break-inside: avoid !important;
           }
         }
+
+        /* Thu gọn nội dung để bản cam kết vừa đúng 1 trang A4 */
+        .a4-container > div:first-child { zoom: 0.84; }
 
         /* Khung hiển thị khi xem trước trên màn hình máy tính */
         .a4-container {
@@ -1821,51 +1826,44 @@ export default function DebiasMatrix() {
                   <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
                 </div>
 
-                <div style={{ position: 'relative', padding: '4px 0 2px 0' }}>
-                  {/* Đường viền hình tam giác nối 3 nguyện vọng: đỉnh = NV1, hai đỉnh đáy = NV2, NV3 */}
+                <div style={{ position: 'relative', padding: '2px 0' }}>
+                  {/* Đường viền tam giác nối 3 nguyện vọng: đỉnh = NV1, hai đỉnh đáy = NV dự phòng 2 và 3 */}
                   <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"
-                    style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}>
-                    <polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+                    style={{ position: 'absolute', left: '25%', top: '12%', width: '50%', height: '76%', zIndex: 0, pointerEvents: 'none' }}>
+                    <polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.07)" stroke="#2dd4bf" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
                   </svg>
 
-                  {/* ĐỈNH TAM GIÁC: Nguyện vọng 1 (Thử thách) */}
-                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
-                    <div className="p-2.5 rounded-lg border border-teal-300 bg-teal-50 shadow-sm" style={{ width: '56%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.dream?.label || 'NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)'}
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[12px]">
+                  <div style={{ position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '14px', rowGap: '10px' }}>
+                    {/* ĐỈNH: Nguyện vọng 1 */}
+                    <div style={{ gridColumn: '1 / -1', justifySelf: 'center', width: '58%', boxSizing: 'border-box', textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #14b8a6', background: '#f0fdfa', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                      <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH GOAL)</span>
+                      <p className="font-bold text-slate-900 mt-0.5 text-[12px]">
                         {triadTiers.dream?.majorSchool || `${targetMajor} (Trường trọng điểm / Tốp đầu)`}
                       </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/70 leading-normal">
-                        {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu cạnh tranh cao)'}
+                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-teal-200 leading-snug">
+                        {triadTiers.dream?.notes || 'Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn'}
                       </div>
                     </div>
-                  </div>
 
-                  {/* HAI ĐỈNH ĐÁY: Nguyện vọng dự phòng 2 và 3 */}
-                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
-                    <div className="p-2.5 rounded-lg border border-cyan-300 bg-cyan-50 shadow-sm" style={{ width: '48%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.realistic?.label || 'NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC TARGET)'}
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                    {/* ĐÁY TRÁI: Dự phòng 2 */}
+                    <div style={{ boxSizing: 'border-box', minWidth: 0, textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #06b6d4', background: '#ecfeff', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                      <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC</span>
+                      <p className="font-bold text-slate-900 mt-0.5 text-[11.5px]">
                         {triadTiers.realistic?.majorSchool || `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`}
                       </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/70 leading-normal">
-                        {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn (+1.5 đến +2.5 điểm)'}
+                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-cyan-200 leading-snug">
+                        {triadTiers.realistic?.notes || 'Mục tiêu trọng tâm — Điểm số nằm trong phong độ an toàn'}
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 shadow-sm" style={{ width: '48%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                      <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                        {triadTiers.safe?.label || 'NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)'}
-                      </span>
-                      <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
+                    {/* ĐÁY PHẢI: Dự phòng 3 */}
+                    <div style={{ boxSizing: 'border-box', minWidth: 0, textAlign: 'center', padding: '6px 10px', borderRadius: '8px', border: '1.5px solid #94a3b8', background: '#f8fafc', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                      <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN</span>
+                      <p className="font-bold text-slate-900 mt-0.5 text-[11.5px]">
                         {triadTiers.safe?.majorSchool || `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`}
                       </p>
-                      <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                        {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm 100% lộ trình học tập không bị gián đoạn'}
+                      <div className="text-[9.5px] text-slate-600 mt-1 pt-1 border-t border-slate-300 leading-snug">
+                        {triadTiers.safe?.notes || 'Vùng đệm dự phòng rủi ro biến động điểm thi, bảo đảm lộ trình học tập không bị gián đoạn'}
                       </div>
                     </div>
                   </div>
