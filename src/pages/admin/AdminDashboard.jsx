@@ -48,7 +48,7 @@ import {
   CheckCircle,
   GitCompare
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content } from '../../data/adaptiveCommitments'
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content, getStudentSignatureData, STUDENT_SIGNATURE_MAP } from '../../data/adaptiveCommitments'
 import { 
   fetchStudentReflectionsSummary, 
   updateStudentMentorSession, 
@@ -1597,6 +1597,151 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     setPreviewPdfStudent(student)
   }
 
+  // Tạo khối chữ ký 3 bên dạng HTML cho file in/tải về
+  const generateSignatureHtml = (studentId) => {
+    const sig = getStudentSignatureData(studentId)
+    return `
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+        <div>
+          <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">HỌC SINH CAM KẾT</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Ký và ghi rõ mã số)</div>
+          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
+            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 20px; color: #1d4ed8; transform: rotate(-4deg); font-weight: bold; line-height: 1;">
+              ${sig.sign}
+            </div>
+            <svg width="74" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
+              <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+            <div style="font-size: 8px; color: #059669; font-weight: 700; margin-top: 1px;">
+              ☑ Đã ký điện tử • ${sig.date}
+            </div>
+          </div>
+          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">${studentId} (${sig.name})</div>
+        </div>
+
+        <div>
+          <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">CỐ VẤN / MENTOR</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Xác nhận nghiệm thu)</div>
+          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
+            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 19px; color: #0f766e; transform: rotate(-3deg); font-weight: bold; line-height: 1;">
+              Ng.V.Tâm
+            </div>
+            <svg width="68" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
+              <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <div style="font-size: 8px; color: #0f766e; font-weight: 700; margin-top: 1px;">
+              ✓ Đã nghiệm thu phiên tham vấn
+            </div>
+          </div>
+          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">ThS. Nguyễn Văn Tâm</div>
+        </div>
+
+        <div>
+          <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">ĐẠI DIỆN PHỤ HUYNH</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Ký chứng kiến hỗ trợ)</div>
+          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
+            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 18px; color: #334155; transform: rotate(-2deg); font-weight: bold; line-height: 1;">
+              Đại diện PH
+            </div>
+            <svg width="64" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
+              <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            <div style="font-size: 8px; color: #475569; font-weight: 700; margin-top: 1px;">
+              ✓ Đồng thuận đồng hành
+            </div>
+          </div>
+          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">Đại diện Gia đình</div>
+        </div>
+      </div>
+    `
+  }
+
+  // Tạo khối chữ ký 3 bên dạng JSX React cho Modal hiển thị trên màn hình
+  const renderSignatureBlock = (studentId) => {
+    const sig = getStudentSignatureData(studentId)
+    return (
+      <div className="grid grid-cols-3 gap-3 pt-3 text-center text-xs border-t border-slate-200">
+        <div className="space-y-1">
+          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">HỌC SINH CAM KẾT</div>
+          <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ mã số)</div>
+          
+          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
+            <div style={{
+              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
+              fontSize: "20px",
+              color: "#1d4ed8",
+              transform: "rotate(-4deg)",
+              fontWeight: "bold",
+              lineHeight: 1
+            }}>
+              {sig.sign}
+            </div>
+            <svg width="76" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
+              <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <div className="text-[8px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
+              <span>☑</span> Đã ký điện tử • {sig.date}
+            </div>
+          </div>
+
+          <div className="font-black text-teal-800 text-[10.5px]">{studentId} ({sig.name})</div>
+        </div>
+
+        <div className="space-y-1">
+          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">CỐ VẤN / MENTOR</div>
+          <div className="text-[9px] text-slate-500 italic">(Xác nhận nghiệm thu Bước 5)</div>
+
+          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
+            <div style={{
+              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
+              fontSize: "19px",
+              color: "#0f766e",
+              transform: "rotate(-3deg)",
+              fontWeight: "bold",
+              lineHeight: 1
+            }}>
+              Ng.V.Tâm
+            </div>
+            <svg width="68" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
+              <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <div className="text-[8px] text-teal-700 font-bold flex items-center gap-1 mt-0.5">
+              <span>✓</span> Đã nghiệm thu phiên tham vấn
+            </div>
+          </div>
+
+          <div className="font-black text-teal-800 text-[10.5px]">ThS. Nguyễn Văn Tâm</div>
+        </div>
+
+        <div className="space-y-1">
+          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">ĐẠI DIỆN PHỤ HUYNH</div>
+          <div className="text-[9px] text-slate-500 italic">(Ký chứng kiến hỗ trợ)</div>
+
+          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
+            <div style={{
+              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
+              fontSize: "18px",
+              color: "#334155",
+              transform: "rotate(-2deg)",
+              fontWeight: "bold",
+              lineHeight: 1
+            }}>
+              Đại diện PH
+            </div>
+            <svg width="64" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
+              <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+            <div className="text-[8px] text-slate-600 font-bold flex items-center gap-1 mt-0.5">
+              <span>✓</span> Đồng thuận đồng hành
+            </div>
+          </div>
+
+          <div className="font-black text-teal-800 text-[10.5px]">Đại diện Gia đình</div>
+        </div>
+      </div>
+    )
+  }
+
   const handleBatchPrintAllPDF = () => {
     setIsBatchPrintModalOpen(true)
   }
@@ -1741,23 +1886,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     `).join('')}
   </div>
 
-  <div class="sign-row">
-    <div class="sign-col">
-      <div class="sign-role">${ct21.signatures.student.title}</div>
-      <div class="sign-sub">${ct21.signatures.student.subtitle}</div>
-      <div class="sign-name">${ct21.signatures.student.name}</div>
-    </div>
-    <div class="sign-col">
-      <div class="sign-role">${ct21.signatures.mentor.title}</div>
-      <div class="sign-sub">${ct21.signatures.mentor.subtitle}</div>
-      <div class="sign-name">${ct21.signatures.mentor.name}</div>
-    </div>
-    <div class="sign-col">
-      <div class="sign-role">${ct21.signatures.parent.title}</div>
-      <div class="sign-sub">${ct21.signatures.parent.subtitle}</div>
-      <div class="sign-name">${ct21.signatures.parent.name}</div>
-    </div>
-  </div>
+  ${generateSignatureHtml(ct21.studentInfo.id)}
 </body>
 </html>`
     } else {
@@ -1863,18 +1992,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   <div class="box">
     <p><strong>Điểm bẻ gãy tư duy Socrates:</strong> <em>"${student.turningPointQuote || ''}"</em></p>
   </div>
-  <div class="sign-row">
-    <div>
-      <p><strong>HỌC SINH CAM KẾT</strong></p>
-      <br/><br/>
-      <p><strong>${student.id}</strong> (Đã ký điện tử)</p>
-    </div>
-    <div>
-      <p><strong>CỐ VẤN / MENTOR</strong></p>
-      <br/><br/>
-      <p><em>(Xác nhận đồng hành)</em></p>
-    </div>
-  </div>
+  ${generateSignatureHtml(student.id)}
 </body>
 </html>`
     }
@@ -1987,23 +2105,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
         `).join('')}
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); margin-top:18px; text-align:center; border-top:1px solid #cbd5e1; padding-top:8px; font-size:10px;">
-        <div>
-          <strong>${ct21.signatures.student.title}</strong><br/>
-          <span style="font-size:9px; color:#64748b;">${ct21.signatures.student.subtitle}</span><br/><br/>
-          <strong style="color:#0f766e;">${ct21.signatures.student.name}</strong>
-        </div>
-        <div>
-          <strong>${ct21.signatures.mentor.title}</strong><br/>
-          <span style="font-size:9px; color:#64748b;">${ct21.signatures.mentor.subtitle}</span><br/><br/>
-          <strong style="color:#0f766e;">${ct21.signatures.mentor.name}</strong>
-        </div>
-        <div>
-          <strong>${ct21.signatures.parent.title}</strong><br/>
-          <span style="font-size:9px; color:#64748b;">${ct21.signatures.parent.subtitle}</span><br/><br/>
-          <strong style="color:#0f766e;">${ct21.signatures.parent.name}</strong>
-        </div>
-      </div>
+      ${generateSignatureHtml(ct21.studentInfo.id)}
     </div>
         `
       }
@@ -2081,10 +2183,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       <div style="background:#f8fafc; padding:12px; border-radius:6px; margin: 12px 0; font-size:12px;">
         <strong>Điểm bẻ gãy Socrates (B2):</strong> <em>"${st.turningPointQuote || ''}"</em>
       </div>
-      <div style="display:flex; justify-content:space-between; margin-top:36px; font-size:12px;">
-        <div><strong>Học sinh cam kết:</strong> ${st.id} (Đã ký)</div>
-        <div><strong>Mentor phụ trách:</strong> ${st.assignedMentor || 'Ban Cố vấn KHKT'}</div>
-      </div>
+      ${generateSignatureHtml(st.id)}
     </div>
     `}).join('')
 
@@ -5547,24 +5646,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       </div>
                     </div>
 
-                    {/* Chữ ký 3 bên */}
-                    <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
-                      <div className="space-y-6">
-                        <div className="font-bold text-slate-700">{ct21.signatures.student.title}</div>
-                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.student.subtitle}</div>
-                        <div className="font-black text-teal-800">{ct21.signatures.student.name}</div>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="font-bold text-slate-700">{ct21.signatures.mentor.title}</div>
-                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.mentor.subtitle}</div>
-                        <div className="font-black text-teal-800">{ct21.signatures.mentor.name}</div>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="font-bold text-slate-700">{ct21.signatures.parent.title}</div>
-                        <div className="text-[10px] text-slate-500 italic">{ct21.signatures.parent.subtitle}</div>
-                        <div className="font-black text-teal-800">{ct21.signatures.parent.name}</div>
-                      </div>
-                    </div>
+                    {/* Chữ ký 3 bên điện tử */}
+                    {renderSignatureBlock(ct21.studentInfo.id)}
                   </div>
                 );
               }
@@ -5768,21 +5851,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     );
                   })()}
 
-                  {/* Chữ ký 3 bên */}
-                  <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
-                    <div className="space-y-8">
-                      <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
-                      <div className="font-black text-teal-800">{previewPdfStudent.id} (Đã ký điện tử)</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
-                      <div className="italic text-slate-500 font-semibold">(Xác nhận đồng hành)</div>
-                    </div>
-                    <div className="space-y-8">
-                      <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
-                      <div className="italic text-slate-500 font-semibold">(Chứng kiến & Hỗ trợ)</div>
-                    </div>
-                  </div>
+                  {/* Chữ ký 3 bên điện tử */}
+                  {renderSignatureBlock(previewPdfStudent.id)}
                 </div>
               );
             })()}
@@ -6034,24 +6104,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                         </div>
                       </div>
 
-                      {/* Chữ ký 3 bên */}
-                      <div className="grid grid-cols-3 gap-4 pt-4 text-center text-xs border-t border-slate-200">
-                        <div className="space-y-6">
-                          <div className="font-bold text-slate-700">{ct21.signatures.student.title}</div>
-                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.student.subtitle}</div>
-                          <div className="font-black text-teal-800">{ct21.signatures.student.name}</div>
-                        </div>
-                        <div className="space-y-6">
-                          <div className="font-bold text-slate-700">{ct21.signatures.mentor.title}</div>
-                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.mentor.subtitle}</div>
-                          <div className="font-black text-teal-800">{ct21.signatures.mentor.name}</div>
-                        </div>
-                        <div className="space-y-6">
-                          <div className="font-bold text-slate-700">{ct21.signatures.parent.title}</div>
-                          <div className="text-[10px] text-slate-500 italic">{ct21.signatures.parent.subtitle}</div>
-                          <div className="font-black text-teal-800">{ct21.signatures.parent.name}</div>
-                        </div>
-                      </div>
+                      {/* Chữ ký 3 bên điện tử */}
+                      {renderSignatureBlock(ct21.studentInfo.id)}
                     </div>
                   );
                 }
@@ -6248,21 +6302,8 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     );
                   })()}
 
-                  {/* Chữ ký 3 bên */}
-                  <div className="grid grid-cols-3 gap-4 pt-3 text-center text-xs border-t border-slate-200">
-                    <div>
-                      <div className="font-bold text-slate-700">HỌC SINH CAM KẾT</div>
-                      <div className="font-black text-teal-800 mt-6">{st.id}</div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-700">CỐ VẤN / MENTOR</div>
-                      <div className="italic text-slate-500 font-semibold mt-6">(Xác nhận)</div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-slate-700">ĐẠI DIỆN PHỤ HUYNH</div>
-                      <div className="italic text-slate-500 font-semibold mt-6">(Chứng kiến)</div>
-                    </div>
-                  </div>
+                  {/* Chữ ký 3 bên điện tử */}
+                  {renderSignatureBlock(st.id)}
                 </div>
               );
             })}

@@ -606,54 +606,72 @@
               <!-- Cột 1: Học sinh cam kết -->
               <div>
                 <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  ${data.signatures.student.title}
+                  HỌC SINH CAM KẾT
                 </div>
                 <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  ${data.signatures.student.subtitle}
+                  (Ký và ghi rõ mã số)
                 </div>
-                <div class="h-14 border border-dashed border-slate-400 rounded bg-white flex items-center justify-center mb-1 overflow-hidden">
-                  <span class="text-[9.5px] text-slate-400 italic">
-                    (Ký và ghi rõ mã số: ${data.studentInfo.id})
+                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
+                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 19px; color: #1d4ed8; transform: rotate(-4deg); font-weight: bold; line-height: 1;">
+                    Ct.${data.studentInfo.id ? data.studentInfo.id.replace('CT_', '') : '01'}_Ký
+                  </div>
+                  <svg width="72" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
+                    <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" />
+                  </svg>
+                  <span class="text-[8px] text-emerald-700 font-bold mt-0.5">
+                    ☑ Đã ký điện tử • 15/11/2026
                   </span>
                 </div>
                 <div class="font-bold text-teal-900 text-[10px]">
-                  ${data.signatures.student.name}
+                  ${data.studentInfo.id} (Học sinh cam kết)
                 </div>
               </div>
 
               <!-- Cột 2: Cố vấn / Mentor -->
               <div>
                 <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  ${data.signatures.mentor.title}
+                  CỐ VẤN / MENTOR
                 </div>
                 <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  ${data.signatures.mentor.subtitle}
+                  (Xác nhận nghiệm thu Bước 5)
                 </div>
-                <div class="h-14 border border-dashed border-slate-400 rounded bg-white flex items-center justify-center mb-1 overflow-hidden">
-                  <span class="text-[9.5px] text-slate-400 italic">
-                    (Ký xác nhận nghiệm thu Bước 5)
+                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
+                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 18px; color: #0f766e; transform: rotate(-3deg); font-weight: bold; line-height: 1;">
+                    Ng.V.Tâm
+                  </div>
+                  <svg width="66" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
+                    <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                  <span class="text-[8px] text-teal-700 font-bold mt-0.5">
+                    ✓ Đã nghiệm thu tham vấn
                   </span>
                 </div>
                 <div class="font-bold text-teal-900 text-[10px]">
-                  ${data.signatures.mentor.name}
+                  ThS. Nguyễn Văn Tâm
                 </div>
               </div>
 
               <!-- Cột 3: Đại diện Phụ huynh -->
               <div>
                 <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  ${data.signatures.parent.title}
+                  ĐẠI DIỆN PHỤ HUYNH
                 </div>
                 <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  ${data.signatures.parent.subtitle}
+                  (Ký chứng kiến hỗ trợ)
                 </div>
-                <div class="h-14 border border-dashed border-slate-400 rounded bg-white flex items-center justify-center mb-1 overflow-hidden">
-                  <span class="text-[9.5px] text-slate-400 italic">
-                    (Ký đồng thuận đồng hành)
+                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
+                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 17px; color: #334155; transform: rotate(-2deg); font-weight: bold; line-height: 1;">
+                    Đại diện PH
+                  </div>
+                  <svg width="62" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
+                    <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                  <span class="text-[8px] text-slate-600 font-bold mt-0.5">
+                    ✓ Đồng thuận đồng hành
                   </span>
                 </div>
                 <div class="font-bold text-teal-900 text-[10px]">
-                  ${data.signatures.parent.name}
+                  Đại diện Gia đình
                 </div>
               </div>
             </div>

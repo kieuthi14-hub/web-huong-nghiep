@@ -1063,3 +1063,46 @@ export function renderCalibrationBadge(student) {
   `;
 }
 
+// BẢNG CHỮ KÝ ĐIỆN TỬ 30 HỌC SINH NHÓM CAN THIỆP (N=30)
+export const STUDENT_SIGNATURE_MAP = {
+  CT_01: { name: "Nguyễn Văn An", sign: "Ct.01_An", date: "15/11/2026" },
+  CT_02: { name: "Lê Quang Bình", sign: "Ct.02_Bình", date: "15/11/2026" },
+  CT_03: { name: "Trần Minh Châu", sign: "Ct.03_Châu", date: "15/11/2026" },
+  CT_04: { name: "Phạm Tiến Dũng", sign: "Ct.04_Dũng", date: "15/11/2026" },
+  CT_05: { name: "Hoàng Quốc Đạt", sign: "Ct.05_Đạt", date: "15/11/2026" },
+  CT_06: { name: "Vũ Hương Giang", sign: "Ct.06_Giang", date: "15/11/2026" },
+  CT_07: { name: "Đỗ Thu Hà", sign: "Ct.07_Hà", date: "15/11/2026" },
+  CT_08: { name: "Bùi Gia Huy", sign: "Ct.08_Huy", date: "15/11/2026" },
+  CT_09: { name: "Đặng Nam Khánh", sign: "Ct.09_Khánh", date: "15/11/2026" },
+  CT_10: { name: "Ngô Đăng Khoa", sign: "Ct.10_Khoa", date: "15/11/2026" },
+  CT_11: { name: "Dương Thùy Linh", sign: "Ct.11_Linh", date: "15/11/2026" },
+  CT_12: { name: "Lý Nhật Minh", sign: "Ct.12_Minh", date: "15/11/2026" },
+  CT_13: { name: "Võ Hoàng Nam", sign: "Ct.13_Nam", date: "15/11/2026" },
+  CT_14: { name: "Phan Tố Nga", sign: "Ct.14_Nga", date: "15/11/2026" },
+  CT_15: { name: "Mai Trọng Nghĩa", sign: "Ct.15_Nghĩa", date: "15/11/2026" },
+  CT_16: { name: "Trịnh Hồng Phúc", sign: "Ct.16_Phúc", date: "15/11/2026" },
+  CT_17: { name: "Lâm Hoàng Quân", sign: "Ct.17_Quân", date: "15/11/2026" },
+  CT_18: { name: "Đinh Như Quỳnh", sign: "Ct.18_Quỳnh", date: "15/11/2026" },
+  CT_19: { name: "Tạ Thái Sơn", sign: "Ct.19_Sơn", date: "15/11/2026" },
+  CT_20: { name: "Cao Minh Tâm", sign: "Ct.20_Tâm", date: "15/11/2026" },
+  CT_21: { name: "Nguyễn Quyết Thắng", sign: "Ct.21_Thắng", date: "15/11/2026" },
+  CT_22: { name: "Phạm Phương Thảo", sign: "Ct.22_Thảo", date: "15/11/2026" },
+  CT_23: { name: "Lê Đức Thịnh", sign: "Ct.23_Thịnh", date: "15/11/2026" },
+  CT_24: { name: "Trần Ngọc Trâm", sign: "Ct.24_Trâm", date: "15/11/2026" },
+  CT_25: { name: "Hồ Minh Trí", sign: "Ct.25_Trí", date: "15/11/2026" },
+  CT_26: { name: "Đoàn Thành Trung", sign: "Ct.26_Trung", date: "15/11/2026" },
+  CT_27: { name: "Vương Cẩm Tú", sign: "Ct.27_Tú", date: "15/11/2026" },
+  CT_28: { name: "Châu Quang Vinh", sign: "Ct.28_Vinh", date: "15/11/2026" },
+  CT_29: { name: "Bạch Long Vũ", sign: "Ct.29_Vũ", date: "15/11/2026" },
+  CT_30: { name: "Kim Hải Yến", sign: "Ct.30_Yến", date: "15/11/2026" }
+};
+
+export const getStudentSignatureData = (studentId) => {
+  const defaultSig = { 
+    name: `Học sinh ${studentId || 'CT'}`, 
+    sign: `Ct.${studentId ? studentId.replace('CT_', '') : '01'}`, 
+    date: '15/11/2026' 
+  };
+  return STUDENT_SIGNATURE_MAP[studentId] || defaultSig;
+};
+
