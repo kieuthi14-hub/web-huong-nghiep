@@ -1682,29 +1682,52 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   </div>
 
   <div class="info-box">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-      <span class="section-title" style="margin:0;">🔺 CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE):</span>
-      <span style="font-size:9px; color:#64748b; font-style:italic;">Chiến lược dải điểm bậc thang 3 nấc</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">
+      <span class="section-title" style="margin:0;">🔺 CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP PHÂN TẦNG):</span>
+      <span style="font-size:9px; color:#64748b; font-style:italic;">Dải điểm bậc thang 3 nấc</span>
     </div>
-    <div style="position:relative;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-top:4px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;left:12%;top:22%;width:76%;height:56%;z-index:0;"><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" stroke-width="1.2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/></svg>
-      <div class="tier-card tier-stretch" style="position:relative;z-index:1;flex:0 0 56%;margin:0 auto 4px auto;text-align:center;box-sizing:border-box;">
-        <span class="tier-title" style="color:#15803d;">${ct21.triangle.stretch.title}</span>
-        <div class="tier-major">${ct21.triangle.stretch.majorSchool}</div>
-        <div class="tier-score" style="color:#166534;">• Điểm tham chiếu: ${ct21.triangle.stretch.targetScore}</div>
-        <div class="tier-note">${ct21.triangle.stretch.notes}</div>
+
+    <!-- Khối Kim tự tháp 3 tầng -->
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+      <div style="width:80px; font-size:8.5px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+        <span>Chọn theo thứ tự:</span>
+        <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
       </div>
-      <div class="tier-card tier-realistic" style="position:relative;z-index:1;flex:1 1 46%;text-align:center;box-sizing:border-box;">
-        <span class="tier-title" style="color:#0e7490;">${ct21.triangle.realistic.title}</span>
-        <div class="tier-major">${ct21.triangle.realistic.majorSchool}</div>
-        <div class="tier-score" style="color:#155e75;">• ${ct21.triangle.realistic.targetScore}</div>
-        <div class="tier-note">${ct21.triangle.realistic.notes}</div>
+
+      <div style="flex:1; max-width:440px; margin:0 auto;">
+        <!-- Tầng 1: Thử thách -->
+        <div style="background:#c2410c; color:#fff; min-height:40px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV1 · THỬ THÁCH (STRETCH)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.stretch.majorSchool}</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">• Tham chiếu: ${ct21.triangle.stretch.targetScore}</div>
+        </div>
+
+        <!-- Tầng 2: Vừa sức -->
+        <div style="background:#0f766e; color:#fff; min-height:40px; text-align:center; padding:3px 12%; margin-top:2.5px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV2 · VỪA SỨC (REALISTIC)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.realistic.majorSchool}</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${ct21.triangle.realistic.targetScore}</div>
+        </div>
+
+        <!-- Tầng 3: Bảo toàn -->
+        <div style="background:#1d4ed8; color:#fff; min-height:40px; text-align:center; padding:3px 4%; margin-top:2.5px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV3 · BẢO TOÀN (SAFETY BUFFER)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.safety.majorSchool}</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${ct21.triangle.safety.targetScore}</div>
+        </div>
       </div>
-      <div class="tier-card tier-safety" style="position:relative;z-index:1;flex:1 1 46%;text-align:center;box-sizing:border-box;">
-        <span class="tier-title" style="color:#334155;">${ct21.triangle.safety.title}</span>
-        <div class="tier-major">${ct21.triangle.safety.majorSchool}</div>
-        <div class="tier-score" style="color:#475569;">• ${ct21.triangle.safety.targetScore}</div>
-        <div class="tier-note">${ct21.triangle.safety.notes}</div>
+
+      <div style="width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+        <span style="font-size:13px; color:#c2410c; line-height:1;">▲</span>
+        <div style="width:2px; height:34px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+        <span style="font-size:7.5px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
       </div>
+    </div>
+
+    <!-- Khối Kế hoạch B -->
+    <div style="margin-top:5px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:4px 8px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+      <div style="font-size:9.5px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+      <div style="font-size:9px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
     </div>
   </div>
 
@@ -1767,23 +1790,51 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     <p><strong>Chỉ số thiên lệch (CRS):</strong> ${student.crs}</p>
   </div>
   <div class="box">
-    <h3 style="margin-top:0; font-size:12px; color:#0f766e; text-transform:uppercase;">🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO):</h3>
-    <div style="position:relative;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding-top:4px;"><svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute;left:12%;top:22%;width:76%;height:56%;z-index:0;"><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" stroke-width="1.2" stroke-dasharray="4 3" vector-effect="non-scaling-stroke"/></svg>
-      <div class="triangle-item" style="position:relative;z-index:1;flex:0 0 56%;margin:0 auto 4px auto;text-align:center;box-sizing:border-box;background:#f0fdfa; border:1px solid #99f6e4; padding:8px; border-radius:6px;">
-        <strong style="color:#0f766e; font-size:10px; text-transform:uppercase; display:block;">Nguyện vọng 1 – Thử thách (Stretch)</strong>
-        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">${student.majorT2 || student.major}</p>
-        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Trường Top đầu — Nỗ lực tối đa (26.5+)</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #cbd5e1; padding-bottom:4px; margin-bottom:6px;">
+      <h3 style="margin:0; font-size:11.5px; color:#0f766e; text-transform:uppercase;">🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP PHÂN TẦNG):</h3>
+      <span style="font-size:9px; color:#64748b; font-style:italic;">Dải điểm bậc thang 3 nấc</span>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+      <div style="width:80px; font-size:8.5px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+        <span>Chọn theo thứ tự:</span>
+        <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
       </div>
-      <div class="triangle-item" style="position:relative;z-index:1;flex:1 1 46%;text-align:center;box-sizing:border-box;background:#ecfeff; border:1px solid #a5f3fc; padding:8px; border-radius:6px;">
-        <strong style="color:#0e7490; font-size:10px; text-transform:uppercase; display:block;">Nguyện vọng dự phòng 2 – Vừa sức (Realistic)</strong>
-        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">${student.majorT2 || student.major} (Trường công lập)</p>
-        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Mục tiêu chính — Dải phong độ (22.5 – 24.0)</span>
+
+      <div style="flex:1; max-width:440px; margin:0 auto;">
+        <!-- Tầng 1: Thử thách -->
+        <div style="background:#c2410c; color:#fff; min-height:40px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV1 · THỬ THÁCH (STRETCH)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">${student.majorT2 || student.major}</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">Trường Top đầu — Nỗ lực tối đa (26.5+)</div>
+        </div>
+
+        <!-- Tầng 2: Vừa sức -->
+        <div style="background:#0f766e; color:#fff; min-height:40px; text-align:center; padding:3px 12%; margin-top:2.5px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV2 · VỪA SỨC (REALISTIC)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">${student.majorT2 || student.major} (Trường công lập)</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">Mục tiêu chính — Dải phong độ (22.5 – 24.0)</div>
+        </div>
+
+        <!-- Tầng 3: Bảo toàn -->
+        <div style="background:#1d4ed8; color:#fff; min-height:40px; text-align:center; padding:3px 4%; margin-top:2.5px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+          <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV3 · BẢO TOÀN (SAFETY BUFFER)</div>
+          <div style="font-size:10px; font-weight:700; margin-top:1px;">Ngành gần / ĐH Địa phương uy tín</div>
+          <div style="font-size:8px; opacity:0.92; margin-top:1px;">Vùng đệm dự phòng — Biên độ an toàn cao</div>
+        </div>
       </div>
-      <div class="triangle-item" style="position:relative;z-index:1;flex:1 1 46%;text-align:center;box-sizing:border-box;background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px;">
-        <strong style="color:#334155; font-size:10px; text-transform:uppercase; display:block;">Nguyện vọng dự phòng 3 – Bảo toàn (Safety Buffer)</strong>
-        <p style="margin:4px 0 0 0; font-weight:bold; font-size:11px;">Ngành gần / ĐH Địa phương</p>
-        <span style="font-size:9.5px; color:#64748b; display:block; margin-top:4px;">Vùng đệm dự phòng — Biên độ an toàn cao</span>
+
+      <div style="width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+        <span style="font-size:13px; color:#c2410c; line-height:1;">▲</span>
+        <div style="width:2px; height:34px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+        <span style="font-size:7.5px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
       </div>
+    </div>
+
+    <!-- Khối Kế hoạch B -->
+    <div style="margin-top:5px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:4px 8px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+      <div style="font-size:9.5px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+      <div style="font-size:9px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
     </div>
   </div>
 
@@ -5428,67 +5479,119 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     </div>
                   </div>
 
-                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
-                  <div className="space-y-1.5 mb-3 text-xs border border-slate-200 rounded-lg p-3.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-teal-900 font-bold">🔺</span>
-                        <span className="font-black text-slate-900 uppercase text-[11px] tracking-wide">
-                          TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
-                    </div>
+                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG KÈM KẾ HOẠCH B) */}
+                  {(() => {
+                    const { triangle } = getAdaptiveStep5Data(previewPdfStudent);
+                    const pyramidTiers = [
+                      {
+                        key: 'stretch',
+                        color: '#c2410c',
+                        title: 'NV1 · THỬ THÁCH',
+                        school: triangle.stretchSchool || previewPdfStudent.major,
+                        hint: 'Điểm chuẩn cao hơn điểm hiện tại',
+                        top: 36,
+                        bottom: 58
+                      },
+                      {
+                        key: 'realistic',
+                        color: '#0f766e',
+                        title: 'NV2 · VỪA SỨC',
+                        school: triangle.realisticSchool || (previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.realistic.major : `${previewPdfStudent.major} (Trường công lập trọng điểm)`),
+                        hint: 'Điểm chuẩn ngang điểm hiện tại',
+                        top: 58,
+                        bottom: 79
+                      },
+                      {
+                        key: 'safety',
+                        color: '#1d4ed8',
+                        title: 'NV3 · BẢO TOÀN',
+                        school: triangle.safetySchool || (previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý') ? DEFAULT_TRIANGLE_DATA.safety.major : 'Ngành gần / Hệ thực hành chất lượng cao'),
+                        hint: 'Điểm chuẩn thấp hơn điểm hiện tại',
+                        top: 79,
+                        bottom: 100
+                      }
+                    ];
 
-                    <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '12px', paddingTop: '4px' }}><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" /></svg>
-                      {/* Nấc 1: Thử thách */}
-                      <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '0 0 56%', margin: '0 auto 4px auto', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                        <div>
-                          <span className="font-extrabold text-teal-900 text-[10px] block uppercase tracking-wide">
-                            NGUYỆN VỌNG 1 – THỬ THÁCH (STRETCH)
-                          </span>
-                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{previewPdfStudent.major}</p>
+                    return (
+                      <div className="space-y-1.5 mb-2.5 text-xs border border-slate-200 rounded-lg p-2.5 bg-white">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-rose-600 font-bold">▲</span>
+                            <span className="font-black text-slate-900 uppercase text-[10.5px] tracking-wide">
+                              TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                            </span>
+                          </div>
+                          <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                         </div>
-                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">
-                          Trường Top đầu — Đòi hỏi nỗ lực tối đa để thu hẹp khoảng cách điểm sàn (tham chiếu: 26.5+)
-                        </div>
-                      </div>
 
-                      {/* Nấc 2: Vừa sức */}
-                      <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                        <div>
-                          <span className="font-extrabold text-cyan-900 text-[10px] block uppercase tracking-wide">
-                            NGUYỆN VỌNG DỰ PHÒNG 2 – VỪA SỨC (REALISTIC)
-                          </span>
-                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                            {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
-                              ? DEFAULT_TRIANGLE_DATA.realistic.major
-                              : `${previewPdfStudent.major} (Trường công lập trọng điểm)`}
-                          </p>
-                        </div>
-                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">
-                          Mục tiêu chính — Điểm số nằm trong dải phong độ học bạ và điểm thi thử hiện tại (22.5 – 24.0)
-                        </div>
-                      </div>
+                        {/* Kim tự tháp 3 tầng dạng tháp phân tầng */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '3px 0' }}>
+                          {/* Cột trái: Thứ tự ưu tiên */}
+                          <div style={{ width: '85px', fontSize: '9px', color: '#475569', lineHeight: 1.25, textAlign: 'left', fontWeight: 600 }}>
+                            <span>Chọn theo thứ tự ưu tiên:</span>
+                            <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>NV1 → NV2 → NV3</div>
+                          </div>
 
-                      {/* Nấc 3: Bảo toàn rủi ro */}
-                      <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                        <div>
-                          <span className="font-extrabold text-slate-800 text-[10px] block uppercase tracking-wide">
-                            NGUYỆN VỌNG DỰ PHÒNG 3 – BẢO TOÀN (SAFETY BUFFER)
-                          </span>
-                          <p className="font-bold text-slate-900 mt-1 text-[11.5px]">
-                            {previewPdfStudent.id === 'CT_01' || previewPdfStudent.major.includes('Tâm lý')
-                              ? DEFAULT_TRIANGLE_DATA.safety.major
-                              : 'Ngành gần / Chương trình tiêu chuẩn (Trường ĐH Nha Trang)'}
-                          </p>
+                          {/* Khối Hình Tháp Tam Giác 3 tầng */}
+                          <div style={{ flex: 1, maxWidth: '440px', margin: '0 auto' }}>
+                            {pyramidTiers.map((t, idx) => {
+                              const lt = (100 - t.top) / 2;
+                              const lb = (100 - t.bottom) / 2;
+                              return (
+                                <div
+                                  key={t.key}
+                                  style={{
+                                    position: 'relative',
+                                    minHeight: '42px',
+                                    marginTop: idx === 0 ? 0 : '2.5px',
+                                    background: t.color,
+                                    clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                    WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    boxSizing: 'border-box',
+                                    padding: `3px ${lt + 2}%`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <div style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.3px', lineHeight: 1.15, textTransform: 'uppercase' }}>
+                                    {t.title}
+                                  </div>
+                                  <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '1px', lineHeight: 1.2 }}>
+                                    {t.school}
+                                  </div>
+                                  <div style={{ fontSize: '8px', opacity: 0.92, marginTop: '1px', lineHeight: 1.15 }}>
+                                    {t.hint}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* Cột phải: Mũi tên tăng dần */}
+                          <div style={{ width: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.2 }}>
+                            <span style={{ fontSize: '14px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                            <div style={{ width: '2px', height: '36px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '2px 0' }} />
+                            <span style={{ fontSize: '8px', color: '#475569' }}>Mức thách thức & điểm chuẩn tăng dần</span>
+                          </div>
                         </div>
-                        <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">
-                          Vùng đệm dự phòng — Ngành gần có biên độ điểm an toàn cao và tối ưu chi phí đào tạo
+
+                        {/* Khối Kế hoạch B */}
+                        <div style={{ marginTop: '5px', border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '6px', padding: '4px 8px', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                          <div style={{ fontSize: '9.5px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                            KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                          </div>
+                          <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '1px', fontWeight: 500 }}>
+                            Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Ma trận kế hoạch hành động */}
                   {(() => {
@@ -5786,38 +5889,114 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                     </div>
                   </div>
 
-                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO) */}
+                  {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG KÈM KẾ HOẠCH B) */}
                   {(() => {
                     const { triangle } = getAdaptiveStep5Data(st);
+                    const pyramidTiers = [
+                      {
+                        key: 'stretch',
+                        color: '#c2410c',
+                        title: 'NV1 · THỬ THÁCH',
+                        school: triangle.stretchSchool || st.major,
+                        hint: 'Điểm chuẩn cao hơn điểm hiện tại',
+                        top: 36,
+                        bottom: 58
+                      },
+                      {
+                        key: 'realistic',
+                        color: '#0f766e',
+                        title: 'NV2 · VỪA SỨC',
+                        school: triangle.realisticSchool || `${st.major} (Trường công lập trọng điểm)`,
+                        hint: 'Điểm chuẩn ngang điểm hiện tại',
+                        top: 58,
+                        bottom: 79
+                      },
+                      {
+                        key: 'safety',
+                        color: '#1d4ed8',
+                        title: 'NV3 · BẢO TOÀN',
+                        school: triangle.safetySchool || 'Hệ Cao đẳng / Ngành gần uy tín',
+                        hint: 'Điểm chuẩn thấp hơn điểm hiện tại',
+                        top: 79,
+                        bottom: 100
+                      }
+                    ];
+
                     return (
-                      <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900 uppercase text-[10.5px]">
-                            🔺 TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
-                          </span>
+                      <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-2.5 bg-white mb-2.5">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-rose-600 font-bold">▲</span>
+                            <span className="font-bold text-slate-900 uppercase text-[10.5px]">
+                              TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                            </span>
+                          </div>
                           <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                         </div>
-                        <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '12px', paddingTop: '4px' }}><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" /></svg>
-                          <div className="bg-teal-50 p-2 rounded border border-teal-200 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '0 0 56%', margin: '0 auto 4px auto', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="text-[9.5px] font-bold text-teal-800 uppercase block">{triangle.stretchTitle}</span>
-                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.stretchSchool}</strong>
-                            </div>
-                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-teal-200/50">{triangle.stretchDesc}</div>
+
+                        {/* Kim tự tháp 3 tầng dạng tháp phân tầng */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '3px 0' }}>
+                          {/* Cột trái: Thứ tự ưu tiên */}
+                          <div style={{ width: '85px', fontSize: '9px', color: '#475569', lineHeight: 1.25, textAlign: 'left', fontWeight: 600 }}>
+                            <span>Chọn theo thứ tự ưu tiên:</span>
+                            <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>NV1 → NV2 → NV3</div>
                           </div>
-                          <div className="bg-cyan-50 p-2 rounded border border-cyan-200 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="text-[9.5px] font-bold text-cyan-800 uppercase block">{triangle.realisticTitle}</span>
-                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.realisticSchool}</strong>
-                            </div>
-                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-cyan-200/50">{triangle.realisticDesc}</div>
+
+                          {/* Khối Hình Tháp Tam Giác 3 tầng */}
+                          <div style={{ flex: 1, maxWidth: '440px', margin: '0 auto' }}>
+                            {pyramidTiers.map((t, idx) => {
+                              const lt = (100 - t.top) / 2;
+                              const lb = (100 - t.bottom) / 2;
+                              return (
+                                <div
+                                  key={t.key}
+                                  style={{
+                                    position: 'relative',
+                                    minHeight: '42px',
+                                    marginTop: idx === 0 ? 0 : '2.5px',
+                                    background: t.color,
+                                    clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                    WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                    WebkitPrintColorAdjust: 'exact',
+                                    printColorAdjust: 'exact',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    boxSizing: 'border-box',
+                                    padding: `3px ${lt + 2}%`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <div style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.3px', lineHeight: 1.15, textTransform: 'uppercase' }}>
+                                    {t.title}
+                                  </div>
+                                  <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '1px', lineHeight: 1.2 }}>
+                                    {t.school}
+                                  </div>
+                                  <div style={{ fontSize: '8px', opacity: 0.92, marginTop: '1px', lineHeight: 1.15 }}>
+                                    {t.hint}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                          <div className="bg-slate-50 p-2 rounded border border-slate-300 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="text-[9.5px] font-bold text-slate-700 uppercase block">{triangle.safetyTitle}</span>
-                              <strong className="text-slate-900 block mt-0.5 text-[11px]">{triangle.safetySchool}</strong>
-                            </div>
-                            <div className="text-[9px] text-slate-600 mt-1 pt-0.5 border-t border-slate-200">{triangle.safetyDesc}</div>
+
+                          {/* Cột phải: Mũi tên tăng dần */}
+                          <div style={{ width: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.2 }}>
+                            <span style={{ fontSize: '14px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                            <div style={{ width: '2px', height: '36px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '2px 0' }} />
+                            <span style={{ fontSize: '8px', color: '#475569' }}>Mức thách thức & điểm chuẩn tăng dần</span>
+                          </div>
+                        </div>
+
+                        {/* Khối Kế hoạch B */}
+                        <div style={{ marginTop: '5px', border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '6px', padding: '4px 8px', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                          <div style={{ fontSize: '9.5px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                            KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                          </div>
+                          <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '1px', fontWeight: 500 }}>
+                            Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
                           </div>
                         </div>
                       </div>

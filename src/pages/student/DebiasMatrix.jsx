@@ -1833,49 +1833,64 @@ export default function DebiasMatrix() {
                     { key: 'safe', color: '#1d4ed8', title: 'NGUYỆN VỌNG DỰ PHÒNG 3 · BẢO TOÀN', hint: 'Điểm chuẩn thấp hơn điểm hiện tại', fallback: `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`, top: 78.7, bottom: 100 }
                   ];
                   return (
-                    <div style={{ display: 'flex', alignItems: 'stretch', gap: '10px', padding: '2px 0' }}>
-                      <div style={{ flex: '1 1 0', minWidth: 0 }}>
-                        {pyramidTiers.map((t, idx) => {
-                          const lt = (100 - t.top) / 2;
-                          const lb = (100 - t.bottom) / 2;
-                          return (
-                            <div key={t.key} style={{
-                              position: 'relative',
-                              height: '70px',
-                              marginTop: idx === 0 ? 0 : '3px',
-                              background: t.color,
-                              clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
-                              WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
-                              WebkitPrintColorAdjust: 'exact',
-                              printColorAdjust: 'exact',
-                              color: '#ffffff',
-                              textAlign: 'center',
-                              boxSizing: 'border-box',
-                              padding: `6px ${lt + 2}%`,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center'
-                            }}>
-                              <div style={{ fontSize: '10.5px', fontWeight: 800, letterSpacing: '0.2px', lineHeight: 1.2 }}>{t.title}</div>
-                              <div style={{ fontSize: '10.5px', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
-                                {triadTiers[t.key]?.majorSchool || t.fallback}
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '2px 0' }}>
+                        <div style={{ width: '85px', fontSize: '9px', color: '#475569', lineHeight: 1.25, textAlign: 'left', fontWeight: 600 }}>
+                          <span>Chọn theo thứ tự:</span>
+                          <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>NV1 → NV2 → NV3</div>
+                        </div>
+
+                        <div style={{ flex: '1 1 0', minWidth: 0 }}>
+                          {pyramidTiers.map((t, idx) => {
+                            const lt = (100 - t.top) / 2;
+                            const lb = (100 - t.bottom) / 2;
+                            return (
+                              <div key={t.key} style={{
+                                position: 'relative',
+                                height: '42px',
+                                marginTop: idx === 0 ? 0 : '2.5px',
+                                background: t.color,
+                                clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                WebkitPrintColorAdjust: 'exact',
+                                printColorAdjust: 'exact',
+                                color: '#ffffff',
+                                textAlign: 'center',
+                                boxSizing: 'border-box',
+                                padding: `3px ${lt + 2}%`,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center'
+                              }}>
+                                <div style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.2px', lineHeight: 1.15 }}>{t.title}</div>
+                                <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '1px', lineHeight: 1.2 }}>
+                                  {triadTiers[t.key]?.majorSchool || t.fallback}
+                                </div>
+                                <div style={{ fontSize: '8px', opacity: 0.92, marginTop: '1px', lineHeight: 1.15 }}>{t.hint}</div>
                               </div>
-                              <div style={{ fontSize: '8.5px', opacity: 0.92, marginTop: '2px', lineHeight: 1.2 }}>{t.hint}</div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
+
+                        <div style={{ width: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.2 }}>
+                          <span style={{ fontSize: '14px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                          <div style={{ width: '2px', height: '36px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '2px 0' }} />
+                          <span style={{ fontSize: '8px', color: '#475569' }}>Mức thách thức tăng dần</span>
+                        </div>
                       </div>
-                      <div style={{ width: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center' }}>
-                        <span style={{ fontSize: '16px', lineHeight: 1 }}>▲</span>
-                        <div style={{ width: '2px', flex: 1, background: '#0f172a' }} />
-                        <span style={{ marginTop: '4px' }}>Mức thách thức tăng dần</span>
+
+                      {/* Khối Kế hoạch B */}
+                      <div style={{ marginTop: '5px', border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '6px', padding: '4px 8px', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                        <div style={{ fontSize: '9.5px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                          KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                        </div>
+                        <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '1px', fontWeight: 500 }}>
+                          Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
+                        </div>
                       </div>
                     </div>
                   );
                 })()}
-                <p style={{ fontSize: '9px', color: '#475569', marginTop: '4px', textAlign: 'center' }}>
-                  Chọn theo thứ tự ưu tiên: Nguyện vọng 1 → Nguyện vọng dự phòng 2 → Nguyện vọng dự phòng 3
-                </p>
               </div>
 
               {/* 4. 3 MỤC TIÊU CAM KẾT HÀNH ĐỘNG HỌC TẬP */}

@@ -494,42 +494,56 @@ export function generateStep5Content(student = {}) {
       </div>
     </div>
 
-    <!-- KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG 3 NẤC -->
-    <div class="p-4 bg-slate-50/90 border border-slate-200 rounded-xl space-y-3">
-      <div class="flex justify-between items-center">
+    <!-- KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG KÈM KẾ HOẠCH B) -->
+    <div class="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+      <div class="flex justify-between items-center border-b border-slate-200 pb-1.5">
         <span class="text-xs font-black text-slate-900 flex items-center gap-1.5 uppercase">
           <span class="text-rose-600">▲</span> TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
         </span>
-        <span class="text-[10px] text-slate-500 italic">Phân tầng bậc thang 3 nấc bảo toàn lộ trình</span>
+        <span class="text-[10px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-        <!-- Nấc 1: Thử thách -->
-        <div class="p-3.5 rounded-lg border border-purple-200 bg-purple-50/70 flex flex-col justify-between">
-          <div>
-            <span class="font-extrabold text-purple-900 text-[10px] uppercase block">${triangle.stretchTitle}</span>
-            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.stretchSchool}</h5>
-          </div>
-          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-purple-200/80 leading-relaxed">${triangle.stretchDesc}</p>
+      <!-- Khối Kim tự tháp 3 tầng dạng tháp phân tầng -->
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+        <div style="width:85px; font-size:9px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+          <span>Chọn theo thứ tự ưu tiên:</span>
+          <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
         </div>
 
-        <!-- Nấc 2: Vừa sức (Cốt lõi) -->
-        <div class="p-3.5 rounded-lg border border-teal-200 bg-teal-50/70 flex flex-col justify-between">
-          <div>
-            <span class="font-extrabold text-teal-900 text-[10px] uppercase block">${triangle.realisticTitle}</span>
-            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.realisticSchool}</h5>
+        <div style="flex:1; max-width:440px; margin:0 auto;">
+          <!-- Tầng 1: Thử thách -->
+          <div style="background:#c2410c; color:#ffffff; min-height:42px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+            <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">NV1 · THỬ THÁCH (STRETCH)</div>
+            <div style="font-size:10px; font-weight:700; margin-top:1px;">${triangle.stretchSchool}</div>
+            <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn cao hơn điểm hiện tại</div>
           </div>
-          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-teal-200/80 leading-relaxed">${triangle.realisticDesc}</p>
+
+          <!-- Tầng 2: Vừa sức -->
+          <div style="background:#0f766e; color:#ffffff; min-height:42px; text-align:center; padding:3px 12%; margin-top:2.5px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+            <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">NV2 · VỪA SỨC (REALISTIC)</div>
+            <div style="font-size:10px; font-weight:700; margin-top:1px;">${triangle.realisticSchool}</div>
+            <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn ngang điểm hiện tại</div>
+          </div>
+
+          <!-- Tầng 3: Bảo toàn -->
+          <div style="background:#1d4ed8; color:#ffffff; min-height:42px; text-align:center; padding:3px 4%; margin-top:2.5px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+            <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">NV3 · BẢO TOÀN (SAFETY BUFFER)</div>
+            <div style="font-size:10px; font-weight:700; margin-top:1px;">${triangle.safetySchool}</div>
+            <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn thấp hơn điểm hiện tại</div>
+          </div>
         </div>
 
-        <!-- Nấc 3: Bảo toàn rủi ro -->
-        <div class="p-3.5 rounded-lg border border-slate-300 bg-white flex flex-col justify-between">
-          <div>
-            <span class="font-extrabold text-slate-800 text-[10px] uppercase block">${triangle.safetyTitle}</span>
-            <h5 class="font-bold text-slate-900 text-[12px] mt-1">${triangle.safetySchool}</h5>
-          </div>
-          <p class="text-[10.5px] text-slate-600 mt-2 pt-2 border-t border-slate-200 leading-relaxed">${triangle.safetyDesc}</p>
+        <div style="width:85px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+          <span style="font-size:14px; color:#c2410c; line-height:1;">▲</span>
+          <div style="width:2px; height:36px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+          <span style="font-size:8px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
         </div>
+      </div>
+
+      <!-- Khối Kế hoạch B -->
+      <div style="margin-top:5px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:4px 8px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+        <div style="font-size:9.5px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+        <div style="font-size:9px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
       </div>
     </div>
 

@@ -522,77 +522,58 @@
           </section>
 
           <!-- 4. TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG -->
-          <div class="space-y-1 mb-2.5 text-[10px]">
-            <div class="flex items-center justify-between">
+          <div class="space-y-1 mb-2 text-[10px] bg-white border border-slate-200 rounded-lg p-2.5">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-1">
               <div class="flex items-center gap-1">
-                <span class="text-teal-900 font-bold">🔺</span>
+                <span class="text-rose-600 font-bold">▲</span>
                 <span class="font-black text-slate-900 uppercase text-[10px] tracking-wide">
-                  CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE):
+                  CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG):
                 </span>
               </div>
-              <span class="text-[9px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
+              <span class="text-[9px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
             </div>
 
-            <div class="grid grid-cols-3 gap-2">
-              <!-- Nấc 1: Thử thách -->
-              <div class="p-2 rounded-lg border border-emerald-200 bg-emerald-50/40 flex flex-col justify-between">
-                <div>
-                  <span class="font-extrabold text-emerald-900 text-[9px] block uppercase tracking-wide">
-                    ${data.triangle.stretch.title}
-                  </span>
-                  <p class="font-bold text-slate-900 mt-0.5 text-[10.5px] leading-tight">
-                    ${data.triangle.stretch.majorSchool}
-                  </p>
+            <!-- Khối Hình Tháp Tam Giác 3 tầng -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+              <div style="width:80px; font-size:8.5px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+                <span>Chọn theo thứ tự:</span>
+                <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
+              </div>
+
+              <div style="flex:1; max-width:440px; margin:0 auto;">
+                <!-- Tầng 1: Thử thách -->
+                <div style="background:#c2410c; color:#ffffff; min-height:38px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">${data.triangle.stretch.title}</div>
+                  <div style="font-size:10px; font-weight:700; margin-top:1px;">${data.triangle.stretch.majorSchool}</div>
+                  <div style="font-size:8px; opacity:0.92; margin-top:1px;">• Điểm tham chiếu: ${data.triangle.stretch.targetScore}</div>
                 </div>
-                <div>
-                  <div class="text-[9px] text-emerald-800 font-bold mt-1">
-                    • Điểm tham chiếu: ${data.triangle.stretch.targetScore}
-                  </div>
-                  <div class="text-[8.5px] text-slate-600 mt-1 pt-1 border-t border-emerald-200/60 leading-normal">
-                    ${data.triangle.stretch.notes}
-                  </div>
+
+                <!-- Tầng 2: Vừa sức -->
+                <div style="background:#0f766e; color:#ffffff; min-height:38px; text-align:center; padding:3px 12%; margin-top:2px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">${data.triangle.realistic.title}</div>
+                  <div style="font-size:10px; font-weight:700; margin-top:1px;">${data.triangle.realistic.majorSchool}</div>
+                  <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${data.triangle.realistic.targetScore}</div>
+                </div>
+
+                <!-- Tầng 3: Bảo toàn -->
+                <div style="background:#1d4ed8; color:#ffffff; min-height:38px; text-align:center; padding:3px 4%; margin-top:2px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+                  <div style="font-size:9.5px; font-weight:900; letter-spacing:0.3px; text-transform:uppercase;">${data.triangle.safety.title}</div>
+                  <div style="font-size:10px; font-weight:700; margin-top:1px;">${data.triangle.safety.majorSchool}</div>
+                  <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${data.triangle.safety.targetScore}</div>
                 </div>
               </div>
 
-              <!-- Nấc 2: Vừa sức -->
-              <div class="p-2 rounded-lg border border-cyan-200 bg-cyan-50/40 flex flex-col justify-between">
-                <div>
-                  <span class="font-extrabold text-cyan-900 text-[9px] block uppercase tracking-wide">
-                    ${data.triangle.realistic.title}
-                  </span>
-                  <p class="font-bold text-slate-900 mt-0.5 text-[10.5px] leading-tight">
-                    ${data.triangle.realistic.majorSchool}
-                  </p>
-                </div>
-                <div>
-                  <div class="text-[9px] text-cyan-800 font-bold mt-1">
-                    • ${data.triangle.realistic.targetScore}
-                  </div>
-                  <div class="text-[8.5px] text-slate-600 mt-1 pt-1 border-t border-cyan-200/60 leading-normal">
-                    ${data.triangle.realistic.notes}
-                  </div>
-                </div>
+              <div style="width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+                <span style="font-size:13px; color:#c2410c; line-height:1;">▲</span>
+                <div style="width:2px; height:32px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+                <span style="font-size:7.5px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
               </div>
+            </div>
 
-              <!-- Nấc 3: Bảo toàn rủi ro -->
-              <div class="p-2 rounded-lg border border-slate-300 bg-slate-50/80 flex flex-col justify-between">
-                <div>
-                  <span class="font-extrabold text-slate-800 text-[9px] block uppercase tracking-wide">
-                    ${data.triangle.safety.title}
-                  </span>
-                  <p class="font-bold text-slate-900 mt-0.5 text-[10.5px] leading-tight">
-                    ${data.triangle.safety.majorSchool}
-                  </p>
-                </div>
-                <div>
-                  <div class="text-[9px] text-slate-700 font-bold mt-1">
-                    • ${data.triangle.safety.targetScore}
-                  </div>
-                  <div class="text-[8.5px] text-slate-600 mt-1 pt-1 border-t border-slate-200 leading-normal">
-                    ${data.triangle.safety.notes}
-                  </div>
-                </div>
-              </div>
+            <!-- Khối Kế hoạch B -->
+            <div style="margin-top:4px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:3px 6px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+              <div style="font-size:9px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+              <div style="font-size:8.5px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
             </div>
           </div>
 
