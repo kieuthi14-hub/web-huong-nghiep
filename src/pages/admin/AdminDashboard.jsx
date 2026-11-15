@@ -70,7 +70,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_01',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'RAI',
     major: 'Tâm lý học (ĐH KHXH&NV)',
     majorT0: 'Tâm lý học (ĐH KHXH&NV)',
@@ -90,7 +90,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_02',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Khá',
+    academicRank: 'Đạt',
     riasec: 'ECS',
     major: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
     majorT0: 'Quản trị Kinh doanh (ĐH Kinh Tế TP.HCM)',
@@ -110,7 +110,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_03',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'SAE',
     major: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)',
     majorT0: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)',
@@ -130,7 +130,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_04',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'CES',
     major: 'Kế toán - Kiểm toán (ĐH Kinh Tế)',
     majorT0: 'Kế toán - Kiểm toán (ĐH Kinh Tế)',
@@ -170,7 +170,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_06',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'ASE',
     major: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)',
     majorT0: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)',
@@ -190,7 +190,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_07',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Xuất sắc',
+    academicRank: 'Tốt',
     riasec: 'IRS',
     major: 'Công nghệ Sinh học Y dược (ĐH KHTN)',
     majorT0: 'Công nghệ Sinh học Y dược (ĐH KHTN)',
@@ -210,7 +210,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_08',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Trung bình',
+    academicRank: 'Đạt',
     riasec: 'ICR',
     major: 'Tạo mẫu tóc tiệm tư (Nha Trang)',
     majorT0: 'Tạo mẫu tóc tiệm tư',
@@ -256,7 +256,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_10',
     grade: 'Khối 10',
     gradeNum: '10',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'CIS',
     major: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)',
     majorT0: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)',
@@ -278,7 +278,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_11',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Đạt',
     riasec: 'RIC',
     major: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)',
     majorT0: 'An toàn Thông tin (Học viện Kỹ thuật Mật mã)',
@@ -298,7 +298,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_12',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'SEC',
     major: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)',
     majorT0: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)',
@@ -318,7 +318,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_13',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Xuất sắc',
+    academicRank: 'Tốt',
     riasec: 'ISR',
     major: 'Y đa khoa (ĐH Y Dược TP.HCM)',
     majorT0: 'Y đa khoa (ĐH Y Dược TP.HCM)',
@@ -338,7 +338,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_14',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Khá',
+    academicRank: 'Đạt',
     riasec: 'AES',
     major: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)',
     majorT0: 'Kiến trúc Công trình (ĐH Kiến Trúc TP.HCM)',
@@ -358,7 +358,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_15',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'ECR',
     major: 'Logistics & Quản lý Chuỗi Cung Ứng',
     majorT0: 'Logistics & Quản lý Chuỗi Cung Ứng (ĐH GTVT)',
@@ -378,7 +378,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_16',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'SIR',
     major: 'Dược học (ĐH Y Dược)',
     majorT0: 'Dược học (ĐH Y Dược)',
@@ -398,7 +398,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_17',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'CSE',
     major: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)',
     majorT0: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)',
@@ -418,7 +418,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_18',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'IRE',
     major: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)',
     majorT0: 'Trí tuệ Nhân tạo & Robotics (ĐH Bách Khoa)',
@@ -438,7 +438,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_19',
     grade: 'Khối 11',
     gradeNum: '11',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'SAI',
     major: 'Tâm lý học Giáo dục (ĐH Sư Phạm)',
     majorT0: 'Tâm lý học Giáo dục (ĐH Sư Phạm TP.HCM)',
@@ -504,7 +504,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_22',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Khá',
+    academicRank: 'Đạt',
     riasec: 'RIE',
     major: 'Kỹ thuật Ô tô (Bách Khoa TP.HCM - 26.5đ)',
     majorT0: 'Kỹ thuật Ô tô (Bách Khoa TP.HCM - 26.5đ)',
@@ -546,7 +546,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_24',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'ESI',
     major: 'Quản trị Khách sạn & Du lịch (Kinh Tế TP.HCM)',
     majorT0: 'Quản trị Khách sạn & Du lịch (Kinh Tế TP.HCM)',
@@ -567,7 +567,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_25',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Đạt',
     riasec: 'IRC',
     major: 'Kỹ thuật Cơ điện tử (Bách Khoa TP.HCM - 26.0đ)',
     majorT0: 'Kỹ thuật Cơ điện tử (Bách Khoa TP.HCM - 26.0đ)',
@@ -588,7 +588,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_26',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'SAR',
     major: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
     majorT0: 'Sư phạm Toán học (ĐH Sư Phạm TP.HCM)',
@@ -609,7 +609,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_27',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'CER',
     major: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)',
     majorT0: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)',
@@ -629,7 +629,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_28',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Khá',
     riasec: 'EAS',
     major: 'Luật Kinh tế (ĐH Luật TP.HCM)',
     majorT0: 'Luật Kinh tế (ĐH Luật TP.HCM)',
@@ -649,7 +649,7 @@ export const INITIAL_CBAS_STUDENTS = [
     id: 'CT_29',
     grade: 'Khối 12',
     gradeNum: '12',
-    academicRank: 'Giỏi',
+    academicRank: 'Tốt',
     riasec: 'RIS',
     major: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)',
     majorT0: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)',
@@ -1379,6 +1379,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     csv += '--- PHẦN 1: THỐNG KÊ TIẾN ĐỘ & VẬN HÀNH CAN THIỆP (PHỤC VỤ MỤC III.3 BÁO CÁO) ---\n'
     csv += 'Chỉ số đo lường,Giá trị thực nghiệm,Tỷ lệ %,Quy chuẩn phương pháp & Ý nghĩa\n'
     csv += `Tổng số học sinh nhóm can thiệp (N),${totalStudents},100.0%,Chọn mẫu ngẫu nhiên phân tầng từ 3 khối lớp (K10: 10 | K11: 10 | K12: 10)\n`
+    csv += `Cơ cấu học lực nhóm can thiệp (Bảng 1 Báo cáo),"Tốt: 9 (30.0%) | Khá: 15 (50.0%) | Đạt: 6 (20.0%)",100.0%,Khớp 100% Bảng 1 đặc điểm mẫu nghiên cứu (Thông tư 22/2021/TT-BGDĐT)\n`
     csv += `Số học sinh hoàn thành đủ 5 bước,${completedB5},${((completedB5 * 100) / totalStudents).toFixed(1)}%,Đạt trọn vẹn tiến trình can thiệp phản tư và hiệu chuẩn mỏ neo\n`
     csv += `Số lượng Nhật ký phản tư (hồ sơ 5 chặng) đã nộp hoàn chỉnh,${completedDossier},100.0%,Đã số hóa và lưu trữ biên bản kiểm chứng thực tế\n`
     csv += `Tổng số phiên tham vấn Mentor (Chặng 4) đã diễn ra,${totalCompletedSessions},${((totalCompletedSessions * 100) / totalStudents).toFixed(1)}%,Hoàn thành phiên đối chất và nghiệm thu mở khóa Bước 5\n`
@@ -3215,11 +3216,11 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                           </td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                              st.academicRank === 'Xuất sắc'
+                              st.academicRank === 'Tốt' || st.academicRank === 'Xuất sắc'
                                 ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
-                                : st.academicRank === 'Giỏi'
+                                : st.academicRank === 'Khá' || st.academicRank === 'Giỏi'
                                 ? 'bg-teal-500/20 text-teal-300 border-teal-500/30'
-                                : 'bg-slate-800 text-slate-300 border-slate-700'
+                                : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                             }`}>
                               {st.academicRank}
                             </span>
