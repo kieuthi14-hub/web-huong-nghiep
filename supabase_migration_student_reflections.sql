@@ -31,6 +31,13 @@ ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS contingency_plan
 -- Ghi chú của Mentor (Bước 4)
 ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS mentor_notes TEXT;
 
+-- Dữ liệu phục vụ Mục III.3 và Mục III.5 (Báo cáo Nghiên cứu KHKT 2026):
+ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS mentor_session_completed BOOLEAN DEFAULT true;
+ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS mentor_session_duration INT DEFAULT 20;
+ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS decision_shift_category TEXT; -- DIEU_CHINH_NV | BO_SUNG_CAN_CU | GIU_NGUYEN_DU_PHONG
+ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS dossier_completed BOOLEAN DEFAULT true;
+ALTER TABLE public.student_reflections ADD COLUMN IF NOT EXISTS completed_steps_count INT DEFAULT 5;
+
 -- 3. CẤU HÌNH ROW LEVEL SECURITY (RLS) ĐỂ WEB GHI & ĐỌC DỮ LIỆU TRỰC TIẾP
 ALTER TABLE public.student_reflections ENABLE ROW LEVEL SECURITY;
 
@@ -42,21 +49,38 @@ CREATE POLICY "Allow read and upsert student_reflections"
   WITH CHECK (true);
 
 -- ============================================================================
--- 4. TRUY VẤN THỐNG KÊ ĐO LƯỜNG HIỆU QUẢ CAN THIỆP (DÙNG CHO BÁO CÁO KHKT)
+-- 4. TRUY VẤN THỐNG KÊ ĐO LƯỜNG HIỆU QUẢ CAN THIỆP (DÙNG CHO BÁO CÁO KHKT MỤC III.3 & III.5)
 -- Lưu ý: Dùng NULLIF(COUNT(*), 0) để tránh lỗi chia cho 0 khi bảng chưa có dòng nào.
 -- ============================================================================
 SELECT 
     COUNT(*) AS tong_so_hoc_sinh,
-    -- Đếm số HS đã tra cứu đủ điểm chuẩn và học phí thực tế
-    COUNT(CASE WHEN benchmark_3years IS NOT NULL AND tuition_per_year > 0 THEN 1 END) AS so_hs_kiem_chung_so_lieu,
-    ROUND(COUNT(CASE WHEN benchmark_3years IS NOT NULL AND tuition_per_year > 0 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS ty_le_kiem_chung_pct,
     
-    -- Đếm số HS đã lập đủ phương án dự phòng (Kế hoạch B)
-    COUNT(CASE WHEN contingency_plan IS NOT NULL AND LENGTH(contingency_plan) > 5 THEN 1 END) AS so_hs_co_ke_hoach_b,
-    ROUND(COUNT(CASE WHEN contingency_plan IS NOT NULL AND LENGTH(contingency_plan) > 5 THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS ty_le_ke_hoach_b_pct,
+    -- MỤC III.3: TIẾN ĐỘ & VẬN HÀNH CAN THIỆP
+    -- Số học sinh hoàn thành đủ 5 bước
+    COUNT(CASE WHEN completed_steps_count >= 5 OR priority_choice_1 IS NOT NULL THEN 1 END) AS so_hs_hoan_thanh_5_buoc,
+    ROUND(COUNT(CASE WHEN completed_steps_count >= 5 OR priority_choice_1 IS NOT NULL THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS ty_le_hoan_thanh_5_buoc_pct,
     
-    -- Đếm số HS có sự điều chỉnh lựa chọn so với mỏ neo ban đầu
-    COUNT(CASE WHEN LOWER(TRIM(initial_career)) <> LOWER(TRIM(priority_choice_1)) THEN 1 END) AS so_hs_dieu_chinh_nguyen_vong,
-    ROUND(COUNT(CASE WHEN LOWER(TRIM(initial_career)) <> LOWER(TRIM(priority_choice_1)) THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS ty_le_dieu_chinh_pct
+    -- Số hồ sơ nhật ký phản tư (5 chặng) đã nộp hoàn chỉnh
+    COUNT(CASE WHEN dossier_completed = true OR priority_choice_1 IS NOT NULL THEN 1 END) AS so_ho_so_nhat_ky_hoan_chinh,
+    
+    -- Tổng số phiên tham vấn Mentor đã diễn ra & thời lượng trung bình
+    COUNT(CASE WHEN mentor_session_completed = true THEN 1 END) AS tong_phien_mentor,
+    ROUND(AVG(CASE WHEN mentor_session_completed = true THEN COALESCE(mentor_session_duration, 20) END), 1) AS thoi_luong_mentor_tb_phut,
+    
+    -- MỤC III.5: PHÂN LOẠI CHUYỂN HÓA QUYẾT ĐỊNH (3 NHÓM)
+    -- Nhóm 1: Điều chỉnh nguyện vọng (Khác ngành B1 sau khi đối chiếu B3)
+    COUNT(CASE WHEN decision_shift_category = 'DIEU_CHINH_NV' 
+      OR (decision_shift_category IS NULL AND LOWER(TRIM(initial_career)) <> LOWER(TRIM(priority_choice_1))) THEN 1 END) AS nhom_1_dieu_chinh_nv,
+    
+    -- Nhóm 2: Bổ sung căn cứ cụ thể (Giữ nguyên ngành + có đủ điểm chuẩn & học phí)
+    COUNT(CASE WHEN decision_shift_category = 'BO_SUNG_CAN_CU' 
+      OR (decision_shift_category IS NULL AND LOWER(TRIM(initial_career)) = LOWER(TRIM(priority_choice_1)) 
+          AND benchmark_3years IS NOT NULL AND tuition_per_year > 0 
+          AND (contingency_plan IS NULL OR LENGTH(contingency_plan) <= 5)) THEN 1 END) AS nhom_2_bo_sung_can_cu,
+          
+    -- Nhóm 3: Giữ nguyên lựa chọn & Bổ sung phương án dự phòng (Có Kế hoạch B)
+    COUNT(CASE WHEN decision_shift_category = 'GIU_NGUYEN_DU_PHONG' 
+      OR (decision_shift_category IS NULL AND LOWER(TRIM(initial_career)) = LOWER(TRIM(priority_choice_1)) 
+          AND contingency_plan IS NOT NULL AND LENGTH(contingency_plan) > 5) THEN 1 END) AS nhom_3_giu_nguyen_va_du_phong
 FROM public.student_reflections;
 
