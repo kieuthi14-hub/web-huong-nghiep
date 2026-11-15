@@ -600,78 +600,66 @@
             </div>
           </section>
 
-          <!-- 6. CHỮ KÝ CAM KẾT 3 BÊN (3-PARTY COMMITMENT CONTRACT) -->
-          <section class="border-t-2 border-slate-900 pt-2 page-break-inside-avoid">
+          <!-- 6. CHỮ KÝ CAM KẾT 3 BÊN (3-PARTY COMMITMENT CONTRACT - ANONYMIZED) -->
+          <section class="border-t-2 border-slate-900 pt-2.5 page-break-inside-avoid">
             <div class="grid grid-cols-3 gap-3 text-center text-[10px]">
               <!-- Cột 1: Học sinh cam kết -->
-              <div>
-                <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  HỌC SINH CAM KẾT
-                </div>
-                <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  (Ký và ghi rõ mã số)
-                </div>
-                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 19px; color: #1d4ed8; transform: rotate(-4deg); font-weight: bold; line-height: 1;">
-                    Ct.${data.studentInfo.id ? data.studentInfo.id.replace('CT_', '') : '01'}_Ký
+              <div class="space-y-4">
+                <div>
+                  <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
+                    HỌC SINH CAM KẾT
                   </div>
-                  <svg width="72" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
-                    <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" />
-                  </svg>
-                  <span class="text-[8px] text-emerald-700 font-bold mt-0.5">
-                    ☑ Đã ký điện tử • 15/11/2026
-                  </span>
+                  <div class="text-[8.5px] text-slate-500 italic mt-0.5">
+                    (Đã xác nhận cam kết điện tử)
+                  </div>
                 </div>
-                <div class="font-bold text-teal-900 text-[10px]">
-                  ${data.studentInfo.id} (Học sinh cam kết)
+                <div class="pt-1">
+                  <div class="font-bold text-teal-900 text-[11px]">
+                    ${data.studentInfo.id}
+                  </div>
+                  <div class="text-[8.5px] text-emerald-700 font-semibold mt-0.5">
+                    ☑ Đã đối chứng & cam kết hành động
+                  </div>
                 </div>
               </div>
 
               <!-- Cột 2: Cố vấn / Mentor -->
-              <div>
-                <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  CỐ VẤN / MENTOR
-                </div>
-                <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  (Xác nhận nghiệm thu Bước 5)
-                </div>
-                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 18px; color: #0f766e; transform: rotate(-3deg); font-weight: bold; line-height: 1;">
-                    Ng.V.Tâm
+              <div class="space-y-4">
+                <div>
+                  <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
+                    CỐ VẤN / MENTOR
                   </div>
-                  <svg width="66" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
-                    <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" />
-                  </svg>
-                  <span class="text-[8px] text-teal-700 font-bold mt-0.5">
-                    ✓ Đã nghiệm thu tham vấn
-                  </span>
+                  <div class="text-[8.5px] text-slate-500 italic mt-0.5">
+                    (Xác nhận nghiệm thu Bước 5)
+                  </div>
                 </div>
-                <div class="font-bold text-teal-900 text-[10px]">
-                  ThS. Nguyễn Văn Tâm
+                <div class="pt-1">
+                  <div class="font-bold text-slate-800 text-[10.5px]">
+                    Ban Cố vấn Dự án
+                  </div>
+                  <div class="text-[8.5px] text-teal-700 font-semibold mt-0.5">
+                    ✓ Đã nghiệm thu phiên tham vấn
+                  </div>
                 </div>
               </div>
 
               <!-- Cột 3: Đại diện Phụ huynh -->
-              <div>
-                <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
-                  ĐẠI DIỆN PHỤ HUYNH
-                </div>
-                <div class="text-[8.5px] text-slate-500 italic mb-1">
-                  (Ký chứng kiến hỗ trợ)
-                </div>
-                <div class="h-12 border border-slate-200 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                  <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 17px; color: #334155; transform: rotate(-2deg); font-weight: bold; line-height: 1;">
-                    Đại diện PH
+              <div class="space-y-4">
+                <div>
+                  <div class="font-black text-slate-900 uppercase tracking-tight text-[10.5px]">
+                    ĐẠI DIỆN PHỤ HUYNH
                   </div>
-                  <svg width="62" height="7" viewBox="0 0 100 16" style="margin-top: -2px;">
-                    <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" />
-                  </svg>
-                  <span class="text-[8px] text-slate-600 font-bold mt-0.5">
-                    ✓ Đồng thuận đồng hành
-                  </span>
+                  <div class="text-[8.5px] text-slate-500 italic mt-0.5">
+                    (Chứng kiến & Hỗ trợ)
+                  </div>
                 </div>
-                <div class="font-bold text-teal-900 text-[10px]">
-                  Đại diện Gia đình
+                <div class="pt-1">
+                  <div class="font-bold text-slate-800 text-[10.5px]">
+                    Đại diện Phụ huynh học sinh
+                  </div>
+                  <div class="text-[8.5px] text-slate-600 font-semibold mt-0.5">
+                    ✓ Đồng thuận đồng hành
+                  </div>
                 </div>
               </div>
             </div>

@@ -48,7 +48,7 @@ import {
   CheckCircle,
   GitCompare
 } from 'lucide-react'
-import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content, getStudentSignatureData, STUDENT_SIGNATURE_MAP } from '../../data/adaptiveCommitments'
+import { ADAPTIVE_COMMITMENTS_BY_GRADE, getGradeCommitmentPlan, UPDATED_STUDENTS_DISPLAY, SOCRATIC_CHAT_LOGS, DEFAULT_TRIANGLE_DATA, IN_DEPTH_AUDIT_LOGS, EXPERIMENTAL_STUDENTS_N30, renderCalibrationBadge, CT21_COMMITMENT_DATA, CT13_COMMITMENT_DATA, CT08_COMMITMENT_DATA, getStudentCommitmentData, getAdaptiveStep5Data, generateStep5Content } from '../../data/adaptiveCommitments'
 import { 
   fetchStudentReflectionsSummary, 
   updateStudentMentorSession, 
@@ -1597,146 +1597,69 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     setPreviewPdfStudent(student)
   }
 
-  // Tạo khối chữ ký 3 bên dạng HTML cho file in/tải về
+  // Tạo khối xác nhận cam kết 3 bên dạng HTML cho file in/tải về (Chuẩn ẩn danh KHKT VISEF)
   const generateSignatureHtml = (studentId) => {
-    const sig = getStudentSignatureData(studentId)
     return `
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 14px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 10px;">
         <div>
           <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">HỌC SINH CAM KẾT</div>
-          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Ký và ghi rõ mã số)</div>
-          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
-            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 20px; color: #1d4ed8; transform: rotate(-4deg); font-weight: bold; line-height: 1;">
-              ${sig.sign}
-            </div>
-            <svg width="74" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
-              <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" />
-            </svg>
-            <div style="font-size: 8px; color: #059669; font-weight: 700; margin-top: 1px;">
-              ☑ Đã ký điện tử • ${sig.date}
-            </div>
-          </div>
-          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">${studentId} (${sig.name})</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic; margin-top: 2px;">(Đã xác nhận cam kết điện tử)</div>
+          <div style="margin-top: 16px; font-weight: 800; color: #0f766e; font-size: 11px;">${studentId}</div>
+          <div style="font-size: 8.5px; color: #059669; font-weight: 600; margin-top: 2px;">☑ Đã đối chứng & cam kết</div>
         </div>
 
         <div>
           <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">CỐ VẤN / MENTOR</div>
-          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Xác nhận nghiệm thu)</div>
-          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
-            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 19px; color: #0f766e; transform: rotate(-3deg); font-weight: bold; line-height: 1;">
-              Ng.V.Tâm
-            </div>
-            <svg width="68" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
-              <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <div style="font-size: 8px; color: #0f766e; font-weight: 700; margin-top: 1px;">
-              ✓ Đã nghiệm thu phiên tham vấn
-            </div>
-          </div>
-          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">ThS. Nguyễn Văn Tâm</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic; margin-top: 2px;">(Xác nhận nghiệm thu Bước 5)</div>
+          <div style="margin-top: 16px; font-weight: 800; color: #334155; font-size: 10.5px;">Ban Cố vấn Dự án</div>
+          <div style="font-size: 8.5px; color: #0f766e; font-weight: 600; margin-top: 2px;">✓ Đã nghiệm thu tham vấn</div>
         </div>
 
         <div>
           <div style="font-weight: 800; font-size: 10px; color: #0f172a; text-transform: uppercase;">ĐẠI DIỆN PHỤ HUYNH</div>
-          <div style="font-size: 8.5px; color: #64748b; font-style: italic;">(Ký chứng kiến hỗ trợ)</div>
-          <div style="height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 2px 0;">
-            <div style="font-family: 'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive; font-size: 18px; color: #334155; transform: rotate(-2deg); font-weight: bold; line-height: 1;">
-              Đại diện PH
-            </div>
-            <svg width="64" height="8" viewBox="0 0 100 16" style="margin-top: -2px;">
-              <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-            <div style="font-size: 8px; color: #475569; font-weight: 700; margin-top: 1px;">
-              ✓ Đồng thuận đồng hành
-            </div>
-          </div>
-          <div style="font-weight: 800; color: #0f766e; font-size: 10px;">Đại diện Gia đình</div>
+          <div style="font-size: 8.5px; color: #64748b; font-style: italic; margin-top: 2px;">(Chứng kiến & Hỗ trợ)</div>
+          <div style="margin-top: 16px; font-weight: 800; color: #334155; font-size: 10.5px;">Đại diện Phụ huynh học sinh</div>
+          <div style="font-size: 8.5px; color: #475569; font-weight: 600; margin-top: 2px;">✓ Đồng thuận đồng hành</div>
         </div>
       </div>
     `
   }
 
-  // Tạo khối chữ ký 3 bên dạng JSX React cho Modal hiển thị trên màn hình
+  // Tạo khối xác nhận cam kết 3 bên dạng JSX React cho Modal hiển thị trên màn hình (Chuẩn ẩn danh KHKT VISEF)
   const renderSignatureBlock = (studentId) => {
-    const sig = getStudentSignatureData(studentId)
     return (
-      <div className="grid grid-cols-3 gap-3 pt-3 text-center text-xs border-t border-slate-200">
-        <div className="space-y-1">
-          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">HỌC SINH CAM KẾT</div>
-          <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ mã số)</div>
-          
-          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
-            <div style={{
-              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-              fontSize: "20px",
-              color: "#1d4ed8",
-              transform: "rotate(-4deg)",
-              fontWeight: "bold",
-              lineHeight: 1
-            }}>
-              {sig.sign}
-            </div>
-            <svg width="76" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-              <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" strokeWidth="2.2" strokeLinecap="round" />
-            </svg>
-            <div className="text-[8px] text-emerald-700 font-bold flex items-center gap-1 mt-0.5">
-              <span>☑</span> Đã ký điện tử • {sig.date}
-            </div>
+      <div className="grid grid-cols-3 gap-3 pt-4 text-center text-xs border-t border-slate-200">
+        <div className="space-y-4">
+          <div>
+            <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">HỌC SINH CAM KẾT</div>
+            <div className="text-[9px] text-slate-500 italic mt-0.5">(Đã xác nhận cam kết điện tử)</div>
           </div>
-
-          <div className="font-black text-teal-800 text-[10.5px]">{studentId} ({sig.name})</div>
+          <div className="pt-1">
+            <div className="font-black text-teal-800 text-[11px]">{studentId}</div>
+            <div className="text-[9px] text-emerald-700 font-semibold mt-0.5">☑ Đã đối chứng & cam kết hành động</div>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">CỐ VẤN / MENTOR</div>
-          <div className="text-[9px] text-slate-500 italic">(Xác nhận nghiệm thu Bước 5)</div>
-
-          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
-            <div style={{
-              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-              fontSize: "19px",
-              color: "#0f766e",
-              transform: "rotate(-3deg)",
-              fontWeight: "bold",
-              lineHeight: 1
-            }}>
-              Ng.V.Tâm
-            </div>
-            <svg width="68" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-              <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <div className="text-[8px] text-teal-700 font-bold flex items-center gap-1 mt-0.5">
-              <span>✓</span> Đã nghiệm thu phiên tham vấn
-            </div>
+        <div className="space-y-4">
+          <div>
+            <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">CỐ VẤN / MENTOR</div>
+            <div className="text-[9px] text-slate-500 italic mt-0.5">(Xác nhận nghiệm thu Bước 5)</div>
           </div>
-
-          <div className="font-black text-teal-800 text-[10.5px]">ThS. Nguyễn Văn Tâm</div>
+          <div className="pt-1">
+            <div className="font-bold text-slate-800 text-[10.5px]">Ban Cố vấn Dự án</div>
+            <div className="text-[9px] text-teal-700 font-semibold mt-0.5">✓ Đã nghiệm thu phiên tham vấn</div>
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">ĐẠI DIỆN PHỤ HUYNH</div>
-          <div className="text-[9px] text-slate-500 italic">(Ký chứng kiến hỗ trợ)</div>
-
-          <div className="h-11 flex flex-col items-center justify-center -my-0.5">
-            <div style={{
-              fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-              fontSize: "18px",
-              color: "#334155",
-              transform: "rotate(-2deg)",
-              fontWeight: "bold",
-              lineHeight: 1
-            }}>
-              Đại diện PH
-            </div>
-            <svg width="64" height="8" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-              <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-            <div className="text-[8px] text-slate-600 font-bold flex items-center gap-1 mt-0.5">
-              <span>✓</span> Đồng thuận đồng hành
-            </div>
+        <div className="space-y-4">
+          <div>
+            <div className="font-bold text-slate-800 text-[10.5px] uppercase tracking-wide">ĐẠI DIỆN PHỤ HUYNH</div>
+            <div className="text-[9px] text-slate-500 italic mt-0.5">(Chứng kiến & Hỗ trợ)</div>
           </div>
-
-          <div className="font-black text-teal-800 text-[10.5px]">Đại diện Gia đình</div>
+          <div className="pt-1">
+            <div className="font-bold text-slate-800 text-[10.5px]">Đại diện Phụ huynh học sinh</div>
+            <div className="text-[9px] text-slate-600 font-semibold mt-0.5">✓ Đồng thuận đồng hành</div>
+          </div>
         </div>
       </div>
     )

@@ -2062,89 +2062,40 @@ export default function DebiasMatrix() {
                 </div>
               )}
 
-              {/* 5. CHỮ KÝ CAM KẾT CÁ NHÂN (3 BÊN) */}
-              <section className="border-t-2 border-slate-900 pt-2.5 page-break-inside-avoid">
+              {/* 5. KHỐI XÁC NHẬN CAM KẾT 3 BÊN (CHUẨN ẨN DANH KHKT) */}
+              <section className="border-t-2 border-slate-900 pt-3 page-break-inside-avoid">
                 <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                  <div>
-                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">HỌC SINH CAM KẾT</div>
-                    <div className="text-[9px] text-slate-500 italic mb-1">(Ký và ghi rõ họ tên)</div>
-                    <div className="h-12 border border-slate-300 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                      {hasSignature && signatureDataUrl ? (
-                        <img 
-                          src={signatureDataUrl} 
-                          alt="Chữ ký học sinh" 
-                          className="max-h-11 max-w-[95%] object-contain" 
-                        />
-                      ) : (
-                        <div className="flex flex-col items-center justify-center">
-                          <div style={{
-                            fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-                            fontSize: "19px",
-                            color: "#1d4ed8",
-                            transform: "rotate(-4deg)",
-                            fontWeight: "bold",
-                            lineHeight: 1
-                          }}>
-                            {typedSignatureName || `Ct.${displayStudentCode.replace('CT_', '')}_Ký`}
-                          </div>
-                          <svg width="70" height="7" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-                            <path d="M 5 8 Q 30 2, 55 10 T 95 6" fill="none" stroke="#1d4ed8" strokeWidth="2.2" strokeLinecap="round" />
-                          </svg>
-                          <span className="text-[8px] text-emerald-700 font-bold mt-0.5">
-                            ☑ Đã ký điện tử
-                          </span>
-                        </div>
-                      )}
+                  <div className="space-y-4">
+                    <div>
+                      <div className="font-bold text-slate-800 uppercase text-[10.5px]">HỌC SINH CAM KẾT</div>
+                      <div className="text-[9px] text-slate-500 italic mt-0.5">(Đã xác nhận cam kết điện tử)</div>
                     </div>
-                    <div className="font-bold text-teal-800 text-[10px]">{typedSignatureName || displayStudentCode}</div>
+                    <div className="pt-1">
+                      <div className="font-black text-teal-800 text-[11px]">{displayStudentCode}</div>
+                      <div className="text-[9px] text-emerald-700 font-semibold mt-0.5">☑ Đã đối chứng & cam kết hành động</div>
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">CỐ VẤN / MENTOR</div>
-                    <div className="text-[9px] text-slate-500 italic mb-1">(Xác nhận nghiệm thu)</div>
-                    <div className="h-12 border border-slate-300 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                      <div style={{
-                        fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-                        fontSize: "18px",
-                        color: "#0f766e",
-                        transform: "rotate(-3deg)",
-                        fontWeight: "bold",
-                        lineHeight: 1
-                      }}>
-                        Ng.V.Tâm
-                      </div>
-                      <svg width="66" height="7" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-                        <path d="M 8 10 Q 35 3, 65 11 T 92 7" fill="none" stroke="#0f766e" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                      <span className="text-[8px] text-teal-700 font-bold mt-0.5">
-                        ✓ Đã nghiệm thu
-                      </span>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="font-bold text-slate-800 uppercase text-[10.5px]">CỐ VẤN / MENTOR</div>
+                      <div className="text-[9px] text-slate-500 italic mt-0.5">(Xác nhận nghiệm thu Bước 5)</div>
                     </div>
-                    <div className="font-bold text-slate-800 text-[10px]">ThS. Nguyễn Văn Tâm</div>
+                    <div className="pt-1">
+                      <div className="font-bold text-slate-800 text-[10.5px]">Ban Cố vấn Dự án</div>
+                      <div className="text-[9px] text-teal-700 font-semibold mt-0.5">✓ Đã nghiệm thu phiên tham vấn</div>
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="font-bold text-slate-700 uppercase text-[10.5px]">ĐẠI DIỆN PHỤ HUYNH</div>
-                    <div className="text-[9px] text-slate-500 italic mb-1">(Ký chứng kiến hỗ trợ)</div>
-                    <div className="h-12 border border-slate-300 rounded bg-white flex flex-col items-center justify-center mb-1 overflow-hidden">
-                      <div style={{
-                        fontFamily: "'Caveat', 'Dancing Script', 'Brush Script MT', 'Segoe Script', cursive",
-                        fontSize: "17px",
-                        color: "#334155",
-                        transform: "rotate(-2deg)",
-                        fontWeight: "bold",
-                        lineHeight: 1
-                      }}>
-                        Đại diện PH
-                      </div>
-                      <svg width="62" height="7" viewBox="0 0 100 16" style={{ marginTop: "-2px" }}>
-                        <path d="M 10 9 Q 40 4, 70 12 T 90 8" fill="none" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" />
-                      </svg>
-                      <span className="text-[8px] text-slate-600 font-bold mt-0.5">
-                        ✓ Đồng thuận đồng hành
-                      </span>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="font-bold text-slate-800 uppercase text-[10.5px]">ĐẠI DIỆN PHỤ HUYNH</div>
+                      <div className="text-[9px] text-slate-500 italic mt-0.5">(Chứng kiến & Hỗ trợ)</div>
                     </div>
-                    <div className="font-bold text-slate-800 text-[10px]">Đại diện Gia đình</div>
+                    <div className="pt-1">
+                      <div className="font-bold text-slate-800 text-[10.5px]">Đại diện Phụ huynh học sinh</div>
+                      <div className="text-[9px] text-slate-600 font-semibold mt-0.5">✓ Đồng thuận đồng hành</div>
+                    </div>
                   </div>
                 </div>
               </section>
