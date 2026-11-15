@@ -1926,25 +1926,53 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
         <div style="font-size:9.5px; color:#475569; font-style:italic;">${ct21.coreCareerGoal.note}</div>
       </div>
 
-      <!-- Tam giác nguyện vọng -->
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin: 8px 0; font-size:10.5px;">
-        <div style="background:#f0fdf4; border:1px solid #86efac; padding:8px; border-radius:6px;">
-          <strong style="color:#15803d; font-size:9.5px; text-transform:uppercase; display:block;">1. Thử thách (Stretch)</strong>
-          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.stretch.majorSchool}</div>
-          <div style="font-size:9.5px; color:#166534; margin-top:2px;">${ct21.triangle.stretch.targetScore}</div>
-          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.stretch.notes}</div>
+      <!-- Tam giác nguyện vọng hình tháp phân tầng 3 nấc kèm Kế hoạch B -->
+      <div style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; margin: 6px 0; background:#ffffff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">
+          <span style="font-weight:900; font-size:10px; color:#0f766e; text-transform:uppercase;">🔺 CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG):</span>
+          <span style="font-size:9px; color:#64748b; font-style:italic;">Dải điểm bậc thang 3 nấc</span>
         </div>
-        <div style="background:#ecfeff; border:1px solid #a5f3fc; padding:8px; border-radius:6px;">
-          <strong style="color:#0e7490; font-size:9.5px; text-transform:uppercase; display:block;">2. Vừa sức (Realistic)</strong>
-          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.realistic.majorSchool}</div>
-          <div style="font-size:9.5px; color:#155e75; margin-top:2px;">${ct21.triangle.realistic.targetScore}</div>
-          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.realistic.notes}</div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+          <div style="width:80px; font-size:8.5px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+            <span>Chọn theo thứ tự:</span>
+            <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
+          </div>
+
+          <div style="flex:1; max-width:440px; margin:0 auto;">
+            <!-- Tầng 1: Thử thách -->
+            <div style="background:#c2410c; color:#fff; min-height:38px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV1 · THỬ THÁCH (STRETCH)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.stretch.majorSchool}</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">• Tham chiếu: ${ct21.triangle.stretch.targetScore}</div>
+            </div>
+
+            <!-- Tầng 2: Vừa sức -->
+            <div style="background:#0f766e; color:#fff; min-height:38px; text-align:center; padding:3px 12%; margin-top:2.5px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV2 · VỪA SỨC (REALISTIC)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.realistic.majorSchool}</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${ct21.triangle.realistic.targetScore}</div>
+            </div>
+
+            <!-- Tầng 3: Bảo toàn -->
+            <div style="background:#1d4ed8; color:#fff; min-height:38px; text-align:center; padding:3px 4%; margin-top:2.5px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV3 · BẢO TOÀN (SAFETY BUFFER)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${ct21.triangle.safety.majorSchool}</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">• ${ct21.triangle.safety.targetScore}</div>
+            </div>
+          </div>
+
+          <div style="width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+            <span style="font-size:13px; color:#c2410c; line-height:1;">▲</span>
+            <div style="width:2px; height:34px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+            <span style="font-size:7.5px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
+          </div>
         </div>
-        <div style="background:#f8fafc; border:1px solid #cbd5e1; padding:8px; border-radius:6px;">
-          <strong style="color:#334155; font-size:9.5px; text-transform:uppercase; display:block;">3. Bảo toàn (Safety Buffer)</strong>
-          <div style="font-weight:bold; margin-top:2px;">${ct21.triangle.safety.majorSchool}</div>
-          <div style="font-size:9.5px; color:#475569; margin-top:2px;">${ct21.triangle.safety.targetScore}</div>
-          <div style="font-size:9px; color:#475569; margin-top:3px; border-top:1px dashed #cbd5e1; padding-top:3px;">${ct21.triangle.safety.notes}</div>
+
+        <!-- Khối Kế hoạch B -->
+        <div style="margin-top:5px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:4px 8px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+          <div style="font-size:9.5px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+          <div style="font-size:9px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
         </div>
       </div>
 
@@ -1988,16 +2016,53 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
       <p><strong>Ngành chốt lại (T2):</strong> ${st.majorT2 || st.major}</p>
       <p><strong>Độ tự tin:</strong> ${st.conf} | <strong>Chỉ số CRS:</strong> ${st.crs}</p>
 
-      <!-- Tam giác nguyện vọng -->
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin: 12px 0; font-size:12px;">
-        <div style="background:#f0fdfa; border:1px solid #99f6e4; padding:8px; border-radius:6px;">
-          <strong>1. Mơ ước:</strong><br/>${st.majorT2 || st.major}
+      <!-- Tam giác nguyện vọng hình tháp phân tầng 3 nấc kèm Kế hoạch B -->
+      <div style="border:1px solid #cbd5e1; border-radius:6px; padding:6px 10px; margin: 8px 0; background:#ffffff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; border-bottom:1px solid #cbd5e1; padding-bottom:3px;">
+          <span style="font-weight:900; font-size:10px; color:#0f766e; text-transform:uppercase;">🔺 CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG):</span>
+          <span style="font-size:9px; color:#64748b; font-style:italic;">Dải điểm bậc thang 3 nấc</span>
         </div>
-        <div style="background:#f0f9ff; border:1px solid #bae6fd; padding:8px; border-radius:6px;">
-          <strong>2. Vừa sức:</strong><br/>${st.majorT2 || st.major} (Trường công lập)
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 0;">
+          <div style="width:80px; font-size:8.5px; color:#475569; line-height:1.25; text-align:left; font-weight:600;">
+            <span>Chọn theo thứ tự:</span>
+            <div style="font-weight:800; color:#0f172a; margin-top:2px;">NV1 → NV2 → NV3</div>
+          </div>
+
+          <div style="flex:1; max-width:440px; margin:0 auto;">
+            <!-- Tầng 1: Thử thách -->
+            <div style="background:#c2410c; color:#fff; min-height:38px; text-align:center; padding:3px 20%; clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-clip-path:polygon(32% 0, 68% 0, 79% 100%, 21% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV1 · THỬ THÁCH (STRETCH)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${st.majorT2 || st.major}</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn cao hơn điểm hiện tại</div>
+            </div>
+
+            <!-- Tầng 2: Vừa sức -->
+            <div style="background:#0f766e; color:#fff; min-height:38px; text-align:center; padding:3px 12%; margin-top:2.5px; clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-clip-path:polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV2 · VỪA SỨC (REALISTIC)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${st.majorT2 || st.major} (Trường công lập)</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn ngang điểm hiện tại</div>
+            </div>
+
+            <!-- Tầng 3: Bảo toàn -->
+            <div style="background:#1d4ed8; color:#fff; min-height:38px; text-align:center; padding:3px 4%; margin-top:2.5px; clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-clip-path:polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%); -webkit-print-color-adjust:exact; print-color-adjust:exact; display:flex; flex-direction:column; justify-content:center;">
+              <div style="font-size:9.5px; font-weight:900; text-transform:uppercase; letter-spacing:0.3px;">NV3 · BẢO TOÀN (SAFETY BUFFER)</div>
+              <div style="font-size:10px; font-weight:700; margin-top:1px;">${st.majorT2 || st.major} (Ngành gần / Thực hành)</div>
+              <div style="font-size:8px; opacity:0.92; margin-top:1px;">Điểm chuẩn thấp hơn điểm hiện tại</div>
+            </div>
+          </div>
+
+          <div style="width:80px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:8.5px; font-weight:700; color:#0f172a; text-align:center; line-height:1.2;">
+            <span style="font-size:13px; color:#c2410c; line-height:1;">▲</span>
+            <div style="width:2px; height:34px; background:linear-gradient(to top, #1d4ed8, #0f766e, #c2410c); margin:2px 0;"></div>
+            <span style="font-size:7.5px; color:#475569;">Mức thách thức & điểm chuẩn tăng</span>
+          </div>
         </div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:8px; border-radius:6px;">
-          <strong>3. Dự phòng:</strong><br/>Ngành gần / Chuẩn đầu ra tương đương
+
+        <!-- Khối Kế hoạch B -->
+        <div style="margin-top:5px; border:1.5px solid #ea580c; background:#fff7ed; border-radius:6px; padding:4px 8px; text-align:center; -webkit-print-color-adjust:exact; print-color-adjust:exact;">
+          <div style="font-size:9.5px; font-weight:900; color:#9a3412; text-transform:uppercase; letter-spacing:0.3px;">KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG</div>
+          <div style="font-size:9px; color:#7c2d12; margin-top:1px; font-weight:500;">Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.</div>
         </div>
       </div>
 
@@ -5354,42 +5419,115 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <p className="text-[10.5px] text-slate-600 italic">{ct21.coreCareerGoal.note}</p>
                     </div>
 
-                    {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
-                    <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3.5">
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                          <span className="text-teal-900">🔺</span>
-                          <span>CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
-                        </span>
-                        <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
-                      </div>
-                      <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '12px', paddingTop: '4px' }}><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" /></svg>
-                        <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '0 0 56%', margin: '0 auto 4px auto', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                          <div>
-                            <span className="font-extrabold text-teal-900 text-[10px] block uppercase">{ct21.triangle.stretch.title}</span>
-                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.stretch.majorSchool}</p>
-                            <div className="text-[10.5px] font-bold text-teal-800 mt-1">• {ct21.triangle.stretch.targetScore}</div>
+                    {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG KÈM KẾ HOẠCH B) */}
+                    {(() => {
+                      const pyramidTiers = [
+                        {
+                          key: 'stretch',
+                          color: '#c2410c',
+                          title: 'NV1 · THỬ THÁCH (STRETCH)',
+                          school: ct21.triangle.stretch.majorSchool,
+                          hint: ct21.triangle.stretch.targetScore || 'Điểm chuẩn cao hơn điểm hiện tại',
+                          top: 36,
+                          bottom: 58
+                        },
+                        {
+                          key: 'realistic',
+                          color: '#0f766e',
+                          title: 'NV2 · VỪA SỨC (REALISTIC)',
+                          school: ct21.triangle.realistic.majorSchool,
+                          hint: ct21.triangle.realistic.targetScore || 'Điểm chuẩn ngang điểm hiện tại',
+                          top: 58,
+                          bottom: 79
+                        },
+                        {
+                          key: 'safety',
+                          color: '#1d4ed8',
+                          title: 'NV3 · BẢO TOÀN (SAFETY BUFFER)',
+                          school: ct21.triangle.safety.majorSchool,
+                          hint: ct21.triangle.safety.targetScore || 'Điểm chuẩn thấp hơn điểm hiện tại',
+                          top: 79,
+                          bottom: 100
+                        }
+                      ];
+
+                      return (
+                        <div className="space-y-1.5 mb-2.5 text-xs border border-slate-200 rounded-lg p-2.5 bg-white">
+                          <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-rose-600 font-bold">▲</span>
+                              <span className="font-black text-slate-900 uppercase text-[10.5px] tracking-wide">
+                                TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                              </span>
+                            </div>
+                            <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                           </div>
-                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">{ct21.triangle.stretch.notes}</div>
-                        </div>
-                        <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                          <div>
-                            <span className="font-extrabold text-cyan-900 text-[10px] block uppercase">{ct21.triangle.realistic.title}</span>
-                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.realistic.majorSchool}</p>
-                            <div className="text-[10.5px] font-bold text-cyan-800 mt-1">• {ct21.triangle.realistic.targetScore}</div>
+
+                          {/* Kim tự tháp 3 tầng dạng tháp phân tầng */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '3px 0' }}>
+                            <div style={{ width: '85px', fontSize: '9px', color: '#475569', lineHeight: 1.25, textAlign: 'left', fontWeight: 600 }}>
+                              <span>Chọn theo thứ tự ưu tiên:</span>
+                              <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>NV1 → NV2 → NV3</div>
+                            </div>
+
+                            <div style={{ flex: 1, maxWidth: '440px', margin: '0 auto' }}>
+                              {pyramidTiers.map((t, idx) => {
+                                const lt = (100 - t.top) / 2;
+                                const lb = (100 - t.bottom) / 2;
+                                return (
+                                  <div
+                                    key={t.key}
+                                    style={{
+                                      position: 'relative',
+                                      minHeight: '42px',
+                                      marginTop: idx === 0 ? 0 : '2.5px',
+                                      background: t.color,
+                                      clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                      WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                      WebkitPrintColorAdjust: 'exact',
+                                      printColorAdjust: 'exact',
+                                      color: '#ffffff',
+                                      textAlign: 'center',
+                                      boxSizing: 'border-box',
+                                      padding: `3px ${lt + 2}%`,
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    <div style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.3px', lineHeight: 1.15, textTransform: 'uppercase' }}>
+                                      {t.title}
+                                    </div>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '1px', lineHeight: 1.2 }}>
+                                      {t.school}
+                                    </div>
+                                    <div style={{ fontSize: '8px', opacity: 0.92, marginTop: '1px', lineHeight: 1.15 }}>
+                                      {t.hint}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div style={{ width: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.2 }}>
+                              <span style={{ fontSize: '14px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                              <div style={{ width: '2px', height: '36px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '2px 0' }} />
+                              <span style={{ fontSize: '8px', color: '#475569' }}>Mức thách thức & điểm chuẩn tăng dần</span>
+                            </div>
                           </div>
-                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">{ct21.triangle.realistic.notes}</div>
-                        </div>
-                        <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                          <div>
-                            <span className="font-extrabold text-slate-800 text-[10px] block uppercase">{ct21.triangle.safety.title}</span>
-                            <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.safety.majorSchool}</p>
-                            <div className="text-[10.5px] font-bold text-slate-700 mt-1">• {ct21.triangle.safety.targetScore}</div>
+
+                          {/* Khối Kế hoạch B */}
+                          <div style={{ marginTop: '5px', border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '6px', padding: '4px 8px', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                            <div style={{ fontSize: '9.5px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                              KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '1px', fontWeight: 500 }}>
+                              Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
+                            </div>
                           </div>
-                          <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">{ct21.triangle.safety.notes}</div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {/* MA TRẬN Ý ĐỊNH THỰC THI VI MÔ */}
                     <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">
@@ -5768,42 +5906,115 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                         <p className="text-[10.5px] text-slate-600 italic">{ct21.coreCareerGoal.note}</p>
                       </div>
 
-                      {/* TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG */}
-                      <div className="space-y-1.5 text-xs border border-slate-200 rounded-lg p-3.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
-                            <span className="text-teal-900">🔺</span>
-                            <span>CHIẾN LƯỢC TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (ADAPTIVE ASPIRATION TRIANGLE)</span>
-                          </span>
-                          <span className="text-[10px] text-slate-500 italic">Chiến lược dải điểm bậc thang 3 nấc</span>
-                        </div>
-                        <div style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '12px', paddingTop: '4px' }}><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style={{ position: 'absolute', left: '12%', top: '22%', width: '76%', height: '56%', zIndex: 0, pointerEvents: 'none' }}><polygon points="50,0 100,100 0,100" fill="rgba(20,184,166,0.06)" stroke="#5eead4" strokeWidth="1.2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" /></svg>
-                          <div className="p-2.5 rounded-lg border border-teal-200 bg-teal-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '0 0 56%', margin: '0 auto 4px auto', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="font-extrabold text-teal-900 text-[10px] block uppercase">{ct21.triangle.stretch.title}</span>
-                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.stretch.majorSchool}</p>
-                              <div className="text-[10.5px] font-bold text-teal-800 mt-1">• {ct21.triangle.stretch.targetScore}</div>
+                      {/* KHỐI TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (HÌNH THÁP 3 TẦNG KÈM KẾ HOẠCH B) */}
+                      {(() => {
+                        const pyramidTiers = [
+                          {
+                            key: 'stretch',
+                            color: '#c2410c',
+                            title: 'NV1 · THỬ THÁCH (STRETCH)',
+                            school: ct21.triangle.stretch.majorSchool,
+                            hint: ct21.triangle.stretch.targetScore || 'Điểm chuẩn cao hơn điểm hiện tại',
+                            top: 36,
+                            bottom: 58
+                          },
+                          {
+                            key: 'realistic',
+                            color: '#0f766e',
+                            title: 'NV2 · VỪA SỨC (REALISTIC)',
+                            school: ct21.triangle.realistic.majorSchool,
+                            hint: ct21.triangle.realistic.targetScore || 'Điểm chuẩn ngang điểm hiện tại',
+                            top: 58,
+                            bottom: 79
+                          },
+                          {
+                            key: 'safety',
+                            color: '#1d4ed8',
+                            title: 'NV3 · BẢO TOÀN (SAFETY BUFFER)',
+                            school: ct21.triangle.safety.majorSchool,
+                            hint: ct21.triangle.safety.targetScore || 'Điểm chuẩn thấp hơn điểm hiện tại',
+                            top: 79,
+                            bottom: 100
+                          }
+                        ];
+
+                        return (
+                          <div className="space-y-1.5 mb-2.5 text-xs border border-slate-200 rounded-lg p-2.5 bg-white">
+                            <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-rose-600 font-bold">▲</span>
+                                <span className="font-black text-slate-900 uppercase text-[10.5px] tracking-wide">
+                                  TAM GIÁC NGUYỆN VỌNG THÍCH ỨNG (CHIẾN LƯỢC QUẢN TRỊ RỦI RO)
+                                </span>
+                              </div>
+                              <span className="text-[9.5px] text-slate-500 italic">Dải điểm bậc thang 3 nấc</span>
                             </div>
-                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-teal-200/60 leading-normal">{ct21.triangle.stretch.notes}</div>
-                          </div>
-                          <div className="p-2.5 rounded-lg border border-cyan-200 bg-cyan-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="font-extrabold text-cyan-900 text-[10px] block uppercase">{ct21.triangle.realistic.title}</span>
-                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.realistic.majorSchool}</p>
-                              <div className="text-[10.5px] font-bold text-cyan-800 mt-1">• {ct21.triangle.realistic.targetScore}</div>
+
+                            {/* Kim tự tháp 3 tầng dạng tháp phân tầng */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '3px 0' }}>
+                              <div style={{ width: '85px', fontSize: '9px', color: '#475569', lineHeight: 1.25, textAlign: 'left', fontWeight: 600 }}>
+                                <span>Chọn theo thứ tự ưu tiên:</span>
+                                <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>NV1 → NV2 → NV3</div>
+                              </div>
+
+                              <div style={{ flex: 1, maxWidth: '440px', margin: '0 auto' }}>
+                                {pyramidTiers.map((t, idx) => {
+                                  const lt = (100 - t.top) / 2;
+                                  const lb = (100 - t.bottom) / 2;
+                                  return (
+                                    <div
+                                      key={t.key}
+                                      style={{
+                                        position: 'relative',
+                                        minHeight: '42px',
+                                        marginTop: idx === 0 ? 0 : '2.5px',
+                                        background: t.color,
+                                        clipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                        WebkitClipPath: `polygon(${lt}% 0, ${100 - lt}% 0, ${100 - lb}% 100%, ${lb}% 100%)`,
+                                        WebkitPrintColorAdjust: 'exact',
+                                        printColorAdjust: 'exact',
+                                        color: '#ffffff',
+                                        textAlign: 'center',
+                                        boxSizing: 'border-box',
+                                        padding: `3px ${lt + 2}%`,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center'
+                                      }}
+                                    >
+                                      <div style={{ fontSize: '9.5px', fontWeight: 900, letterSpacing: '0.3px', lineHeight: 1.15, textTransform: 'uppercase' }}>
+                                        {t.title}
+                                      </div>
+                                      <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '1px', lineHeight: 1.2 }}>
+                                        {t.school}
+                                      </div>
+                                      <div style={{ fontSize: '8px', opacity: 0.92, marginTop: '1px', lineHeight: 1.15 }}>
+                                        {t.hint}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              <div style={{ width: '85px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '9px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.2 }}>
+                                <span style={{ fontSize: '14px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                                <div style={{ width: '2px', height: '36px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '2px 0' }} />
+                                <span style={{ fontSize: '8px', color: '#475569' }}>Mức thách thức & điểm chuẩn tăng dần</span>
+                              </div>
                             </div>
-                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-cyan-200/60 leading-normal">{ct21.triangle.realistic.notes}</div>
-                          </div>
-                          <div className="p-2.5 rounded-lg border border-slate-300 bg-slate-50 flex flex-col justify-between" style={{ position: 'relative', zIndex: 1, flex: '1 1 46%', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-                            <div>
-                              <span className="font-extrabold text-slate-800 text-[10px] block uppercase">{ct21.triangle.safety.title}</span>
-                              <p className="font-bold text-slate-900 mt-1 text-[11.5px]">{ct21.triangle.safety.majorSchool}</p>
-                              <div className="text-[10.5px] font-bold text-slate-700 mt-1">• {ct21.triangle.safety.targetScore}</div>
+
+                            {/* Khối Kế hoạch B */}
+                            <div style={{ marginTop: '5px', border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '6px', padding: '4px 8px', textAlign: 'center', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                              <div style={{ fontSize: '9.5px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                                KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                              </div>
+                              <div style={{ fontSize: '9px', color: '#7c2d12', marginTop: '1px', fontWeight: 500 }}>
+                                Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
+                              </div>
                             </div>
-                            <div className="text-[9.5px] text-slate-600 mt-1.5 pt-1 border-t border-slate-200 leading-normal">{ct21.triangle.safety.notes}</div>
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       {/* MA TRẬN Ý ĐỊNH THỰC THI VI MÔ */}
                       <div className="space-y-2 border border-slate-200 rounded-lg p-4 text-xs bg-slate-50/50">

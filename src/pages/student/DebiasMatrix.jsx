@@ -1156,132 +1156,210 @@ export default function DebiasMatrix() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            
-            {/* Nấc 1: Ước mơ */}
-            <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold uppercase text-[10px]">
-                  {triadTiers.dream.label}
-                </span>
-                {isEditingTriad ? (
+          {isEditingTriad ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              {/* Nấc 1: Ước mơ */}
+              <div className="p-4 rounded-xl bg-orange-50/70 border border-orange-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 font-bold uppercase text-[10px]">
+                    {triadTiers.dream.label}
+                  </span>
                   <input
                     type="text"
                     value={triadTiers.dream.targetScore}
                     onChange={(e) => handleUpdateTriad('dream', 'targetScore', e.target.value)}
-                    className="w-24 bg-white border border-purple-300 text-purple-800 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-28 bg-white border border-orange-300 text-orange-800 rounded px-1.5 py-0.5 text-right font-semibold text-xs"
+                    placeholder="Mục tiêu điểm..."
                   />
-                ) : (
-                  <span className="text-purple-700 font-semibold">{triadTiers.dream.targetScore}</span>
-                )}
-              </div>
-
-              {isEditingTriad ? (
+                </div>
                 <input
                   type="text"
                   value={triadTiers.dream.majorSchool}
                   onChange={(e) => handleUpdateTriad('dream', 'majorSchool', e.target.value)}
-                  className="w-full bg-white border border-purple-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
+                  className="w-full bg-white border border-orange-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
+                  placeholder="Ngành & Trường..."
                 />
-              ) : (
-                <p className="font-bold text-slate-900 text-sm">{triadTiers.dream.majorSchool}</p>
-              )}
-
-              {isEditingTriad ? (
                 <textarea
                   rows={2}
                   value={triadTiers.dream.notes}
                   onChange={(e) => handleUpdateTriad('dream', 'notes', e.target.value)}
-                  className="w-full bg-white border border-purple-300 text-slate-800 rounded p-1.5 text-[11px]"
+                  className="w-full bg-white border border-orange-300 text-slate-800 rounded p-1.5 text-[11px]"
+                  placeholder="Ghi chú chiến lược..."
                 />
-              ) : (
-                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-purple-200/80 pt-1.5">{triadTiers.dream.notes}</p>
-              )}
-            </div>
+              </div>
 
-            {/* Nấc 2: Vừa sức */}
-            <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-bold uppercase text-[10px]">
-                  {triadTiers.realistic.label}
-                </span>
-                {isEditingTriad ? (
+              {/* Nấc 2: Vừa sức */}
+              <div className="p-4 rounded-xl bg-teal-50/70 border border-teal-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 font-bold uppercase text-[10px]">
+                    {triadTiers.realistic.label}
+                  </span>
                   <input
                     type="text"
                     value={triadTiers.realistic.targetScore}
                     onChange={(e) => handleUpdateTriad('realistic', 'targetScore', e.target.value)}
-                    className="w-24 bg-white border border-teal-300 text-teal-800 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-28 bg-white border border-teal-300 text-teal-800 rounded px-1.5 py-0.5 text-right font-semibold text-xs"
+                    placeholder="Mục tiêu điểm..."
                   />
-                ) : (
-                  <span className="text-teal-700 font-semibold">{triadTiers.realistic.targetScore}</span>
-                )}
-              </div>
-
-              {isEditingTriad ? (
+                </div>
                 <input
                   type="text"
                   value={triadTiers.realistic.majorSchool}
                   onChange={(e) => handleUpdateTriad('realistic', 'majorSchool', e.target.value)}
                   className="w-full bg-white border border-teal-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
+                  placeholder="Ngành & Trường..."
                 />
-              ) : (
-                <p className="font-bold text-slate-900 text-sm">{triadTiers.realistic.majorSchool}</p>
-              )}
-
-              {isEditingTriad ? (
                 <textarea
                   rows={2}
                   value={triadTiers.realistic.notes}
                   onChange={(e) => handleUpdateTriad('realistic', 'notes', e.target.value)}
                   className="w-full bg-white border border-teal-300 text-slate-800 rounded p-1.5 text-[11px]"
+                  placeholder="Ghi chú chiến lược..."
                 />
-              ) : (
-                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-teal-200/80 pt-1.5">{triadTiers.realistic.notes}</p>
-              )}
-            </div>
+              </div>
 
-            {/* Nấc 3: An toàn */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded bg-slate-200 text-slate-800 font-bold uppercase text-[10px]">
-                  {triadTiers.safe.label}
-                </span>
-                {isEditingTriad ? (
+              {/* Nấc 3: An toàn */}
+              <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-bold uppercase text-[10px]">
+                    {triadTiers.safe.label}
+                  </span>
                   <input
                     type="text"
                     value={triadTiers.safe.targetScore}
                     onChange={(e) => handleUpdateTriad('safe', 'targetScore', e.target.value)}
-                    className="w-24 bg-white border border-slate-300 text-slate-800 rounded px-1.5 py-0.5 text-right font-semibold"
+                    className="w-28 bg-white border border-blue-300 text-blue-800 rounded px-1.5 py-0.5 text-right font-semibold text-xs"
+                    placeholder="Mục tiêu điểm..."
                   />
-                ) : (
-                  <span className="text-slate-600 font-semibold">{triadTiers.safe.targetScore}</span>
-                )}
-              </div>
-
-              {isEditingTriad ? (
+                </div>
                 <input
                   type="text"
                   value={triadTiers.safe.majorSchool}
                   onChange={(e) => handleUpdateTriad('safe', 'majorSchool', e.target.value)}
-                  className="w-full bg-white border border-slate-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
+                  className="w-full bg-white border border-blue-300 text-slate-900 font-bold rounded px-2 py-1 text-sm"
+                  placeholder="Ngành & Trường..."
                 />
-              ) : (
-                <p className="font-bold text-slate-900 text-sm">{triadTiers.safe.majorSchool}</p>
-              )}
-
-              {isEditingTriad ? (
                 <textarea
                   rows={2}
                   value={triadTiers.safe.notes}
                   onChange={(e) => handleUpdateTriad('safe', 'notes', e.target.value)}
-                  className="w-full bg-white border border-slate-300 text-slate-800 rounded p-1.5 text-[11px]"
+                  className="w-full bg-white border border-blue-300 text-slate-800 rounded p-1.5 text-[11px]"
+                  placeholder="Ghi chú chiến lược..."
                 />
-              ) : (
-                <p className="text-slate-600 text-[11px] leading-relaxed border-t border-slate-200 pt-1.5">{triadTiers.safe.notes}</p>
-              )}
+              </div>
             </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Hình tháp tam giác 3 tầng */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '6px 0' }}>
+                <div style={{ width: '110px', fontSize: '11px', color: '#475569', lineHeight: 1.3, textAlign: 'left', fontWeight: 600 }}>
+                  <span>Chọn theo thứ tự:</span>
+                  <div style={{ fontWeight: 800, color: '#0f172a', marginTop: '2px', fontSize: '12px' }}>NV1 → NV2 → NV3</div>
+                </div>
 
-          </div>
+                <div style={{ flex: '1 1 0', minWidth: 0, maxWidth: '520px', margin: '0 auto' }}>
+                  {/* Tầng 1: Thử thách */}
+                  <div style={{
+                    position: 'relative',
+                    minHeight: '52px',
+                    background: '#c2410c',
+                    clipPath: 'polygon(32% 0, 68% 0, 79% 100%, 21% 100%)',
+                    WebkitClipPath: 'polygon(32% 0, 68% 0, 79% 100%, 21% 100%)',
+                    color: '#ffffff',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                    padding: '6px 22%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.06)'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+                      NV1 · THỬ THÁCH (STRETCH GOAL)
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '2px' }}>
+                      {triadTiers.dream?.majorSchool || `${targetMajor} (Trường trọng điểm / Tốp đầu)`}
+                    </div>
+                    <div style={{ fontSize: '10px', opacity: 0.92, marginTop: '1px' }}>
+                      {triadTiers.dream?.targetScore || 'Điểm chuẩn cao hơn điểm hiện tại'}
+                    </div>
+                  </div>
+
+                  {/* Tầng 2: Vừa sức */}
+                  <div style={{
+                    position: 'relative',
+                    minHeight: '52px',
+                    marginTop: '4px',
+                    background: '#0f766e',
+                    clipPath: 'polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%)',
+                    WebkitClipPath: 'polygon(21% 0, 79% 0, 89.5% 100%, 10.5% 100%)',
+                    color: '#ffffff',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                    padding: '6px 14%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.06)'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+                      NV2 · VỪA SỨC (REALISTIC TARGET)
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '2px' }}>
+                      {triadTiers.realistic?.majorSchool || `${targetMajor} (Hệ chính quy vừa sức / Cơ sở uy tín khu vực)`}
+                    </div>
+                    <div style={{ fontSize: '10px', opacity: 0.92, marginTop: '1px' }}>
+                      {triadTiers.realistic?.targetScore || 'Điểm chuẩn ngang điểm hiện tại'}
+                    </div>
+                  </div>
+
+                  {/* Tầng 3: Bảo toàn */}
+                  <div style={{
+                    position: 'relative',
+                    minHeight: '52px',
+                    marginTop: '4px',
+                    background: '#1d4ed8',
+                    clipPath: 'polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%)',
+                    WebkitClipPath: 'polygon(10.5% 0, 89.5% 0, 100% 100%, 0% 100%)',
+                    color: '#ffffff',
+                    textAlign: 'center',
+                    boxSizing: 'border-box',
+                    padding: '6px 6%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.06)'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: 900, letterSpacing: '0.3px', textTransform: 'uppercase' }}>
+                      NV3 · BẢO TOÀN (SAFETY BUFFER)
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, marginTop: '2px' }}>
+                      {triadTiers.safe?.majorSchool || `${targetMajor} (Hệ Cao đẳng / Chương trình thực hành chất lượng cao)`}
+                    </div>
+                    <div style={{ fontSize: '10px', opacity: 0.92, marginTop: '1px' }}>
+                      {triadTiers.safe?.targetScore || 'Điểm chuẩn thấp hơn điểm hiện tại'}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ width: '110px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0f172a', textAlign: 'center', lineHeight: 1.25 }}>
+                  <span style={{ fontSize: '18px', color: '#c2410c', lineHeight: 1 }}>▲</span>
+                  <div style={{ width: '2px', height: '44px', background: 'linear-gradient(to top, #1d4ed8, #0f766e, #c2410c)', margin: '3px 0' }} />
+                  <span style={{ fontSize: '10px', color: '#475569' }}>Mức thách thức & điểm chuẩn tăng</span>
+                </div>
+              </div>
+
+              {/* Khối Kế hoạch B */}
+              <div style={{ border: '1.5px solid #ea580c', background: '#fff7ed', borderRadius: '8px', padding: '6px 12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '11px', fontWeight: 900, color: '#9a3412', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                  KẾ HOẠCH B · PHƯƠNG ÁN DỰ PHÒNG
+                </div>
+                <div style={{ fontSize: '10.5px', color: '#7c2d12', marginTop: '2px', fontWeight: 500 }}>
+                  Nếu không trúng tuyển cả 3 nấc: xét tuyển bổ sung hoặc ngành gần, ôn tập lại có mục tiêu.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* =========================================================================
