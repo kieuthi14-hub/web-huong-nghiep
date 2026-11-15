@@ -1236,23 +1236,33 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   })
 
   const [shiftCategoriesMap, setShiftCategoriesMap] = useState(() => {
+    let current = {}
     try {
       const saved = localStorage.getItem('cbas_shift_categories_map')
-      if (saved) return JSON.parse(saved)
+      if (saved) current = JSON.parse(saved)
     } catch (e) {}
-    const defaults = {}
-    const group1 = ['CT_02', 'CT_08', 'CT_09', 'CT_11', 'CT_14', 'CT_18', 'CT_21', 'CT_22', 'CT_25']
+    // Nhóm 1 (10 HS): Điều chỉnh nguyện vọng khác ban đầu
+    // Đã phân loại chính xác CT_13: Y đa khoa (ĐH Y Dược) -> Xét nghiệm / Điều dưỡng (CĐ Y tế Khánh Hòa)
+    const group1 = ['CT_02', 'CT_08', 'CT_09', 'CT_11', 'CT_13', 'CT_14', 'CT_18', 'CT_21', 'CT_22', 'CT_25']
+    // Nhóm 2 (9 HS): Bổ sung căn cứ cụ thể (điểm chuẩn, học phí)
     const group2 = ['CT_03', 'CT_04', 'CT_05', 'CT_07', 'CT_10', 'CT_15', 'CT_20', 'CT_24', 'CT_29']
+    // Nhóm 3 (11 HS): Giữ nguyên lựa chọn & Bổ sung dự phòng rủi ro Kế hoạch B
+
     INITIAL_CBAS_STUDENTS.forEach(st => {
-      if (group1.includes(st.id)) {
-        defaults[st.id] = 'DIEU_CHINH_NV'
-      } else if (group2.includes(st.id)) {
-        defaults[st.id] = 'BO_SUNG_CAN_CU'
-      } else {
-        defaults[st.id] = 'GIU_NGUYEN_DU_PHONG'
+      if (!current[st.id] || (st.id === 'CT_13' && current[st.id] === 'GIU_NGUYEN_DU_PHONG')) {
+        if (group1.includes(st.id)) {
+          current[st.id] = 'DIEU_CHINH_NV'
+        } else if (group2.includes(st.id)) {
+          current[st.id] = 'BO_SUNG_CAN_CU'
+        } else {
+          current[st.id] = 'GIU_NGUYEN_DU_PHONG'
+        }
       }
     })
-    return defaults
+    try {
+      localStorage.setItem('cbas_shift_categories_map', JSON.stringify(current))
+    } catch (e) {}
+    return current
   })
 
   const [selectedAnonymousModal, setSelectedAnonymousModal] = useState(null)

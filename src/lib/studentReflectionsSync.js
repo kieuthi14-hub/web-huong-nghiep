@@ -292,10 +292,10 @@ export async function fetchStudentReflectionsSummary() {
       }
     });
   } else {
-    // Giá trị chuẩn thực nghiệm N=30
-    nhom_1_dieu_chinh_nv = 9;
+    // Giá trị chuẩn thực nghiệm N=30 (Đã hiệu chuẩn CT_13 chuyển hẳn sang nhóm 1)
+    nhom_1_dieu_chinh_nv = 10;
     nhom_2_bo_sung_can_cu = 9;
-    nhom_3_giu_nguyen_va_du_phong = 12;
+    nhom_3_giu_nguyen_va_du_phong = 11;
   }
 
   return {
