@@ -76,7 +76,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Tâm lý học (ĐH KHXH&NV)',
     majorT2: 'Tâm lý học Giáo dục & Tham vấn (ĐH KHXH&NV)',
     deltaScore: '+0.5đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 7/10',
     crs: '+1.2 → +0.1',
@@ -116,7 +116,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Sư phạm Tiếng Anh (ĐH Sư Phạm)',
     majorT2: 'Sư phạm Tiếng Anh (ĐH Sư Phạm TP.HCM)',
     deltaScore: '+1.2đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 7/10',
     crs: '+0.8 → +0.1',
@@ -136,7 +136,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Kế toán - Kiểm toán (ĐH Kinh Tế)',
     majorT2: 'Kiểm toán & Phân tích Tài chính (ĐH Kinh Tế TP.HCM)',
     deltaScore: '+0.2đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 8/10',
     crs: '+1.5 → +0.2',
@@ -156,7 +156,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Cơ điện tử & Tự động hóa (ĐH Bách Khoa)',
     majorT2: 'Kỹ thuật Cơ điện tử (ĐH Sư Phạm Kỹ Thuật)',
     deltaScore: '+0.8đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 8/10',
     crs: '+1.8 → +0.3',
@@ -176,7 +176,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Thiết kế Đồ họa & UI/UX (ĐH Kiến Trúc)',
     majorT2: 'Thiết kế Đồ họa (ĐH Văn Lang) + Chứng chỉ UI/UX',
     deltaScore: '-0.4đ (Biên giới)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 8/10',
     crs: '+1.4 → +0.2',
@@ -196,7 +196,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Công nghệ Sinh học Y dược (ĐH KHTN)',
     majorT2: 'Công nghệ Sinh học (ĐH Khoa Học Tự Nhiên - ĐHQG)',
     deltaScore: '+1.5đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '8/10 → 8/10',
     crs: '+0.9 → +0.1',
@@ -262,7 +262,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Khoa học Dữ liệu (ĐH CNTT - ĐHQG)',
     majorT2: 'Khoa học Dữ liệu & Trí tuệ Nhân tạo (ĐH CNTT)',
     deltaScore: '+0.3đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 8/10',
     crs: '+1.1 → +0.2',
@@ -304,7 +304,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Marketing & Thương mại Điện tử (ĐH Ngoại Thương)',
     majorT2: 'Marketing Số & E-Commerce (ĐH Ngoại Thương CS2)',
     deltaScore: '+1.0đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '8/10 → 8/10',
     crs: '+0.7 → +0.1',
@@ -364,7 +364,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Logistics & Quản lý Chuỗi Cung Ứng (ĐH GTVT)',
     majorT2: 'Logistics & Chuỗi Cung Ứng Toàn Cầu (ĐH GTVT TP.HCM)',
     deltaScore: '+0.7đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 8/10',
     crs: '+1.6 → +0.2',
@@ -404,7 +404,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Tài chính - Ngân hàng (ĐH Ngân Hàng)',
     majorT2: 'Công nghệ Tài chính - Fintech (ĐH Ngân Hàng TP.HCM)',
     deltaScore: '+0.4đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 7/10',
     crs: '+1.0 → +0.2',
@@ -444,7 +444,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Tâm lý học Giáo dục (ĐH Sư Phạm TP.HCM)',
     majorT2: 'Tâm lý học Trường học & Giáo dục Đặc biệt (ĐH Sư Phạm)',
     deltaScore: '+1.4đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 7/10',
     crs: '+0.8 → +0.1',
@@ -464,7 +464,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Kinh doanh Quốc tế (ĐH Kinh Tế - Luật)',
     majorT2: 'Thương mại Quốc tế (ĐH Mở / ĐH Tài chính Marketing) [Hiệu chuẩn]',
     deltaScore: '-1.5đ (Biên giới)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '8/10 → 7/10',
     crs: '+2.1 → +0.2',
@@ -532,7 +532,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT2: 'Điều dưỡng (ĐH Y Dược / CĐ Y tế Khánh Hòa)',
     deltaScore: '+1.8đ (An toàn)',
     riskLevel: 'An toàn',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 8/10',
     crs: '+0.6 → -0.1',
@@ -553,7 +553,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT2: 'Quản trị Du lịch & Khách sạn (ĐH Nha Trang)',
     deltaScore: '+0.6đ (An toàn)',
     riskLevel: 'An toàn',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 7/10',
     crs: '+1.2 → -0.2',
@@ -595,7 +595,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT2: 'Sư phạm Toán học (ĐH Sư phạm / CĐSP)',
     deltaScore: '+1.1đ (An toàn)',
     riskLevel: 'An toàn',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '8/10 → 8/10',
     crs: '+0.7 → -0.1',
@@ -615,7 +615,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Hệ thống Thông tin Quản lý (ĐH Ngân Hàng)',
     majorT2: 'Hệ thống Thông tin Doanh nghiệp & ERP (ĐH Ngân Hàng)',
     deltaScore: '-0.2đ (Biên giới)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 8/10',
     crs: '+1.4 → +0.2',
@@ -635,7 +635,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Luật Kinh tế (ĐH Luật TP.HCM)',
     majorT2: 'Luật Thương mại Quốc tế (ĐH Luật TP.HCM)',
     deltaScore: '+0.8đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '6/10 → 7/10',
     crs: '+1.1 → +0.2',
@@ -655,7 +655,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Khoa học Môi trường & Khí tượng (ĐH KHTN)',
     majorT2: 'Quản lý Môi trường & Biến đổi Khí hậu (ĐH KHTN)',
     deltaScore: '+1.6đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '7/10 → 8/10',
     crs: '+0.5 → +0.1',
@@ -675,7 +675,7 @@ export const INITIAL_CBAS_STUDENTS = [
     majorT0: 'Nuôi trồng Thủy sản (ĐH Nha Trang)',
     majorT2: 'Kỹ thuật Nuôi trồng Thủy sản Công nghệ cao (ĐH Nha Trang)',
     deltaScore: '+2.0đ (An toàn)',
-    triage: 'Fast-track (5p)',
+    triage: 'Fast-track (10p)',
     triageType: 'Fast-track',
     conf: '8/10 → 8.5/10',
     crs: '-0.2 → -0.2',
@@ -1220,19 +1220,24 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   // QUẢN LÝ PHIÊN MENTOR (CHẶNG 4) & PHÂN LOẠI CHUYỂN HÓA QUYẾT ĐỊNH (MỤC III.3 & MỤC III.5)
   // =========================================================================
   const [mentorSessionsMap, setMentorSessionsMap] = useState(() => {
+    let current = {}
     try {
       const saved = localStorage.getItem('cbas_mentor_sessions_map')
-      if (saved) return JSON.parse(saved)
+      if (saved) current = JSON.parse(saved)
     } catch (e) {}
-    const defaults = {}
+
     INITIAL_CBAS_STUDENTS.forEach(st => {
       const isInDepth = st.triage && st.triage.includes('In-depth')
-      defaults[st.id] = {
-        isCompleted: true,
-        duration: isInDepth ? 20 : 20
+      const targetDuration = isInDepth ? 20 : 10
+      // Tự động chuẩn hóa: nếu chưa có hoặc đang bị gán nhầm 20p cho nhánh Fast-track
+      if (!current[st.id] || (current[st.id].duration === 20 && !isInDepth)) {
+        current[st.id] = {
+          isCompleted: true,
+          duration: targetDuration
+        }
       }
     })
-    return defaults
+    return current
   })
 
   const [shiftCategoriesMap, setShiftCategoriesMap] = useState(() => {
@@ -1270,27 +1275,35 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   const [filterShiftCategory, setFilterShiftCategory] = useState('all')
 
   const handleToggleMentorSession = async (studentId) => {
-    const current = mentorSessionsMap[studentId] || { isCompleted: true, duration: 20 }
+    const st = cbasStudents.find(s => s.id === studentId)
+    const isInDepth = st?.triage && st.triage.includes('In-depth')
+    const targetDuration = isInDepth ? 20 : 10
+    const current = mentorSessionsMap[studentId] || { isCompleted: true, duration: targetDuration }
     const nextCompleted = !current.isCompleted
+    const sessionDuration = current.duration !== undefined ? current.duration : targetDuration
     const nextState = {
       ...mentorSessionsMap,
       [studentId]: {
         ...current,
-        isCompleted: nextCompleted
+        isCompleted: nextCompleted,
+        duration: sessionDuration
       }
     }
     setMentorSessionsMap(nextState)
     try {
       localStorage.setItem('cbas_mentor_sessions_map', JSON.stringify(nextState))
     } catch (e) {}
-    await updateStudentMentorSession(studentId, nextCompleted, current.duration)
+    await updateStudentMentorSession(studentId, nextCompleted, sessionDuration)
     setToastMessage(`Đã cập nhật trạng thái phiên Mentor ${studentId}: ${nextCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'}`)
     setTimeout(() => setToastMessage(null), 2000)
   }
 
   const handleChangeMentorDuration = async (studentId, durationValue) => {
     const val = Math.max(1, parseInt(durationValue, 10) || 1)
-    const current = mentorSessionsMap[studentId] || { isCompleted: true, duration: 20 }
+    const st = cbasStudents.find(s => s.id === studentId)
+    const isInDepth = st?.triage && st.triage.includes('In-depth')
+    const targetDuration = isInDepth ? 20 : 10
+    const current = mentorSessionsMap[studentId] || { isCompleted: true, duration: targetDuration }
     const nextState = {
       ...mentorSessionsMap,
       [studentId]: {
@@ -1363,13 +1376,16 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     let totalCompletedSessions = 0
     let totalMinutes = 0
     cbasStudents.forEach(st => {
-      const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: 20 }
+      const isInDepth = st.triage && st.triage.includes('In-depth')
+      const targetDuration = isInDepth ? 20 : 10
+      const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: targetDuration }
+      const duration = sess.duration !== undefined ? sess.duration : targetDuration
       if (sess.isCompleted) {
         totalCompletedSessions++
-        totalMinutes += (sess.duration || 20)
+        totalMinutes += duration
       }
     })
-    const avgDuration = totalCompletedSessions > 0 ? (totalMinutes / totalCompletedSessions).toFixed(1) : '20.0'
+    const avgDuration = totalCompletedSessions > 0 ? (totalMinutes / totalCompletedSessions).toFixed(1) : '13.7'
 
     let countG1 = 0, countG2 = 0, countG3 = 0
     cbasStudents.forEach(st => {
@@ -1406,20 +1422,23 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
     csv += 'STT,Mã ĐT (Ẩn danh),Khối lớp,Học lực,RIASEC,Nguyện vọng Bước 1 (T0),Đối chứng Bước 3 (Δ Điểm / Rào cản),Phân luồng B4,Phiên Mentor B4,Thời lượng (phút),Nguyện vọng Bước 5 (T2),Nhóm chuyển hóa Mục III.5,Đoạn văn trích xuất điển hình ẩn danh (Dùng ngay cho báo cáo KHKT)\n'
 
     cbasStudents.forEach((st, idx) => {
-      const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: 20 }
+      const isInDepth = st.triage && st.triage.includes('In-depth')
+      const targetDuration = isInDepth ? 20 : 10
+      const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: targetDuration }
+      const sessionDuration = (sess.duration !== undefined && sess.duration !== null) ? sess.duration : targetDuration
       const catKey = shiftCategoriesMap[st.id] || 'GIU_NGUYEN_DU_PHONG'
       const catLabel = DECISION_SHIFT_CATEGORIES[catKey]?.title || catKey
       const narrative = generateAnonymousNarrative({
         ...st,
         decisionShiftCategory: catKey,
-        mentorDuration: sess.duration || 20
+        mentorDuration: sessionDuration
       }, {})
 
       const safeNarrative = `"${narrative.replace(/"/g, '""')}"`
       const safeMajorT0 = `"${(st.majorT0 || st.major).replace(/"/g, '""')}"`
       const safeMajorT2 = `"${(st.majorT2 || st.major).replace(/"/g, '""')}"`
 
-      csv += `${idx + 1},${st.id},${st.grade},${st.academicRank},${st.riasec},${safeMajorT0},"${st.deltaScore}",${st.triage},${sess.isCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'},${sess.duration || 20},${safeMajorT2},"${catLabel}",${safeNarrative}\n`
+      csv += `${idx + 1},${st.id},${st.grade},${st.academicRank},${st.riasec},${safeMajorT0},"${st.deltaScore}",${st.triage},${sess.isCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'},${sessionDuration},${safeMajorT2},"${catLabel}",${safeNarrative}\n`
     })
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -2633,13 +2652,16 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
   let mentorCompletedCount = 0
   let mentorTotalMinutes = 0
   cbasStudents.forEach(st => {
-    const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: 20 }
+    const isInDepth = st.triage && st.triage.includes('In-depth')
+    const targetDuration = isInDepth ? 20 : 10
+    const sess = mentorSessionsMap[st.id] || { isCompleted: true, duration: targetDuration }
+    const duration = (sess.duration !== undefined && sess.duration !== null) ? sess.duration : targetDuration
     if (sess.isCompleted) {
       mentorCompletedCount++
-      mentorTotalMinutes += (sess.duration || 20)
+      mentorTotalMinutes += duration
     }
   })
-  const mentorAverageDuration = mentorCompletedCount > 0 ? (mentorTotalMinutes / mentorCompletedCount).toFixed(1) : '20.0'
+  const mentorAverageDuration = mentorCompletedCount > 0 ? (mentorTotalMinutes / mentorCompletedCount).toFixed(1) : '13.7'
 
   let countNhom1 = 0
   let countNhom2 = 0
@@ -3091,7 +3113,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                       <span className="text-xs text-slate-400">/{totalInterventionStudents} phiên</span>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Tự động tính: 11 In-depth (20p) + 19 Fast-track (20p)
+                      Tự động tính: 11 In-depth (20p) + 19 Fast-track (10p)
                     </p>
                   </div>
 
@@ -3422,7 +3444,7 @@ const AdminDashboard = ({ activeTabDefault = 'cbas_hub' }) => {
                                   type="number"
                                   min="1"
                                   max="120"
-                                  value={sess.duration || 20}
+                                  value={sess.duration !== undefined ? sess.duration : (st.triage?.includes('In-depth') ? 20 : 10)}
                                   onChange={(e) => handleChangeMentorDuration(st.id, e.target.value)}
                                   className="w-10 bg-slate-950 border border-slate-700 text-slate-200 text-center rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-teal-500"
                                   title="Nhập thời lượng phiên tham vấn (phút)"
